@@ -46,9 +46,7 @@
               </template>
             </ElTableColumn>
           </template>
-          <template v-if="$slots.default" #default>
-            <component :is="() => renderDefaultSlot()" />
-          </template>
+          <slot v-if="$slots.default" />
           <template #empty>
             <div v-if="loading"></div>
             <ElEmpty v-else :description="emptyText" :image-size="120" />
@@ -373,10 +371,6 @@ function renderCellSlot(slotScope: Record<string, unknown>, col: Record<string, 
       value: col.prop ? row?.[col.prop as string] : undefined,
     }) ?? null
   );
-}
-
-function renderDefaultSlot() {
-  return slots.default?.() ?? null;
 }
 
 /**
