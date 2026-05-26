@@ -70,6 +70,23 @@ const AuthAPI = {
       params: { token },
     });
   },
+
+  /** 获取当前用户的可选租户列表 */
+  getTenants() {
+    return request<ApiResponse<TenantOption[]>>({
+      url: `${API_PATH}/tenants`,
+      method: "get",
+    });
+  },
+
+  /** 选择租户，返回含 tenant_id 的新 JWT */
+  selectTenant(tenantId: number) {
+    return request<ApiResponse<SelectTenantResult>>({
+      url: `${API_PATH}/select-tenant`,
+      method: "post",
+      data: { tenant_id: tenantId },
+    });
+  },
 };
 
 export default AuthAPI;
@@ -93,6 +110,31 @@ export interface RefreshToekenBody {
 export interface LoginResult {
   access_token: string;
   refresh_token: string;
+  token_type: string;
+  expires_in: number;
+  tenants?: TenantOption[];
+  user_info?: UserInfoBrief;
+}
+
+/** 租户选项 */
+export interface TenantOption {
+  id: number;
+  name: string;
+  code: string;
+}
+
+/** 用户简要信息 */
+export interface UserInfoBrief {
+  id: number;
+  username: string;
+  name: string;
+  avatar?: string;
+  is_super_admin?: boolean;
+}
+
+/** 选择租户响应 */
+export interface SelectTenantResult {
+  access_token: string;
   token_type: string;
   expires_in: number;
 }

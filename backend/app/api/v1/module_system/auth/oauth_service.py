@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 import secrets
-from typing import Any, Literal, Tuple
+from typing import Any, Literal
 from urllib.parse import quote, urlencode
 
 import httpx
@@ -29,6 +29,7 @@ from app.config.setting import settings
 from app.core.exceptions import CustomException
 from app.core.logger import log
 from app.core.redis_crud import RedisCURD
+
 from .schema import JWTOutSchema
 from .service import LoginService
 
@@ -312,7 +313,7 @@ async def ensure_oauth_user(
     unique_id: str,
     display_name: str,
 ) -> UserModel:
-    auth = AuthSchema(db=db, user=None, check_data_scope=False)
+    auth = AuthSchema(db=db, user=None, tenant_id=1, check_data_scope=False)
     username = _username_for_oauth(provider, unique_id)
     existing = await UserCRUD(auth).get_by_username_crud(username=username)
     if existing:
@@ -340,7 +341,7 @@ async def complete_oauth_login(
     provider: OAuthProvider,
     code: str,
     state: str,
-) -> Tuple[JWTOutSchema, str]:
+) -> tuple[JWTOutSchema, str]:
     rc = RedisCURD(redis)
     raw = await rc.get(f"{STATE_PREFIX}{state}")
     if not raw:

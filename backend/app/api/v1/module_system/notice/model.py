@@ -1,10 +1,10 @@
 from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.base_model import ModelMixin, UserMixin
+from app.core.base_model import ModelMixin, TenantMixin, UserMixin
 
 
-class NoticeModel(ModelMixin, UserMixin):
+class NoticeModel(ModelMixin, TenantMixin, UserMixin):
     """
     通知公告表
     """

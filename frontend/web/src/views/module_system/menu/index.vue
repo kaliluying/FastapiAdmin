@@ -17,11 +17,7 @@
       @reset="onResetSearch"
     />
 
-    <ElTabs
-      v-model="menuClientTab"
-      class="menu-client-tabs px-1 mb-2"
-      @tab-change="handleMenuClientTabChange"
-    >
+    <ElTabs v-model="menuClientTab" @tab-change="handleMenuClientTabChange">
       <ElTabPane label="PC 桌面菜单管理" name="pc" />
       <ElTabPane label="APP 移动端菜单管理" name="app" />
     </ElTabs>
@@ -49,7 +45,7 @@
               @delete="handleBatchDelete"
               @more="handleMoreClick"
             />
-            <ElButton @click="toggleExpand">{{ isExpanded ? "收起" : "展开" }}</ElButton>
+            <ElButton @click="toggleExpand" v-ripple>{{ isExpanded ? "收起" : "展开" }}</ElButton>
           </div>
         </template>
       </FaTableHeader>
@@ -126,6 +122,7 @@
               v-model="formData.parent_id"
               placeholder="选择上级菜单"
               :data="menuOptions"
+              node-key="value"
               filterable
               check-strictly
               :render-after-expand="false"

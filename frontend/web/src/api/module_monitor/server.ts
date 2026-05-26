@@ -29,10 +29,10 @@ export interface Memory {
 }
 
 export interface System {
-  computer_name: string;
-  os_name: string;
   computer_ip: string;
+  computer_name: string;
   os_arch: string;
+  os_name: string;
   user_dir: string;
 }
 
@@ -49,9 +49,9 @@ export interface Python {
 }
 
 export interface SysFile {
-  dirName: string;
-  sysTypeName: string;
-  typeName: string;
+  dir_name: string;
+  sys_type_name: string;
+  type_name: string;
   total: string;
   free: string;
   used: string;

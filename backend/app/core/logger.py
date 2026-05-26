@@ -12,6 +12,76 @@ from app.config.setting import settings
 _logger_handlers = []
 
 
+def _format_with_context(record: dict) -> str:
+    """自定义日志格式化函数，自动注入请求上下文信息
+
+    在日志消息尾部追加 correlation_id、user_id 等上下文字段，
+    实现全链路追踪的可观测性。
+
+    参数:
+        record: loguru 日志记录字典
+
+    返回:
+        str: 格式化后的日志字符串
+    """
+    # 延迟导入避免循环依赖
+    from app.core.context.request_context import RequestContext
+
+    # 基础格式（控制台彩色版本）
+    base = (
+        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+        "<level>{level: <8}</level> | "
+        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+        "<level>{message}</level>"
+    )
+
+    # 尝试获取请求上下文
+    cid = RequestContext.get_correlation_id()
+    uid = RequestContext.get_user_id()
+
+    extras: list[str] = []
+    if cid:
+        extras.append(f"cid={cid[:8]}")
+    if uid is not None:
+        extras.append(f"uid={uid}")
+
+    if extras:
+        return base + " | <dim>" + " ".join(extras) + "</dim>\n"
+    return base + "\n"
+
+
+def _format_file_with_context(record: dict) -> str:
+    """文件日志格式化函数（去除颜色标签，适合日志文件存储）
+
+    参数:
+        record: loguru 日志记录字典
+
+    返回:
+        str: 纯文本格式化日志字符串
+    """
+    from app.core.context.request_context import RequestContext
+
+    base = (
+        "{time:YYYY-MM-DD HH:mm:ss.SSS} | "
+        "{level: <8} | "
+        "{name}:{function}:{line} - "
+        "{message}"
+    )
+
+    cid = RequestContext.get_correlation_id()
+    uid = RequestContext.get_user_id()
+
+    extras: list[str] = []
+    if cid:
+        extras.append(f"cid={cid[:8]}")
+    if uid is not None:
+        extras.append(f"uid={uid}")
+
+    if extras:
+        return base + " | " + " ".join(extras) + "\n"
+    return base + "\n"
+
+
 class InterceptHandler(logging.Handler):
     """
     日志拦截处理器：将所有 Python 标准日志重定向到 Loguru
@@ -82,17 +152,8 @@ def setup_logging() -> None:
     # 步骤1：移除默认处理器
     logger.remove()
 
-    # 步骤2：定义日志格式
-    log_format = (
-        # 时间信息
-        "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
-        # 日志级别，居中对齐
-        "<level>{level: <8}</level> | "
-        # 文件、函数和行号
-        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
-        # 日志消息
-        "<level>{message}</level>"
-    )
+    # 步骤2：使用自定义格式化函数（自动注入 correlation_id）
+    log_format = _format_with_context
 
     # 步骤3：配置控制台输出
     handler_id = logger.add(sys.stdout, format=log_format, level=settings.LOGGER_LEVEL)
@@ -103,10 +164,11 @@ def setup_logging() -> None:
     # 确保日志目录存在,如果不存在则创建
     log_dir.mkdir(parents=True, exist_ok=True)
 
-    # 步骤5：配置常规日志文件
+    # 步骤5：配置常规日志文件（去除颜色标签）
+    file_format = _format_file_with_context
     handler_id = logger.add(
         str(log_dir / "info.log"),
-        format=log_format,
+        format=file_format,
         level="INFO",
         rotation="00:00",  # 每天午夜轮转
         retention=30,  # 日志保留天数，超过此天数的日志文件将被自动清理
@@ -115,10 +177,10 @@ def setup_logging() -> None:
     )
     _logger_handlers.append(handler_id)
 
-    # 步骤6：配置错误日志文件
+    # 步骤6：配置错误日志文件（去除颜色标签）
     handler_id = logger.add(
         str(log_dir / "error.log"),
-        format=log_format,
+        format=file_format,
         level="ERROR",
         rotation="00:00",  # 每天午夜轮转
         retention=30,  # 日志保留天数，超过此天数的日志文件将被自动清理

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.base_model import MappedBase, ModelMixin, TenantMixin, UserMixin
@@ -67,7 +67,7 @@ class UserModel(ModelMixin, TenantMixin, UserMixin):
     """
 
     __tablename__: str = "sys_user"
-    __table_args__: dict[str, str] = {"comment": "用户表"}
+    __table_args__ = (UniqueConstraint("tenant_id", "username"), {"comment": "用户表"})
     __loader_options__: list[str] = [
         "tenant",
         "dept",
@@ -79,15 +79,15 @@ class UserModel(ModelMixin, TenantMixin, UserMixin):
     ]
 
     username: Mapped[str] = mapped_column(
-        String(64), nullable=False, unique=True, comment="用户名/登录账号"
+        String(64), nullable=False, comment="用户名/登录账号"
     )
     password: Mapped[str] = mapped_column(String(255), nullable=False, comment="密码哈希")
     name: Mapped[str] = mapped_column(String(32), nullable=False, comment="昵称")
     mobile: Mapped[str | None] = mapped_column(
-        String(11), nullable=True, unique=True, comment="手机号"
+        String(11), nullable=True, comment="手机号"
     )
     email: Mapped[str | None] = mapped_column(
-        String(64), nullable=True, unique=True, comment="邮箱"
+        String(64), nullable=True, comment="邮箱"
     )
     gender: Mapped[str | None] = mapped_column(
         String(1), default="2", nullable=True, comment="性别(0:男 1:女 2:未知)"

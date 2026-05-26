@@ -83,6 +83,8 @@ export interface RoleTable extends BaseType {
   order?: number;
   code: string;
   data_scope?: number;
+  status?: string;
+  description?: string;
   menus?: permissionMenuType[];
   depts?: permissionDeptType[];
 }
@@ -91,6 +93,8 @@ export interface RoleForm extends BaseFormType {
   name?: string;
   order?: number;
   code: string;
+  status?: string;
+  description?: string;
 }
 
 export interface permissionDataType {

@@ -49,7 +49,7 @@
           <slot v-if="$slots.default" />
           <template #empty>
             <div v-if="loading"></div>
-            <ElEmpty v-else :description="emptyText" :image-size="120" />
+            <ElEmpty v-else :description="emptyText" :image-size="80" />
           </template>
         </ElTable>
       </VueDraggable>

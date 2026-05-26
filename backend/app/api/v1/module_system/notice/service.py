@@ -1,6 +1,7 @@
 from app.api.v1.module_system.auth.schema import AuthSchema
 from app.core.base_schema import BatchSetAvailable
 from app.core.exceptions import CustomException
+from app.core.logger import log
 from app.utils.excel_util import ExcelUtil
 
 from .crud import NoticeCRUD
@@ -251,3 +252,61 @@ class NoticeService:
             )
 
         return ExcelUtil.export_list2excel(list_data=data, mapping_dict=mapping_dict)
+
+    @classmethod
+    async def get_latest_notices_service(cls, auth: AuthSchema, limit: int = 5) -> list[dict]:
+        """获取最新 N 条已启用公告"""
+        from sqlalchemy import select, desc
+
+        from .model import NoticeModel
+        from .schema import NoticeOutSchema
+
+        stmt = (
+            select(NoticeModel)
+            .where(NoticeModel.status == "0")
+            .order_by(desc(NoticeModel.created_time))
+            .limit(limit)
+        )
+        result = await auth.db.execute(stmt)
+        notices = result.scalars().all()
+        return [NoticeOutSchema.model_validate(n).model_dump() for n in notices]
+
+    @classmethod
+    async def get_panel_data_service(cls, auth: AuthSchema) -> dict:
+        """聚合通知面板数据：通知 + 消息 + 待办"""
+        from sqlalchemy import select, desc
+
+        # 1. 通知：最新 5 条已启用公告
+        notices = await cls.get_latest_notices_service(auth, limit=5)
+
+        # 2. 消息：最近的操作日志（作为系统消息）
+        messages = []
+        try:
+            from app.api.v1.module_system.log.model import OperationLogModel
+
+            stmt = (
+                select(OperationLogModel)
+                .order_by(desc(OperationLogModel.created_time))
+                .limit(5)
+            )
+            result = await auth.db.execute(stmt)
+            logs = result.scalars().all()
+            for log_entry in logs:
+                messages.append({
+                    "id": log_entry.id,
+                    "title": log_entry.oper_param or "系统操作",
+                    "content": f"{log_entry.oper_user_name or '系统'} 执行了 {log_entry.title or '操作'}",
+                    "time": log_entry.created_time.strftime("%Y-%m-%d %H:%M") if log_entry.created_time else "",
+                    "type": "system",
+                })
+        except Exception:
+            log.warning("获取面板消息数据失败（操作日志表可能不存在），已跳过")
+
+        # 3. 待办：暂无数据源，返回空列表
+        pendings: list[dict] = []
+
+        return {
+            "notices": notices,
+            "messages": messages,
+            "pendings": pendings,
+        }

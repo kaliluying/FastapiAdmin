@@ -5,7 +5,7 @@ const API_PATH = "/system/param";
 const ParamsAPI = {
   uploadFile(body: any) {
     return request<ApiResponse<UploadFilePath>>({
-      url: `${API_PATH}/upload`,
+      url: `/common/file/upload?upload_type=param`,
       method: "post",
       data: body,
       headers: { "Content-Type": "multipart/form-data" },
@@ -87,6 +87,8 @@ export interface ConfigTable extends BaseType {
   config_key?: string;
   config_value?: string;
   config_type?: boolean;
+  status?: string;
+  description?: string;
 }
 
 export interface ConfigForm extends BaseFormType {
@@ -94,4 +96,6 @@ export interface ConfigForm extends BaseFormType {
   config_key?: string;
   config_value?: string;
   config_type?: boolean;
+  status?: string;
+  description?: string;
 }

@@ -2,7 +2,7 @@ from sqlalchemy import Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.config.setting import settings
-from app.core.base_model import ModelMixin, UserMixin
+from app.core.base_model import ModelMixin, TenantMixin, UserMixin
 
 
 def get_log_text_column_type():
@@ -27,7 +27,7 @@ def get_log_text_column_type():
         return Text
 
 
-class OperationLogModel(ModelMixin, UserMixin):
+class OperationLogModel(ModelMixin, TenantMixin, UserMixin):
     """
     系统日志模型
     日志类型:

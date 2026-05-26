@@ -3,7 +3,7 @@ from typing import Any
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError, ResponseValidationError
 from pydantic_validation_decorator import FieldValidationError
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from starlette.exceptions import HTTPException
 from starlette.responses import JSONResponse
 
@@ -178,15 +178,33 @@ def handle_exception(app: FastAPI) -> None:
         返回:
         - JSONResponse: 包含错误信息的 JSON 响应。
         """
-        error_msg = "数据库操作失败"
         exc_type = type(exc).__name__
-
-        # 对于生产环境，返回通用错误消息
         log.error(
             f"[数据库异常] {request.method} {request.url.path} | 错误类型: {exc_type} | 错误详情: {exc!s}"
         )
+
+        # 完整性约束（唯一键冲突 / 外键引用 / NOT NULL 等）
+        if isinstance(exc, IntegrityError):
+            detail = str(exc.orig) if exc.orig else str(exc)
+            msg = "数据已存在或违反完整性约束"
+            if "Duplicate entry" in detail:
+                msg = "数据重复，请检查唯一字段"
+            elif "foreign key constraint" in detail:
+                msg = "存在关联数据，无法删除"
+            elif "cannot be null" in detail:
+                msg = "必填字段缺失"
+            return ErrorResponse(msg=msg, status_code=status.HTTP_409_CONFLICT, data=detail)
+
+        # 数据库连接类异常
+        if "connect" in str(exc).lower() or "connection" in str(exc).lower():
+            return ErrorResponse(
+                msg="数据库连接失败",
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                data=exc_type,
+            )
+
         return ErrorResponse(
-            msg=f"{error_msg}: {exc_type}",
+            msg=f"数据库操作失败: {exc_type}",
             status_code=status.HTTP_400_BAD_REQUEST,
             data=str(exc),
         )

@@ -65,7 +65,7 @@ export interface CacheInfo {
   cache_key: string;
   cache_name: string;
   cache_value: string;
-  remark: string;
+  remark?: string;
 }
 
 export interface CommandStats {

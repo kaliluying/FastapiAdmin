@@ -34,8 +34,11 @@ from .schema import (
     CaptchaOutSchema,
     JWTOutSchema,
     JWTPayloadSchema,
+    LoginWithTenantsSchema,
     LogoutPayloadSchema,
     RefreshTokenPayloadSchema,
+    SelectTenantOutSchema,
+    TenantOptionSchema,
 )
 
 CaptchaKey = NewType("CaptchaKey", str)
@@ -52,7 +55,7 @@ class LoginService:
         redis: Redis,
         login_form: CustomOAuth2PasswordRequestForm,
         db: AsyncSession,
-    ) -> JWTOutSchema:
+    ) -> LoginWithTenantsSchema:
         """
         用户认证
 
@@ -62,7 +65,7 @@ class LoginService:
         - db (AsyncSession): 数据库会话对象
 
         返回:
-        - JWTOutSchema: 包含访问令牌和刷新令牌的响应模型
+        - LoginWithTenantsSchema: 包含令牌和租户列表的响应模型
 
         异常:
         - CustomException: 认证失败时抛出异常。
@@ -82,12 +85,12 @@ class LoginService:
                 key=login_form.captcha_key,
                 captcha=login_form.captcha,
             )
-        log.info(f"[登录计时] 验证码校验: {round((time.time()-_t)*1000,1)}ms"); _t2 = time.time()
+        log.info(f"[登录计时] 验证码校验: {round((time.time() - _t) * 1000, 1)}ms"); _t2 = time.time()
 
         # 用户认证
         auth = AuthSchema(db=db)
         user = await UserCRUD(auth).get_by_username_crud(username=login_form.username)
-        log.info(f"[登录计时] 数据库查询用户: {round((time.time()-_t2)*1000,1)}ms"); _t3 = time.time()
+        log.info(f"[登录计时] 数据库查询用户: {round((time.time() - _t2) * 1000, 1)}ms"); _t3 = time.time()
 
         if not user:
             raise CustomException(msg="用户不存在")
@@ -96,14 +99,14 @@ class LoginService:
             plain_password=login_form.password, password_hash=user.password
         ):
             raise CustomException(msg="账号或密码错误")
-        log.info(f"[登录计时] Bcrypt密码校验: {round((time.time()-_t3)*1000,1)}ms"); _t4 = time.time()
+        log.info(f"[登录计时] Bcrypt密码校验: {round((time.time() - _t3) * 1000, 1)}ms"); _t4 = time.time()
 
         if user.status == "1":
             raise CustomException(msg="用户已被停用")
 
         # 更新最后登录时间
         user = await UserCRUD(auth).update_last_login_crud(id=user.id)
-        log.info(f"[登录计时] 更新登录时间: {round((time.time()-_t4)*1000,1)}ms"); _t5 = time.time()
+        log.info(f"[登录计时] 更新登录时间: {round((time.time() - _t4) * 1000, 1)}ms"); _t5 = time.time()
 
         if not user:
             raise CustomException(msg="用户不存在")
@@ -117,11 +120,35 @@ class LoginService:
             user=user,
             login_type=login_form.login_type,
         )
-        log.info(f"[登录计时] 创建Token(含IP解析+Redis写入+在线记录): {round((time.time()-_t5)*1000,1)}ms")
+        log.info(f"[登录计时] 创建Token(含IP解析+Redis写入+在线记录): {round((time.time() - _t5) * 1000, 1)}ms")
 
-        log.info(f"[登录计时] ⭐ 登录总耗时: {round((time.time()-_t)*1000,1)}ms")
+        log.info(f"[登录计时] ⭐ 登录总耗时: {round((time.time() - _t) * 1000, 1)}ms")
 
-        return token
+        # 查询用户关联的租户列表
+        _tt = time.time()
+        tenants = await cls.get_user_tenants_service(
+            auth=AuthSchema(db=db, tenant_id=user.tenant_id, check_data_scope=False),
+            db=db,
+            user_id=user.id,
+        )
+        log.info(f"[登录计时] 查询租户列表: {round((time.time() - _tt) * 1000, 1)}ms")
+
+        user_info = {
+            "id": user.id,
+            "username": user.username,
+            "name": user.name,
+            "avatar": user.avatar,
+            "is_super_admin": user.is_superuser,
+        }
+
+        return LoginWithTenantsSchema(
+            access_token=token.access_token,
+            refresh_token=token.refresh_token,
+            expires_in=token.expires_in,
+            token_type=token.token_type,
+            tenants=tenants,
+            user_info=user_info,
+        )
 
     @classmethod
     async def create_token_service(
@@ -174,6 +201,8 @@ class LoginService:
         session_info = OnlineOutSchema(
             session_id=session_id,
             user_id=user.id,
+            tenant_id=user.tenant_id,
+            is_super_admin=user.is_superuser,
             name=user.name,
             user_name=user.username,
             ipaddr=request_ip,
@@ -268,7 +297,7 @@ class LoginService:
         refresh_expires = timedelta(seconds=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
         now = datetime.now()
 
-        session_info_json = json.dumps(session_info)
+        session_info_json = session_info if isinstance(session_info, str) else json.dumps(session_info)
 
         access_token = create_access_token(
             payload=JWTPayloadSchema(
@@ -335,6 +364,176 @@ class LoginService:
         log.info(f"用户退出登录成功,会话编号:{session_id}")
 
         return True
+
+    @classmethod
+    async def get_user_tenants_service(
+        cls,
+        auth: AuthSchema,
+        db: AsyncSession,
+        user_id: int | None = None,
+    ) -> list[TenantOptionSchema]:
+        """
+        获取用户关联的租户列表
+
+        参数:
+        - auth (AuthSchema): 认证信息对象
+        - db (AsyncSession): 数据库会话对象
+        - user_id (int | None): 用户ID，未传入时从 auth.user 获取
+
+        返回:
+        - list[TenantOptionSchema]: 租户选项列表
+        """
+        from sqlalchemy import select
+
+        from app.api.v1.module_system.tenant.model import TenantModel, TenantUserModel
+
+        uid = user_id or (auth.user.id if auth.user else None)
+        if not uid:
+            return []
+
+        # 超管可以看到所有租户
+        if auth.user and auth.user.is_superuser:
+            stmt = (
+                select(TenantModel)
+                .where(TenantModel.status == "0", TenantModel.is_deleted == 0)
+                .order_by(TenantModel.sort, TenantModel.id)
+            )
+            result = await db.execute(stmt)
+            tenant_objs = result.scalars().all()
+            return [
+                TenantOptionSchema(id=t.id, name=t.name, code=t.code)
+                for t in tenant_objs
+            ]
+
+        # 普通用户通过 sys_user_tenant 关联表查询
+        stmt = (
+            select(TenantModel)
+            .join(TenantUserModel, TenantUserModel.tenant_id == TenantModel.id)
+            .where(
+                TenantUserModel.user_id == uid,
+                TenantModel.status == "0",
+                TenantModel.is_deleted == 0,
+            )
+            .order_by(TenantUserModel.is_default.desc(), TenantModel.sort, TenantModel.id)
+        )
+        result = await db.execute(stmt)
+        tenant_objs = result.scalars().all()
+        return [
+            TenantOptionSchema(id=t.id, name=t.name, code=t.code)
+            for t in tenant_objs
+        ]
+
+    @classmethod
+    async def select_tenant_service(
+        cls,
+        request: Request,
+        redis: Redis,
+        auth: AuthSchema,
+        tenant_id: int,
+    ) -> SelectTenantOutSchema:
+        """
+        选择租户：验证用户归属并签发含租户上下文的新 JWT Token
+
+        参数:
+        - request (Request): FastAPI请求对象
+        - redis (Redis): Redis客户端对象
+        - auth (AuthSchema): 当前认证信息
+        - tenant_id (int): 目标租户ID
+
+        返回:
+        - SelectTenantOutSchema: 包含新令牌的响应
+
+        异常:
+        - CustomException: 用户不属于该租户时抛出
+        """
+        from sqlalchemy import select
+
+        from app.api.v1.module_system.tenant.model import TenantModel, TenantUserModel
+
+        if not auth.user:
+            raise CustomException(msg="未认证用户")
+
+        # 超管可以选择任意租户
+        if not auth.user.is_superuser:
+            # 验证用户是否属于该租户
+            exist_stmt = (
+                select(TenantUserModel)
+                .where(
+                    TenantUserModel.user_id == auth.user.id,
+                    TenantUserModel.tenant_id == tenant_id,
+                )
+                .limit(1)
+            )
+            result = await auth.db.execute(exist_stmt)
+            if not result.scalar_one_or_none():
+                raise CustomException(msg="您不属于该租户，无法切换")
+
+        # 验证租户是否存在且状态正常
+        tenant_stmt = (
+            select(TenantModel)
+            .where(TenantModel.id == tenant_id, TenantModel.status == "0")
+            .limit(1)
+        )
+        result = await auth.db.execute(tenant_stmt)
+        tenant = result.scalar_one_or_none()
+        if not tenant:
+            raise CustomException(msg="租户不存在或已被禁用")
+
+        # 获取当前会话信息
+        token = request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
+        if not token:
+            raise CustomException(msg="无法获取当前Token")
+
+        from app.core.security import decode_access_token
+
+        payload = decode_access_token(token)
+        session_info = json.loads(payload.sub)
+        session_id = session_info.get("session_id")
+
+        if not session_id:
+            raise CustomException(msg="会话已失效")
+
+        # 更新会话信息中的 tenant_id
+        session_info["tenant_id"] = tenant_id
+
+        # 签发新的 access_token（含新的 tenant_id）
+        from app.core.security import create_access_token
+
+        access_expires = timedelta(seconds=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        now = datetime.now()
+
+        new_access_token = create_access_token(
+            payload=JWTPayloadSchema(
+                sub=json.dumps(session_info),
+                is_refresh=False,
+                exp=now + access_expires,
+            )
+        )
+
+        # 覆盖 Redis 中的 access_token
+        from app.core.redis_crud import RedisCURD
+
+        await RedisCURD(redis).set(
+            key=f"{RedisInitKeyConfig.ACCESS_TOKEN.key}:{session_id}",
+            value=new_access_token,
+            expire=int(access_expires.total_seconds()),
+        )
+
+        # 同时更新租户上下文
+        from app.core.tenant import set_current_tenant
+
+        set_current_tenant(tenant_id, auth.user.is_superuser)
+
+        log.info(
+            f"用户 {auth.user.username}(id={auth.user.id}) 切换到租户 "
+            f"{tenant.name}(id={tenant_id})"
+        )
+
+        return SelectTenantOutSchema(
+            access_token=new_access_token,
+            token_type=settings.TOKEN_TYPE,
+            expires_in=int(access_expires.total_seconds()),
+        )
 
 
 class CaptchaService:
@@ -425,12 +624,15 @@ class AutoLoginService:
     TOKEN_EXPIRE = 300
 
     @classmethod
-    async def get_auto_login_users_service(cls, db: AsyncSession) -> list[AutoLoginUserSchema]:
+    async def get_auto_login_users_service(
+        cls, db: AsyncSession, tenant_id: int | None = None
+    ) -> list[AutoLoginUserSchema]:
         """
         获取免登录用户列表
 
         参数:
         - db (AsyncSession): 数据库会话对象
+        - tenant_id (int | None): 租户ID,非超管时必传以限制租户范围
 
         返回:
         - list[AutoLoginUserSchema]: 用户列表
@@ -439,8 +641,10 @@ class AutoLoginService:
 
         from app.api.v1.module_system.user.model import UserModel
 
-        # 查询所有启用的用户
-        stmt = select(UserModel).where(UserModel.status == "0").order_by(UserModel.id)
+        stmt = select(UserModel).where(UserModel.status == "0")
+        if tenant_id is not None:
+            stmt = stmt.where(UserModel.tenant_id == tenant_id)
+        stmt = stmt.order_by(UserModel.id)
         result = await db.execute(stmt)
         users = result.scalars().all()
 
@@ -456,7 +660,11 @@ class AutoLoginService:
 
     @classmethod
     async def create_auto_login_token_service(
-        cls, redis: Redis, db: AsyncSession, user_id: int
+        cls,
+        redis: Redis,
+        db: AsyncSession,
+        user_id: int,
+        tenant_id: int | None = None,
     ) -> AutoLoginTokenSchema:
         """
         创建免登录Token
@@ -466,6 +674,7 @@ class AutoLoginService:
         - redis (Redis): Redis客户端对象
         - db (AsyncSession): 数据库会话对象
         - user_id (int): 用户ID
+        - tenant_id (int | None): 租户ID,非超管时必传以防止跨租户操作
 
         返回:
         - AutoLoginTokenSchema: 免登录Token和用户信息
@@ -477,8 +686,9 @@ class AutoLoginService:
 
         from app.api.v1.module_system.user.model import UserModel
 
-        # 查询用户
         stmt = select(UserModel).where(UserModel.id == user_id)
+        if tenant_id is not None:
+            stmt = stmt.where(UserModel.tenant_id == tenant_id)
         result = await db.execute(stmt)
         user = result.scalar_one_or_none()
 
@@ -498,6 +708,7 @@ class AutoLoginService:
         token_data = {
             "user_id": user.id,
             "username": user.username,
+            "tenant_id": user.tenant_id,
             "created_at": datetime.now().isoformat(),
         }
         await RedisCURD(redis).set(
@@ -520,7 +731,12 @@ class AutoLoginService:
 
     @classmethod
     async def auto_login_service(
-        cls, request: Request, redis: Redis, db: AsyncSession, token: str
+        cls,
+        request: Request,
+        redis: Redis,
+        db: AsyncSession,
+        token: str,
+        tenant_id: int | None = None,
     ) -> JWTOutSchema:
         """
         免登录
@@ -530,6 +746,7 @@ class AutoLoginService:
         - redis (Redis): Redis客户端对象
         - db (AsyncSession): 数据库会话对象
         - token (str): 免登录Token
+        - tenant_id (int | None): 租户ID,非超管时必传以防止跨租户登录
 
         返回:
         - JWTOutSchema: JWT令牌信息
@@ -541,7 +758,6 @@ class AutoLoginService:
 
         from app.api.v1.module_system.user.model import UserModel
 
-        # 验证Token
         token_key = f"{cls.AUTO_LOGIN_PREFIX}{token}"
         token_data_str = await RedisCURD(redis).get(token_key)
 
@@ -550,9 +766,12 @@ class AutoLoginService:
 
         token_data = json.loads(token_data_str)
         user_id = token_data.get("user_id")
+        token_tenant_id = token_data.get("tenant_id")
 
-        # 查询用户
         stmt = select(UserModel).where(UserModel.id == user_id)
+        effective_tenant_id = tenant_id if tenant_id is not None else token_tenant_id
+        if effective_tenant_id is not None:
+            stmt = stmt.where(UserModel.tenant_id == effective_tenant_id)
         result = await db.execute(stmt)
         user = result.scalar_one_or_none()
 

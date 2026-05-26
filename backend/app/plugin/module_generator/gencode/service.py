@@ -691,7 +691,8 @@ class GenTableService:
         if gen_table.sub and gen_table.sub_table:
             sub_ctx = Jinja2TemplateUtil.prepare_sub_render_context(gen_table, gen_table.sub_table)
             sub_table = gen_table.sub_table
-            for template in template_list:
+            sub_template_list = Jinja2TemplateUtil.get_sub_table_template_list()
+            for template in sub_template_list:
                 try:
                     render_content = await env.get_template(template).render_async(**sub_ctx)
                     out_key = Jinja2TemplateUtil.get_file_name(template, sub_table)
@@ -923,7 +924,8 @@ class GenTableService:
             sub_ctx = Jinja2TemplateUtil.prepare_sub_render_context(
                 gen_table_schema, gen_table_schema.sub_table
             )
-            await _write_templates(render_info[0], sub_ctx, gen_table_schema.sub_table)
+            sub_templates = Jinja2TemplateUtil.get_sub_table_template_list()
+            await _write_templates(sub_templates, sub_ctx, gen_table_schema.sub_table)
 
         return True
 
@@ -965,7 +967,8 @@ class GenTableService:
                             gen_tbl, gen_tbl.sub_table
                         )
                         sub_tbl = gen_tbl.sub_table
-                        for template_file in render_info[0]:
+                        sub_template_list = Jinja2TemplateUtil.get_sub_table_template_list()
+                        for template_file in sub_template_list:
                             render_content = await env.get_template(template_file).render_async(
                                 **sub_ctx
                             )
@@ -1052,7 +1055,7 @@ class GenTableService:
                     # is_nullable：主键列以 DB 为准，其余保留用户设置
                     if not bool(getattr(column, "is_pk", False)) and hasattr(prev_column, "is_nullable"):
                         column.is_nullable = prev_column.is_nullable
-                    
+
                     # 转换为 GenTableColumnSchema，排除 super_column 等输出专用字段
                     column_data = GenTableColumnSchema(**column.model_dump(exclude={"super_column"}))
                     if hasattr(column, "id") and column.id:
@@ -1186,7 +1189,7 @@ class GenTableService:
                 "table_comment": table_comment or None,
                 "class_name": GenUtils.convert_class_name(sub_name_raw),
                 "package_name": gen_table.package_name,
-                "module_name": gen_table.module_name,
+                "module_name": sub_name_raw,
                 "business_name": sub_name_raw,
                 "function_name": re.sub(r"(?:表|测试)", "", table_comment or "") or sub_name_raw,
                 "sub_table_name": None,

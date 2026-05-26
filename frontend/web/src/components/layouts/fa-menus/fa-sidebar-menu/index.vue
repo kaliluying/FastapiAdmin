@@ -149,14 +149,14 @@ const router = useRouter();
 const settingStore = useSettingsStore();
 const configStore = useConfigStore();
 
-/** 与旧版 layouts/old/components/AppLogo 一致：参数 sys_web_logo / sys_web_title */
+/** 租户配置：tenant_logo / tenant_name */
 const sidebarLogoSrc = computed(() => {
-  const raw = configStore.configData.sys_web_logo?.config_value;
+  const raw = configStore.configData.tenant_logo?.config_value;
   return typeof raw === "string" && raw.trim() ? raw.trim() : undefined;
 });
 
 const sidebarTitle = computed(() => {
-  const raw = configStore.configData.sys_web_title?.config_value;
+  const raw = configStore.configData.tenant_name?.config_value;
   if (typeof raw === "string" && raw.trim()) return raw.trim();
   return AppConfig.systemInfo.name;
 });

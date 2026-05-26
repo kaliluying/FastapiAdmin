@@ -145,6 +145,25 @@ class TenantMixin(MappedBase):
     )
 
 
+class TenantAwareMixin(MappedBase):
+    """
+    租户感知 Mixin（轻量级）
+
+    与 TenantMixin 不同，本 Mixin 不包含外键约束，tenant_id 可为 NULL。
+    适用于不需要严格引用完整性的场景，或渐进式改造阶段。
+    平台超级管理员在数据层不按租户过滤。
+    """
+
+    __abstract__ = True
+
+    tenant_id: Mapped[int | None] = mapped_column(
+        Integer,
+        default=None,
+        index=True,
+        comment="租户ID",
+    )
+
+
 class UserMixin(MappedBase):
     """
     用户审计字段 Mixin

@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, Path, Request, UploadFile
+from fastapi import APIRouter, Body, Depends, Path
 from fastapi.responses import JSONResponse, StreamingResponse
 from redis.asyncio.client import Redis
 
@@ -242,28 +242,6 @@ async def export_obj_list_controller(
     )
 
 
-@ParamsRouter.post(
-    "/upload",
-    summary="上传文件",
-    dependencies=[Depends(AuthPermission(["module_system:param:upload"]))],
-    response_model=ResponseSchema[None],
-)
-async def upload_file_controller(file: UploadFile, request: Request) -> JSONResponse:
-    """
-    上传文件
-
-    参数:
-    - file (UploadFile): 上传的文件对象
-    - request (Request): 请求对象
-
-    返回:
-    - JSONResponse: 包含上传文件结果的 JSON 响应
-    """
-    result_str = await ParamsService.upload_service(base_url=str(request.base_url), file=file)
-    log.info(f"上传文件: {result_str}")
-    return SuccessResponse(data=result_str, msg="上传文件成功")
-
-
 @ParamsRouter.get(
     "/info",
     summary="获取初始化缓存参数",
@@ -282,6 +260,6 @@ async def get_init_obj_controller(
     返回:
     - JSONResponse: 获取初始化缓存参数的 JSON 响应
     """
-    result_dict = await ParamsService.get_init_config_service(redis=redis)
+    result_dict = await ParamsService.get_init_config_service(redis=redis, tenant_id=1)
     log.info(f"获取初始化缓存参数成功 {result_dict}")
     return SuccessResponse(data=result_dict, msg="获取初始化缓存参数成功")

@@ -72,6 +72,13 @@ class Settings(BaseSettings):
     TOKEN_REQUEST_PATH_EXCLUDE: list[str] = ["api/v1/auth/login"]  # JWT / RBAC 路由白名单
     TOKEN_SLIDING_EXPIRE: bool = True  # 是否启用滑动过期(用户操作时自动续期)
 
+    # 多租户中间件白名单路径（不需要租户上下文的公开接口）
+    TENANT_WHITELIST_PATHS: list[str] = [
+        "/api/v1/system/auth/",
+        "/api/v1/health",
+        "/api/v1/common/health",
+    ]
+
     # 多租户：通配子域与登录租户一致（默认关闭；生产按 base 解析 {code}.base）
     TENANT_HOST_ENFORCE: bool = False
     TENANT_HOST_BASE_DOMAIN: str = ""
@@ -99,7 +106,7 @@ class Settings(BaseSettings):
     DATABASE_HOST: str = "localhost"
     DATABASE_PORT: int = 3306
     DATABASE_USER: str = "root"
-    DATABASE_PASSWORD: str = "ServBay.dev"
+    DATABASE_PASSWORD: str = ""
     DATABASE_NAME: str = "fastapiadmin"
 
     # ================================================= #
@@ -111,6 +118,7 @@ class Settings(BaseSettings):
     REDIS_DB_NAME: int = 1
     REDIS_USER: str = ""
     REDIS_PASSWORD: str = ""
+    REDIS_URL: str = ""  # 完整 Redis URL，优先级最高（redis://user:pass@host:port/db）
 
     # ================================================= #
     # ******************** 验证码配置 ******************* #
@@ -167,6 +175,11 @@ class Settings(BaseSettings):
     GZIP_ENABLE: bool = True  # 是否启用Gzip
     GZIP_MIN_SIZE: int = 1000  # 最小压缩大小(字节)
     GZIP_COMPRESS_LEVEL: int = 9  # 压缩级别(1-9)
+
+    # ================================================= #
+    # ***************** 安全响应头配置 ***************** #
+    # ================================================= #
+    HSTS_ENABLE: bool = False  # 是否启用 HSTS（生产环境建议 True，开发环境 False）
 
     # ================================================= #
     # ***************** 静态文件配置 ***************** #
@@ -233,10 +246,14 @@ class Settings(BaseSettings):
         - list[str | None]: 中间件 import 路径或 None。
         """
         # 中间件列表（注册时逆序叠加：下列第一项在列表中最前，最终位于最外层，优先生效）
+        # 中间件执行顺序（从外到内）：
+        #   CORS → RequestLog → SecurityHeaders → GZip → CorrelationId → 业务路由
         MIDDLEWARES: list[str | None] = [
             "app.core.middlewares.CustomCORSMiddleware" if self.CORS_ORIGIN_ENABLE else None,
             "app.core.middlewares.RequestLogMiddleware" if self.OPERATION_LOG_RECORD else None,
+            "app.core.middleware.security_headers.SecurityHeadersMiddleware",  # 安全响应头
             "app.core.middlewares.CustomGZipMiddleware" if self.GZIP_ENABLE else None,
+            "app.core.middleware.correlation.CorrelationIdMiddleware",  # 请求上下文（最内层）
         ]
         return MIDDLEWARES
 

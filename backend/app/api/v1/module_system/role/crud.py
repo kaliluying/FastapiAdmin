@@ -4,6 +4,7 @@ from app.api.v1.module_system.auth.schema import AuthSchema
 from app.api.v1.module_system.dept.crud import DeptCRUD
 from app.api.v1.module_system.menu.crud import MenuCRUD
 from app.core.base_crud import CRUDBase
+from app.core.exceptions import CustomException
 
 from .model import RoleModel
 from .schema import RoleCreateSchema, RoleUpdateSchema
@@ -75,6 +76,21 @@ class RoleCRUD(CRUDBase[RoleModel, RoleCreateSchema, RoleUpdateSchema]):
             if not menu_ids
             else await MenuCRUD(self.auth).get_list_crud(search={"id": ("in", menu_ids)})
         )
+
+        # 租户菜单约束：只允许分配租户菜单权限内的菜单
+        from app.api.v1.module_system.tenant.service import TenantService
+
+        allowed_menu_ids = None
+        if self.auth.user and not self.auth.user.is_superuser:
+            allowed_menu_ids = await TenantService.get_tenant_menu_ids(
+                self.auth, self.auth.user.tenant_id
+            )
+            if allowed_menu_ids is not None:
+                for menu in menus:
+                    if int(menu.id) not in allowed_menu_ids:
+                        raise CustomException(
+                            msg=f"菜单[{menu.name}]不在当前租户的功能组内，无法分配"
+                        )
 
         for obj in roles:
             relationship = obj.menus

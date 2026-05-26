@@ -16,7 +16,11 @@ class FileService:
 
     @classmethod
     async def upload_service(
-        cls, base_url: str, file: UploadFile, upload_type: str = "local"
+        cls,
+        base_url: str,
+        file: UploadFile,
+        upload_type: str = "file",
+        target_path: str | None = None,
     ) -> dict:
         """
         上传文件。
@@ -24,7 +28,8 @@ class FileService:
         参数:
         - base_url (str): 基础访问 URL。
         - file (UploadFile): 上传文件对象。
-        - upload_type (str): 上传类型，'local' 或 'oss'，默认 'local'。
+        - upload_type (str): 上传类型，'file'、'avatar'、'param'、'resource'，默认 'file'。
+        - target_path (str | None): 目标目录路径，仅 resource 类型支持。
 
         返回:
         - Dict: 上传响应字典。
@@ -32,12 +37,12 @@ class FileService:
         异常:
         - CustomException: 当未选择文件或上传类型错误时抛出。
         """
-        if upload_type == "local":
-            filename, filepath, file_url = await UploadUtil.upload_file(
-                file=file, base_url=base_url
-            )
-        else:
-            raise CustomException(msg="上传类型错误")
+        filename, filepath, file_url = await UploadUtil.upload_file(
+            file=file,
+            base_url=base_url,
+            upload_type=upload_type,
+            target_path=target_path,
+        )
 
         return UploadResponseSchema(
             file_path=f"{filepath}",

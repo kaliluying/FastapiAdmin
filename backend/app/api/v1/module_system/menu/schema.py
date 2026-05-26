@@ -64,8 +64,8 @@ class MenuCreateSchema(BaseModel):
             if "parent_id" in values and isinstance(values["parent_id"], str):
                 try:
                     values["parent_id"] = int(values["parent_id"].strip())
-                except Exception:
-                    pass
+                except (ValueError, TypeError):
+                    pass  # parent_id 不是有效整数，保留原值
             # 路由名/路径规范
             if "route_path" in values and isinstance(values["route_path"], str):
                 rp = values["route_path"]

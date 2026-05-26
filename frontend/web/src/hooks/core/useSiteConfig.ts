@@ -16,9 +16,9 @@ const updateFavicon = (url: string) => {
 };
 
 const syncFromConfig = () => {
-  const { sys_web_title, sys_web_favicon } = useConfigStore().configData;
-  if (sys_web_title?.config_value) document.title = sys_web_title.config_value;
-  if (sys_web_favicon?.config_value) updateFavicon(sys_web_favicon.config_value);
+  const { tenant_name, tenant_favicon } = useConfigStore().configData;
+  if (tenant_name?.config_value) document.title = tenant_name.config_value;
+  if (tenant_favicon?.config_value) updateFavicon(tenant_favicon.config_value);
 };
 
 export function useSiteConfig() {

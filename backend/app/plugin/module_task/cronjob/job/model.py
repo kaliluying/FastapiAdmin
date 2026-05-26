@@ -3,7 +3,7 @@ import enum
 from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.base_model import ModelMixin
+from app.core.base_model import ModelMixin, TenantMixin
 
 
 class JobStatusEnum(enum.Enum):
@@ -17,7 +17,7 @@ class JobStatusEnum(enum.Enum):
     CANCELLED = "cancelled"
 
 
-class JobModel(ModelMixin):
+class JobModel(ModelMixin, TenantMixin):
     """
     任务执行日志表
     """

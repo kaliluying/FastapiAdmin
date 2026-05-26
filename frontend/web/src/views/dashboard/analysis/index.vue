@@ -6,21 +6,11 @@
     </ElRow>
 
     <ElRow :gutter="20">
-      <!-- 左侧2个组件 -->
-      <ElCol :xl="6" :lg="6" :xs="24" class="flex flex-col gap-5">
+      <ElCol :xl="12" :lg="12" :xs="24" class="flex flex-col gap-5">
         <CustomerSatisfaction class="flex-1" />
         <TotalRevenue class="flex-1" />
       </ElCol>
-
-      <!-- 中间地图 -->
-      <ElCol :xl="12" :lg="12" :xs="24">
-        <div class="fa-card" style="min-height: 500px">
-          <FaMapChart />
-        </div>
-      </ElCol>
-
-      <!-- 右侧2个组件 -->
-      <ElCol :xl="6" :lg="6" :xs="24" class="flex flex-col gap-5">
+      <ElCol :xl="12" :lg="12" :xs="24" class="flex flex-col gap-5">
         <TargetVsReality class="flex-1" />
         <TopProducts class="flex-1" />
       </ElCol>
@@ -274,8 +264,6 @@ import VolumeServiceLevel from "./modules/volume-service-level.vue";
 
 defineOptions({ name: "DashboardAnalysis" });
 
-const FaMapChart = defineAsyncComponent(() => import("@/components/charts/fa-map-chart/index.vue"));
-
 // === 图表演示数据 ===
 const multiLineData: LineDataItem[] = [
   {
@@ -303,8 +291,6 @@ const stackXAxisData = ref(["产品A", "产品B", "产品C", "产品D", "产品E
 </script>
 
 <style scoped>
-@reference "@styles/core/tailwind.css";
-
 :deep(.el-card) {
   --el-card-border-radius: calc(var(--custom-radius) + 2px);
 
@@ -312,11 +298,18 @@ const stackXAxisData = ref(["产品A", "产品B", "产品C", "产品D", "产品E
 }
 
 .page-title {
-  @apply my-5 text-xl font-medium first:mt-0;
+  margin: 1.25rem 0;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 500;
+}
+
+.page-title:first-child {
+  margin-top: 0;
 }
 
 .fa-card {
-  @apply p-5;
+  padding: 1.25rem;
 }
 
 .console-cards-showcase {

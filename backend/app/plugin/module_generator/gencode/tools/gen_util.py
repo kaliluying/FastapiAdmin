@@ -69,7 +69,7 @@ class GenUtils:
             raise ValueError("业务表ID不能为空")
         column.table_id = table.id
         column.python_field = cls.to_camel_case(column_name)
-        
+
         # 特殊处理几何类型，根据数据库类型选择不同的映射
         from app.config.setting import settings
         if data_type in ["point", "line", "linestring", "polygon", "multipoint", "multilinestring", "multipolygon", "geometrycollection", "geometry"]:

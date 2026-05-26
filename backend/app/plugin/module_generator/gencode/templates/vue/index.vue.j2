@@ -103,101 +103,60 @@
             {% endif %}
             {% endfor %}
           </ElDescriptions>
+          {% if table.sub %}
+          <ElDivider>关联{{ table.sub_table.function_name }}</ElDivider>
+          <ElTable :data="subTableData" size="small" border>
+            {% for col in table.sub_table.columns %}
+            {% if col.is_list and col.column_name != table.sub_table.pk_column.column_name %}
+            {% set col_comment = col.column_comment if col.column_comment else col.column_name %}
+            <ElTableColumn prop="{{ col.column_name }}" label="{{ col_comment }}" />
+            {% endif %}
+            {% endfor %}
+          </ElTable>
+          {% endif %}
         </ElScrollbar>
       </template>
       <template v-else>
         <ElScrollbar max-height="70vh" :view-style="{ overflowX: 'hidden' }">
-          <ElForm
+          <FaForm
             ref="dataFormRef"
-            :model="formData"
+            v-model="formData"
+            :items="dialogFormItems"
             :rules="rules"
             label-suffix=":"
-            label-width="auto"
+            :label-width="100"
             label-position="right"
-            inline
-          >
-            {% for column in columns %}
-            {% if column.is_insert or column.is_edit %}
-            {% set dict_type = column.dict_type %}
-            {% set column_comment = column.column_comment if column.column_comment else '' %}
-            {% set parentheseIndex = column_comment.find("（") %}
-            {% set comment = column_comment[:parentheseIndex] if parentheseIndex != -1 else column_comment %}
-            {% set required = 'true' if not column.is_nullable else 'false' %}
-            {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id'] and column.column_name != pk_column_name %}
-            {% if column.column_name == "status" %}
-            <ElFormItem label="状态" prop="status" :required="true">
-              <ElRadioGroup v-model="formData.status">
-                <ElRadio value="0">启用</ElRadio>
-                <ElRadio value="1">停用</ElRadio>
-              </ElRadioGroup>
-            </ElFormItem>
-            {% elif column.column_name == "description" %}
-            <ElFormItem label="描述" prop="description">
-              <ElInput
-                v-model="formData.description"
-                :rows="4"
-                :maxlength="100"
-                show-word-limit
-                type="textarea"
-                placeholder="请输入描述"
-              />
-            </ElFormItem>
-            {% elif column.python_type == "int" or column.python_type == "float" or column.python_type == "Decimal" %}
-            <ElFormItem label="{{ comment }}" prop="{{ column.column_name }}" :required="{{ required }}">
-              <ElInputNumber
-                v-model="formData.{{ column.column_name }}"
-                placeholder="请输入{{ comment }}"
-                {% if column.python_type == "float" or column.python_type == "Decimal" %}
-                :step="0.01"
-                :precision="2"
-                {% endif %}
-              />
-            </ElFormItem>
-            {% elif column.html_type == "input" %}
-            <ElFormItem label="{{ comment }}" prop="{{ column.column_name }}" :required="{{ required }}">
-              <ElInput v-model="formData.{{ column.column_name }}" placeholder="请输入{{ comment }}" />
-            </ElFormItem>
-            {% elif column.html_type == "textarea" %}
-            <ElFormItem label="{{ comment }}" prop="{{ column.column_name }}" :required="{{ required }}">
-              <ElInput v-model="formData.{{ column.column_name }}" type="textarea" placeholder="请输入{{ comment }}" rows="4" :maxlength="100" show-word-limit />
-            </ElFormItem>
-            {% elif (column.html_type == "select" or column.html_type == "radio") and dict_type != "" %}
-            <ElFormItem label="{{ comment }}" prop="{{ column.column_name }}" :required="{{ required }}">
-              <ElSelect v-model="formData.{{ column.column_name }}" placeholder="请选择{{ comment }}">
-                <ElOption v-for="d in dictStore.getDictArray('{{ dict_type }}')" :key="d.dict_value" :label="d.dict_label" :value="d.dict_value" />
-              </ElSelect>
-            </ElFormItem>
-            {% elif (column.html_type == "select" or column.html_type == "radio") and dict_type %}
-            <ElFormItem label="{{ comment }}" prop="{{ column.column_name }}" :required="{{ required }}">
-              <ElSelect v-model="formData.{{ column.column_name }}" placeholder="请选择{{ comment }}">
-                <ElOption label="请选择字典生成" value="" />
-              </ElSelect>
-            </ElFormItem>
-            {% elif column.html_type == "date" %}
-            <ElFormItem label="{{ comment }}" prop="{{ column.column_name }}" :required="{{ required }}">
-              <ElDatePicker v-model="formData.{{ column.column_name }}" type="date" value-format="YYYY-MM-DD" placeholder="请选择{{ comment }}" style="width: 100%" />
-            </ElFormItem>
-            {% elif column.html_type == "datetime" %}
-            <ElFormItem label="{{ comment }}" prop="{{ column.column_name }}" :required="{{ required }}">
-              <ElDatePicker v-model="formData.{{ column.column_name }}" type="datetime" value-format="YYYY-MM-DD HH:mm:ss" placeholder="请选择{{ comment }}" style="width: 100%" />
-            </ElFormItem>
-            {% elif column.html_type == "checkbox" %}
-            <ElFormItem label="{{ comment }}" prop="{{ column.column_name }}">
-              <ElCheckbox v-model="formData.{{ column.column_name }}">{{ comment }}</ElCheckbox>
-            </ElFormItem>
-            {% elif column.html_type == "imageUpload" %}
-            <ElFormItem label="{{ comment }}" prop="{{ column.column_name }}">
-              <SingleImageUpload v-model="formData.{{ column.column_name }}" />
-            </ElFormItem>
-            {% elif column.html_type == "switch" %}
-            <ElFormItem label="{{ comment }}" prop="{{ column.column_name }}">
-              <ElSwitch v-model="formData.{{ column.column_name }}" />
-            </ElFormItem>
-            {% endif %}
-            {% endif %}
-            {% endif %}
-            {% endfor %}
-          </ElForm>
+            :span="24"
+            :gutter="16"
+            :show-reset="false"
+            :show-submit="false"
+            class="crud-dialog-art-form"
+          />
+          {% if table.sub %}
+          <ElDivider>{{ table.sub_table.function_name }}列表</ElDivider>
+          <div class="sub-table-section">
+            <div class="flex justify-between items-center mb-2">
+              <ElButton size="small" type="primary" @click="addSubRow">
+                新增{{ table.sub_table.function_name }}
+              </ElButton>
+            </div>
+            <ElTable :data="subTableData" size="small" border>
+              {% for col in table.sub_table.columns %}
+              {% if col.is_list and col.column_name != table.sub_table.pk_column.column_name %}
+              {% set col_comment = col.column_comment if col.column_comment else col.column_name %}
+              <ElTableColumn prop="{{ col.column_name }}" label="{{ col_comment }}" />
+              {% endif %}
+              {% endfor %}
+              <ElTableColumn label="操作" width="80" fixed="right">
+                <template #default="{ $index }">
+                  <ElButton type="danger" size="small" link @click="removeSubRow($index)">
+                    删除
+                  </ElButton>
+                </template>
+              </ElTableColumn>
+            </ElTable>
+          </div>
+          {% endif %}
         </ElScrollbar>
       </template>
 
@@ -249,6 +208,8 @@ import {{ class_name }}API, {
 } from "@/api/{{ package_name }}/{{ module_name }}";
 import { ElMessage, ElMessageBox, ElTag } from "element-plus";
 import { ResultEnum } from "@/enums/api/result.enum";
+import FaForm from "@/components/forms/fa-form/index.vue";
+import type { FormItem } from "@/components/forms/fa-form/index.vue";
 {% set _img = namespace(need=false) %}
 {% for column in columns %}
 {% if (column.is_insert or column.is_edit) and column.html_type == "imageUpload" %}
@@ -537,7 +498,7 @@ const detailFormData = ref<{{ class_name }}Table>({});
 const formData = ref<{{ class_name }}Form>({
   {% for column in columns %}
   {% if column.is_insert or column.is_edit %}
-  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id'] and column.column_name != pk_column_name %}
+  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id', 'tenant_id'] and column.column_name != pk_column_name %}
   {% if column.column_name == "status" %}
   {{ column.column_name }}: "0",
   {% elif column.python_type == "bool" or column.html_type == "switch" %}
@@ -553,12 +514,50 @@ const formData = ref<{{ class_name }}Form>({
 const rules = reactive({
   {% for column in columns %}
   {% if column.is_insert or column.is_edit %}
-  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id'] and column.column_name != pk_column_name %}
+  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id', 'tenant_id'] and column.column_name != pk_column_name %}
   {{ column.column_name }}: [{ required: {% if not column.is_nullable %}true{% else %}false{% endif %}, message: "请填写{{ column.column_comment or column.column_name }}", trigger: "blur" }],
   {% endif %}
   {% endif %}
   {% endfor %}
 });
+
+const dialogFormItems = computed<FormItem[]>(() => [
+  {% for column in columns %}
+  {% if column.is_insert or column.is_edit %}
+  {% set dict_type = column.dict_type %}
+  {% set column_comment = column.column_comment if column.column_comment else '' %}
+  {% set parentheseIndex = column_comment.find("（") %}
+  {% set comment = column_comment[:parentheseIndex] if parentheseIndex != -1 else column_comment %}
+  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id', 'tenant_id'] and column.column_name != pk_column_name %}
+  {% if column.column_name == "status" %}
+  { key: "status", label: "状态", type: "radio", props: { options: [{ label: "启用", value: "0" }, { label: "停用", value: "1" }] } },
+  {% elif column.column_name == "description" %}
+  { key: "description", label: "描述", type: "textarea", placeholder: "请输入描述" },
+  {% elif column.python_type == "int" or column.python_type == "float" or column.python_type == "Decimal" %}
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "input-number", placeholder: "请输入{{ comment }}"{% if column.python_type == "float" or column.python_type == "Decimal" %}, props: { step: 0.01, precision: 2 }{% endif %} },
+  {% elif column.html_type == "input" %}
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "input", placeholder: "请输入{{ comment }}" },
+  {% elif column.html_type == "textarea" %}
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "textarea", placeholder: "请输入{{ comment }}" },
+  {% elif dict_type != "" %}
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "select", placeholder: "请选择{{ comment }}", options: dictStore.getDictArray("{{ dict_type }}").map(d => ({ label: d.dict_label, value: d.dict_value })) },
+  {% elif column.html_type == "select" or column.html_type == "radio" %}
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "select", placeholder: "请选择{{ comment }}" },
+  {% elif column.html_type == "date" %}
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "date", placeholder: "请选择{{ comment }}" },
+  {% elif column.html_type == "datetime" %}
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "datetime", placeholder: "请选择{{ comment }}" },
+  {% elif column.html_type == "switch" %}
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "switch" },
+  {% elif column.html_type == "checkbox" %}
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "checkbox" },
+  {% else %}
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "input", placeholder: "请输入{{ comment }}" },
+  {% endif %}
+  {% endif %}
+  {% endif %}
+  {% endfor %}
+]);
 
 const dataFormRef = ref();
 const importModalVisible = ref(false);
@@ -567,7 +566,7 @@ const exportModalVisible = ref(false);
 const initialFormData: {{ class_name }}Form = {
   {% for column in columns %}
   {% if column.is_insert or column.is_edit %}
-  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id'] and column.column_name != pk_column_name %}
+  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id', 'tenant_id'] and column.column_name != pk_column_name %}
   {% if column.column_name == "status" %}
   {{ column.column_name }}: "0",
   {% elif column.python_type == "bool" or column.html_type == "switch" %}
@@ -659,6 +658,9 @@ async function openDetailDialog(row: {{ class_name }}Table) {
   dialogVisible.type = "detail";
   dialogVisible.title = "详情";
   detailFormData.value = response.data.data ?? { ...row };
+  {% if table.sub %}
+  subTableData.value = (response.data.data as any)?.{{ sub_rel_list_name }} ?? [];
+  {% endif %}
   dialogVisible.visible = true;
 }
 
@@ -668,10 +670,16 @@ async function openEditDialog(type: "add" | "edit", row?: {{ class_name }}Table)
     dialogVisible.title = "新增{{ function_name }}";
     Object.assign(formData.value, initialFormData);
     formData.value[PK] = undefined;
+    {% if table.sub %}
+    subTableData.value = [];
+    {% endif %}
   } else if (row?.[PK]) {
     dialogVisible.title = "修改";
     const response = await {{ class_name }}API.get{{ class_name }}Detail(row[PK] as number);
     Object.assign(formData.value, response.data.data);
+    {% if table.sub %}
+    subTableData.value = (response.data.data as any)?.{{ sub_rel_list_name }} ?? [];
+    {% endif %}
   }
   dialogVisible.visible = true;
 }
@@ -730,6 +738,24 @@ const deleteRow = async (row: {{ class_name }}Table) => {
     ElMessage.info("已取消删除");
   }
 };
+
+{% if table.sub %}
+const subTableData = ref<any[]>([]);
+
+function addSubRow() {
+  subTableData.value.push({
+    {% for col in table.sub_table.columns %}
+    {% if col.column_name not in ['id', 'uuid', 'status', 'description', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and col.column_name != table.sub_table.pk_column.column_name %}
+    {{ col.column_name }}: undefined,
+    {% endif %}
+    {% endfor %}
+  });
+}
+
+function removeSubRow(index: number) {
+  subTableData.value.splice(index, 1);
+}
+{% endif %}
 
 async function handleBatchDelete() {
   const ids = selectedIds.value;

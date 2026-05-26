@@ -47,6 +47,9 @@ export class StorageConfig {
   /** 上次登录用户ID键名（用于判断是否为同一用户登录） */
   static readonly LAST_USER_ID_KEY = "sys-last-user-id";
 
+  /** 上次选择租户ID键名 */
+  static readonly LAST_TENANT_ID_KEY = "sys-last-tenant-id";
+
   /** 响应式布局切换时暂存桌面端菜单类型 */
   static readonly RESPONSIVE_MENU_TYPE_KEY = "sys-responsive-menu-type";
 

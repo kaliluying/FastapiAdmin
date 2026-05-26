@@ -230,8 +230,9 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             obj_dict = data if isinstance(data, dict) else data.model_dump()
             obj = self.model(**obj_dict)
 
-            # 设置字段值（只检查一次current_user）
             if self.auth.user:
+                if hasattr(obj, "tenant_id") and getattr(obj, "tenant_id", None) is None:
+                    setattr(obj, "tenant_id", self.auth.user.tenant_id)
                 if hasattr(obj, "created_id"):
                     setattr(obj, "created_id", self.auth.user.id)
                 if hasattr(obj, "updated_id"):
@@ -269,6 +270,12 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             if not obj:
                 raise CustomException(msg="更新对象不存在")
 
+            if self.auth.user and not self.auth.user.is_superuser:
+                if hasattr(obj, "tenant_id"):
+                    obj_tid = getattr(obj, "tenant_id", None)
+                    if obj_tid is not None and obj_tid != self.auth.user.tenant_id:
+                        raise CustomException(msg="无权修改其他租户的数据")
+
             # 设置字段值（只检查一次current_user）
             if self.auth.user and hasattr(obj, "updated_id"):
                 setattr(obj, "updated_id", self.auth.user.id)
@@ -292,6 +299,29 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             return obj
         except Exception as e:
             raise CustomException(msg=f"更新失败: {e!s}")
+
+    def __tenant_condition(self, read_mode: bool = False) -> builtins.list[ColumnElement]:
+        """
+        获取租户隔离条件。
+
+        read_mode=True 时对标记了 __platform_data_shared__ 的模型会同时放开
+        tenant_id=1（平台数据），使租户用户也能读取平台共享数据；写入操作不受此影响。
+
+        返回:
+        - List[ColumnElement]: 租户过滤条件列表，超管或无 tenant_id 字段时返回空列表。
+        """
+        if not hasattr(self.model, "tenant_id"):
+            return []
+        if self.auth.user and self.auth.user.is_superuser:
+            return []
+        tid = self.auth.user.tenant_id if self.auth.user else self.auth.tenant_id
+        if tid is not None:
+            own_filter = getattr(self.model, "tenant_id") == tid
+            if read_mode and getattr(self.model, "__platform_data_shared__", False) and tid != 1:
+                platform_filter = getattr(self.model, "tenant_id") == 1
+                return [own_filter | platform_filter]
+            return [own_filter]
+        return []
 
     async def delete(self, ids: builtins.list[int]) -> None:
         """
@@ -325,13 +355,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 if self.auth.user:
                     update_data["deleted_id"] = self.auth.user.id
 
-                # 只更新有权限的数据
-                sql = update(self.model).where(pk_cols[0].in_(ids)).values(**update_data)
+                # 只更新有权限的数据（主键 + 租户隔离）
+                sql = update(self.model).where(pk_cols[0].in_(ids), *self.__tenant_condition()).values(**update_data)
                 await self.auth.db.execute(sql)
                 await self.auth.db.flush()
             else:
-                # 不支持软删除的模型，执行物理删除
-                sql = delete(self.model).where(pk_cols[0].in_(ids))
+                # 不支持软删除的模型，执行物理删除（租户隔离）
+                sql = delete(self.model).where(pk_cols[0].in_(ids), *self.__tenant_condition())
                 await self.auth.db.execute(sql)
                 await self.auth.db.flush()
         except Exception as e:
@@ -359,8 +389,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 if self.auth.user:
                     update_data["deleted_id"] = self.auth.user.id
 
-                # 更新所有数据为软删除状态
-                sql = update(self.model).values(**update_data)
+                # 更新所有数据为软删除状态（租户隔离）
+                sql = update(self.model).where(*self.__tenant_condition()).values(**update_data)
                 await self.auth.db.execute(sql)
                 await self.auth.db.flush()
             else:
@@ -393,8 +423,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
             if len(pk_cols) > 1:
                 raise CustomException(msg="暂不支持复合主键的批量更新")
 
-            # 只更新有权限的数据
-            sql = update(self.model).where(pk_cols[0].in_(ids)).values(**kwargs)
+            # 只更新有权限的数据（主键 + 租户隔离）
+            sql = update(self.model).where(pk_cols[0].in_(ids), *self.__tenant_condition()).values(**kwargs)
             await self.auth.db.execute(sql)
             await self.auth.db.flush()
         except CustomException:
@@ -432,8 +462,8 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                     "deleted_id": None
                 }
 
-                # 只更新有权限的数据
-                sql = update(self.model).where(pk_cols[0].in_(ids)).values(**update_data)
+                # 只更新有权限的数据（主键 + 租户隔离）
+                sql = update(self.model).where(pk_cols[0].in_(ids), *self.__tenant_condition()).values(**update_data)
                 await self.auth.db.execute(sql)
                 await self.auth.db.flush()
             else:
@@ -445,8 +475,10 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
 
     async def __filter_permissions(self, sql: Select) -> Select:
         """
-        过滤数据权限（仅用于Select）。
+        过滤数据权限（仅用于Select）：先按租户隔离，再按业务权限策略过滤。
         """
+        for condition in self.__tenant_condition(read_mode=True):
+            sql = sql.where(condition)
         filter = Permission(model=self.model, auth=self.auth)
         return await filter.filter_query(sql)
 
@@ -467,6 +499,13 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         # 默认添加软删除条件，只查询未删除的数据
         if hasattr(self.model, "is_deleted"):
             conditions.append(getattr(self.model, "is_deleted") == False)
+
+        # 多租户数据隔离：非超管自动按 tenant_id 过滤
+        if hasattr(self.model, "tenant_id"):
+            if not self.auth.user or not self.auth.user.is_superuser:
+                tid = self.auth.user.tenant_id if self.auth.user else self.auth.tenant_id
+                if tid is not None:
+                    conditions.append(getattr(self.model, "tenant_id") == tid)
 
         for key, value in kwargs.items():
             if value is None or value == "":

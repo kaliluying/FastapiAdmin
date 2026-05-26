@@ -521,7 +521,7 @@ async def get_init_dict_data_controller(
     - CustomException: 根据字典类型获取数据失败时抛出异常。
     """
     dict_data_query_result = await DictDataService.get_init_dict_service(
-        redis=redis, dict_type=dict_type
+        redis=redis, dict_type=dict_type, tenant_id=1
     )
     log.info(f"获取初始化字典数据成功：{dict_data_query_result}")
 

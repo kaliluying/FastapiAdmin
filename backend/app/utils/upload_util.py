@@ -361,6 +361,43 @@ class UploadUtil:
                 yield chunk
 
     @staticmethod
+    def _sanitize_target_path(target_path: str) -> str:
+        """
+        清理目标路径，移除危险字符和路径穿越。
+
+        参数:
+        - target_path (str): 原始目标路径。
+
+        返回:
+        - str: 安全的相对路径。
+
+        异常:
+        - CustomException: 当路径包含非法字符时抛出。
+        """
+        if not target_path:
+            return ""
+
+        # 检查路径穿越
+        if ".." in target_path or "\x00" in target_path:
+            log.error(f"检测到目标路径穿越攻击: {target_path}")
+            raise CustomException(msg="非法的目标路径")
+
+        # 规范化路径：移除多余的斜杠、点号
+        parts = target_path.replace("\\", "/").split("/")
+        safe_parts = []
+
+        for part in parts:
+            # 跳过空字符串和单独的点号
+            if not part or part == ".":
+                continue
+            # 移除危险字符
+            part = re.sub(r'[<>:"|?*\x00-\x1f]', "", part)
+            if part and part != "..":
+                safe_parts.append(part)
+
+        return "/".join(safe_parts)
+
+    @staticmethod
     def delete_file(filepath: Path) -> bool:
         """
         删除文件。
@@ -378,13 +415,26 @@ class UploadUtil:
             return False
 
     @classmethod
-    async def upload_file(cls, file: UploadFile, base_url: str) -> tuple[str, Path, str]:
+    async def upload_file(
+        cls,
+        file: UploadFile,
+        base_url: str,
+        upload_type: str = "file",
+        target_path: str | None = None,
+    ) -> tuple[str, Path, str]:
         """
         安全文件上传。
 
         参数:
         - file (UploadFile): 上传的文件对象。
         - base_url (str): 基础 URL。
+        - upload_type (str): 上传类型，可选值:
+          - "file": 通用文件 (默认)
+          - "avatar": 头像图片
+          - "param": 参数配置
+          - "resource": 监控资源
+        - target_path (str | None): 目标目录路径（相对路径），仅 resource 类型支持。
+          例如: "images", "documents/2024"
 
         返回:
         - tuple[str, Path, str]: (文件名, 文件路径, 文件 URL)。
@@ -417,7 +467,26 @@ class UploadUtil:
         safe_filename = cls.generate_safe_filename(original_filename, extension)
 
         try:
-            dir_path = settings.UPLOAD_FILE_PATH.joinpath(datetime.now().strftime("%Y/%m/%d"))
+            # 根据上传类型选择保存目录
+            type_subdir = {
+                "avatar": "avatar",
+                "param": "param",
+                "resource": "resource",
+            }.get(upload_type, "file")
+
+            # 构建目录路径
+            if target_path and upload_type == "resource":
+                # target_path 是相对于 upload/resource 的子目录
+                # 清理路径，防止路径穿越
+                safe_target = cls._sanitize_target_path(target_path)
+                dir_path = settings.UPLOAD_FILE_PATH.joinpath(
+                    type_subdir, safe_target, datetime.now().strftime("%Y/%m/%d")
+                )
+            else:
+                dir_path = settings.UPLOAD_FILE_PATH.joinpath(
+                    type_subdir, datetime.now().strftime("%Y/%m/%d")
+                )
+
             dir_path.mkdir(parents=True, exist_ok=True)
 
             filepath = dir_path.joinpath(safe_filename)

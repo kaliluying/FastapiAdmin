@@ -8,85 +8,6 @@
     @close="onDrawerClosed"
   >
     <ElTabs v-model="activeTabRef" type="border-card">
-      <!-- 网站配置 -->
-      <ElTabPane label="网站配置" name="website">
-        <ElForm :model="configState" label-suffix=":" label-width="100px" label-position="right">
-          <!-- 系统配置 -->
-          <ElDivider>网站配置</ElDivider>
-          <div v-for="(item, key) in systemConfigs" :key="key">
-            <ElFormItem :label="item.config_name">
-              <span class="flex items-center gap-2 w-full">
-                <ElInput
-                  v-model="item.config_value"
-                  :placeholder="t('common.inputText')"
-                  clearable
-                  :style="'width: 100%'"
-                  @input="markModified(key)"
-                />
-              </span>
-            </ElFormItem>
-          </div>
-
-          <!-- logo配置 -->
-          <ElDivider>网站图标</ElDivider>
-          <div v-for="(item, key) in logoConfigs" :key="key">
-            <ElFormItem :label="item.config_name">
-              <div class="flex items-center gap-2 w-full">
-                <FaUpload
-                  v-model="item.config_value"
-                  :data="{ type: key }"
-                  :name="'file'"
-                  :max-file-size="item.maxFileSize"
-                  :show-tip="true"
-                  :enable-preview="true"
-                  :enable-crop="true"
-                  v-bind="logoCropBind(String(key))"
-                  @success="(fileInfo: UploadFilePath) => handleUploadSuccess(fileInfo, key)"
-                  @error="handleUploadError"
-                />
-              </div>
-            </ElFormItem>
-          </div>
-        </ElForm>
-      </ElTabPane>
-      <ElTabPane label="安全隐私" name="securityPrivacy">
-        <ElForm :model="configState" label-suffix=":" label-width="100px" label-position="right">
-          <!-- 系统配置 -->
-          <ElDivider>安全隐私</ElDivider>
-          <div v-for="(item, key) in securityPrivacyConfigs" :key="key">
-            <ElFormItem :label="item.config_name">
-              <span class="flex items-center gap-2 w-full">
-                <ElInput
-                  v-model="item.config_value"
-                  :placeholder="t('common.inputText')"
-                  clearable
-                  :style="'width: 100%'"
-                  @input="markModified(key)"
-                />
-              </span>
-            </ElFormItem>
-          </div>
-        </ElForm>
-      </ElTabPane>
-      <ElTabPane label="用户协议" name="userAgreement">
-        <!-- 系统配置 -->
-        <ElForm :model="configState" label-suffix=":" label-width="100px" label-position="right">
-          <ElDivider>用户协议</ElDivider>
-          <div v-for="(item, key) in userAgreementConfigs" :key="key">
-            <ElFormItem :label="item.config_name">
-              <span class="flex items-center gap-2 w-full">
-                <ElInput
-                  v-model="item.config_value"
-                  :placeholder="t('common.inputText')"
-                  clearable
-                  :style="'width: 100%'"
-                  @input="markModified(key)"
-                />
-              </span>
-            </ElFormItem>
-          </div>
-        </ElForm>
-      </ElTabPane>
       <ElTabPane label="接口白名单" name="apiWhitelist">
         <ElForm :model="configState" label-suffix=":" label-width="100px" label-position="right">
           <!-- 系统配置 -->
@@ -325,45 +246,7 @@ const drawerSize = computed(() => (appStore.device === DeviceEnum.DESKTOP ? "60%
 const t = useI18n().t;
 const configStore = useConfigStore();
 
-/** 网站图标裁剪：favicon 方形、Logo 横版、登录背景 16:9 */
-function logoCropBind(key: string) {
-  switch (key) {
-    case "sys_web_favicon":
-      return {
-        cropCutWidth: 64,
-        cropCutHeight: 64,
-        cropBoxWidth: 380,
-        cropBoxHeight: 320,
-        cropDialogTitle: "裁剪网站图标",
-        cropInnerTitle: "调整图标",
-        cropPreviewTitle: "预览",
-      };
-    case "sys_web_logo":
-      return {
-        cropCutWidth: 320,
-        cropCutHeight: 96,
-        cropBoxWidth: 520,
-        cropBoxHeight: 360,
-        cropDialogTitle: "裁剪站点 Logo",
-        cropInnerTitle: "调整 Logo",
-        cropPreviewTitle: "预览",
-      };
-    case "sys_login_background":
-      return {
-        cropCutWidth: 960,
-        cropCutHeight: 540,
-        cropBoxWidth: 560,
-        cropBoxHeight: 380,
-        cropDialogTitle: "裁剪登录背景",
-        cropInnerTitle: "调整背景图",
-        cropPreviewTitle: "预览",
-        cropFileType: "jpeg" as const,
-      };
-    default:
-      return {};
-  }
-}
-const activeTabRef = ref("website");
+const activeTabRef = ref("apiWhitelist");
 
 // 与父组件的 v-model 同步
 const props = defineProps<{ modelValue: boolean }>();
@@ -443,17 +326,12 @@ const submitChanges = async () => {
       });
     }
 
-    // 4. 处理其他配置项
+    // 4. 处理其他配置项（已迁移到租户管理的配置不再处理）
     const otherKeys = keysToSubmit.filter(
       (key) => !["white_api_list_path", "ip_black_list", "ip_white_list"].includes(key)
     );
     const otherUpdatePromises = otherKeys.map((key) => {
-      const item =
-        systemConfigs.value[key as keyof typeof systemConfigs.value] ||
-        logoConfigs.value[key as keyof typeof logoConfigs.value] ||
-        securityPrivacyConfigs.value[key as keyof typeof securityPrivacyConfigs.value] ||
-        userAgreementConfigs.value[key as keyof typeof userAgreementConfigs.value] ||
-        demoConfigs.value[key as keyof typeof demoConfigs.value];
+      const item = demoConfigs.value[key as keyof typeof demoConfigs.value];
       return item && item.id ? ParamsAPI.updateParams(item.id, { ...item }) : Promise.resolve();
     });
     await Promise.all(otherUpdatePromises);
@@ -483,24 +361,9 @@ const resetForm = async () => {
   // 重置其他配置项
   const keysToReset = Object.keys(modifiedFields);
   for (const key of keysToReset) {
-    if (systemConfigs.value[key as keyof typeof systemConfigs.value]) {
-      systemConfigs.value[key as keyof typeof systemConfigs.value].config_value =
+    if (key !== "ip_white_list" && configStore.configData[key as keyof typeof configStore.configData]) {
+      (configStore.configData as Record<string, ConfigTable>)[key as string].config_value =
         configStore.configData[key as keyof typeof configStore.configData]?.config_value || "";
-    } else if (logoConfigs.value[key as keyof typeof logoConfigs.value]) {
-      logoConfigs.value[key as keyof typeof logoConfigs.value].config_value =
-        configStore.configData[key as keyof typeof configStore.configData]?.config_value || "";
-    } else if (securityPrivacyConfigs.value[key as keyof typeof securityPrivacyConfigs.value]) {
-      securityPrivacyConfigs.value[key as keyof typeof securityPrivacyConfigs.value].config_value =
-        configStore.configData[key as keyof typeof configStore.configData]?.config_value || "";
-    } else if (userAgreementConfigs.value[key as keyof typeof userAgreementConfigs.value]) {
-      userAgreementConfigs.value[key as keyof typeof userAgreementConfigs.value].config_value =
-        configStore.configData[key as keyof typeof configStore.configData]?.config_value || "";
-    } else if (demoConfigs.value[key as keyof typeof demoConfigs.value]) {
-      // 除了IP白名单外的演示配置项
-      if (key !== "ip_white_list") {
-        demoConfigs.value[key as keyof typeof demoConfigs.value].config_value =
-          configStore.configData[key as keyof typeof configStore.configData]?.config_value || "";
-      }
     }
     delete modifiedFields[key];
   }
@@ -516,27 +379,6 @@ async function onDrawerClosed() {
   // 抽屉关闭动画结束后再执行重置，避免打断动画
   await resetForm();
 }
-
-// 系统配置项
-const systemConfigs = computed(() => ({
-  sys_web_title: configStore.configData.sys_web_title,
-  sys_web_version: configStore.configData.sys_web_version,
-  sys_web_description: configStore.configData.sys_web_description,
-}));
-
-// 安全隐私配置项
-const securityPrivacyConfigs = computed(() => ({
-  sys_help_doc: configStore.configData.sys_help_doc,
-  sys_git_code: configStore.configData.sys_git_code,
-  sys_keep_record: configStore.configData.sys_keep_record,
-  sys_web_copyright: configStore.configData.sys_web_copyright,
-  sys_web_privacy: configStore.configData.sys_web_privacy,
-}));
-
-// 用户协议配置项
-const userAgreementConfigs = computed(() => ({
-  sys_web_clause: configStore.configData.sys_web_clause,
-}));
 
 // 接口白名单配置 - 动态管理
 const apiWhitelistItems = ref<ListItem[]>([]);
@@ -695,42 +537,6 @@ const demoConfigs = computed(() => ({
   demo_enable: configStore.configData.demo_enable,
   ip_white_list: configStore.configData.ip_white_list,
 }));
-
-// logo配置项
-const logoConfigs = computed(() => ({
-  sys_web_logo: {
-    ...configStore.configData.sys_web_logo,
-    maxFileSize: 5,
-  },
-  sys_web_favicon: {
-    ...configStore.configData.sys_web_favicon,
-    maxFileSize: 5,
-  },
-  sys_login_background: {
-    ...configStore.configData.sys_login_background,
-    maxFileSize: 10,
-  },
-}));
-
-// 图片上传成功的回调处理
-const handleUploadSuccess = (fileInfo: UploadFilePath, type: string) => {
-  const fileUrl = fileInfo.file_url;
-  if (type in configStore.configData) {
-    (configStore.configData as Record<string, ConfigTable>)[type].config_value = fileUrl;
-  }
-  if (type in systemConfigs.value) {
-    (systemConfigs.value as Record<string, { config_value: string }>)[type].config_value = fileUrl;
-  } else if (type in logoConfigs.value) {
-    (logoConfigs.value as Record<string, { config_value: string }>)[type].config_value = fileUrl;
-  }
-  markModified(type);
-};
-
-// 图片上传失败的回调处理
-const handleUploadError = (error: any) => {
-  console.error("上传失败:", error.message || "未知错误");
-  ElMessage.error(`上传失败：${error.message || "请稍后重试"}`);
-};
 
 onMounted(() => {
   initializeLists();

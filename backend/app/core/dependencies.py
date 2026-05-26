@@ -16,10 +16,22 @@ from app.core.exceptions import CustomException
 from app.core.logger import log
 from app.core.redis_crud import RedisCURD
 from app.core.security import OAuth2Schema, decode_access_token
+from app.core.tenant import get_current_tenant_id as _get_ctx_tenant_id
+from app.core.tenant import set_current_tenant
+
+
+async def db_getter_read() -> AsyncGenerator[AsyncSession, None]:
+    """只读数据库会话 — 无事务开销，适用于纯 SELECT 查询。
+
+    比 db_getter 少一次 BEGIN/ROLLBACK 网络往返，
+    每次只读请求可省约 2 次 TCP 往返。
+    """
+    async with async_db_session() as session:
+        yield session
 
 
 async def db_getter() -> AsyncGenerator[AsyncSession, None]:
-    """获取数据库会话连接
+    """读写数据库会话 — 带显式事务，适用于 INSERT/UPDATE/DELETE。
 
     返回:
     - AsyncSession: 数据库会话连接
@@ -39,6 +51,18 @@ async def redis_getter(request: Request) -> Redis:
     - Redis: Redis连接
     """
     return request.app.state.redis
+
+
+async def get_current_tenant_id() -> int | None:
+    """获取当前请求的租户 ID 依赖注入函数。
+
+    从 ContextVar 中读取租户 ID（由 TenantMiddleware 设置）。
+    非认证路径（白名单）返回 None。
+
+    返回:
+        int | None: 当前租户 ID，未设置时返回 None。
+    """
+    return _get_ctx_tenant_id()
 
 
 async def get_current_user(
@@ -71,7 +95,8 @@ async def get_current_user(
 
     online_user_info = payload.sub
     # 从Redis中获取用户信息
-    user_info = json.loads(online_user_info)  # 确保是字典类型
+    # online_user_info可能已经是字典类型，需要先判断
+    user_info = online_user_info if isinstance(online_user_info, dict) else json.loads(online_user_info)
 
     session_id = user_info.get("session_id")
     if not session_id:
@@ -95,8 +120,13 @@ async def get_current_user(
             expire=settings.REFRESH_TOKEN_EXPIRE_MINUTES,
         )
 
-    # 关闭数据权限过滤，避免当前用户查询被拦截
-    auth = AuthSchema(db=db, check_data_scope=False)
+    # 关闭数据权限过滤（角色权限依赖用户对象，此时尚未加载）
+    # 租户隔离通过 tenant_id 单独控制，不依赖 check_data_scope
+    tenant_id = user_info.get("tenant_id")
+    is_super_admin = user_info.get("is_super_admin", False)
+    # 设置租户上下文（供 ORM 过滤器及下游代码使用）
+    set_current_tenant(tenant_id, is_super_admin)
+    auth = AuthSchema(db=db, tenant_id=tenant_id, check_data_scope=False)
     username = user_info.get("user_name")
     if not username:
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
@@ -175,7 +205,8 @@ async def _verify_token(
 
     online_user_info = payload.sub
     # 从Redis中获取用户信息
-    user_info = json.loads(online_user_info)  # 确保是字典类型
+    # online_user_info可能已经是字典类型，需要先判断
+    user_info = online_user_info if isinstance(online_user_info, dict) else json.loads(online_user_info)
 
     session_id = user_info.get("session_id")
     if not session_id:
@@ -199,6 +230,10 @@ async def _verify_token(
             expire=settings.REFRESH_TOKEN_EXPIRE_MINUTES,
         )
 
+    # 设置租户上下文（供 ORM 过滤器使用）
+    tenant_id = user_info.get("tenant_id")
+    is_super_admin = user_info.get("is_super_admin", False)
+    set_current_tenant(tenant_id, is_super_admin)
     # 关闭数据权限过滤，避免当前用户查询被拦截
     auth = AuthSchema(db=db, check_data_scope=False)
     username = user_info.get("user_name")

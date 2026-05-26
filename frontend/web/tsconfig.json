@@ -23,7 +23,8 @@
       "@utils/*": ["./src/utils/*"],
       "@stores": ["./src/store"],
       "@plugins": ["./src/plugins"],
-      "@styles": ["./src/styles"]
+      "@styles": ["./src/styles"],
+      "@api/*": ["./src/api/*"]
     }
   },
   "include": [

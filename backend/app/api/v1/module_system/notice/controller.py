@@ -230,3 +230,16 @@ async def get_obj_list_available_controller(
     result_dict = await NoticeService.get_notice_available_page_service(auth=auth)
     log.info("查询已启用公告列表成功")
     return SuccessResponse(data=result_dict, msg="查询已启用公告列表成功")
+
+
+@NoticeRouter.get(
+    "/panel",
+    summary="通知面板数据（铃铛）",
+    description="返回通知铃铛所需的全部数据：通知、消息、待办",
+)
+async def get_notification_panel_controller(
+    auth: Annotated[AuthSchema, Depends(get_current_user)],
+) -> JSONResponse:
+    """通知面板聚合接口，返回通知、消息、待办三个列表。"""
+    result = await NoticeService.get_panel_data_service(auth=auth)
+    return SuccessResponse(data=result, msg="获取面板数据成功")

@@ -1,7 +1,7 @@
 import urllib.parse
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends, Path, Request, UploadFile
+from fastapi import APIRouter, Body, Depends, Path, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -51,28 +51,6 @@ async def get_current_user_info_controller(
     result_dict = await UserService.get_current_user_info_service(auth=auth)
     log.info("获取当前用户信息成功")
     return SuccessResponse(data=result_dict, msg="获取当前用户信息成功")
-
-
-@UserRouter.post(
-    "/current/avatar/upload",
-    summary="上传当前用户头像",
-    dependencies=[Depends(get_current_user)],
-    response_model=ResponseSchema[UserOutSchema],
-)
-async def user_avatar_upload_controller(file: UploadFile, request: Request) -> JSONResponse:
-    """
-    上传当前用户头像
-
-    参数:
-    - file (UploadFile): 上传的文件
-    - request (Request): 请求对象
-
-    返回:
-    - JSONResponse: 上传头像JSON响应
-    """
-    result_str = await UserService.upload_avatar_service(base_url=str(request.base_url), file=file)
-    log.info(f"上传头像成功: {result_str}")
-    return SuccessResponse(data=result_str, msg="上传头像成功")
 
 
 @UserRouter.put(

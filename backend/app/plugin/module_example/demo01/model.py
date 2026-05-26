@@ -2,10 +2,10 @@
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.base_model import ModelMixin, UserMixin
+from app.core.base_model import ModelMixin, TenantMixin, UserMixin
 
 
-class Demo01Model(ModelMixin, UserMixin):
+class Demo01Model(ModelMixin, TenantMixin, UserMixin):
     """
     示例表 - 涵盖大多数常用数据类型
     """

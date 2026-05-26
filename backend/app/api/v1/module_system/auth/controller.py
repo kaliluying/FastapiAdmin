@@ -11,27 +11,32 @@ from app.common.response import ErrorResponse, SuccessResponse
 from app.config.setting import settings
 from app.core.dependencies import db_getter, get_current_user, redis_getter
 from app.core.exceptions import CustomException
-from app.core.redis_crud import RedisCURD
 from app.core.logger import log
+from app.core.redis_crud import RedisCURD
 from app.core.router_class import OperationLogRoute
 from app.core.security import CustomOAuth2PasswordRequestForm
 
-from .schema import (
-    AutoLoginTokenSchema,
-    AutoLoginUserSchema,
-    CaptchaOutSchema,
-    JWTOutSchema,
-    LogoutPayloadSchema,
-    RefreshTokenPayloadSchema,
-)
 from .oauth_service import (
     STATE_PREFIX,
+    _callback_url,
     build_authorize_url,
     complete_oauth_login,
     oauth_service_error_redirect,
     oauth_service_frontend_redirect_from_token,
     save_oauth_state,
-    _callback_url,
+)
+from .schema import (
+    AuthSchema,
+    AutoLoginTokenSchema,
+    AutoLoginUserSchema,
+    CaptchaOutSchema,
+    JWTOutSchema,
+    LoginWithTenantsSchema,
+    LogoutPayloadSchema,
+    RefreshTokenPayloadSchema,
+    SelectTenantOutSchema,
+    SelectTenantSchema,
+    TenantOptionSchema,
 )
 from .service import AutoLoginService, CaptchaService, LoginService
 
@@ -41,8 +46,8 @@ AuthRouter = APIRouter(route_class=OperationLogRoute, prefix="/auth", tags=["认
 @AuthRouter.post(
     "/login",
     summary="登录",
-    description="登录",
-    response_model=JWTOutSchema,
+    description="登录（返回可选租户列表）",
+    response_model=LoginWithTenantsSchema,
 )
 async def login_for_access_token_controller(
     request: Request,
@@ -60,21 +65,21 @@ async def login_for_access_token_controller(
     - db (AsyncSession): 数据库会话对象
 
     返回:
-    - JWTOutSchema: 包含访问令牌和刷新令牌的响应模型
+    - LoginWithTenantsSchema: 包含令牌、租户列表和用户信息的响应模型
 
     异常:
     - CustomException: 认证失败时抛出异常。
     """
-    login_token = await LoginService.authenticate_user_service(
+    login_result = await LoginService.authenticate_user_service(
         request=request, redis=redis, login_form=login_form, db=db
     )
 
     log.info(f"用户{login_form.username}登录成功")
 
-    # 如果是文档请求，则不记录日志:http://localhost:8000/api/v1/docs
+    # 如果是文档请求，则不记录日志
     if settings.DOCS_URL in request.headers.get("referer", ""):
-        return login_token.model_dump()
-    return SuccessResponse(data=login_token.model_dump(), msg="登录成功")
+        return login_result.model_dump()
+    return SuccessResponse(data=login_result.model_dump(), msg="登录成功")
 
 
 @AuthRouter.post(
@@ -177,18 +182,21 @@ async def logout_controller(
     response_model=list[AutoLoginUserSchema],
 )
 async def get_auto_login_users_controller(
+    auth: Annotated[AuthSchema, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(db_getter)],
 ) -> JSONResponse:
     """
     获取免登录用户列表
 
     参数:
+    - auth (AuthSchema): 认证信息
     - db (AsyncSession): 数据库会话对象
 
     返回:
     - list[AutoLoginUserSchema]: 免登录用户列表
     """
-    users = await AutoLoginService.get_auto_login_users_service(db=db)
+    tenant_id = None if auth.user.is_superuser else auth.user.tenant_id
+    users = await AutoLoginService.get_auto_login_users_service(db=db, tenant_id=tenant_id)
     return SuccessResponse(data=users, msg="获取成功")
 
 
@@ -199,6 +207,7 @@ async def get_auto_login_users_controller(
     response_model=AutoLoginTokenSchema,
 )
 async def get_auto_login_token_controller(
+    auth: Annotated[AuthSchema, Depends(get_current_user)],
     redis: Annotated[Redis, Depends(redis_getter)],
     db: Annotated[AsyncSession, Depends(db_getter)],
     user_id: int,
@@ -207,6 +216,7 @@ async def get_auto_login_token_controller(
     获取免登录Token
 
     参数:
+    - auth (AuthSchema): 认证信息
     - redis (Redis): Redis客户端对象
     - db (AsyncSession): 数据库会话对象
     - user_id (int): 用户ID
@@ -214,8 +224,9 @@ async def get_auto_login_token_controller(
     返回:
     - AutoLoginTokenSchema: 免登录Token和用户信息
     """
+    tenant_id = None if auth.user.is_superuser else auth.user.tenant_id
     result = await AutoLoginService.create_auto_login_token_service(
-        redis=redis, db=db, user_id=user_id
+        redis=redis, db=db, user_id=user_id, tenant_id=tenant_id
     )
     return SuccessResponse(data=result, msg="获取成功")
 
@@ -249,6 +260,64 @@ async def auto_login_controller(
     )
     log.info("用户免登录成功")
     return SuccessResponse(data=login_token.model_dump(), msg="登录成功")
+
+
+@AuthRouter.post(
+    "/select-tenant",
+    summary="选择租户",
+    description="登录后选择当前操作的租户，签发含租户上下文的新 JWT Token",
+    response_model=SelectTenantOutSchema,
+    dependencies=[Depends(get_current_user)],
+)
+async def select_tenant_controller(
+    request: Request,
+    data: SelectTenantSchema,
+    auth: Annotated[AuthSchema, Depends(get_current_user)],
+    redis: Annotated[Redis, Depends(redis_getter)],
+) -> JSONResponse:
+    """
+    选择租户
+
+    验证用户是否属于该租户，签发包含 tenant_id 的新 JWT Token。
+
+    参数:
+    - request (Request): FastAPI请求对象
+    - data (SelectTenantSchema): 租户选择请求
+    - auth (AuthSchema): 当前认证信息
+    - redis (Redis): Redis客户端对象
+
+    返回:
+    - SelectTenantOutSchema: 包含新令牌的响应
+    """
+    result = await LoginService.select_tenant_service(
+        request=request, redis=redis, auth=auth, tenant_id=data.tenant_id
+    )
+    return SuccessResponse(data=result.model_dump(), msg="租户切换成功")
+
+
+@AuthRouter.get(
+    "/tenants",
+    summary="获取可选租户列表",
+    description="返回当前用户关联的所有可选租户",
+    response_model=list[TenantOptionSchema],
+    dependencies=[Depends(get_current_user)],
+)
+async def get_user_tenants_controller(
+    auth: Annotated[AuthSchema, Depends(get_current_user)],
+    db: Annotated[AsyncSession, Depends(db_getter)],
+) -> JSONResponse:
+    """
+    获取当前用户的租户列表
+
+    参数:
+    - auth (AuthSchema): 当前认证信息
+    - db (AsyncSession): 数据库会话对象
+
+    返回:
+    - list[TenantOptionSchema]: 租户选项列表
+    """
+    tenants = await LoginService.get_user_tenants_service(auth=auth, db=db)
+    return SuccessResponse(data=tenants, msg="获取租户列表成功")
 
 
 @AuthRouter.get(

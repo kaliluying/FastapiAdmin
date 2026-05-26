@@ -74,3 +74,5 @@ frontend/docs/*
 
 frontend/app/*
 !frontend/app/.gitkeep
+
+.workbudddy/*

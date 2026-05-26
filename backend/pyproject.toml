@@ -17,6 +17,7 @@ dependencies = [
     "click==8.1.7",                             # 命令行参数解析
     "croniter>=1.0.12,<5.0.0",                  # cron（与 prefect 约束一致；部署 requirements.txt 同源）
     "cryptography==45.0.2",                     # mysql8 密码加密
+    "dependency-injector==4.49.0",                # 依赖注入容器
     "fastapi==0.115.2",                         # fastapi 框架
     "fastapi-limiter==0.1.6",                   # 接口限流
     "greenlet==3.1.1",                          # 协程框架
@@ -31,6 +32,7 @@ dependencies = [
     "passlib==1.7.4",                           # 密码加密
     "prefect>=3.5.0,<4",                        # 工作流编排（与 typer>=0.19 兼容；部署与 requirements.txt 一致）
     "pillow==11.0.0",                           # 图片处理
+    "prometheus-fastapi-instrumentator==7.1.0",   # Prometheus 指标采集
     "psutil==6.1.0",                            # 系统信息
     "psycopg==3.3.2",                           # postgresql 同步操作数据库基于 psycopg是psycopg2升级版：psycopg2 是一个 pure-Python PostgreSQL 适配器。
     "psycopg-binary==3.3.2",                    # postgresql 异步操作数据库基于 psycopg2：asyncpg 是 psycopg2 的异步版本，psycopg2 是一个 pure-Python PostgreSQL 数据库适配器。
@@ -44,6 +46,7 @@ dependencies = [
     "tomli>=2.0.1; python_version < '3.11'",    # 解析 plugin.toml（3.11+ 用标准库 tomllib）
     "sqlalchemy==2.0.45",                       # 数据库ORM
     "sqlglot[rs]==27.8.0",                      # sql 解析
+    "structlog==25.5.0",                        # 结构化日志
     "typer==0.19.0",                            # 命令行工具
     "user-agents==2.2.0",                       # 获取用户UA
     "uvicorn==0.30.6",                          # uvicorn web 框架

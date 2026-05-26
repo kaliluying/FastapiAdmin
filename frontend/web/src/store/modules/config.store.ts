@@ -29,6 +29,7 @@
  */
 import { store } from "@stores";
 import ParamsAPI, { ConfigTable } from "@/api/module_system/params";
+import TenantAPI from "@/api/module_system/tenant";
 import { defineStore } from "pinia";
 import { ref } from "vue";
 
@@ -43,15 +44,17 @@ export const useConfigStore = defineStore(
     const configLoading = ref(false);
 
     /**
-     * 获取系统配置
+     * 获取系统配置 + 租户配置
      * @param force 是否强制刷新配置
+     * @param tenantId 租户ID（默认 1），登录页等公开场景使用
      */
-    async function getConfig(force = false) {
+    async function getConfig(force = false, tenantId = 1) {
       if ((isConfigLoaded.value && !force) || configLoading.value) {
         return;
       }
       configLoading.value = true;
       try {
+        // 1. 获取系统级配置（演示模式、IP黑白名单等）
         const response = await ParamsAPI.getInitConfig();
         const list = response?.data?.data;
         if (!Array.isArray(list)) {
@@ -63,6 +66,22 @@ export const useConfigStore = defineStore(
             configData.value[item.config_key] = item;
           }
         });
+
+        // 2. 获取租户个性化配置（品牌标识、版权信息等）
+        try {
+          const tenantResp = await TenantAPI.getTenantConfigInfo(tenantId);
+          const tenantList = tenantResp?.data?.data;
+          if (Array.isArray(tenantList)) {
+            tenantList.forEach((item: any) => {
+              if (item.config_value !== undefined && item.config_key) {
+                configData.value[item.config_key] = item;
+              }
+            });
+          }
+        } catch (e) {
+          console.warn("[configStore] 获取租户配置失败（非关键错误）", e);
+        }
+
         isConfigLoaded.value = true;
       } finally {
         configLoading.value = false;

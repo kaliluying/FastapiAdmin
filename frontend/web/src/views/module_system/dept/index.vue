@@ -40,7 +40,7 @@
               @delete="handleBatchDelete"
               @more="handleMoreClick"
             />
-            <ElButton @click="toggleExpand">{{ isExpanded ? "收起" : "展开" }}</ElButton>
+            <ElButton @click="toggleExpand" v-ripple>{{ isExpanded ? "收起" : "展开" }}</ElButton>
           </div>
         </template>
       </FaTableHeader>

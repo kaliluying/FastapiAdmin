@@ -9,6 +9,7 @@
     "email": "deptadmin@example.com",
     "description": "集团总公司",
     "parent_id": null,
+    "tenant_id": 1,
     "children": []
   }
 ]

@@ -25,7 +25,6 @@ import { nextTick } from "vue";
 import { useSettingsStore, useUserStore, useMenuStore, useWorktabStore } from "@stores";
 import { IframeRouteManager, ROUTE_PATH_LOGIN_ALT, staticRoutes } from "./staticRoutes";
 import { useCommon } from "@/hooks/core/useCommon";
-import { UserAPI } from "@/api/module_system/user";
 import {
   NProgress,
   setWorktab,
@@ -155,6 +154,10 @@ async function handleRouteGuard(
   const loginRedirect = handleLoginStatus(to, userStore);
   if (loginRedirect) return loginRedirect;
 
+  // 多租户：已登录但未选租户时重定向到租户选择页
+  const tenantRedirect = handleTenantGuard(to, userStore);
+  if (tenantRedirect) return tenantRedirect;
+
   if (routeInitFailed) {
     return to.matched.length > 0 ? true : { name: "500", replace: true };
   }
@@ -199,6 +202,41 @@ function handleLoginStatus(
 
   userStore.resetAllState();
   return { name: "Login", query: { redirect: to.fullPath }, replace: true };
+}
+
+/**
+ * 多租户守卫：已登录但尚未选择租户时，重定向到租户选择页。
+ * 仅在用户有多个租户时生效；单租户时自动选择。
+ */
+function handleTenantGuard(
+  to: RouteLocationNormalized,
+  userStore: ReturnType<typeof useUserStore>
+): Record<string, unknown> | undefined {
+  // 未登录或已在租户选择页，不处理
+  if (!userStore.isLogin || to.path === "/tenant-select" || to.name === "TenantSelect") {
+    return undefined;
+  }
+
+  // 匿名公开路径不检查租户
+  if (isAnonymousPublicPath(to.path)) return undefined;
+
+  const tenants = userStore.tenantList;
+  const current = userStore.currentTenant;
+
+  // 已有选中租户，放行
+  if (current) return undefined;
+
+  // 未加载租户列表：先放行，由动态路由初始化后加载
+  if (tenants.length === 0) return undefined;
+
+  // 单租户：自动选择
+  if (tenants.length === 1) {
+    userStore.setCurrentTenant(tenants[0]);
+    return undefined;
+  }
+
+  // 多租户：跳转选择页
+  return { name: "TenantSelect", query: { redirect: to.fullPath }, replace: true };
 }
 
 /** 登录页（项目里同时存在 `/login` 与 `/auth/login` 等多套入口） */
@@ -292,9 +330,10 @@ async function handleDynamicRoutes(to: RouteLocationNormalized, router: Router) 
     // 2. 获取菜单数据
     const menuList = await menuProcessor.getMenuList();
 
-    // 3. 验证菜单数据
-    if (!menuProcessor.validateMenuList(menuList)) {
-      throw new Error("获取菜单列表失败，请重新登录");
+    // 3. 验证菜单数据（空菜单不阻塞：用户可能未分配角色，允许进入首页）
+    const menuValid = menuProcessor.validateMenuList(menuList);
+    if (!menuValid) {
+      console.warn("[RouteGuard] 菜单列表为空，用户可能未分配角色，使用空菜单继续导航");
     }
 
     // 4. 注册动态路由
@@ -367,10 +406,7 @@ async function handleDynamicRoutes(to: RouteLocationNormalized, router: Router) 
  */
 async function fetchUserInfo(): Promise<void> {
   const userStore = useUserStore();
-  const response = await UserAPI.getCurrentUserInfo();
-  const data = response.data.data;
-  userStore.setUserInfo(data);
-  // 检查并清理工作台标签页（如果是不同用户登录）
+  await userStore.getUserInfo();
   userStore.checkAndClearWorktabs();
 }
 

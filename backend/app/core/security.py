@@ -105,7 +105,7 @@ def create_access_token(payload: JWTPayloadSchema) -> str:
     返回:
     - str: 生成的JWT访问令牌。
     """
-    payload_dict = payload.model_dump()
+    payload_dict = payload.model_dump(exclude_none=False)
     return jwt.encode(
         payload=payload_dict,
         key=settings.SECRET_KEY,
@@ -146,3 +146,37 @@ def decode_access_token(token: str) -> JWTPayloadSchema:
 
     except jwt.InvalidTokenError:
         raise CustomException(msg="token已失效,请重新登录", code=10401, status_code=401)
+
+
+def decode_access_token_with_tenant(token: str) -> tuple[JWTPayloadSchema, int | None, bool]:
+    """解析JWT访问令牌并提取租户信息。
+
+    在标准 JWT 解码基础上，额外从 payload.sub（OnlineOutSchema JSON）
+    中提取 tenant_id 和 is_super_admin 字段。
+
+    参数:
+        token: JWT 访问令牌字符串。
+
+    返回:
+        tuple[JWTPayloadSchema, int | None, bool]:
+            (payload, tenant_id, is_super_admin)。
+            tenant_id 为 None 表示未设置；is_super_admin 默认 False。
+
+    异常:
+        CustomException: 解析失败时抛出，状态码为 401。
+    """
+    payload = decode_access_token(token)
+
+    tenant_id: int | None = None
+    is_super_admin: bool = False
+
+    try:
+        import json
+        if payload.sub:
+            user_info = json.loads(payload.sub)
+            tenant_id = user_info.get("tenant_id")
+            is_super_admin = user_info.get("is_super_admin", False)
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        pass
+
+    return payload, tenant_id, is_super_admin

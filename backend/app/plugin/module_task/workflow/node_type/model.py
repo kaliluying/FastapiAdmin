@@ -4,23 +4,23 @@
 画布上的 type 对应本表的 code；执行时加载 func 代码块（须定义 handler）。
 """
 
-from sqlalchemy import Boolean, Integer, String, Text
+from sqlalchemy import Boolean, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.base_model import ModelMixin, UserMixin
+from app.core.base_model import ModelMixin, TenantMixin, UserMixin
 
 
-class WorkflowNodeTypeModel(ModelMixin, UserMixin):
+class WorkflowNodeTypeModel(ModelMixin, TenantMixin, UserMixin):
     """
     编排节点类型：用于 Vue Flow 左侧 palette 与 Prefect 运行时解析。
     """
 
     __tablename__: str = "task_workflow_node_type"
-    __table_args__: dict[str, str] = {"comment": "工作流编排节点类型（非定时任务节点）"}
+    __table_args__ = (UniqueConstraint("tenant_id", "code"), {"comment": "工作流编排节点类型（非定时任务节点）"})
     __loader_options__: list[str] = ["created_by", "updated_by", "deleted_by"]
 
     name: Mapped[str] = mapped_column(String(128), nullable=False, comment="显示名称")
-    code: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, comment="节点编码，对应画布 node.type")
+    code: Mapped[str] = mapped_column(String(64), nullable=False, comment="节点编码，对应画布 node.type")
     category: Mapped[str] = mapped_column(
         String(32),
         nullable=False,

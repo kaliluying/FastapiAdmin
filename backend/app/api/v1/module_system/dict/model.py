@@ -1,21 +1,25 @@
-from sqlalchemy import Boolean, ForeignKey, Integer, String
+from sqlalchemy import Boolean, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.base_model import ModelMixin
+from app.core.base_model import ModelMixin, TenantMixin
 
 
-class DictTypeModel(ModelMixin):
+class DictTypeModel(ModelMixin, TenantMixin):
     """
     字典类型表
+
+    __platform_data_shared__ = True 表示 tenant_id=1 的平台字典对
+    所有租户可读，但只有平台管理员可写。
     """
 
     __tablename__: str = "sys_dict_type"
-    __table_args__: dict[str, str] = {"comment": "字典类型表"}
+    __table_args__ = (UniqueConstraint("tenant_id", "dict_type"), {"comment": "字典类型表"})
     __loader_options__: list[str] = []
+    __platform_data_shared__: bool = True
 
     dict_name: Mapped[str] = mapped_column(String(64), nullable=False, comment="字典名称")
     dict_type: Mapped[str] = mapped_column(
-        String(255), nullable=False, unique=True, comment="字典类型"
+        String(255), nullable=False, comment="字典类型"
     )
 
     # 关系定义
@@ -26,14 +30,18 @@ class DictTypeModel(ModelMixin):
     )
 
 
-class DictDataModel(ModelMixin):
+class DictDataModel(ModelMixin, TenantMixin):
     """
     字典数据表
+
+    与 DictTypeModel 相同：tenant_id=1 的平台字典数据对
+    所有租户可读，但只有平台管理员可写。
     """
 
     __tablename__: str = "sys_dict_data"
     __table_args__: dict[str, str] = {"comment": "字典数据表"}
     __loader_options__: list[str] = []
+    __platform_data_shared__: bool = True
 
     dict_sort: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="字典排序")
     dict_label: Mapped[str] = mapped_column(String(255), nullable=False, comment="字典标签")

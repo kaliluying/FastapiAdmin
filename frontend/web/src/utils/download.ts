@@ -19,13 +19,16 @@ interface DownloadUtil {
 
 const download: DownloadUtil = {
   async name(name: string, isDelete: boolean = true) {
-    const url =
-      baseURL + "/common/download?fileName=" + encodeURIComponent(name) + "&delete=" + isDelete;
+    const url = baseURL + "/common/file/download";
     try {
-      const res = await axios.get<Blob>(url, {
-        responseType: "blob",
-        headers: { Authorization: `Bearer ${Auth.getAccessToken()}` },
-      });
+      const res = await axios.post<Blob>(
+        url,
+        { file_path: name, delete: isDelete },
+        {
+          responseType: "blob",
+          headers: { Authorization: `Bearer ${Auth.getAccessToken()}` },
+        }
+      );
       const isBlob = blobValidate(res.data);
       if (isBlob) {
         const blob = new Blob([res.data]);
@@ -40,7 +43,7 @@ const download: DownloadUtil = {
   },
 
   async resource(resource: string) {
-    const url = baseURL + "/common/download/resource?resource=" + encodeURIComponent(resource);
+    const url = baseURL + "/monitor/resource/download?path=" + encodeURIComponent(resource);
     try {
       const res = await axios.get<Blob>(url, {
         responseType: "blob",

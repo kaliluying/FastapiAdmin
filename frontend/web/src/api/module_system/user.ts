@@ -13,7 +13,7 @@ export const UserAPI = {
 
   uploadCurrentUserAvatar(body: any) {
     return request<ApiResponse<UploadFilePath>>({
-      url: `${API_PATH}/current/avatar/upload`,
+      url: `/common/file/upload?upload_type=avatar`,
       method: "post",
       data: body,
       headers: { "Content-Type": "multipart/form-data" },
@@ -191,6 +191,13 @@ export interface UserInfo extends BaseType {
   created_by?: CommonType;
   updated_by?: CommonType;
   deleted_by?: CommonType;
+  tenant_id?: number;
+  tenant_name?: string;
+  gitee_login?: string;
+  github_login?: string;
+  wx_login?: string;
+  qq_login?: string;
+  description?: string;
 }
 
 export interface deptTreeType {

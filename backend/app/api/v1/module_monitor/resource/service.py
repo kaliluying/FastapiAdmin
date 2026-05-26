@@ -7,13 +7,10 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
-from fastapi import UploadFile
-
 from app.config.setting import settings
 from app.core.exceptions import CustomException
 from app.core.logger import log
 from app.utils.excel_util import ExcelUtil
-from app.utils.upload_util import DANGEROUS_EXTENSIONS, MIME_TYPE_MAPPING
 
 from .schema import (
     ResourceCopySchema,
@@ -23,7 +20,6 @@ from .schema import (
     ResourceMoveSchema,
     ResourceRenameSchema,
     ResourceSearchQueryParam,
-    ResourceUploadSchema,
 )
 
 
@@ -613,127 +609,12 @@ class ResourceService:
             raise CustomException(msg=f"排序参数格式错误: {e!s}")
 
     @classmethod
-    async def upload_file_service(
-        cls,
-        file: UploadFile,
-        target_path: str | None = None,
-        base_url: str | None = None,
-    ) -> dict:
-        """
-        上传文件到指定目录
-
-        参数:
-        - file (UploadFile): 上传的文件对象。
-        - target_path (str | None): 目标目录路径。
-        - base_url (str | None): 基础URL，用于生成完整URL。
-
-        返回:
-        - dict: 包含文件信息的字典。
-        """
-        if not file or not file.filename:
-            raise CustomException(msg="请选择要上传的文件")
-
-        original_filename = file.filename
-
-        # 使用加强版的 _sanitize_filename 来清理文件名
-        # 该方法已经包含了路径遍历检测
-        safe_filename = cls._sanitize_filename(original_filename)
-
-        # 如果文件名被重置为默认名称，说明检测到攻击
-        if safe_filename.startswith("file_") and safe_filename != original_filename:
-            log.error(f"文件名因安全问题被重置，原始文件名: {original_filename}")
-
-        # 检查文件扩展名（使用清理后的文件名）
-        if "." not in safe_filename:
-            raise CustomException(msg="无法识别文件类型")
-
-        ext = os.path.splitext(safe_filename)[1].lower()
-        if not ext:
-            raise CustomException(msg="无法识别文件类型")
-
-        if ext in DANGEROUS_EXTENSIONS:
-            log.error(f"尝试上传危险文件类型: {ext}")
-            raise CustomException(msg=f"不允许上传此类型的文件: {ext}")
-
-        try:
-            content = await file.read()
-            if len(content) > cls.MAX_UPLOAD_SIZE:
-                raise CustomException(
-                    msg=f"文件太大，最大支持{cls.MAX_UPLOAD_SIZE // (1024 * 1024)}MB"
-                )
-
-            detected_type = cls._detect_file_type(content)
-            if detected_type:
-                expected_ext = MIME_TYPE_MAPPING.get(detected_type, "")
-                if expected_ext and expected_ext != ext:
-                    log.warning(
-                        f"文件类型不匹配: 声明扩展名={ext}, 检测类型={detected_type}"
-                    )
-
-            # 获取安全的目录路径（_get_safe_path 已经包含路径遍历防护）
-            safe_dir = (
-                cls._get_resource_root() if target_path is None else cls._get_safe_path(target_path)
-            )
-
-            # 确保目录存在
-            os.makedirs(safe_dir, exist_ok=True)
-
-            # 构建完整的文件路径
-            file_path = os.path.join(safe_dir, safe_filename)
-
-            # 最终安全检查：确保文件路径在允许的目录下
-            file_path_abs = os.path.normpath(os.path.abspath(file_path))
-            safe_dir_abs = os.path.normpath(os.path.abspath(safe_dir))
-            resource_root_abs = os.path.normpath(os.path.abspath(cls._get_resource_root()))
-
-            # 检查文件路径是否在目标目录下
-            if not file_path_abs.startswith(safe_dir_abs + os.sep) and file_path_abs != safe_dir_abs:
-                log.error(f"检测到路径穿越攻击，目标路径: {file_path}")
-                raise CustomException(msg="非法的文件路径")
-
-            # 再次确保文件路径在资源根目录下（防止通过 target_path 绕过）
-            if not file_path_abs.startswith(resource_root_abs + os.sep) and file_path_abs != resource_root_abs:
-                log.error(f"检测到越权访问尝试，目标路径: {file_path_abs}, 根目录: {resource_root_abs}")
-                raise CustomException(msg="访问路径不在允许范围内")
-
-            if os.path.exists(file_path):
-                base_name, extension = os.path.splitext(safe_filename)
-                counter = 1
-                while os.path.exists(file_path):
-                    new_filename = f"{base_name}_{counter}{extension}"
-                    file_path = os.path.join(safe_dir, new_filename)
-                    counter += 1
-                safe_filename = os.path.basename(file_path)
-
-            Path(file_path).write_bytes(content)
-
-            file_info = cls._get_file_info(file_path, base_url)
-
-            file_url = cls._generate_http_url(file_path, base_url)
-
-            log.info(f"文件上传成功: {safe_filename}")
-
-            return ResourceUploadSchema(
-                filename=safe_filename,
-                file_url=file_url,
-                file_size=file_info.get("size", 0),
-                upload_time=datetime.now(),
-            ).model_dump(mode="json")
-
-        except CustomException:
-            raise
-        except Exception as e:
-            log.error(f"文件上传失败: {e!s}")
-            raise CustomException(msg=f"文件上传失败: {e!s}")
-
-    @classmethod
-    async def download_file_service(cls, file_path: str, base_url: str | None = None) -> str:
+    async def download_file_service(cls, file_path: str) -> str:
         """
         下载文件（返回本地文件系统路径）
 
         参数:
         - file_path (str): 文件路径（可为相对路径、绝对路径或完整URL）。
-        - base_url (str | None): 基础URL，用于生成完整URL（不再直接返回URL）。
 
         返回:
         - str: 本地文件系统路径。

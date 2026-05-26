@@ -25,12 +25,13 @@ const chartInstance = shallowRef<echarts.ECharts | null>(null);
 const settingStore = useSettingsStore();
 const { isDark } = storeToRefs(settingStore);
 
-const props = withDefaults(defineProps<MapChartProps>(), {
+const props = withDefaults(defineProps<MapChartProps & { dynamic?: boolean }>(), {
   mapData: () => [],
   selectedRegion: "",
   showLabels: true,
   showScatter: true,
   isEmpty: false,
+  dynamic: false,
 });
 
 // 定义 emit
@@ -242,12 +243,17 @@ const resizeChart = () => {
 };
 
 let initTimer: ReturnType<typeof setTimeout> | null = null;
+let dynamicTimer: ReturnType<typeof setInterval> | null = null;
 
 // 处理组件销毁
 const cleanupChart = () => {
   if (initTimer !== null) {
     clearTimeout(initTimer);
     initTimer = null;
+  }
+  if (dynamicTimer !== null) {
+    clearInterval(dynamicTimer);
+    dynamicTimer = null;
   }
   if (chartInstance.value) {
     chartInstance.value.off("click", handleMapClick);
@@ -257,12 +263,29 @@ const cleanupChart = () => {
   window.removeEventListener("resize", resizeChart);
 };
 
+const updateDynamicData = () => {
+  if (!chartInstance.value || chartInstance.value.isDisposed()) return;
+  const mapData = prepareMapData(chinaMapJson);
+  const scatterData = [
+    { name: "北京", value: [116.405285, 39.904989, Math.round(50 + Math.random() * 200)] },
+    { name: "上海", value: [121.472644, 31.231706, Math.round(50 + Math.random() * 200)] },
+    { name: "深圳", value: [114.085947, 22.547, Math.round(50 + Math.random() * 200)] },
+    { name: "成都", value: [104.065735, 30.659462, Math.round(30 + Math.random() * 150)] },
+    { name: "武汉", value: [114.298572, 30.584355, Math.round(30 + Math.random() * 150)] },
+    { name: "杭州", value: [120.153576, 30.287459, Math.round(30 + Math.random() * 150)] },
+  ];
+  chartInstance.value.setOption({ series: [{ data: mapData }, { data: scatterData }] });
+};
+
 // 生命周期钩子
 onMounted(() => {
   if (!isEmpty.value) {
     (async () => {
       await initMap();
       initTimer = setTimeout(resizeChart, 100);
+      if (props.dynamic) {
+        dynamicTimer = setInterval(updateDynamicData, 4000);
+      }
     })();
   }
   window.addEventListener("resize", resizeChart);

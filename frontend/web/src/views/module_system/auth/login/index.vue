@@ -2,7 +2,7 @@
 <template>
   <div class="login-page-root flex h-screen w-full flex-col overflow-hidden">
     <FaLoginCenterBackdrop v-if="panelAlign === 'center'" viewport-fixed />
-    <AuthTopBar v-model:panel-align="panelAlign" />
+    <FaAuthTopBar v-model:panel-align="panelAlign" />
 
     <div
       class="login-auth-split relative z-1 flex min-h-0 flex-1 overflow-hidden"
@@ -120,11 +120,11 @@
                 rel="noopener noreferrer"
                 class="login-page-footer__link"
               >
-                {{ configStore.configData?.sys_web_copyright?.config_value || "" }}
+                {{ configStore.configData?.tenant_copyright?.config_value || "" }}
               </a>
               <span class="login-page-footer__sep">|</span>
               <a
-                :href="configStore.configData?.sys_help_doc?.config_value || '#'"
+                :href="configStore.configData?.tenant_help_doc?.config_value || '#'"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="login-page-footer__link"
@@ -133,7 +133,7 @@
               </a>
               <span class="login-page-footer__sep">|</span>
               <a
-                :href="configStore.configData?.sys_web_privacy?.config_value || '#'"
+                :href="configStore.configData?.tenant_privacy?.config_value || '#'"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="login-page-footer__link"
@@ -142,7 +142,7 @@
               </a>
               <span class="login-page-footer__sep">|</span>
               <a
-                :href="configStore.configData?.sys_web_clause?.config_value || '#'"
+                :href="configStore.configData?.tenant_clause?.config_value || '#'"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="login-page-footer__link"
@@ -150,10 +150,10 @@
                 条款
               </a>
               <span
-                v-if="configStore.configData?.sys_keep_record?.config_value"
+                v-if="configStore.configData?.tenant_keep_record?.config_value"
                 class="login-page-footer__record"
               >
-                {{ configStore.configData.sys_keep_record.config_value }}
+                {{ configStore.configData.tenant_keep_record.config_value }}
               </span>
             </div>
           </footer>
@@ -180,6 +180,7 @@ import FaLoginForgetPanel from "@/components/views/fa-login/FaLoginForgetPanel.v
 import FaLoginMobilePanel from "@/components/views/fa-login/FaLoginMobilePanel.vue";
 import FaLoginQrPanel from "@/components/views/fa-login/FaLoginQrPanel.vue";
 import FaLoginRegisterPanel from "@/components/views/fa-login/FaLoginRegisterPanel.vue";
+import FaAuthTopBar from "@/components/views/fa-login/FaAuthTopBar.vue";
 import { useLoginPanelAlign } from "@/components/views/fa-login/useLoginPanelAlign";
 
 defineOptions({ name: "Login" });
@@ -225,7 +226,7 @@ const panelSubTitle = computed(() => {
 });
 
 const userAgreementHref = computed(
-  () => configStore.configData?.sys_web_clause?.config_value || "#"
+  () => configStore.configData?.tenant_clause?.config_value || "#"
 );
 
 function setAuthPanel(panel: AuthPanel) {
@@ -592,7 +593,19 @@ const handleSubmit = async () => {
 
     await userStore.login(loginForm);
 
-    await router.replace(resolveRedirectTarget(route.query));
+    // 多租户：读取登录响应中的租户列表
+    const tenants = userStore.tenantList;
+    if (tenants.length > 1) {
+      await router.replace({
+        name: "TenantSelect",
+        query: { redirect: route.query.redirect as string },
+      });
+    } else if (tenants.length === 1) {
+      await userStore.setCurrentTenant(tenants[0]);
+      await router.replace(resolveRedirectTarget(route.query));
+    } else {
+      await router.replace(resolveRedirectTarget(route.query));
+    }
 
     if (settingStore.showGuide) {
       appStore.showGuide(true);

@@ -205,14 +205,14 @@ const userStore = useUserStore();
 const menuStore = useMenuStore();
 const configStore = useConfigStore();
 
-/** 与侧栏一致：参数配置 sys_web_logo / sys_web_title */
+/** 租户配置：tenant_logo / tenant_name */
 const headerLogoSrc = computed(() => {
-  const raw = configStore.configData.sys_web_logo?.config_value;
+  const raw = configStore.configData.tenant_logo?.config_value;
   return typeof raw === "string" && raw.trim() ? raw.trim() : undefined;
 });
 
 const headerSystemName = computed(() => {
-  const raw = configStore.configData.sys_web_title?.config_value;
+  const raw = configStore.configData.tenant_name?.config_value;
   if (typeof raw === "string" && raw.trim()) return raw.trim();
   return AppConfig.systemInfo.name;
 });

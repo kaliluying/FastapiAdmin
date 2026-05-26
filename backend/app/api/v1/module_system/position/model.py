@@ -3,13 +3,13 @@ from typing import TYPE_CHECKING
 from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.core.base_model import ModelMixin, UserMixin
+from app.core.base_model import ModelMixin, TenantMixin, UserMixin
 
 if TYPE_CHECKING:
     from app.api.v1.module_system.user.model import UserModel
 
 
-class PositionModel(ModelMixin, UserMixin):
+class PositionModel(ModelMixin, TenantMixin, UserMixin):
     """
     岗位模型
     """

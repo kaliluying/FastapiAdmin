@@ -1,10 +1,10 @@
 from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.base_model import ModelMixin
+from app.core.base_model import ModelMixin, TenantMixin
 
 
-class ParamsModel(ModelMixin):
+class ParamsModel(ModelMixin, TenantMixin):
     """
     参数配置表
     """

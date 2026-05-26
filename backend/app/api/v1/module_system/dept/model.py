@@ -1,30 +1,30 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.common.enums import PermissionFilterStrategy
-from app.core.base_model import ModelMixin
+from app.core.base_model import ModelMixin, TenantMixin
 
 if TYPE_CHECKING:
     from app.api.v1.module_system.role.model import RoleModel
     from app.api.v1.module_system.user.model import UserModel
 
 
-class DeptModel(ModelMixin):
+class DeptModel(ModelMixin, TenantMixin):
     """
     部门模型
     """
 
     __tablename__: str = "sys_dept"
-    __table_args__: dict[str, str] = {"comment": "部门表"}
+    __table_args__ = (UniqueConstraint("tenant_id", "code"), {"comment": "部门表"})
     __loader_options__: list[str] = []
     __permission_strategy__: PermissionFilterStrategy = PermissionFilterStrategy.DEPT_BASED
 
     name: Mapped[str] = mapped_column(String(64), nullable=False, comment="部门名称")
     order: Mapped[int] = mapped_column(Integer, nullable=False, default=999, comment="显示排序")
     code: Mapped[str] = mapped_column(
-        String(16), nullable=False, unique=True, comment="部门编码"
+        String(16), nullable=False, comment="部门编码"
     )
     leader: Mapped[str | None] = mapped_column(String(32), default=None, comment="部门负责人")
     phone: Mapped[str | None] = mapped_column(String(11), default=None, comment="手机")

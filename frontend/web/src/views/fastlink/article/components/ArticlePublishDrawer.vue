@@ -174,7 +174,7 @@ const EMPTY_EDITOR_CONTENT = "<p><br></p>";
 const userStore = useUserStore();
 const { accessToken } = userStore;
 
-const uploadImageUrl = `${import.meta.env.VITE_API_URL}/api/common/upload`;
+const uploadImageUrl = `${import.meta.env.VITE_API_URL}/api/common/file/upload`;
 const uploadHeaders = { Authorization: accessToken };
 
 type ResultPhase = "form" | "success" | "fail";

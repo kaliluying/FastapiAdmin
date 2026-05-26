@@ -60,6 +60,8 @@ export interface LogTable extends BaseType {
   request_payload?: string;
   response_json?: string;
   process_time?: string;
+  status?: string;
+  description?: string;
   created_by?: CommonType;
   updated_by?: CommonType;
   deleted_by?: CommonType;

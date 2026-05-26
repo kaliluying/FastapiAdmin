@@ -15,7 +15,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.base_model import ModelMixin, UserMixin
+from app.core.base_model import ModelMixin, TenantMixin, UserMixin
 
 
 class StatusEnum(enum.Enum):
@@ -25,7 +25,7 @@ class StatusEnum(enum.Enum):
     INACTIVE = "inactive"
 
 
-class DemoModel(ModelMixin, UserMixin):
+class DemoModel(ModelMixin, TenantMixin, UserMixin):
     """
     示例表 - 涵盖大多数常用数据类型
     """

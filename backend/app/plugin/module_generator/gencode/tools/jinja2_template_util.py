@@ -226,6 +226,7 @@ class Jinja2TemplateUtil:
             "is_sub_entity": False,
             "sub_class_name": sub_class_name,
             "sub_model_class_name": sub_model_class_name,
+            "sub_module_name": (gen_table.sub_table.module_name if gen_table.sub and gen_table.sub_table else ""),
             "sub_rel_list_name": sub_rel_list_name,
             "parent_rel_name": parent_rel_name,
             "parent_list_rel_name": "",
@@ -294,7 +295,7 @@ class Jinja2TemplateUtil:
     @classmethod
     def get_template_list(cls):
         """
-        获取模板列表。
+        获取主表模板列表。
 
         参数:
         - 无
@@ -312,6 +313,23 @@ class Jinja2TemplateUtil:
             "vue/index.vue.j2",
         ]
         return templates
+
+    @classmethod
+    def get_sub_table_template_list(cls):
+        """
+        获取子表模板列表（仅 model / schema / __init__，不含 controller/service/crud/vue/api）。
+
+        参数:
+        - 无
+
+        返回:
+        - List[str]: 子表模板路径列表。
+        """
+        return [
+            "python/model.py.j2",
+            "python/schema.py.j2",
+            "python/__init__.py.j2",
+        ]
 
     @classmethod
     def get_file_name(cls, template: str, gen_table: GenTableOutSchema):
@@ -732,7 +750,7 @@ class Jinja2TemplateUtil:
         sqlalchemy_type = StringUtil.get_mapping_value_by_key_ignore_case(
             GenConstant.DB_TO_SQLALCHEMY, column_type
         )
-        
+
         # 特殊处理PostgreSQL类型
         if settings.DATABASE_TYPE == "postgres":
             if column_type.upper() == "BOOLEAN":

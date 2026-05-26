@@ -13,6 +13,8 @@ from .position.controller import PositionRouter
 from .role.controller import RoleRouter
 from .tenant.controller import TenantRouter
 from .user.controller import UserRouter
+from .ticket.controller import TicketRouter
+from .plugin.controller import PluginRouter
 
 system_router = APIRouter(prefix="/system")
 
@@ -27,3 +29,5 @@ system_router.include_router(PositionRouter)
 system_router.include_router(RoleRouter)
 system_router.include_router(TenantRouter)
 system_router.include_router(UserRouter)
+system_router.include_router(TicketRouter)
+system_router.include_router(PluginRouter)

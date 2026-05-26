@@ -4,13 +4,13 @@ from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.common.enums import PermissionFilterStrategy
-from app.core.base_model import ModelMixin
+from app.core.base_model import ModelMixin, TenantMixin
 
 if TYPE_CHECKING:
     from app.api.v1.module_system.role.model import RoleModel
 
 
-class MenuModel(ModelMixin):
+class MenuModel(ModelMixin, TenantMixin):
     """
     菜单表 - 用于存储系统菜单信息
 

@@ -164,15 +164,15 @@ const mainColors = AppConfig.systemMainColor;
 const themeColorForCss = computed(() => systemThemeColor.value);
 
 const webLogoSrc = computed(
-  () => configStore.configData.sys_web_logo?.config_value?.trim() || undefined
+  () => configStore.configData.tenant_logo?.config_value?.trim() || undefined
 );
 
 const siteTitle = computed(
-  () => configStore.configData.sys_web_title?.config_value?.trim() || AppConfig.systemInfo.name
+  () => configStore.configData.tenant_name?.config_value?.trim() || AppConfig.systemInfo.name
 );
 
 const displayVersion = computed(() => {
-  const raw = configStore.configData.sys_web_version?.config_value?.trim();
+  const raw = configStore.configData.tenant_version?.config_value?.trim();
   const ver = raw || DEFAULT_APP_VERSION;
   return ver.startsWith("v") || ver.startsWith("V") ? ver : `v${ver}`;
 });

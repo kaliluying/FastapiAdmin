@@ -57,11 +57,11 @@
             :key="index"
             class="box-border flex-c px-3.5 py-3.5 c-p last:border-b-0 hover:bg-g-200/60"
           >
-            <div class="w-9 h-9">
-              <img :src="item.avatar" class="w-full h-full rounded-lg" loading="eager" />
+            <div class="size-9 leading-9 text-center rounded-lg flex-cc bg-info/12 text-info">
+              <FaSvgIcon class="text-lg bg-transparent!" icon="ri:message-3-line" />
             </div>
             <div class="w-[calc(100%-45px)] ml-3.5">
-              <h4 class="text-xs font-normal leading-5.5">{{ item.title }}</h4>
+              <h4 class="text-sm font-normal leading-5.5 text-g-900">{{ item.title }}</h4>
               <p class="mt-1.5 text-xs text-g-500">{{ item.time }}</p>
             </div>
           </li>
@@ -103,16 +103,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, type Ref, type ComputedRef } from "vue";
+import { computed, ref, watch, onMounted, type Ref, type ComputedRef } from "vue";
 import { useI18n } from "vue-i18n";
-
-// 导入头像图片
-import avatar1 from "@imgs/avatar/avatar1.webp";
-import avatar2 from "@imgs/avatar/avatar2.webp";
-import avatar3 from "@imgs/avatar/avatar3.webp";
-import avatar4 from "@imgs/avatar/avatar4.webp";
-import avatar5 from "@imgs/avatar/avatar5.webp";
-import avatar6 from "@imgs/avatar/avatar6.webp";
+import { useRouter } from "vue-router";
+import NoticeAPI, {
+  type NoticeTable,
+  type NotificationPanelMessage,
+} from "@/api/module_system/notice";
 
 defineOptions({ name: "FaNotification" });
 
@@ -130,8 +127,8 @@ interface MessageItem {
   title: string;
   /** 时间 */
   time: string;
-  /** 头像 */
-  avatar: string;
+  /** 内容 */
+  content?: string;
 }
 
 interface PendingItem {
@@ -172,76 +169,52 @@ const visible = ref(false);
 const barActiveIndex = ref(0);
 
 const useNotificationData = () => {
-  // 通知数据
-  const noticeList = ref<NoticeItem[]>([
-    {
-      title: "新增国际化",
-      time: "2024-6-13 0:10",
-      type: "notice",
-    },
-    {
-      title: "冷月呆呆给你发了一条消息",
-      time: "2024-4-21 8:05",
-      type: "message",
-    },
-    {
-      title: "小肥猪关注了你",
-      time: "2020-3-17 21:12",
-      type: "collection",
-    },
-    {
-      title: "新增使用文档",
-      time: "2024-02-14 0:20",
-      type: "notice",
-    },
-    {
-      title: "小肥猪给你发了一封邮件",
-      time: "2024-1-20 0:15",
-      type: "email",
-    },
-    {
-      title: "菜单mock本地真实数据",
-      time: "2024-1-17 22:06",
-      type: "notice",
-    },
-  ]);
-
-  // 消息数据
-  const msgList = ref<MessageItem[]>([
-    {
-      title: "池不胖 关注了你",
-      time: "2021-2-26 23:50",
-      avatar: avatar1,
-    },
-    {
-      title: "唐不苦 关注了你",
-      time: "2021-2-21 8:05",
-      avatar: avatar2,
-    },
-    {
-      title: "中小鱼 关注了你",
-      time: "2020-1-17 21:12",
-      avatar: avatar3,
-    },
-    {
-      title: "何小荷 关注了你",
-      time: "2021-01-14 0:20",
-      avatar: avatar4,
-    },
-    {
-      title: "誶誶淰 关注了你",
-      time: "2020-12-20 0:15",
-      avatar: avatar5,
-    },
-    {
-      title: "冷月呆呆 关注了你",
-      time: "2020-12-17 22:06",
-      avatar: avatar6,
-    },
-  ]);
-
-  // 待办数据
+  const panelLoading = ref(false);
+  const noticeList = ref<NoticeItem[]>([]);
+  const msgList = ref<MessageItem[]>([]);
   const pendingList = ref<PendingItem[]>([]);
+
+  const fetchPanel = async () => {
+    panelLoading.value = true;
+    try {
+      const res = await NoticeAPI.getNotificationPanel();
+      const data = (res.data as any)?.data ?? res.data ?? {};
+
+      // 通知
+      const notices: any[] = data.notices || [];
+      noticeList.value = notices.map((n: NoticeTable) => ({
+        title: n.notice_title || "",
+        time: n.created_time || "",
+        type: "notice" as NoticeType,
+      }));
+
+      // 消息
+      const messages: NotificationPanelMessage[] = data.messages || [];
+      msgList.value = messages.map((m) => ({
+        title: m.title || "",
+        time: m.time || "",
+        content: m.content || "",
+      }));
+
+      // 待办
+      const pendings: NotificationPanelMessage[] = data.pendings || [];
+      pendingList.value = pendings.map((p) => ({
+        title: p.title || "",
+        time: p.time || "",
+      }));
+    } catch {
+      noticeList.value = [];
+      msgList.value = [];
+      pendingList.value = [];
+    } finally {
+      panelLoading.value = false;
+    }
+  };
+
+  onMounted(() => fetchPanel());
+  watch(visible, (v) => {
+    if (v) fetchPanel();
+  });
 
   // 标签栏数据
   const barList = computed<BarItem[]>(() => [
@@ -375,17 +348,16 @@ const useTabManagement = (
 // 业务逻辑处理
 const useBusinessLogic = () => {
   const handleNoticeAll = () => {
-    // TODO: 实现查看全部通知逻辑
-    console.info("[TODO] 查看全部通知");
+    // 跳转到公告管理页面
+    const router = useRouter();
+    router.push("/module_system/notice");
   };
 
   const handleMsgAll = () => {
-    // TODO: 实现查看全部消息逻辑
     console.info("[TODO] 查看全部消息");
   };
 
   const handlePendingAll = () => {
-    // TODO: 实现查看全部待办逻辑
     console.info("[TODO] 查看全部待办");
   };
 

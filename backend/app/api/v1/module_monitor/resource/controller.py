@@ -64,7 +64,7 @@ async def get_directory_list_controller(
 @ResourceRouter.post(
     "/upload",
     summary="上传文件",
-    description="上传文件到指定目录",
+    description="上传文件到指定目录（调用统一上传接口）",
     response_model=ResponseSchema[dict],
     dependencies=[Depends(AuthPermission(["module_monitor:resource:upload"]))],
 )
@@ -84,10 +84,14 @@ async def upload_file_controller(
     返回:
     - JSONResponse: 包含上传文件信息的JSON响应。
     """
-    result_dict = await ResourceService.upload_file_service(
-        file=file, target_path=target_path, base_url=str(request.base_url)
+    # 调用统一上传接口，使用 resource 类型
+    result_dict = await FileService.upload_service(
+        base_url=str(request.base_url),
+        file=file,
+        upload_type="resource",
+        target_path=target_path,
     )
-    log.info(f"上传文件成功: {result_dict['filename']}")
+    log.info(f"上传文件成功: {result_dict['file_name']}")
     return SuccessResponse(data=result_dict, msg="上传文件成功")
 
 
@@ -98,21 +102,18 @@ async def upload_file_controller(
     dependencies=[Depends(AuthPermission(["module_monitor:resource:download"]))],
 )
 async def download_file_controller(
-    request: Request, path: Annotated[str, Query(description="文件路径")]
+    path: Annotated[str, Query(description="文件路径")]
 ) -> FileResponse:
     """
     下载文件
 
     参数:
-    - request (Request): FastAPI请求对象，用于获取基础URL。
     - path (str): 文件路径。
 
     返回:
     - FileResponse: 包含文件内容的文件响应。
     """
-    file_path = await ResourceService.download_file_service(
-        file_path=path, base_url=str(request.base_url)
-    )
+    file_path = await ResourceService.download_file_service(file_path=path)
 
     # 获取文件名
     import os

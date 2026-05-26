@@ -65,6 +65,20 @@ const NoticeAPI = {
       responseType: "blob",
     });
   },
+
+  getLatestNotices() {
+    return request<ApiResponse<NoticeTable[]>>({
+      url: `${API_PATH}/latest`,
+      method: "get",
+    });
+  },
+
+  getNotificationPanel() {
+    return request<ApiResponse<NotificationPanel>>({
+      url: `${API_PATH}/panel`,
+      method: "get",
+    });
+  },
 };
 
 export default NoticeAPI;
@@ -92,4 +106,18 @@ export interface NoticeForm extends BaseFormType {
   notice_title?: string;
   notice_type?: string;
   notice_content?: string;
+}
+
+export interface NotificationPanelMessage {
+  id?: number;
+  title: string;
+  content?: string;
+  time: string;
+  type?: string;
+}
+
+export interface NotificationPanel {
+  notices: NoticeTable[];
+  messages: NotificationPanelMessage[];
+  pendings: NotificationPanelMessage[];
 }

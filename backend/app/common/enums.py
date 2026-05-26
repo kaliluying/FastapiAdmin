@@ -46,6 +46,7 @@ class RedisInitKeyConfig(Enum):
     REFRESH_TOKEN = {"key": "refresh_token", "remark": "刷新令牌信息"}
     CAPTCHA_CODES = {"key": "captcha_codes", "remark": "图片验证码"}
     SYSTEM_CONFIG = {"key": "system_config", "remark": "系统配置"}
+    TENANT_CONFIG = {"key": "tenant_config", "remark": "租户配置"}
     SYSTEM_DICT = {"key": "system_dict", "remark": "数据字典"}
     APSCHEDULER_LOCK_KEY = {
         "key": "scheduler_job_lock",

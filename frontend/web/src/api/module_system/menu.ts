@@ -80,6 +80,8 @@ export interface MenuTable extends BaseType {
   title?: string;
   params?: { key: string; value: string }[];
   affix?: boolean;
+  status?: string;
+  description?: string;
   children?: MenuTable[];
   client?: "pc" | "app";
 }

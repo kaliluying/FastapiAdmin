@@ -81,6 +81,7 @@ export default ({ mode }: { mode: string }) => {
         "@stores": resolvePath("src/store"),
         "@plugins": resolvePath("src/plugins"),
         "@styles": resolvePath("src/styles"),
+        "@api": resolvePath("src/api"),
       },
     },
     build: {

@@ -55,7 +55,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "修改菜单",
@@ -75,7 +76,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "删除菜单",
@@ -95,7 +97,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "批量修改菜单状态",
@@ -115,7 +118,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "详情菜单",
@@ -135,7 +139,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "查询菜单",
@@ -155,10 +160,12 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "租户管理",
@@ -197,7 +204,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "修改租户",
@@ -217,7 +225,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "删除租户",
@@ -237,7 +246,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "批量修改租户状态",
@@ -257,7 +267,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "租户详情",
@@ -277,7 +288,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "查询租户",
@@ -297,16 +309,104 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
+          },
+          {
+            "name": "配额管理",
+            "type": 3,
+            "icon": null,
+            "order": 10,
+            "permission": "module_system:tenant:update",
+            "route_name": null,
+            "route_path": null,
+            "component_path": null,
+            "status": "0",
+            "keep_alive": true,
+            "hidden": false,
+            "always_show": false,
+            "title": "配额管理",
+            "params": null,
+            "affix": false,
+            "redirect": null,
+            "description": "初始化数据",
+            "client": "pc",
+            "tenant_id": 1
+          },
+          {
+            "name": "配置管理",
+            "type": 3,
+            "icon": null,
+            "order": 11,
+            "permission": "module_system:tenant:update",
+            "route_name": null,
+            "route_path": null,
+            "component_path": null,
+            "status": "0",
+            "keep_alive": true,
+            "hidden": false,
+            "always_show": false,
+            "title": "配置管理",
+            "params": null,
+            "affix": false,
+            "redirect": null,
+            "description": "初始化数据",
+            "client": "pc",
+            "tenant_id": 1
+          },
+          {
+            "name": "菜单权限",
+            "type": 3,
+            "icon": null,
+            "order": 12,
+            "permission": "module_system:tenant:update",
+            "route_name": null,
+            "route_path": null,
+            "component_path": null,
+            "status": "0",
+            "keep_alive": true,
+            "hidden": false,
+            "always_show": false,
+            "title": "菜单权限",
+            "params": null,
+            "affix": false,
+            "redirect": null,
+            "description": "初始化数据",
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
-      },
+        "client": "pc",
+        "tenant_id": 1
+      }
+    ],
+    "client": "pc",
+    "tenant_id": 1
+  },
+  {
+    "name": "系统管理",
+    "type": 1,
+    "icon": "ri:settings-2-line",
+    "order": 2,
+    "permission": null,
+    "route_name": "System",
+    "route_path": "/system",
+    "component_path": null,
+    "status": "0",
+    "keep_alive": true,
+    "hidden": false,
+    "always_show": false,
+    "title": "系统管理",
+    "params": null,
+    "affix": false,
+    "redirect": "/system/dept",
+    "description": "初始化数据",
+    "children": [
       {
         "name": "字典管理",
         "type": 2,
         "icon": "ri:book-2-line",
-        "order": 3,
+        "order": 1,
         "permission": "module_system:dict_type:query",
         "route_name": "Dict",
         "route_path": "dict",
@@ -339,7 +439,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "修改字典类型",
@@ -359,7 +460,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "删除字典类型",
@@ -379,7 +481,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "导出字典类型",
@@ -399,7 +502,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "批量修改字典状态",
@@ -419,7 +523,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "字典数据查询",
@@ -439,7 +544,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "创建字典数据",
@@ -459,7 +565,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "修改字典数据",
@@ -479,7 +586,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "删除字典数据",
@@ -499,7 +607,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "导出字典数据",
@@ -519,7 +628,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "批量修改字典数据状态",
@@ -539,7 +649,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "详情字典类型",
@@ -559,7 +670,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "查询字典类型",
@@ -579,7 +691,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "详情字典数据",
@@ -599,16 +712,18 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "参数管理",
         "type": 2,
         "icon": "ri:settings-3-line",
-        "order": 4,
+        "order": 2,
         "permission": "module_system:param:query",
         "route_name": "Params",
         "route_path": "param",
@@ -641,7 +756,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "修改参数",
@@ -661,7 +777,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "删除参数",
@@ -681,7 +798,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "导出参数",
@@ -701,7 +819,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "参数上传",
@@ -721,7 +840,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "参数详情",
@@ -741,7 +861,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "查询参数",
@@ -761,38 +882,18 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
-      }
-    ],
-    "client": "pc"
-  },
-  {
-    "name": "系统管理",
-    "type": 1,
-    "icon": "ri:settings-2-line",
-    "order": 2,
-    "permission": null,
-    "route_name": "System",
-    "route_path": "/system",
-    "component_path": null,
-    "status": "0",
-    "keep_alive": true,
-    "hidden": false,
-    "always_show": false,
-    "title": "系统管理",
-    "params": null,
-    "affix": false,
-    "redirect": "/system/dept",
-    "description": "初始化数据",
-    "children": [
+        "client": "pc",
+        "tenant_id": 1
+      },
       {
         "name": "部门管理",
         "type": 2,
         "icon": "ri:node-tree",
-        "order": 2,
+        "order": 3,
         "permission": "module_system:dept:query",
         "route_name": "Dept",
         "route_path": "/system/dept",
@@ -825,7 +926,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "修改部门",
@@ -845,7 +947,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "删除部门",
@@ -865,7 +968,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "批量修改部门状态",
@@ -885,7 +989,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "详情部门",
@@ -905,7 +1010,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "查询部门",
@@ -925,16 +1031,18 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "岗位管理",
         "type": 2,
         "icon": "ri:map-pin-line",
-        "order": 3,
+        "order": 4,
         "permission": "module_system:position:query",
         "route_name": "Position",
         "route_path": "/system/position",
@@ -967,7 +1075,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "修改岗位",
@@ -987,7 +1096,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "删除岗位",
@@ -1007,7 +1117,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "批量修改岗位状态",
@@ -1027,7 +1138,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "岗位导出",
@@ -1047,7 +1159,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "详情岗位",
@@ -1067,7 +1180,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "查询岗位",
@@ -1087,16 +1201,18 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "角色管理",
         "type": 2,
         "icon": "ri:admin-line",
-        "order": 4,
+        "order": 5,
         "permission": "module_system:role:query",
         "route_name": "Role",
         "route_path": "/system/role",
@@ -1129,7 +1245,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "修改角色",
@@ -1149,7 +1266,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "删除角色",
@@ -1169,7 +1287,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "批量修改角色状态",
@@ -1189,7 +1308,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "角色导出",
@@ -1209,7 +1329,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "详情角色",
@@ -1229,7 +1350,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "查询角色",
@@ -1249,7 +1371,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "分配权限",
@@ -1269,16 +1392,18 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "用户管理",
         "type": 2,
         "icon": "ri:user-line",
-        "order": 5,
+        "order": 6,
         "permission": "module_system:user:query",
         "route_name": "User",
         "route_path": "/system/user",
@@ -1311,7 +1436,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "修改用户",
@@ -1331,7 +1457,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "删除用户",
@@ -1351,7 +1478,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "批量修改用户状态",
@@ -1371,7 +1499,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "导出用户",
@@ -1391,7 +1520,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "导入用户",
@@ -1411,7 +1541,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "下载用户导入模板",
@@ -1431,7 +1562,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "详情用户",
@@ -1451,7 +1583,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "查询用户",
@@ -1471,16 +1604,18 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "日志管理",
         "type": 2,
         "icon": "ri:focus-3-line",
-        "order": 6,
+        "order": 7,
         "permission": "module_system:log:query",
         "route_name": "Log",
         "route_path": "/system/log",
@@ -1513,7 +1648,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "日志导出",
@@ -1533,7 +1669,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "日志详情",
@@ -1553,7 +1690,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "查询日志",
@@ -1573,16 +1711,18 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "公告管理",
         "type": 2,
         "icon": "ri:notification-3-line",
-        "order": 7,
+        "order": 8,
         "permission": "module_system:notice:query",
         "route_name": "Notice",
         "route_path": "/system/notice",
@@ -1615,7 +1755,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "公告修改",
@@ -1635,7 +1776,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "公告删除",
@@ -1655,7 +1797,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "公告导出",
@@ -1675,7 +1818,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "公告批量修改状态",
@@ -1695,7 +1839,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "公告详情",
@@ -1715,7 +1860,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "查询公告",
@@ -1735,13 +1881,293 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
+      },
+      {
+        "name": "插件市场",
+        "type": 2,
+        "icon": "ri:store-2-line",
+        "order": 9,
+        "permission": "module_system:plugin:query",
+        "route_name": "PluginMarket",
+        "route_path": "plugin-market",
+        "component_path": "module_system/plugin/index",
+        "status": "0",
+        "keep_alive": true,
+        "hidden": false,
+        "always_show": false,
+        "title": "插件市场",
+        "params": null,
+        "affix": false,
+        "redirect": null,
+        "description": "初始化数据",
+        "children": [
+          {
+            "name": "查询插件",
+            "type": 3,
+            "icon": null,
+            "order": 1,
+            "permission": "module_system:plugin:query",
+            "route_name": null,
+            "route_path": null,
+            "component_path": null,
+            "status": "0",
+            "keep_alive": true,
+            "hidden": false,
+            "always_show": false,
+            "title": "查询插件",
+            "params": null,
+            "affix": false,
+            "redirect": null,
+            "description": "初始化数据",
+            "client": "pc",
+            "tenant_id": 1
+          },
+          {
+            "name": "安装插件",
+            "type": 3,
+            "icon": null,
+            "order": 2,
+            "permission": "module_system:plugin:install",
+            "route_name": null,
+            "route_path": null,
+            "component_path": null,
+            "status": "0",
+            "keep_alive": true,
+            "hidden": false,
+            "always_show": false,
+            "title": "安装插件",
+            "params": null,
+            "affix": false,
+            "redirect": null,
+            "description": "初始化数据",
+            "client": "pc",
+            "tenant_id": 1
+          },
+          {
+            "name": "卸载插件",
+            "type": 3,
+            "icon": null,
+            "order": 3,
+            "permission": "module_system:plugin:uninstall",
+            "route_name": null,
+            "route_path": null,
+            "component_path": null,
+            "status": "0",
+            "keep_alive": true,
+            "hidden": false,
+            "always_show": false,
+            "title": "卸载插件",
+            "params": null,
+            "affix": false,
+            "redirect": null,
+            "description": "初始化数据",
+            "client": "pc",
+            "tenant_id": 1
+          },
+          {
+            "name": "创建插件",
+            "type": 3,
+            "icon": null,
+            "order": 4,
+            "permission": "module_system:plugin:create",
+            "route_name": null,
+            "route_path": null,
+            "component_path": null,
+            "status": "0",
+            "keep_alive": true,
+            "hidden": false,
+            "always_show": false,
+            "title": "创建插件",
+            "params": null,
+            "affix": false,
+            "redirect": null,
+            "description": "初始化数据",
+            "client": "pc",
+            "tenant_id": 1
+          },
+          {
+            "name": "更新插件",
+            "type": 3,
+            "icon": null,
+            "order": 5,
+            "permission": "module_system:plugin:update",
+            "route_name": null,
+            "route_path": null,
+            "component_path": null,
+            "status": "0",
+            "keep_alive": true,
+            "hidden": false,
+            "always_show": false,
+            "title": "更新插件",
+            "params": null,
+            "affix": false,
+            "redirect": null,
+            "description": "初始化数据",
+            "client": "pc",
+            "tenant_id": 1
+          },
+          {
+            "name": "删除插件",
+            "type": 3,
+            "icon": null,
+            "order": 6,
+            "permission": "module_system:plugin:delete",
+            "route_name": null,
+            "route_path": null,
+            "component_path": null,
+            "status": "0",
+            "keep_alive": true,
+            "hidden": false,
+            "always_show": false,
+            "title": "删除插件",
+            "params": null,
+            "affix": false,
+            "redirect": null,
+            "description": "初始化数据",
+            "client": "pc",
+            "tenant_id": 1
+          },
+          {
+            "name": "启用禁用插件",
+            "type": 3,
+            "icon": null,
+            "order": 7,
+            "permission": "module_system:plugin:toggle",
+            "route_name": null,
+            "route_path": null,
+            "component_path": null,
+            "status": "0",
+            "keep_alive": true,
+            "hidden": false,
+            "always_show": false,
+            "title": "启用禁用插件",
+            "params": null,
+            "affix": false,
+            "redirect": null,
+            "description": "初始化数据",
+            "client": "pc",
+            "tenant_id": 1
+          }
+        ],
+        "client": "pc",
+        "tenant_id": 1
+      },
+      {
+        "name": "工单管理",
+        "type": 2,
+        "icon": "ri:feedback-line",
+        "order": 10,
+        "permission": "module_system:ticket:query",
+        "route_name": "ModuleTicket",
+        "route_path": "ticket",
+        "component_path": "module_system/ticket/index",
+        "status": "0",
+        "keep_alive": true,
+        "hidden": false,
+        "always_show": false,
+        "title": "工单管理",
+        "params": null,
+        "affix": false,
+        "redirect": null,
+        "description": "初始化数据",
+        "children": [
+          {
+            "name": "查询工单",
+            "type": 3,
+            "icon": null,
+            "order": 1,
+            "permission": "module_system:ticket:query",
+            "route_name": null,
+            "route_path": null,
+            "component_path": null,
+            "status": "0",
+            "keep_alive": true,
+            "hidden": false,
+            "always_show": false,
+            "title": "查询工单",
+            "params": null,
+            "affix": false,
+            "redirect": null,
+            "description": "初始化数据",
+            "client": "pc",
+            "tenant_id": 1
+          },
+          {
+            "name": "创建工单",
+            "type": 3,
+            "icon": null,
+            "order": 2,
+            "permission": "module_system:ticket:create",
+            "route_name": null,
+            "route_path": null,
+            "component_path": null,
+            "status": "0",
+            "keep_alive": true,
+            "hidden": false,
+            "always_show": false,
+            "title": "创建工单",
+            "params": null,
+            "affix": false,
+            "redirect": null,
+            "description": "初始化数据",
+            "client": "pc",
+            "tenant_id": 1
+          },
+          {
+            "name": "更新工单",
+            "type": 3,
+            "icon": null,
+            "order": 3,
+            "permission": "module_system:ticket:update",
+            "route_name": null,
+            "route_path": null,
+            "component_path": null,
+            "status": "0",
+            "keep_alive": true,
+            "hidden": false,
+            "always_show": false,
+            "title": "更新工单",
+            "params": null,
+            "affix": false,
+            "redirect": null,
+            "description": "初始化数据",
+            "client": "pc",
+            "tenant_id": 1
+          },
+          {
+            "name": "删除工单",
+            "type": 3,
+            "icon": null,
+            "order": 4,
+            "permission": "module_system:ticket:delete",
+            "route_name": null,
+            "route_path": null,
+            "component_path": null,
+            "status": "0",
+            "keep_alive": true,
+            "hidden": false,
+            "always_show": false,
+            "title": "删除工单",
+            "params": null,
+            "affix": false,
+            "redirect": null,
+            "description": "初始化数据",
+            "client": "pc",
+            "tenant_id": 1
+          }
+        ],
+        "client": "pc",
+        "tenant_id": 1
       }
     ],
-    "client": "pc"
+    "client": "pc",
+    "tenant_id": 1
   },
   {
     "name": "监控管理",
@@ -1799,10 +2225,12 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "服务器监控",
@@ -1822,7 +2250,8 @@
         "affix": false,
         "redirect": null,
         "description": "初始化数据",
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "缓存监控",
@@ -1861,10 +2290,12 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "文件管理",
@@ -1903,7 +2334,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "文件下载",
@@ -1923,7 +2355,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "文件删除",
@@ -1943,7 +2376,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "文件移动",
@@ -1963,7 +2397,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "文件复制",
@@ -1983,7 +2418,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "文件重命名",
@@ -2003,7 +2439,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "创建目录",
@@ -2023,7 +2460,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "导出文件列表",
@@ -2043,13 +2481,16 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       }
     ],
-    "client": "pc"
+    "client": "pc",
+    "tenant_id": 1
   },
   {
     "name": "接口管理",
@@ -2088,7 +2529,8 @@
         "affix": false,
         "redirect": null,
         "description": "初始化数据",
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "Redoc文档",
@@ -2108,7 +2550,8 @@
         "affix": false,
         "redirect": null,
         "description": "初始化数据",
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "LangJin文档",
@@ -2128,10 +2571,12 @@
         "affix": false,
         "redirect": null,
         "description": "初始化数据",
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       }
     ],
-    "client": "pc"
+    "client": "pc",
+    "tenant_id": 1
   },
   {
     "name": "代码管理",
@@ -2189,7 +2634,8 @@
             "affix": false,
             "redirect": null,
             "description": "查询代码生成业务表列表",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "创建表结构",
@@ -2209,7 +2655,8 @@
             "affix": false,
             "redirect": null,
             "description": "创建表结构",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "编辑业务表信息",
@@ -2229,7 +2676,8 @@
             "affix": false,
             "redirect": null,
             "description": "编辑业务表信息",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "删除业务表信息",
@@ -2249,7 +2697,8 @@
             "affix": false,
             "redirect": null,
             "description": "删除业务表信息",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "导入表结构",
@@ -2269,7 +2718,8 @@
             "affix": false,
             "redirect": null,
             "description": "导入表结构",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "批量生成代码",
@@ -2289,7 +2739,8 @@
             "affix": false,
             "redirect": null,
             "description": "批量生成代码",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "生成代码到指定路径",
@@ -2309,7 +2760,8 @@
             "affix": false,
             "redirect": null,
             "description": "生成代码到指定路径",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "查询数据库表列表",
@@ -2329,7 +2781,8 @@
             "affix": false,
             "redirect": null,
             "description": "查询数据库表列表",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "同步数据库",
@@ -2349,177 +2802,16 @@
             "affix": false,
             "redirect": null,
             "description": "同步数据库",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       }
     ],
-    "client": "pc"
-  },
-  {
-    "name": "应用门户",
-    "type": 1,
-    "icon": "ri:shopping-bag-3-line",
-    "order": 6,
-    "permission": null,
-    "route_name": "Application",
-    "route_path": "/application",
-    "component_path": null,
-    "status": "0",
-    "keep_alive": true,
-    "hidden": false,
-    "always_show": false,
-    "title": "应用门户",
-    "params": null,
-    "affix": false,
-    "redirect": "/application/portal",
-    "description": "初始化数据",
-    "children": [
-      {
-        "name": "插件市场",
-        "type": 2,
-        "icon": "ri:shopping-cart-2-line",
-        "order": 1,
-        "permission": "module_application:portal:query",
-        "route_name": "PortalApp",
-        "route_path": "/application/portal",
-        "component_path": "module_application/portal/index",
-        "status": "0",
-        "keep_alive": true,
-        "hidden": false,
-        "always_show": false,
-        "title": "插件市场",
-        "params": null,
-        "affix": false,
-        "redirect": null,
-        "description": "初始化数据",
-        "children": [
-          {
-            "name": "创建插件",
-            "type": 3,
-            "icon": null,
-            "order": 1,
-            "permission": "module_application:portal:create",
-            "route_name": null,
-            "route_path": null,
-            "component_path": null,
-            "status": "0",
-            "keep_alive": true,
-            "hidden": false,
-            "always_show": false,
-            "title": "创建插件",
-            "params": null,
-            "affix": false,
-            "redirect": null,
-            "description": "初始化数据",
-            "client": "pc"
-          },
-          {
-            "name": "修改插件",
-            "type": 3,
-            "icon": null,
-            "order": 2,
-            "permission": "module_application:portal:update",
-            "route_name": null,
-            "route_path": null,
-            "component_path": null,
-            "status": "0",
-            "keep_alive": true,
-            "hidden": false,
-            "always_show": false,
-            "title": "修改插件",
-            "params": null,
-            "affix": false,
-            "redirect": null,
-            "description": "初始化数据",
-            "client": "pc"
-          },
-          {
-            "name": "删除插件",
-            "type": 3,
-            "icon": null,
-            "order": 3,
-            "permission": "module_application:portal:delete",
-            "route_name": null,
-            "route_path": null,
-            "component_path": null,
-            "status": "0",
-            "keep_alive": true,
-            "hidden": false,
-            "always_show": false,
-            "title": "删除插件",
-            "params": null,
-            "affix": false,
-            "redirect": null,
-            "description": "初始化数据",
-            "client": "pc"
-          },
-          {
-            "name": "批量修改插件状态",
-            "type": 3,
-            "icon": null,
-            "order": 4,
-            "permission": "module_application:portal:patch",
-            "route_name": null,
-            "route_path": null,
-            "component_path": null,
-            "status": "0",
-            "keep_alive": true,
-            "hidden": false,
-            "always_show": false,
-            "title": "批量修改应用状态",
-            "params": null,
-            "affix": false,
-            "redirect": null,
-            "description": "初始化数据",
-            "client": "pc"
-          },
-          {
-            "name": "详情插件",
-            "type": 3,
-            "icon": null,
-            "order": 5,
-            "permission": "module_application:portal:detail",
-            "route_name": null,
-            "route_path": null,
-            "component_path": null,
-            "status": "0",
-            "keep_alive": true,
-            "hidden": false,
-            "always_show": false,
-            "title": "详情插件",
-            "params": null,
-            "affix": false,
-            "redirect": null,
-            "description": "初始化数据",
-            "client": "pc"
-          },
-          {
-            "name": "查询插件",
-            "type": 3,
-            "icon": null,
-            "order": 6,
-            "permission": "module_application:portal:query",
-            "route_name": null,
-            "route_path": null,
-            "component_path": null,
-            "status": "0",
-            "keep_alive": true,
-            "hidden": false,
-            "always_show": false,
-            "title": "查询插件",
-            "params": null,
-            "affix": false,
-            "redirect": null,
-            "description": "查询插件",
-            "client": "pc"
-          }
-        ],
-        "client": "pc"
-      }
-    ],
-    "client": "pc"
+    "client": "pc",
+    "tenant_id": 1
   },
   {
     "name": "AI管理",
@@ -2577,7 +2869,8 @@
             "affix": false,
             "redirect": null,
             "description": "AI对话",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "查询会话",
@@ -2597,7 +2890,8 @@
             "affix": false,
             "redirect": null,
             "description": "查询会话",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "会话详情",
@@ -2617,7 +2911,8 @@
             "affix": false,
             "redirect": null,
             "description": "会话详情",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "创建会话",
@@ -2637,7 +2932,8 @@
             "affix": false,
             "redirect": null,
             "description": "创建会话",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "更新会话",
@@ -2657,7 +2953,8 @@
             "affix": false,
             "redirect": null,
             "description": "更新会话",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "删除会话",
@@ -2677,10 +2974,12 @@
             "affix": false,
             "redirect": null,
             "description": "删除会话",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "会话记忆",
@@ -2719,7 +3018,8 @@
             "affix": false,
             "redirect": null,
             "description": "查询会话记忆",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "会话记忆详情",
@@ -2739,7 +3039,8 @@
             "affix": false,
             "redirect": null,
             "description": "会话记忆详情",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "删除会话记忆",
@@ -2759,13 +3060,16 @@
             "affix": false,
             "redirect": null,
             "description": "删除会话记忆",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       }
     ],
-    "client": "pc"
+    "client": "pc",
+    "tenant_id": 1
   },
   {
     "name": "任务管理",
@@ -2842,7 +3146,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "查询调度器",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "控制调度器",
@@ -2862,7 +3167,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "控制调度器",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "操作任务",
@@ -2882,7 +3188,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "操作任务",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "删除执行日志",
@@ -2902,7 +3209,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "删除执行日志",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "详情执行日志",
@@ -2922,10 +3230,12 @@
                 "affix": false,
                 "redirect": null,
                 "description": "详情执行日志",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               }
             ],
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "节点管理",
@@ -2964,7 +3274,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "创建节点",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "调试节点",
@@ -2984,7 +3295,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "调试节点",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "修改节点",
@@ -3004,7 +3316,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "修改节点",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "删除节点",
@@ -3024,7 +3337,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "删除节点",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "详情节点",
@@ -3044,7 +3358,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "详情节点",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "查询节点",
@@ -3064,13 +3379,16 @@
                 "affix": false,
                 "redirect": null,
                 "description": "查询节点",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               }
             ],
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "工作流",
@@ -3128,7 +3446,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "创建流程",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "执行流程",
@@ -3148,7 +3467,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "执行流程",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "修改流程",
@@ -3168,7 +3488,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "修改流程",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "删除流程",
@@ -3188,7 +3509,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "删除流程",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "详情流程",
@@ -3208,7 +3530,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "详情流程",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "查询流程",
@@ -3228,10 +3551,12 @@
                 "affix": false,
                 "redirect": null,
                 "description": "查询流程",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               }
             ],
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "编排节点类型",
@@ -3270,7 +3595,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "创建编排节点类型",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "修改编排节点类型",
@@ -3290,7 +3616,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "修改编排节点类型",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "删除编排节点类型",
@@ -3310,7 +3637,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "删除编排节点类型",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "详情编排节点类型",
@@ -3330,7 +3658,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "详情编排节点类型",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "查询编排节点类型",
@@ -3350,16 +3679,20 @@
                 "affix": false,
                 "redirect": null,
                 "description": "查询编排节点类型",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               }
             ],
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       }
     ],
-    "client": "pc"
+    "client": "pc",
+    "tenant_id": 1
   },
   {
     "name": "案例管理",
@@ -3417,7 +3750,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "更新示例",
@@ -3437,7 +3771,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "删除示例",
@@ -3457,7 +3792,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "批量修改示例状态",
@@ -3477,7 +3813,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "导出示例",
@@ -3497,7 +3834,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "导入示例",
@@ -3517,7 +3855,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "下载导入示例模版",
@@ -3537,7 +3876,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "详情示例",
@@ -3557,7 +3897,8 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           },
           {
             "name": "查询示例",
@@ -3577,10 +3918,12 @@
             "affix": false,
             "redirect": null,
             "description": "初始化数据",
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       },
       {
         "name": "二级目录",
@@ -3638,7 +3981,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "初始化数据",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "更新示例01",
@@ -3658,7 +4002,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "初始化数据",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "删除示例01",
@@ -3678,7 +4023,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "初始化数据",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "批量修改示例01状态",
@@ -3698,7 +4044,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "初始化数据",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "导出示例01",
@@ -3718,7 +4065,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "初始化数据",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "导入示例01",
@@ -3738,7 +4086,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "初始化数据",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "下载导入示例01模版",
@@ -3758,7 +4107,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "初始化数据",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "详情示例01",
@@ -3778,7 +4128,8 @@
                 "affix": false,
                 "redirect": null,
                 "description": "初始化数据",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               },
               {
                 "name": "查询示例01",
@@ -3798,16 +4149,20 @@
                 "affix": false,
                 "redirect": null,
                 "description": "初始化数据",
-                "client": "pc"
+                "client": "pc",
+                "tenant_id": 1
               }
             ],
-            "client": "pc"
+            "client": "pc",
+            "tenant_id": 1
           }
         ],
-        "client": "pc"
+        "client": "pc",
+        "tenant_id": 1
       }
     ],
-    "client": "pc"
+    "client": "pc",
+    "tenant_id": 1
   },
   {
     "name": "首页",
@@ -3828,7 +4183,8 @@
     "redirect": "/app/home",
     "description": "APP 移动端-首页",
     "children": [],
-    "client": "app"
+    "client": "app",
+    "tenant_id": 1
   },
   {
     "name": "同事",
@@ -3849,7 +4205,8 @@
     "redirect": "/app/colleague",
     "description": "APP 移动端-同事",
     "children": [],
-    "client": "app"
+    "client": "app",
+    "tenant_id": 1
   },
   {
     "name": "打卡",
@@ -3870,7 +4227,8 @@
     "redirect": "/app/attendance",
     "description": "APP 移动端-打卡",
     "children": [],
-    "client": "app"
+    "client": "app",
+    "tenant_id": 1
   },
   {
     "name": "消息",
@@ -3891,7 +4249,8 @@
     "redirect": "/app/message",
     "description": "APP 移动端-消息",
     "children": [],
-    "client": "app"
+    "client": "app",
+    "tenant_id": 1
   },
   {
     "name": "我的",
@@ -3912,6 +4271,7 @@
     "redirect": "/app/mine",
     "description": "APP 移动端-我的",
     "children": [],
-    "client": "app"
+    "client": "app",
+    "tenant_id": 1
   }
 ]

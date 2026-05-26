@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.common.enums import PermissionFilterStrategy
-from app.core.base_model import MappedBase, ModelMixin
+from app.core.base_model import MappedBase, ModelMixin, TenantMixin
 
 if TYPE_CHECKING:
     from app.api.v1.module_system.dept.model import DeptModel
@@ -61,7 +61,7 @@ class RoleDeptsModel(MappedBase):
     )
 
 
-class RoleModel(ModelMixin):
+class RoleModel(ModelMixin, TenantMixin):
     """
     角色模型
 
@@ -69,13 +69,13 @@ class RoleModel(ModelMixin):
     """
 
     __tablename__: str = "sys_role"
-    __table_args__: dict[str, str] = {"comment": "角色表"}
+    __table_args__ = (UniqueConstraint("tenant_id", "code"), {"comment": "角色表"})
     __loader_options__: list[str] = ["menus", "depts"]
     __permission_strategy__: PermissionFilterStrategy = PermissionFilterStrategy.USER_ROLE
 
     name: Mapped[str] = mapped_column(String(64), nullable=False, comment="角色名称")
     code: Mapped[str] = mapped_column(
-        String(16), nullable=False, unique=True, comment="角色编码"
+        String(16), nullable=False, comment="角色编码"
     )
     order: Mapped[int] = mapped_column(Integer, nullable=False, default=999, comment="显示排序")
     data_scope: Mapped[int] = mapped_column(

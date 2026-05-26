@@ -196,9 +196,9 @@ export interface ResourceItem {
   /** 文件大小（字节） */
   size?: number | null;
   /** 创建时间 */
-  created_time: string;
+  created_time?: string;
   /** 修改时间 */
-  modified_time: string;
+  modified_time?: string;
   /** 是否为隐藏文件 */
   is_hidden?: boolean;
 }

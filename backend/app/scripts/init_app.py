@@ -37,6 +37,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
     """
     from app.api.v1.module_system.dict.service import DictDataService
     from app.api.v1.module_system.params.service import ParamsService
+    from app.api.v1.module_system.tenant.service import TenantService
     from app.core.ap_scheduler import SchedulerUtil
 
     try:
@@ -50,6 +51,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
         log.info("✅ Redis系统配置初始化完成")
         await DictDataService().init_dict_service(redis=app.state.redis)
         log.info("✅ Redis数据字典初始化完成")
+        await TenantService.init_tenant_config_cache(redis=app.state.redis)
+        log.info("✅ Redis租户配置初始化完成")
         await SchedulerUtil.init_scheduler(redis=app.state.redis)
         log.info("✅ 定时任务调度器初始化完成")
         await FastAPILimiter.init(
@@ -102,11 +105,19 @@ def register_middlewares(app: FastAPI) -> None:
     返回:
     - None
     """
+    # 租户上下文中间件（最外层，最先执行，最后清理）
+    from app.core.tenant_middleware import TenantMiddleware
+
+    app.add_middleware(TenantMiddleware)
+
     for middleware in settings.MIDDLEWARE_LIST[::-1]:
         if not middleware:
             continue
         middleware = import_module(middleware, desc="中间件")
         app.add_middleware(middleware)
+
+    # 注册多租户 ORM 过滤器（导入即触发 @event.listens_for 注册）
+    import app.core.tenant_filter  # noqa: F401
 
 
 def register_exceptions(app: FastAPI) -> None:
@@ -132,15 +143,14 @@ def register_routers(app: FastAPI) -> None:
     返回:
     - None
     """
-    from app.api.v1.module_application import application_router
     from app.api.v1.module_common import common_router
     from app.api.v1.module_monitor import monitor_router
     from app.api.v1.module_system import system_router
 
-    app.include_router(common_router, dependencies=[Depends(RateLimiter(times=5, seconds=10))])
-    app.include_router(application_router, dependencies=[Depends(RateLimiter(times=5, seconds=10))])
-    app.include_router(system_router, dependencies=[Depends(RateLimiter(times=5, seconds=10))])
-    app.include_router(monitor_router, dependencies=[Depends(RateLimiter(times=5, seconds=10))])
+    # 业务路由（带速率限制）
+    app.include_router(common_router, dependencies=[Depends(RateLimiter(times=60, seconds=10))])
+    app.include_router(system_router, dependencies=[Depends(RateLimiter(times=60, seconds=10))])
+    app.include_router(monitor_router, dependencies=[Depends(RateLimiter(times=60, seconds=10))])
 
     from app.plugin.module_ai.chat.ws import WS_AI
 
@@ -154,8 +164,14 @@ def register_routers(app: FastAPI) -> None:
     # 获取动态路由实例
     app.include_router(
         router=get_dynamic_router(),
-        dependencies=[Depends(RateLimiter(times=5, seconds=10))],
+        dependencies=[Depends(RateLimiter(times=60, seconds=10))],
     )
+
+    # Prometheus Metrics 端点
+    from app.api.v1.module_common.monitoring.metrics import setup_metrics
+
+    setup_metrics(app)
+    log.info("✅ Prometheus Metrics 端点已启用 (/metrics)")
 
 
 def register_files(app: FastAPI) -> None:

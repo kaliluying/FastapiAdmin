@@ -55,7 +55,7 @@
     <FaDialog
       v-model="dialogVisible.visible"
       :title="dialogVisible.title"
-      width="640px"
+      width="720px"
       dialog-class="crud-embed-dialog"
       modal-class="crud-embed-dialog"
       :form-mode="dialogVisible.type"
@@ -91,6 +91,10 @@
         />
       </template>
     </FaDialog>
+
+    <TenantQuotaDialog v-model="quotaVisible" :tenant-id="currentTenantId" @saved="refreshData" />
+    <TenantConfigDialog v-model="configVisible" :tenant-id="currentTenantId" @saved="refreshData" />
+    <TenantMenuDialog v-model="menuVisible" :tenant-id="currentTenantId" @saved="refreshData" />
   </div>
 </template>
 
@@ -106,6 +110,9 @@ import TenantAPI, {
   type TenantTable,
   type TenantUpdateForm,
 } from "@/api/module_system/tenant";
+import TenantQuotaDialog from "./components/TenantQuotaDialog.vue";
+import TenantConfigDialog from "./components/TenantConfigDialog.vue";
+import TenantMenuDialog from "./components/TenantMenuDialog.vue";
 import { useAuth } from "@/hooks/core/useAuth";
 import FaSearchBar from "@/components/forms/fa-search-bar/index.vue";
 import FaForm from "@/components/forms/fa-form/index.vue";
@@ -186,6 +193,27 @@ function buildTenantRowActions(
       perm: "module_system:tenant:delete",
       run: () => ctx.onDelete(row.id!),
     },
+    {
+      key: "quota",
+      label: "配额",
+      artType: "edit",
+      perm: "module_system:tenant:update",
+      run: () => openQuotaDialog(row.id!),
+    },
+    {
+      key: "config",
+      label: "配置",
+      artType: "edit",
+      perm: "module_system:tenant:update",
+      run: () => openConfigDialog(row.id!),
+    },
+    {
+      key: "menu",
+      label: "菜单",
+      artType: "edit",
+      perm: "module_system:tenant:update",
+      run: () => openMenuDialog(row.id!),
+    },
   ];
   return all.filter((a) => hasAuth(a.perm));
 }
@@ -221,36 +249,34 @@ function formatTenantOperationCell(
     );
   }
 
-  const dropdown = h(
-    ElDropdown,
-    { trigger: "click" },
-    {
-      default: () =>
-        h(ElTooltip, { content: "更多", placement: "top" }, () =>
+  const dropdown = h(ElTooltip, { content: "更多", placement: "top" }, () =>
+    h(
+      ElDropdown,
+      { trigger: "click" },
+      {
+        default: () =>
           h("span", { class: "inline-flex align-middle" }, [
             h(FaButtonTable, {
               type: "more",
               onClick: () => {},
             }),
-          ])
-        ),
-      dropdown: () =>
-        h(
-          ElDropdownMenu,
-          null,
-          overflow.map((a) =>
-            h(
-              ElDropdownItem,
-              {
-                key: a.key,
-                disabled: a.disabled,
-                onClick: () => a.run(),
-              },
-              () => a.label
+          ]),
+        dropdown: () =>
+          h(ElDropdownMenu, null, () =>
+            overflow.map((a) =>
+              h(
+                ElDropdownItem,
+                {
+                  key: a.key,
+                  disabled: a.disabled,
+                  onClick: () => a.run(),
+                },
+                () => a.label
+              )
             )
-          )
-        ),
-    }
+          ),
+      }
+    )
   );
 
   return h(
@@ -369,8 +395,8 @@ const {
     columnsFactory: (): ColumnOption<TenantTable>[] => [
       { type: "selection", width: 48, fixed: "left" },
       { type: "globalIndex", width: 56, label: "序号" },
-      { prop: "name", label: "租户名称", minWidth: 140, showOverflowTooltip: true },
-      { prop: "code", label: "租户编码", minWidth: 120, showOverflowTooltip: true },
+      { prop: "name", label: "租户名称", minWidth: 80, showOverflowTooltip: true },
+      { prop: "code", label: "租户编码", minWidth: 80, showOverflowTooltip: true },
       {
         prop: "status",
         label: "状态",
@@ -380,14 +406,16 @@ const {
             row.status === "0" ? "正常" : "禁用"
           ),
       },
-      { prop: "start_time", label: "开始时间", width: 168, showOverflowTooltip: true },
-      { prop: "end_time", label: "结束时间", width: 168, showOverflowTooltip: true },
-      { prop: "description", label: "描述", minWidth: 150, showOverflowTooltip: true },
-      { prop: "created_time", label: "创建时间", width: 168, showOverflowTooltip: true },
+      { prop: "contact_name", label: "联系人", minWidth: 100, showOverflowTooltip: true },
+      { prop: "contact_phone", label: "联系电话", width: 100, showOverflowTooltip: true },
+      { prop: "start_time", label: "开始时间", width: 100, showOverflowTooltip: true },
+      { prop: "end_time", label: "结束时间", width: 100, showOverflowTooltip: true },
+      { prop: "description", label: "描述", minWidth: 130, showOverflowTooltip: true },
+      { prop: "created_time", label: "创建时间", width: 138, showOverflowTooltip: true },
       {
         prop: "operation",
         label: "操作",
-        width: 200,
+        width: 220,
         fixed: "right",
         align: "right",
         formatter: (row: TenantTable) => formatTenantOperationCell(row, opCtx),
@@ -410,6 +438,13 @@ const tenantDetailItems: import("@/components/others/fa-descriptions/index.vue")
         map: { "0": { type: "success", text: "正常" }, "1": { type: "danger", text: "禁用" } },
       },
     },
+    { label: "联系人", prop: "contact_name", span: 1 },
+    { label: "联系电话", prop: "contact_phone", span: 1 },
+    { label: "联系邮箱", prop: "contact_email", span: 1 },
+    { label: "地址", prop: "address", span: 2 },
+    { label: "域名", prop: "domain", span: 1 },
+    { label: "Logo", prop: "logo_url", span: 1 },
+    { label: "排序", prop: "sort", span: 1 },
     { label: "开始时间", prop: "start_time", span: 1 },
     { label: "结束时间", prop: "end_time", span: 1 },
     { label: "描述", prop: "description" },
@@ -423,10 +458,36 @@ const formData = ref<TenantForm>({
   description: "",
   start_time: undefined,
   end_time: undefined,
+  contact_name: "",
+  contact_phone: "",
+  contact_email: "",
+  address: "",
+  domain: "",
+  logo_url: "",
+  sort: 0,
 });
 
 // ─── 对话框状态 ───
 const { dialogVisible } = useCrudDialog();
+
+// P1 功能状态
+const currentTenantId = ref<number | null>(null);
+const quotaVisible = ref(false);
+const configVisible = ref(false);
+const menuVisible = ref(false);
+
+function openQuotaDialog(id: number) {
+  currentTenantId.value = id;
+  quotaVisible.value = true;
+}
+function openConfigDialog(id: number) {
+  currentTenantId.value = id;
+  configVisible.value = true;
+}
+function openMenuDialog(id: number) {
+  currentTenantId.value = id;
+  menuVisible.value = true;
+}
 
 const CODE_PATTERN = /^[A-Za-z0-9]+$/;
 
@@ -462,6 +523,13 @@ const initialFormData: TenantForm = {
   description: "",
   start_time: undefined,
   end_time: undefined,
+  contact_name: "",
+  contact_phone: "",
+  contact_email: "",
+  address: "",
+  domain: "",
+  logo_url: "",
+  sort: 0,
 };
 
 const dataFormRef = ref<InstanceType<typeof FaForm> | null>(null);
@@ -471,13 +539,13 @@ const tenantFormRenderKey = ref(0);
 async function handleOpenDialog(type: "create" | "update" | "detail", id?: number) {
   dialogVisible.type = type;
   if (id) {
-    const response = await TenantAPI.detailTenant(id);
+    const detailRes = await TenantAPI.detailTenant(id);
     if (type === "detail") {
       dialogVisible.title = "租户详情";
-      Object.assign(detailFormData.value, response.data.data);
+      Object.assign(detailFormData.value, detailRes.data.data);
     } else if (type === "update") {
       dialogVisible.title = "修改租户";
-      Object.assign(formData.value, response.data.data);
+      Object.assign(formData.value, detailRes.data.data);
     }
   } else {
     dialogVisible.title = "新增租户";
@@ -500,14 +568,14 @@ const tenantDialogFormItems = computed<FormItem[]>(() => [
     label: "租户名称",
     key: "name",
     type: "input",
-    span: 24,
+    span: 12,
     props: { placeholder: "请输入租户名称", maxlength: 100 },
   },
   {
     label: "租户编码",
     key: "code",
     type: "input",
-    span: 24,
+    span: 12,
     props: {
       placeholder: "字母与数字，创建后不可改",
       maxlength: 100,
@@ -518,7 +586,7 @@ const tenantDialogFormItems = computed<FormItem[]>(() => [
     label: "状态",
     key: "status",
     type: "select",
-    span: 24,
+    span: 12,
     props: {
       placeholder: "请选择状态",
       style: { width: "100%" },
@@ -529,22 +597,45 @@ const tenantDialogFormItems = computed<FormItem[]>(() => [
     },
   },
   {
-    label: "描述",
-    key: "description",
+    label: "排序",
+    key: "sort",
+    type: "number",
+    span: 12,
+    props: { placeholder: "请输入排序值", min: 0, style: { width: "100%" } },
+  },
+  {
+    label: "联系人",
+    key: "contact_name",
     type: "input",
-    span: 24,
-    props: {
-      type: "textarea",
-      rows: 3,
-      maxlength: 255,
-      placeholder: "请输入描述",
-    },
+    span: 12,
+    props: { placeholder: "请输入联系人姓名", maxlength: 64 },
+  },
+  {
+    label: "联系电话",
+    key: "contact_phone",
+    type: "input",
+    span: 12,
+    props: { placeholder: "请输入联系电话", maxlength: 20 },
+  },
+  {
+    label: "联系邮箱",
+    key: "contact_email",
+    type: "input",
+    span: 12,
+    props: { placeholder: "请输入联系邮箱", maxlength: 128 },
+  },
+  {
+    label: "域名",
+    key: "domain",
+    type: "input",
+    span: 12,
+    props: { placeholder: "请输入域名", maxlength: 255 },
   },
   {
     label: "开始时间",
     key: "start_time",
     type: "datetime",
-    span: 24,
+    span: 12,
     props: {
       style: { width: "100%" },
       placeholder: "可选",
@@ -556,12 +647,31 @@ const tenantDialogFormItems = computed<FormItem[]>(() => [
     label: "结束时间",
     key: "end_time",
     type: "datetime",
-    span: 24,
+    span: 12,
     props: {
       style: { width: "100%" },
       placeholder: "可选",
       type: "datetime",
       valueFormat: "YYYY-MM-DD HH:mm:ss",
+    },
+  },
+  {
+    label: "地址",
+    key: "address",
+    type: "input",
+    span: 24,
+    props: { placeholder: "请输入地址", maxlength: 255 },
+  },
+  {
+    label: "描述",
+    key: "description",
+    type: "input",
+    span: 24,
+    props: {
+      type: "textarea",
+      rows: 3,
+      maxlength: 255,
+      placeholder: "请输入描述",
     },
   },
 ]);
@@ -597,18 +707,43 @@ async function handleSubmit() {
         name: formData.value.name,
         start_time: formData.value.start_time,
         end_time: formData.value.end_time,
+        contact_name: formData.value.contact_name,
+        contact_phone: formData.value.contact_phone,
+        contact_email: formData.value.contact_email,
+        address: formData.value.address,
+        domain: formData.value.domain,
+        logo_url: formData.value.logo_url,
+        sort: formData.value.sort,
       };
       await TenantAPI.updateTenant(id, payload);
       await refreshUpdate();
+      ElMessage.success("修改成功");
     } else {
       const payload: TenantCreateForm = {
         name: formData.value.name as string,
         code: formData.value.code as string,
+        status: formData.value.status,
+        description: formData.value.description,
         start_time: formData.value.start_time,
         end_time: formData.value.end_time,
+        contact_name: formData.value.contact_name,
+        contact_phone: formData.value.contact_phone,
+        contact_email: formData.value.contact_email,
+        address: formData.value.address,
+        domain: formData.value.domain,
+        logo_url: formData.value.logo_url,
+        sort: formData.value.sort,
       };
-      await TenantAPI.createTenant(payload);
+      const res: any = await TenantAPI.createTenant(payload);
+      const newId = res?.data?.data?.id;
       await refreshCreate();
+      ElMessage.success("创建成功，请为该租户分配菜单权限");
+      dialogVisible.visible = false;
+      if (newId) {
+        currentTenantId.value = newId;
+        menuVisible.value = true;
+      }
+      return;
     }
     dialogVisible.visible = false;
     dataFormRef.value?.resetFields();

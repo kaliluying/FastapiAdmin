@@ -241,7 +241,7 @@ class DemoService:
                 raise CustomException(msg="导入文件为空")
 
             # 检查表头是否完整
-            missing_headers = [header for header in header_dict.keys() if header not in df.columns]
+            missing_headers = [header for header in header_dict if header not in df.columns]
             if missing_headers:
                 raise CustomException(msg=f"导入文件缺少必要的列: {', '.join(missing_headers)}")
 

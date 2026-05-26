@@ -1,11 +1,13 @@
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import (
     APIRouter,
     BackgroundTasks,
     Body,
     Depends,
+    Form,
+    Query,
     Request,
     UploadFile,
 )
@@ -25,25 +27,37 @@ FileRouter = APIRouter(route_class=OperationLogRoute, prefix="/file", tags=["文
 @FileRouter.post(
     "/upload",
     summary="上传文件",
-    description="上传文件",
+    description="统一文件上传入口，支持多种上传类型，可指定目标目录",
     response_model=ResponseSchema[dict],
     dependencies=[Depends(AuthPermission(["module_common:file:upload"]))],
 )
 async def upload_controller(
     file: UploadFile,
     request: Request,
+    upload_type: Annotated[
+        Literal["file", "avatar", "param", "resource"] | None,
+        Query(description="上传类型: file=通用文件, avatar=头像, param=参数配置, resource=监控资源")
+    ] = "file",
+    target_path: Annotated[str | None, Form(description="目标目录路径（仅 resource 类型支持）")] = None,
 ) -> JSONResponse:
     """
-    上传文件
+    统一文件上传接口
 
     参数:
     - file (UploadFile): 上传的文件
     - request (Request): 请求对象
+    - upload_type (str): 上传类型，默认 "file"
+    - target_path (str | None): 目标目录路径，仅 resource 类型支持
 
     返回:
     - JSONResponse: 包含上传文件详情的JSON响应
     """
-    result_dict = await FileService.upload_service(base_url=str(request.base_url), file=file)
+    result_dict = await FileService.upload_service(
+        base_url=str(request.base_url),
+        file=file,
+        upload_type=upload_type or "file",
+        target_path=target_path,
+    )
     log.info(f"上传文件成功 {result_dict}")
     return SuccessResponse(data=result_dict, msg="上传文件成功")
 

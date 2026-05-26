@@ -10,13 +10,12 @@ from app.api.v1.module_system.menu.crud import MenuCRUD
 from app.api.v1.module_system.menu.schema import MenuOutSchema
 from app.api.v1.module_system.position.crud import PositionCRUD
 from app.api.v1.module_system.role.crud import RoleCRUD
-from app.core.base_schema import BatchSetAvailable, UploadResponseSchema
+from app.core.base_schema import BatchSetAvailable
 from app.core.exceptions import CustomException
 from app.core.logger import log
 from app.utils.common_util import traversal_to_tree
 from app.utils.excel_util import ExcelUtil
 from app.utils.hash_bcrpy_util import PwdUtil
-from app.utils.upload_util import UploadUtil
 
 from .crud import UserCRUD
 from .schema import (
@@ -316,6 +315,17 @@ class UserService:
                 and getattr(menu, "client", "pc") == "pc"
             }
 
+            # 租户菜单约束：非超管用户只能看到租户菜单权限内的菜单
+            if menu_ids and auth.user.tenant_id:
+                from app.api.v1.module_system.tenant.service import TenantService
+
+                allowed_ids = await TenantService.get_tenant_menu_ids(
+                    auth, auth.user.tenant_id
+                )
+                if allowed_ids is not None:
+                    allowed_set = set(allowed_ids)
+                    menu_ids = menu_ids & allowed_set
+
             # 使用树形结构查询，预加载children关系
             menus = (
                 [
@@ -385,27 +395,6 @@ class UserService:
             if user.is_superuser:
                 raise CustomException(msg="超级管理员状态不能修改")
         await UserCRUD(auth).set_available_crud(ids=data.ids, status=data.status)
-
-    @classmethod
-    async def upload_avatar_service(cls, base_url: str, file: UploadFile) -> dict:
-        """
-        上传用户头像
-
-        参数:
-        - base_url (str): 基础URL
-        - file (UploadFile): 上传的文件
-
-        返回:
-        - Dict: 上传头像响应字典
-        """
-        filename, filepath, file_url = await UploadUtil.upload_file(file=file, base_url=base_url)
-
-        return UploadResponseSchema(
-            file_path=f"{filepath}",
-            file_name=filename,
-            origin_name=file.filename,
-            file_url=f"{file_url}",
-        ).model_dump()
 
     @classmethod
     async def change_user_password_service(
@@ -569,7 +558,7 @@ class UserService:
                 raise CustomException(msg="导入文件为空")
 
             # 检查表头是否完整
-            missing_headers = [header for header in header_dict.keys() if header not in df.columns]
+            missing_headers = [header for header in header_dict if header not in df.columns]
             if missing_headers:
                 raise CustomException(msg=f"导入文件缺少必要的列: {', '.join(missing_headers)}")
 

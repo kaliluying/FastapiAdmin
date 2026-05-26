@@ -152,6 +152,8 @@ export interface DictDataPageQuery extends PageQuery {
 export interface DictTable extends BaseType {
   dict_name?: string;
   dict_type?: string;
+  status?: string;
+  description?: string;
 }
 
 export interface DictForm extends BaseFormType {
@@ -168,6 +170,7 @@ export interface DictDataTable extends BaseType {
   css_class?: string;
   list_class?: string;
   is_default?: boolean;
+  status?: string;
 }
 
 export interface DictDataForm extends BaseFormType {

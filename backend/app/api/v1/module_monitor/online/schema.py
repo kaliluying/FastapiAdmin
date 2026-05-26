@@ -15,6 +15,8 @@ class OnlineOutSchema(BaseModel):
     name: str = Field(..., description="用户名称")
     session_id: str = Field(..., description="会话编号")
     user_id: int = Field(..., description="用户ID")
+    tenant_id: int = Field(..., description="租户ID")
+    is_super_admin: bool = Field(default=False, description="是否为超级管理员")
     user_name: str = Field(..., description="用户名")
     ipaddr: str | None = Field(default=None, description="登陆IP地址")
     login_location: str | None = Field(default=None, description="登录所属地")
