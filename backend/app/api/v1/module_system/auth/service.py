@@ -412,7 +412,7 @@ class LoginService:
             .where(
                 TenantUserModel.user_id == uid,
                 TenantModel.status == "0",
-                TenantModel.is_deleted == 0,
+                TenantModel.is_deleted.is_(False),
             )
             .order_by(TenantUserModel.is_default.desc(), TenantModel.sort, TenantModel.id)
         )

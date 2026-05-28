@@ -22,9 +22,12 @@
       "@utils": ["./src/utils"],
       "@utils/*": ["./src/utils/*"],
       "@stores": ["./src/store"],
+      "@stores/*": ["./src/store/*"],
       "@plugins": ["./src/plugins"],
       "@styles": ["./src/styles"],
-      "@api/*": ["./src/api/*"]
+      "@api/*": ["./src/api/*"],
+      "@fa_logo/*": ["./src/assets/fa_logo/*"],
+      "@fa_logo": ["./src/assets/fa_logo"],
     }
   },
   "include": [
