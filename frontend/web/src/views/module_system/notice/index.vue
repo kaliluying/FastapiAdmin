@@ -119,8 +119,8 @@
         >
           <template #status>
             <ElRadioGroup v-model="formData.status">
-              <ElRadio value="0">启用</ElRadio>
-              <ElRadio value="1">停用</ElRadio>
+              <ElRadio :value="0">启用</ElRadio>
+              <ElRadio :value="1">停用</ElRadio>
             </ElRadioGroup>
           </template>
           <template #notice_content>
@@ -335,7 +335,7 @@ const formData = ref<NoticeForm>({
   notice_title: "",
   notice_type: "",
   notice_content: "",
-  status: "0",
+  status: 0,
   description: undefined,
 });
 
@@ -354,7 +354,7 @@ const initialFormData: NoticeForm = {
   notice_title: "",
   notice_type: "",
   notice_content: "",
-  status: "0",
+  status: 0,
   description: undefined,
 };
 
@@ -466,7 +466,7 @@ const {
         label: "状态",
         width: 88,
         formatter: (row: NoticeTable) => {
-          const ok = row.status === "0";
+          const ok = row.status === 0;
           const cfg = ok
             ? { type: "success" as const, text: "启用" }
             : { type: "danger" as const, text: "停用" };
@@ -586,11 +586,10 @@ async function deleteNoticeRow(id: number) {
     await confirmDelete();
     await NoticeAPI.deleteNotice([id]);
     await noticeStore.getNotice();
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
-    // 用户取消
+    ElMessage.info("删除取消");
   }
 }
 
@@ -643,11 +642,10 @@ async function handleBatchDelete() {
     batchDeleting.value = true;
     await NoticeAPI.deleteNotice(ids);
     await noticeStore.getNotice();
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
-    // 用户取消
+    ElMessage.info("删除取消");
   } finally {
     batchDeleting.value = false;
   }
@@ -665,7 +663,7 @@ async function handleMoreClick(status: string) {
     await refreshData();
     await noticeStore.getNotice();
   } catch {
-    // 用户取消
+    ElMessage.info("操作取消");
   }
 }
 

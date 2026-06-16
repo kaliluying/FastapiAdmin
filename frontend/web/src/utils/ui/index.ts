@@ -1,7 +1,6 @@
 /** UI helpers (flattened). */
 
 import NProgress from "nprogress";
-import "nprogress/nprogress.css";
 import { ThemeMode } from "@/enums";
 import { useSettingsStore } from "@stores";
 import { fourDotsSpinnerSvg } from "@/assets/svg/loading";
@@ -281,17 +280,26 @@ export const EmojiText: { [key: string]: string } = {
 
 const { LIGHT, DARK } = SystemThemeEnum;
 
-export const themeAnimation = (e: any) => {
+export const themeAnimation = (e: MouseEvent) => {
   const x = e.clientX;
   const y = e.clientY;
   const endRadius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
 
-  document.documentElement.style.setProperty("--x", x + "px");
-  document.documentElement.style.setProperty("--y", y + "px");
-  document.documentElement.style.setProperty("--r", endRadius + "px");
+  // 动态注入含硬编码坐标的 @keyframes，绕过 View Transition 伪元素对 CSS 变量的继承问题
+  const id = "vt-clip-kf";
+  let el = document.getElementById(id) as HTMLStyleElement | null;
+  if (!el) {
+    el = document.createElement("style");
+    el.id = id;
+    document.head.appendChild(el);
+  }
+  el.textContent = `@keyframes clip{from{clip-path:circle(0% at ${x}px ${y}px)}to{clip-path:circle(${endRadius}px at ${x}px ${y}px)}}`;
+  document.head.appendChild(el);
 
-  if (document.startViewTransition) document.startViewTransition(() => toggleTheme());
-  else toggleTheme();
+  requestAnimationFrame(() => {
+    if (document.startViewTransition) document.startViewTransition(() => toggleTheme());
+    else toggleTheme();
+  });
 };
 
 const toggleTheme = () => {

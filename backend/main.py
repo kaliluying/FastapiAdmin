@@ -8,6 +8,9 @@ from fastapi import FastAPI
 
 from alembic import command
 from app.common.enums import EnvironmentEnum
+from app.config.setting import settings
+from app.core.logger import logger
+from app.utils.banner import worship
 
 fastapiadmin_cli = typer.Typer()
 alembic_cfg = Config("alembic.ini")
@@ -20,8 +23,7 @@ def create_app() -> FastAPI:
     返回:
     - FastAPI: 已配置生命周期的应用对象。
     """
-    from app.config.setting import settings
-    from app.scripts.init_app import (
+    from app.init_app import (
         lifespan,
         register_exceptions,
         register_files,
@@ -29,14 +31,8 @@ def create_app() -> FastAPI:
         register_routers,
         reset_api_docs,
     )
-
     # 创建FastAPI应用
     app = FastAPI(**settings.FASTAPI_CONFIG, lifespan=lifespan)
-
-    from app.core.logger import setup_logging
-
-    # 初始化日志
-    setup_logging()
     # 注册各种组件
     register_exceptions(app)
     # 注册中间件
@@ -47,14 +43,13 @@ def create_app() -> FastAPI:
     register_files(app)
     # 重设API文档
     reset_api_docs(app)
-
     return app
 
 
 # typer.Option是非必填；typer.Argument是必填
 @fastapiadmin_cli.command(
     name="run",
-    help="启动 FastapiAdmin 服务, 运行 python main.py run --env=dev 不加参数默认 dev 环境",
+    help="启动 FastapiAdmin 服务, 运行 uv run main.py run --env=dev 不加参数默认 dev 环境",
 )
 def run(
     env: Annotated[
@@ -71,41 +66,24 @@ def run(
     - None
     """
 
-    try:
-        # 设置环境变量
-        os.environ["ENVIRONMENT"] = env.value
+    # 设置环境变量（必须在 import settings 之前，确保加载正确环境）
+    os.environ["ENVIRONMENT"] = env.value
 
-        # 显示启动横幅
-        from app.utils.banner import worship
+    typer.secho(
+        message="FastapiAdmin 服务启动",
+        fg=typer.colors.GREEN,
+    )
+    logger.info(worship(env.value))
 
-        typer.secho(
-            message=worship(env.value),
-            fg=typer.colors.GREEN,
-        )
-
-        # 清除配置缓存，确保重新加载配置
-        from app.config.setting import get_settings
-        
-        get_settings.cache_clear()
-        settings = get_settings()
-
-        from app.core.logger import setup_logging
-
-        setup_logging()
-
-        # 启动uvicorn服务
-        uvicorn.run(
-            app="main:create_app",
-            host=settings.SERVER_HOST,
-            port=settings.SERVER_PORT,
-            reload=env.value == EnvironmentEnum.DEV.value,
-            factory=True,
-            log_config=None,
-        )
-    finally:
-        from app.core.logger import cleanup_logging
-
-        cleanup_logging()
+    # 启动uvicorn服务
+    uvicorn.run(
+        app="main:create_app",
+        host=settings.SERVER_HOST,
+        port=settings.SERVER_PORT,
+        reload=env.value == EnvironmentEnum.DEV.value,
+        factory=True,
+        log_config=None,
+    )
 
 
 @fastapiadmin_cli.command(

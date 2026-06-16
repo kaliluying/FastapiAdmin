@@ -30,9 +30,11 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {});
 
-const emit = defineEmits<{
-  (e: "click"): void;
-}>();
+interface Emits {
+  click: [];
+}
+
+const emit = defineEmits<Emits>();
 
 // 默认按钮配置
 const defaultButtons = {

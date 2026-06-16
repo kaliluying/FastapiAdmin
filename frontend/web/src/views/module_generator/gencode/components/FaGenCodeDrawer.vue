@@ -135,7 +135,7 @@ const previewScope = defineModel<"all" | "frontend" | "backend">("previewScope",
 const previewTypes = defineModel<string[]>("previewTypes", { required: true });
 const code = defineModel<string>("code", { required: true });
 
-const emit = defineEmits<{
+interface Emits {
   close: [];
   "prev-step": [];
   "next-step": [];
@@ -146,7 +146,9 @@ const emit = defineEmits<{
   "master-sub-blur": [];
   "file-click": [data: TreeNode];
   "copy-code": [];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 </script>
 
 <style scoped lang="scss">

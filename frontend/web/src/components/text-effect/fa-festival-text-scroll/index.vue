@@ -7,7 +7,7 @@
     <FaTextScroll
       v-if="showFestivalStrip"
       class="mb-3!"
-      type="primary"
+      type="theme"
       :text="festivalScrollDisplayHtml"
       height="40px"
       :speed="55"

@@ -6,9 +6,9 @@ from agno.db.postgres import PostgresDb
 from agno.db.sqlite import SqliteDb
 from agno.session.team import TeamSession
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.config.setting import settings
-from app.core.logger import log
+from app.core.base_schema import AuthSchema
+from app.core.logger import logger
 
 from .schema import ChatSessionCreateSchema, ChatSessionUpdateSchema
 
@@ -23,7 +23,11 @@ class ChatSessionCRUD:
         """初始化CRUD数据层"""
         self.auth = auth
         self.user_id = auth.user.username if auth and auth.user else "user"
-        self.team_id = str(auth.user.dept_id) if auth and auth.user and hasattr(auth.user, 'dept_id') and auth.user.dept_id else None
+        self.team_id = (
+            str(auth.user.dept_id)
+            if auth and auth.user and hasattr(auth.user, "dept_id") and auth.user.dept_id
+            else None
+        )
         self.db = self._get_db()
 
     def _get_db(self) -> Any:
@@ -32,7 +36,9 @@ class ChatSessionCRUD:
         db_uri = settings.DB_URI
 
         db_mapping = {
-            "mysql": lambda: MySQLDb(db_url=db_uri, db_schema=settings.DATABASE_NAME, create_schema=False),
+            "mysql": lambda: MySQLDb(
+                db_url=db_uri, db_schema=settings.DATABASE_NAME, create_schema=False
+            ),
             "postgres": lambda: PostgresDb(db_url=db_uri, db_schema="public", create_schema=False),
             "sqlite": lambda: SqliteDb(db_file=db_uri.replace("sqlite:///", "")),
         }
@@ -41,10 +47,6 @@ class ChatSessionCRUD:
             raise ValueError(f"不支持的数据库类型: {db_type}")
 
         return db_mapping[db_type]()
-
-    def __del__(self) -> None:
-        """析构时关闭数据库连接"""
-        self.db.close()
 
     async def get_by_id_crud(self, session_id: str) -> TeamSession | None:
         """
@@ -58,12 +60,10 @@ class ChatSessionCRUD:
         """
         try:
             return self.db.get_session(
-                session_id=session_id,
-                session_type=self.SESSION_TYPE,
-                user_id=self.user_id
+                session_id=session_id, session_type=self.SESSION_TYPE, user_id=self.user_id
             )
         except Exception as e:
-            log.error(f"获取会话详情失败: {e}")
+            logger.error(f"获取会话详情失败: {e}")
             return None
 
     async def list_crud(
@@ -82,15 +82,12 @@ class ChatSessionCRUD:
         - list[TeamSession]: 会话列表；失败时为空列表。
         """
         try:
-            result = self.db.get_sessions(
-                session_type=self.SESSION_TYPE,
-                user_id=self.user_id
-            )
+            result = self.db.get_sessions(session_type=self.SESSION_TYPE, user_id=self.user_id)
             if isinstance(result, tuple) and len(result) == 2:
                 return result[0]
             return result if isinstance(result, list) else []
         except Exception as e:
-            log.error(f"获取会话列表失败: {e}")
+            logger.error(f"获取会话列表失败: {e}")
             return []
 
     async def create_crud(self, data: ChatSessionCreateSchema) -> TeamSession | None:
@@ -129,7 +126,7 @@ class ChatSessionCRUD:
             result = self.db.upsert_session(session=session)
             return result
         except Exception as e:
-            log.exception(f"创建会话失败: {e}")
+            logger.exception(f"创建会话失败: {e}")
             return None
 
     async def update_crud(self, session_id: str, data: ChatSessionUpdateSchema) -> bool:
@@ -148,11 +145,11 @@ class ChatSessionCRUD:
                 session_id=session_id,
                 session_type=self.SESSION_TYPE,
                 session_name=data.title,
-                user_id=self.user_id
+                user_id=self.user_id,
             )
             return True
         except Exception as e:
-            log.error(f"更新会话失败: {e}")
+            logger.error(f"更新会话失败: {e}")
             return False
 
     async def delete_crud(self, session_ids: list[str]) -> bool:
@@ -167,11 +164,8 @@ class ChatSessionCRUD:
         """
         try:
             for session_id in session_ids:
-                self.db.delete_session(
-                    session_id=session_id,
-                    user_id=self.user_id
-                )
+                self.db.delete_session(session_id=session_id, user_id=self.user_id)
             return True
         except Exception as e:
-            log.error(f"删除会话失败: {e}")
+            logger.error(f"删除会话失败: {e}")
             return False

@@ -85,7 +85,7 @@ defineOptions({ name: "FaImportDialog", inheritAttrs: false });
 /**
  * 导入模态框组件属性定义
  */
-interface FaImportDialogProps {
+interface Props {
   /**
    * 弹窗标题
    */
@@ -178,7 +178,7 @@ interface FaImportDialogProps {
 }
 
 // 定义props
-const props = withDefaults(defineProps<FaImportDialogProps>(), {
+const props = withDefaults(defineProps<Props>(), {
   title: "导入数据",
   width: "600px",
   maxHeight: "60vh",
@@ -198,8 +198,7 @@ const importModalVisible = defineModel<boolean>("modelValue", {
   default: false,
 });
 
-// 定义事件
-const emit = defineEmits<{
+interface Emits {
   /** 导入成功事件 */
   "import-success": [data: any];
   /** 导入失败事件 */
@@ -210,7 +209,10 @@ const emit = defineEmits<{
   "download-template": [];
   /** 上传事件 */
   upload: [formData: FormData, file: File];
-}>();
+}
+
+// 定义事件
+const emit = defineEmits<Emits>();
 
 // 引用
 const importFormRef = ref(null);

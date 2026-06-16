@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from app.config.setting import settings
 from app.core.base_model import MappedBase
 from app.core.exceptions import CustomException
-from app.core.logger import log
+from app.core.logger import logger
 
 
 def create_engine_and_session(
@@ -42,7 +42,7 @@ def create_engine_and_session(
             pool_recycle=settings.POOL_RECYCLE,
         )
     except Exception as e:
-        log.error(f"❌ 数据库连接失败 {e}")
+        logger.error(f"❌ 数据库连接失败 {e}")
         raise
     else:
         # 同步数据库会话工厂
@@ -92,7 +92,7 @@ def create_async_engine_and_session(
                 pool_use_lifo=settings.POOL_USE_LIFO,
             )
     except Exception as e:
-        log.error(f"❌ 数据库连接失败 {e}")
+        logger.error(f"❌ 数据库连接失败 {e}")
         raise
     else:
         # 异步数据库会话工厂
@@ -163,14 +163,14 @@ async def redis_connect(app: FastAPI, status: bool) -> Redis | None:
             if await rd.ping():  # pyright: ignore[reportGeneralTypeIssues]
                 return rd
         except exceptions.AuthenticationError as e:
-            log.error(f"❌ 数据库 Redis 认证失败: {e}")
+            logger.error(f"❌ 数据库 Redis 认证失败: {e}")
             raise
         except exceptions.TimeoutError as e:
-            log.error(f"❌ 数据库 Redis 连接超时: {e}")
+            logger.error(f"❌ 数据库 Redis 连接超时: {e}")
             raise
         except exceptions.RedisError as e:
-            log.error(f"❌ 数据库 Redis 连接错误: {e}")
+            logger.error(f"❌ 数据库 Redis 连接错误: {e}")
             raise
     else:
         await app.state.redis.close()
-        log.info("✅️ Redis连接已关闭")
+        logger.info("✅️ Redis连接已关闭")

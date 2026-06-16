@@ -61,6 +61,8 @@
 import AppConfig from "@/config";
 import { ref } from "vue";
 
+defineOptions({ name: "FaCommentItem" });
+
 interface Comment {
   id: number;
   author: string;
@@ -69,15 +71,20 @@ interface Comment {
   replies: Comment[];
 }
 
-const props = defineProps<{
+interface Props {
+  /** 评论内容 */
   comment: Comment;
   showReplyForm: number | null;
-}>();
+}
 
-const emit = defineEmits<{
-  (event: "toggle-reply", commentId: number): void;
-  (event: "add-reply", commentId: number, replyAuthor: string, replyContent: string): void;
-}>();
+const props = defineProps<Props>();
+
+interface Emits {
+  "toggle-reply": [commentId: number];
+  "add-reply": [commentId: number, replyAuthor: string, replyContent: string];
+}
+
+const emit = defineEmits<Emits>();
 
 const replyAuthor = ref("");
 const replyContent = ref("");

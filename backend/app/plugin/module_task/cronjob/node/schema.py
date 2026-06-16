@@ -1,3 +1,5 @@
+import re
+
 from fastapi import Query
 from pydantic import (
     BaseModel,
@@ -21,13 +23,41 @@ class NodeCreateSchema(BaseModel):
     func: str | None = Field(default=None, description="代码块")
     args: str | None = Field(default=None, description="位置参数")
     kwargs: str | None = Field(default=None, description="关键字参数")
-    coalesce: bool | None = Field(default=False, description="是否合并运行:是否在多个运行时间到期时仅运行作业一次")
-    max_instances: int | None = Field(default=1, ge=1, description="最大实例数:允许的最大并发执行实例数")
+    coalesce: bool | None = Field(
+        default=False, description="是否合并运行:是否在多个运行时间到期时仅运行作业一次"
+    )
+    max_instances: int | None = Field(
+        default=1, ge=1, description="最大实例数:允许的最大并发执行实例数"
+    )
     jobstore: str | None = Field(default="default", max_length=64, description="任务存储")
-    executor: str | None = Field(default="default", max_length=64, description="任务执行器:将运行此作业的执行程序的名称",)
+    executor: str | None = Field(
+        default="default",
+        max_length=64,
+        description="任务执行器:将运行此作业的执行程序的名称",
+    )
     start_date: str | None = Field(default=None, description="开始时间")
     end_date: str | None = Field(default=None, description="结束时间")
-    code: str | None = Field(default=None, description="节点编码")
+    code: str | None = Field(default=None, max_length=32, description="节点编码")
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) < 1 or len(v) > 64:
+            raise ValueError("任务名称长度必须在1-64个字符之间")
+        return v
+
+    @field_validator("code")
+    @classmethod
+    def validate_code(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        v = v.strip()
+        if len(v) < 2 or len(v) > 32:
+            raise ValueError("节点编码长度必须在2-32个字符之间")
+        if not re.match(r"^[A-Za-z][A-Za-z0-9_]*$", v):
+            raise ValueError("节点编码必须以字母开头，仅允许字母、数字、下划线")
+        return v
 
     @model_validator(mode="after")
     def _validate_func(self):

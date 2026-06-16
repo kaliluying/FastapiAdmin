@@ -10,14 +10,10 @@ from __future__ import annotations
 from contextvars import ContextVar
 
 # 当前请求的租户 ID（None 表示未设置或公开接口）
-current_tenant_id: ContextVar[int | None] = ContextVar(
-    "current_tenant_id", default=None
-)
+current_tenant_id: ContextVar[int | None] = ContextVar("current_tenant_id", default=None)
 
 # 当前用户是否为超级管理员
-current_is_super_admin: ContextVar[bool] = ContextVar(
-    "current_is_super_admin", default=False
-)
+current_is_super_admin: ContextVar[bool] = ContextVar("current_is_super_admin", default=False)
 
 
 def set_current_tenant(tenant_id: int | None, is_super_admin: bool = False) -> None:

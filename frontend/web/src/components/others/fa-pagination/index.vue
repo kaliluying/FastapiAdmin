@@ -20,52 +20,41 @@
 </template>
 
 <script setup lang="ts">
-import { watch, type PropType } from "vue";
+import { watch } from "vue";
 
-const props = defineProps({
-  total: {
-    type: Number as PropType<number>,
-    default: 0,
-  },
-  pageSizes: {
-    type: Array as PropType<number[]>,
-    default() {
-      return [10, 20, 30, 50, 100];
-    },
-  },
-  layout: {
-    type: String,
-    default: "total, sizes, prev, pager, next, jumper",
-  },
-  background: {
-    type: Boolean,
-    default: true,
-  },
-  disabled: {
-    type: Boolean,
-    default: false,
-  },
+defineOptions({ name: "FaPagination" });
+
+interface Props {
+  total?: number;
+  pageSizes?: number[];
+  layout?: string;
+  background?: boolean;
+  disabled?: boolean;
   /** 页码按钮数量（透传 ElPagination） */
-  pagerCount: {
-    type: Number as PropType<number>,
-    default: undefined,
-  },
+  pagerCount?: number;
   /** 分页器尺寸（透传 ElPagination） */
-  size: {
-    type: String as PropType<"" | "default" | "small" | "large">,
-    default: undefined,
-  },
-  autoScroll: {
-    type: Boolean,
-    default: true,
-  },
-  hidden: {
-    type: Boolean,
-    default: false,
-  },
+  size?: "" | "default" | "small" | "large";
+  autoScroll?: boolean;
+  hidden?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  total: 0,
+  pageSizes: () => [10, 20, 30, 50, 100],
+  layout: "total, sizes, prev, pager, next, jumper",
+  background: true,
+  disabled: false,
+  pagerCount: undefined,
+  size: undefined,
+  autoScroll: true,
+  hidden: false,
 });
 
-const emit = defineEmits(["pagination"]);
+interface Emits {
+  pagination: [params: { page: number; limit: number }];
+}
+
+const emit = defineEmits<Emits>();
 
 const currentPage = defineModel("page", {
   type: Number,

@@ -94,7 +94,7 @@ class GenTableSchema(BaseModel):
         default=None,
         description=(
             "功能子目录/路由段；导入时默认表名；同 module_name 下多表须不同。"
-            "可含斜杠表示嵌套，参考 module_example：demo、demo/demo01、gen_demo02。"
+            "可含斜杠表示嵌套，参考 module_example：demo、demo/subdir、gen_demo。"
         ),
     )
     function_name: str | None = Field(default=None, description="生成功能名")
@@ -223,7 +223,7 @@ class GenTableSchema(BaseModel):
     @classmethod
     def normalize_business_name(cls, v: str | None) -> str | None:
         """
-        业务名允许多段（如 demo/demo01）；统一按 slug 规范。
+        业务名允许多段（如 demo/subdir）；统一按 slug 规范。
 
         参数:
         - v (str | None): 原始业务名。
@@ -288,11 +288,15 @@ class GenSyncPreviewSchema(BaseModel):
     table_name: str = Field(..., description="表名")
     added: list[str] = Field(default_factory=list, description="新增列（DB有、gen无）")
     removed: list[str] = Field(default_factory=list, description="删除列（gen有、DB无）")
-    changed: list[GenSyncColumnChange] = Field(default_factory=list, description="变更列（同名但属性变化）")
+    changed: list[GenSyncColumnChange] = Field(
+        default_factory=list, description="变更列（同名但属性变化）"
+    )
     unchanged: int = Field(default=0, description="未变化列数（同名且关键属性一致）")
 
     sub_table_name: str | None = Field(default=None, description="子表表名")
-    sub: "GenSyncPreviewSchema | None" = Field(default=None, description="子表差异（若配置了主子表）")
+    sub: "GenSyncPreviewSchema | None" = Field(
+        default=None, description="子表差异（若配置了主子表）"
+    )
 
 
 @dataclass

@@ -44,11 +44,13 @@ const props = defineProps<{
   articleId?: number | null;
 }>();
 
-const emit = defineEmits<{
+interface Emits {
   "update:modelValue": [boolean];
   edit: [id: number];
   "open-comment-wall": [];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const emitOpenCommentWall = () => {
   emit("open-comment-wall");

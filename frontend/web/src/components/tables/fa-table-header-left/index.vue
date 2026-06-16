@@ -19,7 +19,7 @@
           <ElButton
             v-if="permCreate"
             v-hasPerm="permCreate"
-            type="success"
+            type="primary"
             :icon="Plus"
             @click="$emit('add')"
             plain
@@ -30,7 +30,7 @@
             v-if="permImport"
             v-hasPerm="permImport"
             v-ripple
-            type="warning"
+            type="success"
             :loading="importLoading"
             :icon="Upload"
             @click="$emit('import')"
@@ -42,7 +42,7 @@
             v-if="permExport"
             v-hasPerm="permExport"
             v-ripple
-            type="primary"
+            type="warning"
             :loading="exportLoading"
             :icon="Download"
             @click="$emit('export')"
@@ -89,38 +89,39 @@ import { ArrowDown, Delete, Download, Plus, Upload } from "@element-plus/icons-v
 import { computed } from "vue";
 import type { FaTableHeaderLeftConfigButton } from "@/components/modal/types";
 
-const props = withDefaults(
-  defineProps<{
-    /** 与 CrudContent `toolbarLeftBtn` 一致时走配置驱动（与 handleToolbar 对齐） */
-    configButtons?: FaTableHeaderLeftConfigButton[];
-    /** 勾选行主键，用于禁用批删 / 更多（插槽完全自定义时可不传） */
-    removeIds?: Array<string | number>;
-    /** 新增按钮权限，不传则不显示（configButtons 未传时） */
-    permCreate?: string | string[];
-    /** 导入按钮权限，不传则不显示；顺序在新增之后、批量删除之前 */
-    permImport?: string | string[];
-    /** 导出按钮权限，不传则不显示 */
-    permExport?: string | string[];
-    /** 导入按钮 loading */
-    importLoading?: boolean;
-    /** 导出按钮 loading */
-    exportLoading?: boolean;
-    /** 批量删除权限，不传则不显示 */
-    permDelete?: string | string[];
-    /** 「更多」下拉权限，不传则不显示 */
-    permPatch?: string | string[];
-    /** 批量删除中（按钮 loading，并禁用「更多」） */
-    deleteLoading?: boolean;
-  }>(),
-  {
-    removeIds: () => [],
-    deleteLoading: false,
-    importLoading: false,
-    exportLoading: false,
-  }
-);
+defineOptions({ name: "FaTableHeaderLeft" });
 
-defineEmits<{
+interface Props {
+  /** 与 CrudContent `toolbarLeftBtn` 一致时走配置驱动（与 handleToolbar 对齐） */
+  configButtons?: FaTableHeaderLeftConfigButton[];
+  /** 勾选行主键，用于禁用批删 / 更多（插槽完全自定义时可不传） */
+  removeIds?: Array<string | number>;
+  /** 新增按钮权限，不传则不显示（configButtons 未传时） */
+  permCreate?: string | string[];
+  /** 导入按钮权限，不传则不显示；顺序在新增之后、批量删除之前 */
+  permImport?: string | string[];
+  /** 导出按钮权限，不传则不显示 */
+  permExport?: string | string[];
+  /** 导入按钮 loading */
+  importLoading?: boolean;
+  /** 导出按钮 loading */
+  exportLoading?: boolean;
+  /** 批量删除权限，不传则不显示 */
+  permDelete?: string | string[];
+  /** 「更多」下拉权限，不传则不显示 */
+  permPatch?: string | string[];
+  /** 批量删除中（按钮 loading，并禁用「更多」） */
+  deleteLoading?: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  removeIds: () => [],
+  deleteLoading: false,
+  importLoading: false,
+  exportLoading: false,
+});
+
+interface Emits {
   /** 配置模式：与 CrudContent handleToolbar 一致 */
   toolbar: [name: string];
   add: [];
@@ -128,7 +129,9 @@ defineEmits<{
   export: [];
   delete: [];
   more: [value: string];
-}>();
+}
+
+defineEmits<Emits>();
 
 const moreDisabled = computed(() => props.removeIds.length === 0 || props.deleteLoading);
 </script>

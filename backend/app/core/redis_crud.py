@@ -3,7 +3,7 @@ from typing import Any
 
 from redis.asyncio.client import Redis
 
-from app.core.logger import log
+from app.core.logger import logger
 
 
 class RedisCURD:
@@ -26,7 +26,7 @@ class RedisCURD:
             data = await self.redis.mget(*[str(key) for key in keys])
             return data
         except Exception as e:
-            log.error(f"批量获取缓存失败: {e!s}")
+            logger.error(f"批量获取缓存失败: {e!s}")
             return []
 
     async def get_keys(self, pattern: str = "*") -> list:
@@ -42,7 +42,7 @@ class RedisCURD:
             keys = await self.redis.keys(f"{pattern}")
             return keys
         except Exception as e:
-            log.error(f"获取缓存键名失败: {e!s}")
+            logger.error(f"获取缓存键名失败: {e!s}")
             return []
 
     async def get(self, key: str) -> Any:
@@ -63,7 +63,7 @@ class RedisCURD:
             return data
 
         except Exception as e:
-            log.error(f"获取缓存失败: {e!s}")
+            logger.error(f"获取缓存失败: {e!s}")
             return None
 
     async def set(self, key: str, value: Any, expire: int | None = 86400) -> bool:
@@ -85,14 +85,14 @@ class RedisCURD:
                 try:
                     data = json.dumps(value).encode("utf-8")
                 except Exception as e:
-                    log.error(f"序列化数据失败: {e!s}")
+                    logger.error(f"序列化数据失败: {e!s}")
                     return False
 
             await self.redis.set(name=key, value=data, ex=expire)
             return True
 
         except Exception as e:
-            log.error(f"设置缓存失败: {e!s}")
+            logger.error(f"设置缓存失败: {e!s}")
             return False
 
     async def lock(self, key: str, expire: int, value: str | None = None) -> tuple[bool, str]:
@@ -120,7 +120,7 @@ class RedisCURD:
             )
             return (result is not None, lock_value)
         except Exception as e:
-            log.error(f"获取分布式锁失败: {e!s}")
+            logger.error(f"获取分布式锁失败: {e!s}")
             return (False, "")
 
     async def unlock(self, key: str, value: str) -> bool:
@@ -145,7 +145,7 @@ class RedisCURD:
             result = await self.redis.eval(script, 1, key, value)  # pyright: ignore[reportGeneralTypeIssues]
             return result == 1
         except Exception as e:
-            log.error(f"释放分布式锁失败: {e!s}")
+            logger.error(f"释放分布式锁失败: {e!s}")
             return False
 
     async def unlock_simple(self, key: str) -> bool:
@@ -161,7 +161,7 @@ class RedisCURD:
             await self.redis.delete(key)
             return True
         except Exception as e:
-            log.error(f"释放分布式锁失败: {e!s}")
+            logger.error(f"释放分布式锁失败: {e!s}")
             return False
 
     async def delete(self, *keys: str) -> bool:
@@ -177,7 +177,7 @@ class RedisCURD:
             await self.redis.delete(*keys)
             return True
         except Exception as e:
-            log.error(f"删除缓存失败: {e!s}")
+            logger.error(f"删除缓存失败: {e!s}")
             return False
 
     async def clear(self, pattern: str = "*") -> bool:
@@ -195,7 +195,7 @@ class RedisCURD:
                 await self.redis.delete(*keys)
             return True
         except Exception as e:
-            log.error(f"清空缓存失败: {e!s}")
+            logger.error(f"清空缓存失败: {e!s}")
             return False
 
     async def exists(self, key: str) -> bool:
@@ -210,7 +210,7 @@ class RedisCURD:
         try:
             return await self.redis.exists(f"{key}")
         except Exception as e:
-            log.error(f"判断缓存是否存在失败: {e!s}")
+            logger.error(f"判断缓存是否存在失败: {e!s}")
             return False
 
     async def ttl(self, key: str) -> int:
@@ -225,7 +225,7 @@ class RedisCURD:
         try:
             return await self.redis.ttl(f"{key}")
         except Exception as e:
-            log.error(f"获取缓存过期时间失败: {e!s}")
+            logger.error(f"获取缓存过期时间失败: {e!s}")
             return -1
 
     async def renew_lock(self, key: str, expire: int, value: str) -> bool:
@@ -251,7 +251,7 @@ class RedisCURD:
             result = await self.redis.eval(script, 1, key, value, str(expire))  # pyright: ignore[reportGeneralTypeIssues]
             return result == 1
         except Exception as e:
-            log.error(f"续约分布式锁失败: {e!s}")
+            logger.error(f"续约分布式锁失败: {e!s}")
             return False
 
     async def expire(self, key: str, expire: int) -> bool:
@@ -267,7 +267,7 @@ class RedisCURD:
         try:
             return await self.redis.expire(f"{key}", expire)
         except Exception as e:
-            log.error(f"设置缓存过期时间失败: {e!s}")
+            logger.error(f"设置缓存过期时间失败: {e!s}")
             return False
 
     async def info(self) -> dict:
@@ -279,7 +279,7 @@ class RedisCURD:
         try:
             return await self.redis.info()
         except Exception as e:
-            log.error(f"获取缓存信息失败: {e!s}")
+            logger.error(f"获取缓存信息失败: {e!s}")
             return {}
 
     async def db_size(self) -> int:
@@ -291,7 +291,7 @@ class RedisCURD:
         try:
             return await self.redis.dbsize()
         except Exception as e:
-            log.error(f"获取数据库大小失败: {e!s}")
+            logger.error(f"获取数据库大小失败: {e!s}")
             return 0
 
     async def commandstats(self) -> dict:
@@ -303,7 +303,7 @@ class RedisCURD:
         try:
             return await self.redis.info("commandstats")
         except Exception as e:
-            log.error(f"获取命令统计信息失败: {e!s}")
+            logger.error(f"获取命令统计信息失败: {e!s}")
             return {}
 
     async def hash_set(self, name: str, key: str, value: Any) -> bool:
@@ -321,7 +321,7 @@ class RedisCURD:
             await self.redis.hset(name=name, key=key, value=value)
             return True
         except Exception as e:
-            log.error(f"设置哈希缓存失败: {e!s}")
+            logger.error(f"设置哈希缓存失败: {e!s}")
             return False
 
     async def hash_get(self, name: str, keys: list[str]) -> list[Any]:
@@ -338,5 +338,5 @@ class RedisCURD:
             data = await self.redis.hmget(name=name, keys=keys)
             return data
         except Exception as e:
-            log.error(f"获取哈希缓存失败: {e!s}")
+            logger.error(f"获取哈希缓存失败: {e!s}")
             return []

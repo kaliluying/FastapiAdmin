@@ -17,6 +17,8 @@
 
 <script setup lang="ts">
 import { useSettingsStore } from "@stores";
+
+defineOptions({ name: "FaThemeSettings" });
 import { useSettingsConfig } from "../composables/useSettingsConfig";
 import { useTheme } from "@/hooks/core/useTheme";
 

@@ -78,12 +78,18 @@ function tick() {
 }
 
 onMounted(() => {
-  requestAnimationFrame(() => {
-    if (chartRef.value) {
-      initChart(chartRef.value);
+  const el = chartRef.value;
+  if (!el) return;
+
+  const observer = new ResizeObserver((entries) => {
+    const entry = entries[0];
+    if (entry && entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+      observer.disconnect();
+      initChart(el);
       timer = window.setInterval(tick, 5000);
     }
   });
+  observer.observe(el);
   window.addEventListener("resize", handleResize);
 });
 

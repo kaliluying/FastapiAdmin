@@ -1,6 +1,6 @@
 import type { AppRouteRecord, RouteMeta } from "@/types/router";
 import type { UserInfo } from "@/api/module_system/user";
-import type { MenuTable } from "@/api/module_system/menu";
+import type { MenuTable } from "@/api/module_platform/menu";
 import { useUserStore } from "@stores";
 import { useAppMode } from "@/hooks/core/useAppMode";
 
@@ -9,7 +9,6 @@ import {
   ROUTE_COMPONENT_LAYOUT,
   ROUTE_COMPONENT_NESTED_PARENT,
 } from "./staticRoutes";
-import { formatMenuTitle } from "@utils";
 import { MenuTypeEnum } from "@/enums/system/menu.enum";
 
 /**
@@ -20,18 +19,22 @@ import { MenuTypeEnum } from "@/enums/system/menu.enum";
 /** 前端模式并入菜单的内置路由（扩展点，默认空） */
 export const builtinFrontendRoutes: AppRouteRecord[] = [];
 
-function normalizeMenuNestedPaths(items: MenuTable[], parentAbsolutePath?: string): MenuTable[] {
+function normalizeMenuNestedPaths(items: MenuTable[], parentAbsolutePath = ""): MenuTable[] {
   return items.map((node) => {
     const raw = (node.route_path ?? "").trim();
-    let routePath: string | null | undefined = node.route_path;
-    if (parentAbsolutePath && raw && raw === parentAbsolutePath) {
-      routePath = "";
-    }
-    const canonical = raw.startsWith("/") ? raw : parentAbsolutePath;
+    // 计算当前节点的绝对路径传给子节点递归使用
+    const canonical = raw
+      ? raw.startsWith("/")
+        ? raw
+        : parentAbsolutePath
+          ? joinAbsolutePath(parentAbsolutePath, raw)
+          : `/${raw}`
+      : parentAbsolutePath;
+
     const children = node.children?.length
       ? normalizeMenuNestedPaths(node.children, canonical)
       : undefined;
-    return { ...node, route_path: routePath, children };
+    return { ...node, children };
   });
 }
 
@@ -47,7 +50,7 @@ function normalizeAppRouteChildPaths(
   parentAbsolutePath = ""
 ): AppRouteRecord[] {
   return routes.map((route) => {
-    let path = (route.path ?? "").trim();
+    const path = (route.path ?? "").trim();
 
     if (/^https?:\/\//i.test(path)) {
       return {
@@ -58,38 +61,17 @@ function normalizeAppRouteChildPaths(
       };
     }
 
-    if (parentAbsolutePath && path.startsWith("/")) {
-      const p = parentAbsolutePath.replace(/\/$/, "");
-      if (path.startsWith(`${p}/`)) {
-        path = path.slice(p.length + 1);
-      } else if (path === p) {
-        path = "";
-      }
-    }
-
-    if (
-      parentAbsolutePath &&
-      path.startsWith("/") &&
-      !/^https?:\/\//i.test(path) &&
-      !path.startsWith("/outside/iframe/")
-    ) {
-      const segments = path.split("/").filter(Boolean);
-      if (segments.length) path = segments[segments.length - 1]!;
-    }
-
-    const currentAbs = !parentAbsolutePath
-      ? path.startsWith("/")
+    const currentAbs = parentAbsolutePath
+      ? joinAbsolutePath(parentAbsolutePath, path)
+      : path.startsWith("/")
         ? path
-        : path
-          ? `/${path.replace(/^\/+/, "")}`
-          : ""
-      : joinAbsolutePath(parentAbsolutePath, path);
+        : `/${path}`;
 
     const children = route.children?.length
       ? normalizeAppRouteChildPaths(route.children, currentAbs)
       : route.children;
 
-    return { ...route, path, children };
+    return { ...route, children };
   });
 }
 
@@ -128,6 +110,12 @@ function mapMenuNode(item: MenuTable, depth = 0): AppRouteRecord {
     fixedTab: !!item.affix,
     alwaysShow: !!item.always_show,
     isHide: !!item.hidden,
+    isHideTab: !!item.is_hide_tab,
+    link: item.link || undefined,
+    isIframe: !!item.is_iframe,
+    activePath: item.active_path || undefined,
+    showBadge: !!item.show_badge,
+    showTextBadge: item.show_text_badge || undefined,
     client: item.client,
   };
 
@@ -160,8 +148,6 @@ export class MenuProcessor {
     } else {
       menuList = await this.processBackendMenu();
     }
-
-    this.validateMenuPaths(menuList);
 
     return this.normalizeMenuPaths(menuList);
   }
@@ -317,53 +303,6 @@ export class MenuProcessor {
       route.meta?.isIframe !== true &&
       route.component &&
       route.component !== ""
-    );
-  }
-
-  private validateMenuPaths(menuList: AppRouteRecord[], level = 1): void {
-    menuList.forEach((route) => {
-      if (!route.children?.length) return;
-
-      const parentName = String(route.name || route.path || "未知路由");
-
-      route.children.forEach((child) => {
-        const childPath = child.path || "";
-
-        if (this.isValidAbsolutePath(childPath)) return;
-
-        if (childPath.startsWith("/")) {
-          this.logPathError(child, childPath, parentName, level);
-        }
-      });
-
-      this.validateMenuPaths(route.children, level + 1);
-    });
-  }
-
-  private isValidAbsolutePath(path: string): boolean {
-    return (
-      path.startsWith("http://") ||
-      path.startsWith("https://") ||
-      path.startsWith("/outside/iframe/")
-    );
-  }
-
-  private logPathError(
-    route: AppRouteRecord,
-    path: string,
-    parentName: string,
-    level: number
-  ): void {
-    const routeName = String(route.name || path || "未知路由");
-    const menuTitle = route.meta?.title || routeName;
-    const suggestedPath = path.split("/").pop() || path.slice(1);
-
-    console.error(
-      `[路由配置错误] 菜单 "${formatMenuTitle(menuTitle)}" (name: ${routeName}, path: ${path}) 配置错误\n` +
-        `  位置: ${parentName} > ${routeName}\n` +
-        `  问题: ${level + 1}级菜单的 path 不能以 / 开头\n` +
-        `  当前配置: path: '${path}'\n` +
-        `  应该改为: path: '${suggestedPath}'`
     );
   }
 

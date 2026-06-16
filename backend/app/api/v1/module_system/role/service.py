@@ -1,7 +1,6 @@
 from typing import Any
 
-from app.api.v1.module_system.auth.schema import AuthSchema
-from app.core.base_schema import BatchSetAvailable
+from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.exceptions import CustomException
 from app.utils.excel_util import ExcelUtil
 
@@ -19,7 +18,7 @@ class RoleService:
     """角色模块服务层"""
 
     @classmethod
-    async def get_role_detail_service(cls, auth: AuthSchema, id: int) -> dict:
+    async def get_role_detail_service(cls, auth: AuthSchema, id: int) -> RoleOutSchema:
         """
         获取角色详情
 
@@ -30,8 +29,10 @@ class RoleService:
         返回:
         - dict: 角色详情字典
         """
-        role = await RoleCRUD(auth).get_by_id_crud(id=id)
-        return RoleOutSchema.model_validate(role).model_dump()
+        role = await RoleCRUD(auth).get(id=id)
+        if not role:
+            raise CustomException(msg="角色不存在")
+        return RoleOutSchema.model_validate(role)
 
     @classmethod
     async def get_role_list_service(
@@ -39,7 +40,7 @@ class RoleService:
         auth: AuthSchema,
         search: RoleQueryParam | None = None,
         order_by: list[dict[str, str]] | None = None,
-    ) -> list[dict]:
+    ) -> list[RoleOutSchema]:
         """
         获取角色列表
 
@@ -49,10 +50,12 @@ class RoleService:
         - order_by (list[dict[str, str]] | None): 排序参数列表
 
         返回:
-        - list[dict]: 角色详情字典列表
+        - list[RoleOutSchema]: 角色详情字典列表
         """
-        role_list = await RoleCRUD(auth).get_list_crud(search=search.__dict__, order_by=order_by)
-        return [RoleOutSchema.model_validate(role).model_dump() for role in role_list]
+        role_list = await RoleCRUD(auth).list(
+            search=search.__dict__ if search else {}, order_by=order_by
+        )
+        return [RoleOutSchema.model_validate(role) for role in role_list]
 
     @classmethod
     async def get_role_page_service(
@@ -86,7 +89,7 @@ class RoleService:
         )
 
     @classmethod
-    async def create_role_service(cls, auth: AuthSchema, data: RoleCreateSchema) -> dict:
+    async def create_role_service(cls, auth: AuthSchema, data: RoleCreateSchema) -> RoleOutSchema:
         """
         创建角色
 
@@ -103,11 +106,16 @@ class RoleService:
         obj = await RoleCRUD(auth).get(code=data.code)
         if obj:
             raise CustomException(msg="创建失败，编码已存在")
+
+        # 检查租户配额
+        from app.api.v1.module_platform.tenant.service import TenantService
+        await TenantService.check_quota_service(auth, auth.tenant_id, "role")
+
         new_role = await RoleCRUD(auth).create(data=data)
-        return RoleOutSchema.model_validate(new_role).model_dump()
+        return RoleOutSchema.model_validate(new_role)
 
     @classmethod
-    async def update_role_service(cls, auth: AuthSchema, id: int, data: RoleUpdateSchema) -> dict:
+    async def update_role_service(cls, auth: AuthSchema, id: int, data: RoleUpdateSchema) -> RoleOutSchema:
         """
         更新角色
 
@@ -119,7 +127,7 @@ class RoleService:
         返回:
         - dict: 更新后的角色详情字典
         """
-        role = await RoleCRUD(auth).get_by_id_crud(id=id)
+        role = await RoleCRUD(auth).get(id=id)
         if not role:
             raise CustomException(msg="更新失败，该角色不存在")
         exist_role = await RoleCRUD(auth).get(name=data.name)
@@ -129,7 +137,7 @@ class RoleService:
         if exist_code and exist_code.id != id:
             raise CustomException(msg="更新失败，角色编码已存在")
         updated_role = await RoleCRUD(auth).update(id=id, data=data)
-        return RoleOutSchema.model_validate(updated_role).model_dump()
+        return RoleOutSchema.model_validate(updated_role)
 
     @classmethod
     async def delete_role_service(cls, auth: AuthSchema, ids: list[int]) -> None:
@@ -145,10 +153,14 @@ class RoleService:
         """
         if len(ids) < 1:
             raise CustomException(msg="删除失败，删除对象不能为空")
-        for id in ids:
-            role = await RoleCRUD(auth).get_by_id_crud(id=id)
-            if not role:
-                raise CustomException(msg="删除失败，该角色不存在")
+
+        # 批量校验角色存在性
+        roles = await RoleCRUD(auth).list(search={"id": ("in", ids)})
+        if len(roles) != len(ids):
+            found = {r.id for r in roles}
+            missing = [rid for rid in ids if rid not in found]
+            raise CustomException(msg=f"角色 ID {missing} 不存在")
+
         await RoleCRUD(auth).delete(ids=ids)
 
     @classmethod
@@ -169,9 +181,7 @@ class RoleService:
         await RoleCRUD(auth).set_role_menus_crud(role_ids=data.role_ids, menu_ids=data.menu_ids)
 
         # 设置数据权限范围
-        await RoleCRUD(auth).set_role_data_scope_crud(
-            role_ids=data.role_ids, data_scope=data.data_scope
-        )
+        await RoleCRUD(auth).set(ids=data.role_ids, data_scope=data.data_scope)
 
         # 设置自定义数据权限部门
         if data.data_scope == 5 and data.dept_ids:
@@ -191,7 +201,12 @@ class RoleService:
         返回:
         - None
         """
-        await RoleCRUD(auth).set_available_crud(ids=data.ids, status=data.status)
+        roles = await RoleCRUD(auth).list(search={"id": ("in", data.ids)})
+        role_map = {r.id: r for r in roles}
+        for rid in data.ids:
+            if rid not in role_map:
+                raise CustomException(msg=f"角色ID {rid} 不存在")
+        await RoleCRUD(auth).set(ids=data.ids, status=data.status)
 
     @classmethod
     async def export_role_list_service(cls, role_list: list[dict[str, Any]]) -> bytes:
@@ -232,10 +247,5 @@ class RoleService:
         for item in data:
             item["status"] = "启用" if item.get("status") == "0" else "停用"
             item["data_scope"] = data_scope_map.get(item.get("data_scope", 1), "")
-            item["creator"] = (
-                item.get("creator", {}).get("name", "未知")
-                if isinstance(item.get("creator"), dict)
-                else "未知"
-            )
 
         return ExcelUtil.export_list2excel(list_data=data, mapping_dict=mapping_dict)

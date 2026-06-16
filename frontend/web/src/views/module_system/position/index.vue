@@ -104,8 +104,8 @@
         >
           <template #status>
             <ElRadioGroup v-model="formData.status">
-              <ElRadio value="0">启用</ElRadio>
-              <ElRadio value="1">停用</ElRadio>
+              <ElRadio :value="0">启用</ElRadio>
+              <ElRadio :value="1">停用</ElRadio>
             </ElRadioGroup>
           </template>
         </FaForm>
@@ -399,8 +399,8 @@ const {
         label: "状态",
         width: 88,
         formatter: (row: PositionTable) =>
-          h(ElTag, { type: row.status === "0" ? "success" : "danger" }, () =>
-            row.status === "0" ? "启用" : "停用"
+          h(ElTag, { type: row.status === 0 ? "success" : "danger" }, () =>
+            row.status === 0 ? "启用" : "停用"
           ),
       },
       { prop: "order", label: "岗位排序", width: 100, showOverflowTooltip: true },
@@ -487,7 +487,7 @@ const formData = ref<PositionForm>({
   id: undefined,
   name: undefined,
   order: 1,
-  status: "0",
+  status: 0,
   description: undefined,
 });
 
@@ -503,7 +503,7 @@ const initialFormData: PositionForm = {
   id: undefined,
   name: undefined,
   order: 1,
-  status: "0",
+  status: 0,
   description: undefined,
 };
 
@@ -604,11 +604,10 @@ async function deletePositionRow(id: number) {
     await confirmDelete();
     await PositionAPI.deletePosition([id]);
     await userStore.getUserInfo();
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
-    // 用户取消
+    ElMessage.info("删除取消");
   }
 }
 
@@ -620,7 +619,6 @@ async function handleBatchDelete() {
     batchDeleting.value = true;
     await PositionAPI.deletePosition(ids);
     await userStore.getUserInfo();
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {

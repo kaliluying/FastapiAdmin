@@ -45,29 +45,29 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, type PropType } from "vue";
+import { computed } from "vue";
 import { AppRouteRecord } from "@/types/router";
 import { handleMenuJump, formatMenuTitle } from "@utils";
 
 defineOptions({ name: "FaHorizontalSubmenu" });
 
-const props = defineProps({
-  item: {
-    type: Object as PropType<AppRouteRecord>,
-    required: true,
-  },
-  theme: {
-    type: Object,
-    default: () => ({}),
-  },
-  isMobile: Boolean,
-  level: {
-    type: Number,
-    default: 0,
-  },
+interface Props {
+  item: AppRouteRecord;
+  theme?: Record<string, any>;
+  isMobile?: boolean;
+  level?: number;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  theme: () => ({}),
+  level: 0,
 });
 
-const emit = defineEmits(["close"]);
+interface Emits {
+  close: [];
+}
+
+const emit = defineEmits<Emits>();
 
 // 过滤后的子菜单项（不包含隐藏的）
 const filteredChildren = computed(() => {

@@ -205,5 +205,12 @@
   },
   "author": "fastapiadmin <948080782@qq.com>",
   "license": "MIT",
-  "homepage": "https://gitee.com/fastapiadmin/FastapiAdmin"
+  "homepage": "https://gitee.com/fastapiadmin/FastapiAdmin",
+  "browserslist": [
+    "Chrome >= 84",
+    "Firefox >= 83",
+    "Safari >= 14.1",
+    "Edge >= 84",
+    "not dead"
+  ]
 }

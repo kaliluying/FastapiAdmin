@@ -12,6 +12,7 @@
       :show-search="true"
       :disabled-search="false"
       :default-expanded="false"
+      :button-left-limit="0"
       @search="handleSearchBarSearch"
       @reset="onResetSearch"
     />
@@ -142,7 +143,8 @@ defineOptions({
   inheritAttrs: false,
 });
 
-import { ref, reactive, computed, onActivated, watch, nextTick, provide } from "vue";
+import { ref, reactive, computed, watchEffect, onActivated, nextTick, provide } from "vue";
+import "codemirror/theme/dracula.css";
 import { useClipboard } from "@vueuse/core";
 import { useRoute } from "vue-router";
 import type { EditorConfiguration } from "codemirror";
@@ -154,11 +156,10 @@ import GencodeAPI, {
   type DBTableSchema,
   type GenTablePageQuery,
 } from "@/api/module_generator/gencode";
-import MenuAPI, { MenuTable } from "@/api/module_system/menu";
+import MenuAPI, { MenuTable } from "@/api/module_platform/menu";
 import DictAPI, { DictTable } from "@/api/module_system/dict";
 import { MenuTypeEnum } from "@/enums";
 import { useSettingsStore } from "@stores";
-import { ThemeMode } from "@/enums/settings/theme.enum";
 import { useTable } from "@/hooks/core/useTable";
 import FaTable from "@/components/tables/fa-table/index.vue";
 import FaTableHeader from "@/components/tables/fa-table-header/index.vue";
@@ -264,18 +265,11 @@ const treeData = ref<TreeNode[]>([]);
 
 const settingsStore = useSettingsStore();
 
-// 主题计算属性
-const codeTheme = computed(() => (settingsStore.theme === ThemeMode.DARK ? "dracula" : "default"));
+// 主题计算属性 - 使用 isDark 判断当前是否为暗色模式
+const codeTheme = computed(() => (settingsStore.isDark ? "dracula" : "default"));
 
-// 监听主题变化并更新CodeMirror实例
-watch(codeTheme, (newTheme) => {
-  if (cmRef.value && cmRef.value.cminstance) {
-    cmRef.value.cminstance.setOption("theme", newTheme);
-  }
-});
-
-// CodeMirror配置
-const cmOptions: EditorConfiguration = {
+// CodeMirror配置（使用 computed 确保主题响应式）
+const cmOptions = computed<EditorConfiguration>(() => ({
   mode: "text/javascript",
   lineNumbers: true,
   smartIndent: true,
@@ -285,7 +279,15 @@ const cmOptions: EditorConfiguration = {
   theme: codeTheme.value,
   lineWrapping: true,
   autofocus: false,
-};
+}));
+
+// 监听主题变化并更新CodeMirror实例
+watchEffect(() => {
+  const theme = codeTheme.value;
+  if (cmRef.value?.cminstance) {
+    cmRef.value.cminstance.setOption("theme", theme);
+  }
+});
 
 // 工具函数
 const { copy } = useClipboard();
@@ -1108,7 +1110,7 @@ function clearMasterSub() {
   });
 }
 
-/** module_example 风格下业务名可空；模块名示例见 demo、gen_demo02 */
+/** module_example 风格下业务名可空；模块名示例见 demo、gen_demo */
 function validateBusinessName(_rule: unknown, value: unknown, callback: (e?: Error) => void) {
   const pkg = (info.package_name || "").trim();
   const mod = (info.module_name || "").trim();

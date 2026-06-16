@@ -1,9 +1,8 @@
-from collections.abc import Sequence
 
-from app.api.v1.module_system.auth.schema import AuthSchema
+from app.api.v1.module_platform.menu.crud import MenuCRUD
 from app.api.v1.module_system.dept.crud import DeptCRUD
-from app.api.v1.module_system.menu.crud import MenuCRUD
 from app.core.base_crud import CRUDBase
+from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
 
 from .model import RoleModel
@@ -23,40 +22,7 @@ class RoleCRUD(CRUDBase[RoleModel, RoleCreateSchema, RoleUpdateSchema]):
         返回:
         - None
         """
-        self.auth = auth
         super().__init__(model=RoleModel, auth=auth)
-
-    async def get_by_id_crud(self, id: int, preload: list | None = None) -> RoleModel | None:
-        """
-        根据id获取角色信息
-
-        参数:
-        - id (int): 角色ID
-        - preload (list | None): 预加载选项
-
-        返回:
-        - RoleModel | None: 角色模型对象
-        """
-        return await self.get(id=id, preload=preload)
-
-    async def get_list_crud(
-        self,
-        search: dict | None = None,
-        order_by: list | None = None,
-        preload: list | None = None,
-    ) -> Sequence[RoleModel]:
-        """
-        获取角色列表
-
-        参数:
-        - search (dict | None): 查询参数
-        - order_by (list | None): 排序参数
-        - preload (list | None): 预加载选项
-
-        返回:
-        - Sequence[RoleModel]: 角色模型对象列表
-        """
-        return await self.list(search=search, order_by=order_by, preload=preload)
 
     async def set_role_menus_crud(self, role_ids: list[int], menu_ids: list[int]) -> None:
         """
@@ -70,46 +36,28 @@ class RoleCRUD(CRUDBase[RoleModel, RoleCreateSchema, RoleUpdateSchema]):
         - None
         """
         roles = await self.list(search={"id": ("in", role_ids)})
-        # 前端未勾选时 menu_ids 可能为空：此时应清空关联，而不是触发全量查询
         menus = (
             []
             if not menu_ids
-            else await MenuCRUD(self.auth).get_list_crud(search={"id": ("in", menu_ids)})
+            else await MenuCRUD(self.auth).list(search={"id": ("in", menu_ids)})
         )
 
-        # 租户菜单约束：只允许分配租户菜单权限内的菜单
-        from app.api.v1.module_system.tenant.service import TenantService
+        from app.api.v1.module_platform.package.service import PackageService
 
-        allowed_menu_ids = None
-        if self.auth.user and not self.auth.user.is_superuser:
-            allowed_menu_ids = await TenantService.get_tenant_menu_ids(
-                self.auth, self.auth.user.tenant_id
+        if self.auth.user and not self.auth.user.is_superuser and self.auth.tenant_id:
+            allowed_menu_ids = await PackageService.get_tenant_available_menu_ids(
+                self.auth, self.auth.tenant_id
             )
-            if allowed_menu_ids is not None:
-                for menu in menus:
-                    if int(menu.id) not in allowed_menu_ids:
-                        raise CustomException(
-                            msg=f"菜单[{menu.name}]不在当前租户的功能组内，无法分配"
-                        )
+            allowed_set = set(allowed_menu_ids)
+            for menu in menus:
+                if int(menu.id) not in allowed_set:
+                    raise CustomException(msg=f"菜单[{menu.name}]不在当前租户的功能组内，无法分配")
 
         for obj in roles:
             relationship = obj.menus
             relationship.clear()
             relationship.extend(menus)
         await self.auth.db.flush()
-
-    async def set_role_data_scope_crud(self, role_ids: list[int], data_scope: int) -> None:
-        """
-        设置角色的数据范围
-
-        参数:
-        - role_ids (list[int]): 角色ID列表
-        - data_scope (int): 数据范围
-
-        返回:
-        - None
-        """
-        await self.set(ids=role_ids, data_scope=data_scope)
 
     async def set_role_depts_crud(self, role_ids: list[int], dept_ids: list[int]) -> None:
         """
@@ -123,11 +71,10 @@ class RoleCRUD(CRUDBase[RoleModel, RoleCreateSchema, RoleUpdateSchema]):
         - None
         """
         roles = await self.list(search={"id": ("in", role_ids)})
-        # 前端未勾选时 dept_ids 可能为空：此时应清空关联，而不是触发全量查询
         depts = (
             []
             if not dept_ids
-            else await DeptCRUD(self.auth).get_list_crud(search={"id": ("in", dept_ids)})
+            else await DeptCRUD(self.auth).list(search={"id": ("in", dept_ids)})
         )
 
         for obj in roles:
@@ -135,16 +82,3 @@ class RoleCRUD(CRUDBase[RoleModel, RoleCreateSchema, RoleUpdateSchema]):
             relationship.clear()
             relationship.extend(depts)
         await self.auth.db.flush()
-
-    async def set_available_crud(self, ids: list[int], status: str) -> None:
-        """
-        设置角色的可用状态
-
-        参数:
-        - ids (list[int]): 角色ID列表
-        - status (str): 可用状态
-
-        返回:
-        - None
-        """
-        await self.set(ids=ids, status=status)

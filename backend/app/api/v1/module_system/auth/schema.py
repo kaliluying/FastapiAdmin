@@ -1,66 +1,7 @@
-from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel, ConfigDict, Field
 
-from app.api.v1.module_system.user.model import UserModel
-
-
-class AuthSchema(BaseModel):
-    """权限认证模型"""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    user: UserModel | None = Field(default=None, description="用户信息")
-    check_data_scope: bool = Field(default=True, description="是否检查数据权限")
-    db: AsyncSession = Field(description="数据库会话")
-    tenant_id: int | None = Field(default=None, description="租户ID,用于用户认证前查询")
-
-
-class JWTPayloadSchema(BaseModel):
-    """JWT载荷模型"""
-
-    sub: str = Field(..., description="用户登录信息")
-    is_refresh: bool = Field(default=False, description="是否刷新token")
-    exp: datetime | int = Field(..., description="过期时间")
-
-    @model_validator(mode="after")
-    def validate_fields(self):
-        """
-        校验 JWT 载荷字段的基本合法性。
-
-        返回:
-        - JWTPayloadSchema: 校验后的载荷实例。
-
-        异常:
-        - ValueError: 必填字段为空或格式不正确时抛出。
-        """
-        if not self.sub or len(self.sub.strip()) == 0:
-            raise ValueError("会话编号不能为空")
-        return self
-
-
-class JWTOutSchema(BaseModel):
-    """JWT响应模型"""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    access_token: str = Field(..., min_length=1, description="访问token")
-    refresh_token: str = Field(..., min_length=1, description="刷新token")
-    token_type: str = Field(default="Bearer", description="token类型")
-    expires_in: int = Field(..., gt=0, description="过期时间(秒)")
-
-
-class RefreshTokenPayloadSchema(BaseModel):
-    """刷新Token载荷模型"""
-
-    refresh_token: str = Field(..., min_length=1, description="刷新token")
-
-
-class LogoutPayloadSchema(BaseModel):
-    """退出登录载荷模型"""
-
-    token: str = Field(..., min_length=1, description="token")
+from app.core.base_schema import JWTOutSchema
 
 
 class CaptchaOutSchema(BaseModel):
@@ -124,3 +65,44 @@ class LoginWithTenantsSchema(JWTOutSchema):
 
     tenants: list[TenantOptionSchema] = Field(default_factory=list, description="可选租户列表")
     user_info: dict = Field(default_factory=dict, description="用户信息")
+
+
+# ─── 租户自助注册 ──────────────────────────────────────────────────────────────
+
+class TenantRegisterSchema(BaseModel):
+    """租户自助注册请求"""
+
+    username: str = Field(..., min_length=3, max_length=32, description="登录账号")
+    password: str = Field(..., min_length=6, max_length=128, description="登录密码")
+    email: str = Field(..., max_length=128, description="邮箱（用于接收通知）")
+    tenant_name: str | None = Field(
+        default=None, max_length=100, description="企业/团队名称（可选，默认：{用户名}的租户）"
+    )
+
+
+class TenantRegisterOutSchema(BaseModel):
+    """租户自助注册响应"""
+
+    user_id: int = Field(..., description="用户ID")
+    username: str = Field(..., description="账号")
+    tenant_id: int = Field(..., description="租户ID")
+    tenant_name: str = Field(..., description="租户名称")
+    tenant_code: str = Field(..., description="租户编码")
+    package: str | None = Field(default=None, description="开通套餐")
+    trial_end: str = Field(..., description="试用到期日")
+    message: str = Field(default="注册成功", description="提示信息")
+
+
+# ─── 忘记密码（自助重置）─────────────────────────────────────────
+
+class ForgotPasswordSchema(BaseModel):
+    """忘记密码：提交邮箱，接收重置邮件"""
+
+    email: str = Field(..., max_length=128, description="注册时使用的邮箱")
+
+
+class ResetPasswordWithTokenSchema(BaseModel):
+    """通过邮件链接重置密码"""
+
+    token: str = Field(..., min_length=1, description="密码重置令牌")
+    new_password: str = Field(..., min_length=6, max_length=128, description="新密码")

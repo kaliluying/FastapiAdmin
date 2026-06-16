@@ -36,7 +36,7 @@
 <script setup lang="ts">
 defineOptions({ name: "FaStatsCard" });
 
-interface StatsCardProps {
+interface Props {
   /** 盒子样式 */
   boxStyle?: string;
   /** 图标 */
@@ -57,9 +57,13 @@ interface StatsCardProps {
   textColor?: string;
   /** 是否显示箭头 */
   showArrow?: boolean;
+  /** 图标大小 */
+  iconSize?: number;
+  /** 图标背景圆角 */
+  iconBgRadius?: number;
 }
 
-withDefaults(defineProps<StatsCardProps>(), {
+withDefaults(defineProps<Props>(), {
   iconSize: 30,
   iconBgRadius: 50,
   decimals: 0,

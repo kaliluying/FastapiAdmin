@@ -43,7 +43,7 @@ from redis.asyncio import Redis
 
 from app.config.setting import settings
 from app.core.database import engine
-from app.core.logger import log
+from app.core.logger import logger
 from app.plugin.module_task.cronjob.node.model import NodeModel
 from app.utils.cron_util import CronUtil
 
@@ -58,7 +58,7 @@ scheduler.configure(
             username=settings.REDIS_USER,
             password=settings.REDIS_PASSWORD,
             db=int(settings.REDIS_DB_NAME),
-        )
+        ),
     },
     executors={
         "default": AsyncIOExecutor(),
@@ -130,7 +130,7 @@ class SchedulerUtil:
                 cls._handle_other_event(event)
 
         except Exception as e:
-            log.error(f"处理任务执行事件失败: {e!s}", exc_info=True)
+            logger.error(f"处理任务执行事件失败: {e!s}", exc_info=True)
 
     @classmethod
     def _handle_job_submitted(cls, event: JobSubmissionEvent) -> None:
@@ -141,7 +141,7 @@ class SchedulerUtil:
         job = cls.get_job(job_id=job_id)
 
         if job:
-            log.info(f"任务 {job_id} ({job.name}) 已提交执行")
+            logger.info(f"任务 {job_id} ({job.name}) 已提交执行")
 
             trigger_type = cls._get_trigger_type(job_id)
 
@@ -169,7 +169,7 @@ class SchedulerUtil:
             else:
                 original_job_id, job_name = job_id, cached_value
 
-            log.info(f"任务 {job_id} 提交执行，但未找到任务信息（可能已被移除），尝试创建日志")
+            logger.info(f"任务 {job_id} 提交执行，但未找到任务信息（可能已被移除），尝试创建日志")
             result = cls._create_job_log(
                 job_id=original_job_id,
                 job_name=job_name,
@@ -177,9 +177,9 @@ class SchedulerUtil:
                 status="running",
             )
             if result:
-                log.info(f"任务 {original_job_id} 日志创建成功，id={result}")
+                logger.info(f"任务 {original_job_id} 日志创建成功，id={result}")
             else:
-                log.error(f"任务 {original_job_id} 日志创建失败")
+                logger.error(f"任务 {original_job_id} 日志创建失败")
 
     @classmethod
     def _handle_job_executed(cls, event: JobExecutionEvent) -> None:
@@ -190,11 +190,11 @@ class SchedulerUtil:
         retval = getattr(event, "retval", None)
         scheduled_run_time = getattr(event, "scheduled_run_time", None)
 
-        log.info(f"任务 {job_id} 执行成功")
+        logger.info(f"任务 {job_id} 执行成功")
         if retval:
-            log.debug(f"任务 {job_id} 返回值: {retval}")
+            logger.debug(f"任务 {job_id} 返回值: {retval}")
         if scheduled_run_time:
-            log.debug(f"任务 {job_id} 计划执行时间: {scheduled_run_time}")
+            logger.debug(f"任务 {job_id} 计划执行时间: {scheduled_run_time}")
 
         # 更新执行日志
         cls._update_latest_job_log(
@@ -214,7 +214,7 @@ class SchedulerUtil:
                     trigger_type=trigger_type,
                     status="pending",
                 )
-                log.debug(f"任务 {job_id} 已创建新的 pending 状态日志，等待下次执行")
+                logger.debug(f"任务 {job_id} 已创建新的 pending 状态日志，等待下次执行")
 
     @classmethod
     def _handle_job_error(cls, event: JobExecutionEvent) -> None:
@@ -226,11 +226,11 @@ class SchedulerUtil:
         traceback = getattr(event, "traceback", None)
         scheduled_run_time = getattr(event, "scheduled_run_time", None)
 
-        log.error(f"任务 {job_id} 执行失败: {exception!s}")
+        logger.error(f"任务 {job_id} 执行失败: {exception!s}")
         if traceback:
-            log.debug(f"任务 {job_id} 错误堆栈: {traceback}")
+            logger.debug(f"任务 {job_id} 错误堆栈: {traceback}")
         if scheduled_run_time:
-            log.debug(f"任务 {job_id} 计划执行时间: {scheduled_run_time}")
+            logger.debug(f"任务 {job_id} 计划执行时间: {scheduled_run_time}")
 
         # 更新执行日志
         cls._update_latest_job_log(
@@ -251,7 +251,7 @@ class SchedulerUtil:
                     trigger_type=trigger_type,
                     status="pending",
                 )
-                log.debug(f"任务 {job_id} 已创建新的 pending 状态日志，等待下次执行")
+                logger.debug(f"任务 {job_id} 已创建新的 pending 状态日志，等待下次执行")
 
     @classmethod
     def _handle_job_missed(cls, event: JobEvent) -> None:
@@ -261,9 +261,9 @@ class SchedulerUtil:
         job_id = str(event.job_id)
         job = cls.get_job(job_id=job_id)
 
-        log.warning(f"任务 {job_id} 错过执行时间")
+        logger.warning(f"任务 {job_id} 错过执行时间")
         if job:
-            log.debug(f"任务 {job_id} ({job.name}) 错过执行")
+            logger.debug(f"任务 {job_id} ({job.name}) 错过执行")
 
         # 更新执行日志
         cls._update_latest_job_log(
@@ -283,7 +283,7 @@ class SchedulerUtil:
                     trigger_type=trigger_type,
                     status="pending",
                 )
-                log.debug(f"任务 {job_id} 已创建新的 pending 状态日志，等待下次执行")
+                logger.debug(f"任务 {job_id} 已创建新的 pending 状态日志，等待下次执行")
 
     @classmethod
     def _handle_job_removed(cls, event: JobEvent) -> None:
@@ -298,7 +298,7 @@ class SchedulerUtil:
         job_id = str(event.job_id)
         jobstore = getattr(event, "jobstore", "unknown")
 
-        log.info(f"任务 {job_id} 从 {jobstore} 存储器中移除")
+        logger.info(f"任务 {job_id} 从 {jobstore} 存储器中移除")
 
         # 检查是否是一次性任务（DateTrigger）
         # 如果任务已经不存在，说明可能是一次性任务执行后被自动移除
@@ -307,7 +307,7 @@ class SchedulerUtil:
         if job is None:
             # 任务已经被移除，可能是一次性任务
             # 不需要在这里创建日志，JOB_SUBMITTED 和 JOB_EXECUTED 会处理
-            log.debug(f"任务 {job_id} 已从调度器中移除（可能是一次性任务），跳过日志更新")
+            logger.debug(f"任务 {job_id} 已从调度器中移除（可能是一次性任务），跳过日志更新")
             return
 
         # 任务还存在，说明是周期性任务被手动移除
@@ -324,20 +324,22 @@ class SchedulerUtil:
         job = cls.get_job(job_id=job_id)
 
         if job:
-            log.info(f"任务 {job_id} ({job.name}) 已添加到 {jobstore} 存储器")
+            logger.info(f"任务 {job_id} ({job.name}) 已添加到 {jobstore} 存储器")
 
             # 为周期性任务（cron/interval）创建初始的 pending 状态日志
             trigger_type = cls._get_trigger_type(job_id)
             if trigger_type in ("cron", "interval"):
+                # 清理旧的 pending 日志，避免重启导致 pending 日志累积
+                cls._cleanup_obsolete_pending_logs(job_id)
                 cls._create_job_log(
                     job_id=job_id,
                     job_name=job.name,
                     trigger_type=trigger_type,
                     status="pending",
                 )
-                log.debug(f"任务 {job_id} 已创建初始 pending 状态日志")
+                logger.info(f"任务 {job_id} 已创建初始 pending 状态日志")
         else:
-            log.info(f"任务 {job_id} 已添加到 {jobstore} 存储器")
+            logger.info(f"任务 {job_id} 已添加到 {jobstore} 存储器")
 
     @classmethod
     def _handle_job_modified(cls, event: JobEvent) -> None:
@@ -349,16 +351,16 @@ class SchedulerUtil:
         job = cls.get_job(job_id=job_id)
 
         if job:
-            log.info(f"任务 {job_id} ({job.name}) 已在 {jobstore} 存储器中修改")
+            logger.info(f"任务 {job_id} ({job.name}) 已在 {jobstore} 存储器中修改")
         else:
-            log.info(f"任务 {job_id} 已在 {jobstore} 存储器中修改")
+            logger.info(f"任务 {job_id} 已在 {jobstore} 存储器中修改")
 
     @classmethod
     def _handle_scheduler_started(cls, event: SchedulerEvent) -> None:
         """
         处理调度器启动事件
         """
-        log.info("调度器已启动")
+        logger.info("调度器已启动")
         cls._update_scheduler_status("running")
 
     @classmethod
@@ -366,7 +368,7 @@ class SchedulerUtil:
         """
         处理调度器关闭事件
         """
-        log.info("调度器已关闭")
+        logger.info("调度器已关闭")
         cls._update_scheduler_status("stopped")
 
     @classmethod
@@ -374,7 +376,7 @@ class SchedulerUtil:
         """
         处理调度器暂停事件
         """
-        log.info("调度器已暂停")
+        logger.info("调度器已暂停")
         cls._update_scheduler_status("paused")
 
     @classmethod
@@ -382,7 +384,7 @@ class SchedulerUtil:
         """
         处理调度器恢复事件
         """
-        log.info("调度器已恢复运行")
+        logger.info("调度器已恢复运行")
         cls._update_scheduler_status("running")
 
     @classmethod
@@ -392,10 +394,10 @@ class SchedulerUtil:
         """
         alias = event.alias
         if alias:
-            log.info(f"执行器 {alias} 已添加到调度器")
+            logger.info(f"执行器 {alias} 已添加到调度器")
             cls._update_executor_info(alias, "added")
         else:
-            log.warning("执行器添加事件，但别名为空")
+            logger.warning("执行器添加事件，但别名为空")
 
     @classmethod
     def _handle_executor_removed(cls, event: SchedulerEvent) -> None:
@@ -404,10 +406,10 @@ class SchedulerUtil:
         """
         alias = event.alias
         if alias:
-            log.info(f"执行器 {alias} 已从调度器中移除")
+            logger.info(f"执行器 {alias} 已从调度器中移除")
             cls._update_executor_info(alias, "removed")
         else:
-            log.warning("执行器移除事件，但别名为空")
+            logger.warning("执行器移除事件，但别名为空")
 
     @classmethod
     def _handle_jobstore_added(cls, event: SchedulerEvent) -> None:
@@ -416,10 +418,10 @@ class SchedulerUtil:
         """
         alias = event.alias
         if alias:
-            log.info(f"JobStore {alias} 已添加到调度器")
+            logger.info(f"JobStore {alias} 已添加到调度器")
             cls._update_jobstore_info(alias, "added")
         else:
-            log.warning("JobStore 添加事件，但别名为空")
+            logger.warning("JobStore 添加事件，但别名为空")
 
     @classmethod
     def _handle_jobstore_removed(cls, event: SchedulerEvent) -> None:
@@ -428,10 +430,10 @@ class SchedulerUtil:
         """
         alias = event.alias
         if alias:
-            log.info(f"JobStore {alias} 已从调度器中移除")
+            logger.info(f"JobStore {alias} 已从调度器中移除")
             cls._update_jobstore_info(alias, "removed")
         else:
-            log.warning("JobStore 移除事件，但别名为空")
+            logger.warning("JobStore 移除事件，但别名为空")
 
     @classmethod
     def _handle_all_jobs_removed(cls, event: SchedulerEvent) -> None:
@@ -439,7 +441,7 @@ class SchedulerUtil:
         处理所有任务移除事件
         注意：清空调度器任务不应该清空执行日志，而是将所有 pending 状态的日志更新为 cancelled
         """
-        log.info("所有任务已从调度器中移除")
+        logger.info("所有任务已从调度器中移除")
         cls._cancel_all_pending_job_logs()
 
     @classmethod
@@ -448,16 +450,18 @@ class SchedulerUtil:
         处理任务达到最大实例数事件
         """
         job_id = str(event.job_id)
-        log.warning(f"任务 {job_id} 已达到最大实例数限制，无法启动新实例")
+        logger.warning(f"任务 {job_id} 已达到最大实例数限制，无法启动新实例")
 
     @classmethod
-    def _handle_other_event(cls, event: SchedulerEvent | JobEvent | JobExecutionEvent | JobSubmissionEvent) -> None:
+    def _handle_other_event(
+        cls, event: SchedulerEvent | JobEvent | JobExecutionEvent | JobSubmissionEvent
+    ) -> None:
         """
         处理其他事件
         """
         event_code = event.code
         event_type = type(event).__name__
-        log.debug(f"收到未处理的事件: {event_type} (code: {event_code})")
+        logger.debug(f"收到未处理的事件: {event_type} (code: {event_code})")
 
     @classmethod
     def _update_scheduler_status(cls, status: str) -> None:
@@ -473,7 +477,12 @@ class SchedulerUtil:
             from app.api.v1.module_system.params.model import ParamsModel
 
             with Session(engine) as session:
-                param = session.query(ParamsModel).filter(ParamsModel.config_key == "scheduler_status").first()
+                param = (
+                    session
+                    .query(ParamsModel)
+                    .filter(ParamsModel.config_key == "scheduler_status")
+                    .first()
+                )
                 if param:
                     param.config_value = status
                 else:
@@ -485,9 +494,9 @@ class SchedulerUtil:
                     )
                     session.add(param)
                 session.commit()
-                log.debug(f"调度器状态已更新: {status}")
+                logger.info(f"调度器状态已更新: {status}")
         except Exception as e:
-            log.error(f"更新调度器状态失败: {e!s}", exc_info=True)
+            logger.error(f"更新调度器状态失败: {e!s}", exc_info=True)
 
     @classmethod
     def _update_executor_info(cls, alias: str | None, action: str) -> None:
@@ -499,7 +508,7 @@ class SchedulerUtil:
         - action (str): 操作 (added/removed)
         """
         if not alias:
-            log.warning("执行器别名为空，跳过更新")
+            logger.warning("执行器别名为空，跳过更新")
             return
 
         try:
@@ -521,14 +530,14 @@ class SchedulerUtil:
                             config_type=True,
                         )
                         session.add(param)
-                    log.debug(f"执行器 {alias} 已标记为活跃")
+                    logger.debug(f"执行器 {alias} 已标记为活跃")
                 elif action == "removed":
                     if param:
                         param.config_value = "inactive"
-                    log.debug(f"执行器 {alias} 已标记为非活跃")
+                    logger.debug(f"执行器 {alias} 已标记为非活跃")
                 session.commit()
         except Exception as e:
-            log.error(f"更新执行器信息失败: {e!s}", exc_info=True)
+            logger.error(f"更新执行器信息失败: {e!s}", exc_info=True)
 
     @classmethod
     def _update_jobstore_info(cls, alias: str | None, action: str) -> None:
@@ -540,7 +549,7 @@ class SchedulerUtil:
         - action (str): 操作 (added/removed)
         """
         if not alias:
-            log.warning("JobStore 别名为空，跳过更新")
+            logger.warning("JobStore 别名为空，跳过更新")
             return
 
         try:
@@ -562,14 +571,14 @@ class SchedulerUtil:
                             config_type=True,
                         )
                         session.add(param)
-                    log.debug(f"JobStore {alias} 已标记为活跃")
+                    logger.debug(f"JobStore {alias} 已标记为活跃")
                 elif action == "removed":
                     if param:
                         param.config_value = "inactive"
-                    log.debug(f"JobStore {alias} 已标记为非活跃")
+                    logger.debug(f"JobStore {alias} 已标记为非活跃")
                 session.commit()
         except Exception as e:
-            log.error(f"更新 JobStore 信息失败: {e!s}", exc_info=True)
+            logger.error(f"更新 JobStore 信息失败: {e!s}", exc_info=True)
 
     @classmethod
     def _clear_all_job_logs(cls) -> None:
@@ -584,9 +593,9 @@ class SchedulerUtil:
             with Session(engine) as session:
                 session.query(JobModel).delete()
                 session.commit()
-                log.info("所有任务日志已清空")
+                logger.info("所有任务日志已清空")
         except Exception as e:
-            log.error(f"清空任务日志失败: {e!s}", exc_info=True)
+            logger.error(f"清空任务日志失败: {e!s}", exc_info=True)
 
     @classmethod
     def _cancel_all_pending_job_logs(cls) -> None:
@@ -600,13 +609,13 @@ class SchedulerUtil:
             from app.plugin.module_task.cronjob.job.model import JobModel
 
             with Session(engine) as session:
-                session.query(JobModel).filter(JobModel.status == "pending").update(
-                    {"status": "cancelled"}
-                )
+                session.query(JobModel).filter(JobModel.status == "pending").update({
+                    "status": "cancelled"
+                })
                 session.commit()
-                log.info("所有待执行任务日志已标记为已取消")
+                logger.info("所有待执行任务日志已标记为已取消")
         except Exception as e:
-            log.error(f"取消待执行任务日志失败: {e!s}", exc_info=True)
+            logger.error(f"取消待执行任务日志失败: {e!s}", exc_info=True)
 
     @classmethod
     def _get_trigger_type(cls, job_id: str) -> str:
@@ -646,6 +655,63 @@ class SchedulerUtil:
         scheduler.start()
         scheduler.add_listener(cls.scheduler_event_listener, EVENT_ALL)
         scheduler.resume()
+        cls._register_system_jobs()
+
+    @classmethod
+    def _register_system_jobs(cls) -> None:
+        """
+        注册系统级定时任务（租户到期/续费提醒/归档清理/订单取消/日志清理）。
+        在 init_scheduler 末尾自动调用。
+        """
+        from apscheduler.triggers.cron import CronTrigger
+        from apscheduler.triggers.interval import IntervalTrigger
+
+        from app.api.v1.module_platform.order.service import OrderService
+        from app.api.v1.module_platform.tenant.service import TenantService
+
+        # 租户到期检查（每小时）
+        scheduler.add_job(
+            TenantService.check_tenant_expiry,
+            trigger=IntervalTrigger(hours=1),
+            id="system_tenant_expiry_check",
+            name="租户到期检查",
+            replace_existing=True,
+        )
+        # 宽限期续费提醒（每天 9:00）
+        scheduler.add_job(
+            TenantService.send_grace_reminders,
+            trigger=CronTrigger(hour=9, minute=0),
+            id="system_grace_reminder",
+            name="宽限期续费提醒",
+            replace_existing=True,
+        )
+        # 过期租户归档清理（每月 1 号 2:00）
+        scheduler.add_job(
+            TenantService.clean_expired_tenants,
+            trigger=CronTrigger(day=1, hour=2, minute=0),
+            id="system_clean_expired",
+            name="过期租户归档清理",
+            replace_existing=True,
+        )
+        # 超时订单取消（每 5 分钟）
+        scheduler.add_job(
+            OrderService.cancel_expired_orders,
+            trigger=IntervalTrigger(minutes=5),
+            id="system_cancel_expired_orders",
+            name="超时订单取消",
+            replace_existing=True,
+        )
+        # 操作日志清理（每周日 3:00）
+        from app.api.v1.module_system.log.service import OperationLogService
+
+        scheduler.add_job(
+            OperationLogService.cleanup_operation_log,
+            trigger=CronTrigger(day_of_week="sun", hour=3, minute=0),
+            id="system_cleanup_operation_log",
+            name="操作日志清理",
+            replace_existing=True,
+        )
+        logger.info("✅ 6 个系统周期任务已注册（租户到期/续费提醒/归档清理/订单取消/日志清理）")
 
     @classmethod
     def _task_wrapper(cls, job_id: str | int, code_block: str | None, *args, **kwargs):
@@ -683,7 +749,7 @@ class SchedulerUtil:
             result = run_sync_handler()
             return result
         except Exception as e:
-            log.error(f"任务 {job_id} 执行失败: {e!s}")
+            logger.error(f"任务 {job_id} 执行失败: {e!s}")
             raise
 
     @classmethod
@@ -795,7 +861,33 @@ class SchedulerUtil:
             return {"error": str(e), "raw_data": str(blob_data[:200])}
 
     @classmethod
-    def _create_job_log(cls, job_id: str, job_name: str | None = None, trigger_type: str = "manual", status: str = "running") -> int | None:
+    def _cleanup_obsolete_pending_logs(cls, job_id: str) -> None:
+        """清理该 job_id 的所有旧的 pending 日志，避免重启累积。"""
+        from sqlalchemy.orm import Session
+
+        from app.plugin.module_task.cronjob.job.model import JobModel
+
+        try:
+            with Session(engine) as session:
+                deleted = (
+                    session.query(JobModel)
+                    .filter(JobModel.job_id == job_id, JobModel.status == "pending")
+                    .delete(synchronize_session=False)
+                )
+                session.commit()
+                if deleted:
+                    logger.info(f"清理了任务 {job_id} 的 {deleted} 条旧 pending 日志")
+        except Exception as e:
+            logger.error(f"清理任务 {job_id} 旧 pending 日志失败: {e}")
+
+    @classmethod
+    def _create_job_log(
+        cls,
+        job_id: str,
+        job_name: str | None = None,
+        trigger_type: str = "manual",
+        status: str = "running",
+    ) -> int | None:
         """
         创建执行日志
         """
@@ -822,14 +914,16 @@ class SchedulerUtil:
                 )
                 session.add(job_log)
                 session.commit()
-                log.info(f"执行日志创建成功: job_id={job_id}, id={job_log.id}")
+                logger.info(f"执行日志创建成功: job_id={job_id}, id={job_log.id}")
                 return job_log.id
         except Exception as e:
-            log.error(f"创建执行日志失败: job_id={job_id}, error={e}", exc_info=True)
+            logger.error(f"创建执行日志失败: job_id={job_id}, error={e}", exc_info=True)
             return None
 
     @classmethod
-    def _update_job_log(cls, job_id: str, status: str, result: str | None = None, error: str | None = None) -> None:
+    def _update_job_log(
+        cls, job_id: str, status: str, result: str | None = None, error: str | None = None
+    ) -> None:
         """
         更新执行日志（更新该 job_id 最新的 pending 状态日志）
         用于周期性任务在提交执行时将 pending 更新为 running
@@ -844,7 +938,8 @@ class SchedulerUtil:
 
         with Session(engine) as session:
             job_log = (
-                session.query(JobModel)
+                session
+                .query(JobModel)
                 .filter(JobModel.job_id == job_id, JobModel.status == "pending")
                 .order_by(JobModel.created_time.desc())
                 .first()
@@ -861,10 +956,12 @@ class SchedulerUtil:
                     job_log.error = error
                 session.commit()
             else:
-                log.warning(f"未找到任务 {job_id} 的待执行日志记录")
+                logger.warning(f"未找到任务 {job_id} 的待执行日志记录")
 
     @classmethod
-    def _update_latest_job_log(cls, job_id: str, status: str, result: str | None = None, error: str | None = None) -> None:
+    def _update_latest_job_log(
+        cls, job_id: str, status: str, result: str | None = None, error: str | None = None
+    ) -> None:
         """
         更新最新的执行日志（更新该 job_id 最新的一条日志）
         用于每次执行完成后更新状态
@@ -881,7 +978,8 @@ class SchedulerUtil:
             with Session(engine) as session:
                 # 首先尝试更新 running 状态的日志
                 job_log = (
-                    session.query(JobModel)
+                    session
+                    .query(JobModel)
                     .filter(JobModel.job_id == job_id, JobModel.status == "running")
                     .order_by(JobModel.created_time.desc())
                     .first()
@@ -897,13 +995,14 @@ class SchedulerUtil:
                     if error:
                         job_log.error = error
                     session.commit()
-                    log.info(f"执行日志更新成功: job_id={job_id}, id={job_log.id}, status={status}")
+                    logger.info(f"执行日志更新成功: job_id={job_id}, id={job_log.id}, status={status}")
                     return
 
                 # 没有找到 running 状态的日志，尝试更新 cancelled 状态的日志
                 # 这种情况发生在 EVENT_JOB_REMOVED 先于 EVENT_JOB_SUBMITTED 触发时
                 job_log = (
-                    session.query(JobModel)
+                    session
+                    .query(JobModel)
                     .filter(JobModel.job_id == job_id, JobModel.status == "cancelled")
                     .order_by(JobModel.created_time.desc())
                     .first()
@@ -919,11 +1018,11 @@ class SchedulerUtil:
                     if error:
                         job_log.error = error
                     session.commit()
-                    log.info(f"执行日志更新成功: job_id={job_id}, id={job_log.id}, status={status}")
+                    logger.info(f"执行日志更新成功: job_id={job_id}, id={job_log.id}, status={status}")
                     return
 
                 # 创建新的日志记录
-                log.debug(f"未找到任务 {job_id} 的日志记录，创建新日志")
+                logger.debug(f"未找到任务 {job_id} 的日志记录，创建新日志")
                 trigger_type = cls._get_trigger_type(job_id) if job else "manual"
                 new_log = JobModel(
                     job_id=job_id,
@@ -937,9 +1036,11 @@ class SchedulerUtil:
                 )
                 session.add(new_log)
                 session.commit()
-                log.info(f"执行日志创建成功: job_id={job_id}, id={new_log.id}, status={status}")
+                logger.info(f"执行日志创建成功: job_id={job_id}, id={new_log.id}, status={status}")
         except Exception as e:
-            log.error(f"更新执行日志失败: job_id={job_id}, status={status}, error={e}", exc_info=True)
+            logger.error(
+                f"更新执行日志失败: job_id={job_id}, status={status}, error={e}", exc_info=True
+            )
 
     @classmethod
     def _update_job_log_on_removed(cls, job_id: str) -> None:
@@ -973,18 +1074,16 @@ class SchedulerUtil:
 
         with Session(engine) as session:
             job_log = (
-                session.query(JobModel)
-                .filter(
-                    JobModel.job_id == job_id,
-                    JobModel.status.in_(['pending', 'running'])
-                )
+                session
+                .query(JobModel)
+                .filter(JobModel.job_id == job_id, JobModel.status.in_(["pending", "running"]))
                 .order_by(JobModel.created_time.desc())
                 .first()
             )
             if job_log:
                 job_log.status = "cancelled"
                 session.commit()
-                log.info(f"任务 {job_id} 的执行日志已标记为已取消")
+                logger.info(f"任务 {job_id} 的执行日志已标记为已取消")
 
     @classmethod
     def get_job_status(cls, job_id: str | int) -> str:
@@ -1023,6 +1122,7 @@ class SchedulerUtil:
         """
         # 使用稍微延迟的时间，确保事件监听器能够捕获事件
         from datetime import timedelta
+
         trigger = DateTrigger(run_date=datetime.now() + timedelta(seconds=0.1))
         job = cls._add_job_with_trigger(job_info, trigger)
         # 注意：不需要手动创建执行日志，EVENT_JOB_SUBMITTED 事件会自动创建
@@ -1064,8 +1164,17 @@ class SchedulerUtil:
 
         second, minute, hour, day, month, day_of_week, year = tuple(parsed_fields)
 
-        if second == "*" and minute == "*" and hour == "*" and day == "*" and month == "*" and day_of_week in ("*", "?"):
-            raise ValueError("Cron表达式不允许每秒执行，请至少指定秒数（如：0 * * * * ? * 表示每分钟执行）")
+        if (
+            second == "*"
+            and minute == "*"
+            and hour == "*"
+            and day == "*"
+            and month == "*"
+            and day_of_week in ("*", "?")
+        ):
+            raise ValueError(
+                "Cron表达式不允许每秒执行，请至少指定秒数（如：0 * * * * ? * 表示每分钟执行）"
+            )
 
         trigger = CronTrigger(
             second=second,
@@ -1186,7 +1295,7 @@ class SchedulerUtil:
                 jobstore=jobstore,
                 executor=executor,
             )
-            log.info(f"任务 {job_info.id} 添加到 {jobstore} 存储器成功")
+            logger.info(f"任务 {job_info.id} 添加到 {jobstore} 存储器成功")
             return job
         except ConflictingIdError:
             scheduler.remove_job(job_id=str(job_info.id), jobstore=jobstore)
@@ -1202,7 +1311,7 @@ class SchedulerUtil:
                 jobstore=jobstore,
                 executor=executor,
             )
-            log.info(f"任务 {job_info.id} 已存在，已移除旧任务并重新添加")
+            logger.info(f"任务 {job_info.id} 已存在，已移除旧任务并重新添加")
             return job
 
     @classmethod
@@ -1232,7 +1341,9 @@ class SchedulerUtil:
         return scheduler.shutdown(wait=wait)
 
     @classmethod
-    def configure(cls, gconfig: dict | None = None, prefix: str = "apscheduler.", **options) -> None:
+    def configure(
+        cls, gconfig: dict | None = None, prefix: str = "apscheduler.", **options
+    ) -> None:
         """
         透传配置底层 APScheduler。
 
@@ -1388,7 +1499,8 @@ class SchedulerUtil:
         with Session(engine) as session:
             for job in jobs:
                 existing_log = (
-                    session.query(JobModel)
+                    session
+                    .query(JobModel)
                     .filter(JobModel.job_id == str(job.id), JobModel.status == "pending")
                     .first()
                 )
@@ -1478,7 +1590,10 @@ class SchedulerUtil:
 
         # 创建临时任务，延迟 0.1 秒执行，确保事件监听器能够捕获事件
         from datetime import timedelta
-        trigger = DateTrigger(run_date=datetime.now() + timedelta(seconds=0.1), timezone="Asia/Shanghai")
+
+        trigger = DateTrigger(
+            run_date=datetime.now() + timedelta(seconds=0.1), timezone="Asia/Shanghai"
+        )
         temp_job = scheduler.add_job(
             func=job.func,
             trigger=trigger,
@@ -1491,5 +1606,5 @@ class SchedulerUtil:
             max_instances=1,
         )
 
-        log.info(f"任务 {job_id} 已触发立即执行，临时任务 ID: {temp_job_id}")
+        logger.info(f"任务 {job_id} 已触发立即执行，临时任务 ID: {temp_job_id}")
         return temp_job

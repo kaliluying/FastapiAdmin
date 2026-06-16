@@ -52,6 +52,7 @@
   $animate: mymove 2s 1 linear infinite
 ) {
   -webkit-animation: $animate;
+  -moz-animation: $animate;
   -o-animation: $animate;
   animation: $animate;
 

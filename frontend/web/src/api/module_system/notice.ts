@@ -51,7 +51,7 @@ const NoticeAPI = {
 
   batchNotice(body: BatchType) {
     return request<ApiResponse>({
-      url: `${API_PATH}/available/setting`,
+      url: `${API_PATH}/status/batch`,
       method: "patch",
       data: body,
     });
@@ -66,9 +66,23 @@ const NoticeAPI = {
     });
   },
 
-  getLatestNotices() {
-    return request<ApiResponse<NoticeTable[]>>({
-      url: `${API_PATH}/latest`,
+  readNotice(id: number) {
+    return request<ApiResponse>({
+      url: `${API_PATH}/read/${id}`,
+      method: "post",
+    });
+  },
+
+  readAllNotice() {
+    return request<ApiResponse>({
+      url: `${API_PATH}/read-all`,
+      method: "post",
+    });
+  },
+
+  getUnreadCount() {
+    return request<ApiResponse<number>>({
+      url: `${API_PATH}/unread-count`,
       method: "get",
     });
   },
@@ -86,11 +100,6 @@ export default NoticeAPI;
 export interface NoticePageQuery extends PageQuery {
   notice_title?: string;
   notice_type?: string;
-  status?: string;
-  created_time?: string[];
-  updated_time?: string[];
-  created_id?: number;
-  updated_id?: number;
 }
 
 export interface NoticeTable extends BaseType {

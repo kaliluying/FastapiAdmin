@@ -12,7 +12,7 @@ import { Auth, setPageTitle, StorageConfig } from "@utils";
 import AuthAPI from "@/api/module_system/auth";
 import UserAPI from "@/api/module_system/user";
 import type { TenantOption } from "@/api/module_system/auth";
-import type { MenuTable } from "@/api/module_system/menu";
+import type { MenuTable } from "@/api/module_platform/menu";
 import { ResultEnum } from "@/enums/api/result.enum";
 import { ElNotification } from "element-plus";
 import { store, useDictStore } from "@stores";

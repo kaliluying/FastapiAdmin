@@ -108,6 +108,13 @@ declare global {
   interface PageQuery {
     page_no: number;
     page_size: number;
+    description?: string;
+    status?: number;
+    created_time?: string[];
+    updated_time?: string[];
+    created_id?: number;
+    updated_id?: number;
+    tenant_id?: number;
   }
 
   /**
@@ -145,12 +152,15 @@ declare global {
     index?: number;
     id?: number;
     uuid?: string;
-    status?: string;
+    status?: number;
     description?: string;
     created_time?: string;
     updated_time?: string;
     deleted_time?: string;
-    deleted_id?: number;
+    created_by?: CommonType;
+    updated_by?: CommonType;
+    deleted_by?: CommonType;
+    tenant_by?: TenantType;
   }
 
   /**
@@ -158,7 +168,7 @@ declare global {
    */
   interface BaseFormType {
     id?: number;
-    status?: string;
+    status?: number;
     description?: string;
     remark?: string;
     order?: number;
@@ -239,15 +249,6 @@ declare global {
     name?: string;
     code?: string;
     menus?: any[];
-  }
-
-  /**
-   * 验证码信息
-   */
-  interface CaptchaInfo {
-    enable: boolean;
-    key: string;
-    img_base: string;
   }
 
   /**

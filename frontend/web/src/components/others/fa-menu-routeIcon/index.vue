@@ -33,13 +33,15 @@ import {
 
 defineOptions({ name: "FaMenuRouteIcon", inheritAttrs: false });
 
-const props = defineProps<{
+interface Props {
   icon?: string;
   color?: string;
   /** 与 Vue `class` 一致（含条件 `false`） */
   class?: string | string[] | Record<string, boolean> | null | undefined | false;
   style?: Record<string, unknown> | string;
-}>();
+}
+
+const props = withDefaults(defineProps<Props>(), {});
 
 const trimmedIcon = computed(() => props.icon?.trim() ?? "");
 

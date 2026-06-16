@@ -66,18 +66,11 @@ export { WorkflowDefinitionAPI };
 export interface WorkflowPageQuery extends PageQuery {
   name?: string;
   code?: string;
-  status?: string;
-  created_time?: string[];
-  updated_time?: string[];
-  created_id?: number;
-  updated_id?: number;
 }
 
 export interface WorkflowTable extends BaseType {
   name?: string;
   code?: string;
-  status?: string;
-  description?: string;
   nodes?: any[];
   edges?: any[];
   created_by?: CommonType;
@@ -88,8 +81,6 @@ export interface WorkflowTable extends BaseType {
 export interface WorkflowForm extends BaseFormType {
   name?: string;
   code?: string;
-  status?: string;
-  description?: string;
   nodes?: any[];
   edges?: any[];
 }

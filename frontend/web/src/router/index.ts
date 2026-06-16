@@ -32,7 +32,7 @@ export const HOME_PAGE_PATH = "/home";
 export { HOME_ROUTE_NAME, ROOT_LAYOUT_ROUTE_NAME };
 
 /** 动态路由注册与菜单转换（一般从 `@/router` 按需导入） */
-export { RouteRegistry, ComponentLoader, RouteTransformer, RouteValidator } from "./dynamicRoutes";
-export type { ValidationResult } from "./dynamicRoutes";
+export { RouteRegistry, ComponentLoader, RouteTransformer, RouteValidator } from "./core";
+export type { ValidationResult } from "./core";
 export { IframeRouteManager } from "./staticRoutes";
 export { MenuProcessor, builtinFrontendRoutes } from "./MenuProcessor";

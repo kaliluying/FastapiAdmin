@@ -91,7 +91,7 @@
               <ElFormItem prop="module_name">
                 <template #label>
                   模块名
-                  <ElTooltip content="包名下第二层目录。示例：demo / gen_demo02" placement="top">
+                  <ElTooltip content="包名下第二层目录。示例：demo / gen_demo" placement="top">
                     <ElIcon><QuestionFilled /></ElIcon>
                   </ElTooltip>
                 </template>
@@ -103,7 +103,7 @@
                 <template #label>
                   业务名
                   <ElTooltip
-                    content="模块下第三层目录（可为空）。示例：demo01；留空表示仅到模块目录"
+                    content="模块下第三层目录（可为空）。示例：subdir；留空表示仅到模块目录"
                     placement="top"
                   >
                     <ElIcon><QuestionFilled /></ElIcon>
@@ -111,7 +111,7 @@
                 </template>
                 <ElInput
                   v-model="info.business_name"
-                  placeholder="例如 demo01（可留空）"
+                  placeholder="例如 subdir（可留空）"
                   clearable
                 />
               </ElFormItem>
@@ -291,10 +291,12 @@ const frontendApiFilePreview = computed(() => {
   return `frontend/src/api/${pkg}/${mod}.ts`;
 });
 
-const emit = defineEmits<{
+interface Emits {
   "clear-master-sub": [];
   "master-sub-blur": [];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const formRef = ref<FormInstance>();
 const injected = inject(GENCODE_BASIC_FORM_KEY, undefined);

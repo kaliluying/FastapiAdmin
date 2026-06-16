@@ -1,16 +1,13 @@
-from collections.abc import Sequence
 from datetime import datetime
-from typing import Any
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.api.v1.module_system.position.crud import PositionCRUD
 from app.api.v1.module_system.role.crud import RoleCRUD
 from app.core.base_crud import CRUDBase
+from app.core.base_schema import AuthSchema
 
 from .model import UserModel
 from .schema import (
     UserCreateSchema,
-    UserForgetPasswordSchema,
     UserUpdateSchema,
 )
 
@@ -28,112 +25,18 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         返回:
         - None
         """
-        self.auth = auth
         super().__init__(model=UserModel, auth=auth)
 
-    async def get_by_id_crud(
-        self, id: int, preload: list[str | Any] | None = None
-    ) -> UserModel | None:
-        """
-        根据id获取用户信息
-
-        参数:
-        - id (int): 用户ID
-        - preload (list[str | Any] | None): 预加载关系，未提供时使用模型默认项
-
-        返回:
-        - UserModel | None: 用户信息,如果不存在则为None
-        """
-        return await self.get(
-            preload=preload,
-            id=id,
-        )
-
-    async def get_by_username_crud(
-        self, username: str, preload: list[str | Any] | None = None
-    ) -> UserModel | None:
-        """
-        根据用户名获取用户信息
-
-        参数:
-        - username (str): 用户名
-        - preload (list[str | Any] | None): 预加载关系，未提供时使用模型默认项
-
-        返回:
-        - UserModel | None: 用户信息,如果不存在则为None
-        """
-        return await self.get(
-            preload=preload,
-            username=username,
-        )
-
-    async def get_by_mobile_crud(
-        self, mobile: str, preload: list[str | Any] | None = None
-    ) -> UserModel | None:
-        """
-        根据手机号获取用户信息
-
-        参数:
-        - mobile (str): 手机号
-        - preload (list[str | Any] | None): 预加载关系，未提供时使用模型默认项
-
-        返回:
-        - UserModel | None: 用户信息,如果不存在则为None
-        """
-        return await self.get(
-            preload=preload,
-            mobile=mobile,
-        )
-
-    async def get_list_crud(
-        self,
-        search: dict | None = None,
-        order_by: list[dict[str, str]] | None = None,
-        preload: list[str | Any] | None = None,
-    ) -> Sequence[UserModel]:
-        """
-        获取用户列表
-
-        参数:
-        - search (dict | None): 查询参数对象。
-        - order_by (list[dict[str, str]] | None): 排序参数列表。
-        - preload (list[str | Any] | None): 预加载关系，未提供时使用模型默认项
-
-        返回:
-        - Sequence[UserModel]: 用户列表
-        """
-        return await self.list(
-            search=search,
-            order_by=order_by,
-            preload=preload,
-        )
-
-    async def update_last_login_crud(self, id: int) -> UserModel | None:
+    async def update_last_login(self, id: int) -> None:
         """
         更新用户最后登录时间
 
         参数:
         - id (int): 用户ID
-
-        返回:
-        - UserModel | None: 更新后的用户信息
         """
-        return await self.update(id=id, data={"last_login": datetime.now()})
+        await self.set([id], last_login=datetime.now())
 
-    async def set_available_crud(self, ids: list[int], status: str) -> None:
-        """
-        批量设置用户可用状态
-
-        参数:
-        - ids (list[int]): 用户ID列表
-        - status (str): 可用状态（与表字段一致，如 "0"/"1"）
-
-        返回:
-        - None
-        """
-        await self.set(ids=ids, status=status)
-
-    async def set_user_roles_crud(self, user_ids: list[int], role_ids: list[int]) -> None:
+    async def set_user_roles(self, user_ids: list[int], role_ids: list[int]) -> None:
         """
         批量设置用户角色
 
@@ -146,7 +49,7 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         """
         user_objs = await self.list(search={"id": ("in", user_ids)})
         if role_ids:
-            role_objs = await RoleCRUD(self.auth).get_list_crud(search={"id": ("in", role_ids)})
+            role_objs = await RoleCRUD(self.auth).list(search={"id": ("in", role_ids)})
         else:
             role_objs = []
 
@@ -156,7 +59,7 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
             relationship.extend(role_objs)
         await self.auth.db.flush()
 
-    async def set_user_positions_crud(self, user_ids: list[int], position_ids: list[int]) -> None:
+    async def set_user_positions(self, user_ids: list[int], position_ids: list[int]) -> None:
         """
         批量设置用户岗位
 
@@ -169,7 +72,7 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         """
         user_objs = await self.list(search={"id": ("in", user_ids)})
         if position_ids:
-            position_objs = await PositionCRUD(self.auth).get_list_crud(
+            position_objs = await PositionCRUD(self.auth).list(
                 search={"id": ("in", position_ids)}
             )
         else:
@@ -181,7 +84,7 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
             relationship.extend(position_objs)
         await self.auth.db.flush()
 
-    async def change_password_crud(self, id: int, password_hash: str) -> UserModel:
+    async def change_password(self, id: int, password_hash: str) -> UserModel:
         """
         修改用户密码
 
@@ -194,27 +97,6 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         """
         return await self.update(id=id, data=UserUpdateSchema(password=password_hash))
 
-    async def forget_password_crud(self, id: int, password_hash: str) -> UserModel:
-        """
-        重置密码
-
-        参数:
-        - id (int): 用户ID
-        - password_hash (str): 密码哈希值
-
-        返回:
-        - UserModel: 更新后的用户信息
-        """
-        return await self.update(id=id, data=UserUpdateSchema(password=password_hash))
-
-    async def register_user_crud(self, data: UserForgetPasswordSchema) -> UserModel:
-        """
-        用户注册
-
-        参数:
-        - data (UserForgetPasswordSchema): 用户注册信息
-
-        返回:
-        - UserModel: 注册成功的用户信息
-        """
-        return await self.create(data=UserCreateSchema(**data.model_dump()))
+    async def forget_password(self, id: int, password_hash: str) -> UserModel:
+        """重置密码（与 change_password 逻辑相同）"""
+        return await self.change_password(id=id, password_hash=password_hash)

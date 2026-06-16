@@ -16,29 +16,38 @@ from app.utils.xss_util import sanitize_html
 class NoticeCreateSchema(BaseModel):
     """公告通知创建模型"""
 
-    notice_title: str = Field(..., max_length=50, description="公告标题")
-    notice_type: str = Field(..., description="公告类型（1通知 2公告）")
-    notice_content: str = Field(..., description="公告内容")
-    status: str = Field(default="0", description="是否启用(0:启用 1:禁用)")
+    notice_title: str = Field(..., min_length=1, max_length=64, description="公告标题")
+    notice_type: str = Field(..., max_length=1, description="公告类型(1:通知 2:公告)")
+    notice_content: str | None = Field(default=None, max_length=65535, description="公告内容")
+    status: int = Field(default=0, ge=0, le=1, description="状态(0:正常 1:禁用)")
     description: str | None = Field(default=None, max_length=255, description="描述")
 
     @field_validator("notice_type")
     @classmethod
     def _validate_notice_type(cls, value: str):
         if value not in {"1", "2"}:
-            raise ValueError("公告类型仅支持 '1'(通知) 或 '2'(公告)")
+            raise ValueError("公告类型仅支持 1(通知) 或 2(公告)")
+        return value
+
+    @field_validator("status")
+    @classmethod
+    def _validate_status(cls, value: int):
+        if value not in {0, 1}:
+            raise ValueError("状态仅支持 0(正常) 或 1(禁用)")
         return value
 
     @field_validator("notice_content")
     @classmethod
-    def _sanitize_notice_content(cls, value: str) -> str:
+    def _sanitize_notice_content(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
         return sanitize_html(value)
 
     @model_validator(mode="after")
     def _validate_after(self):
         if not self.notice_title.strip():
             raise ValueError("公告标题不能为空")
-        if not self.notice_content.strip():
+        if self.notice_content and not self.notice_content.strip():
             raise ValueError("公告内容不能为空")
         return self
 
@@ -78,7 +87,7 @@ class NoticeQueryParam:
         # 模糊查询字段
         self.notice_title = (QueueEnum.like.value, notice_title)
         # 精确查询字段
-        self.notice_type = notice_type
+        self.notice_type = (QueueEnum.eq.value, notice_type)
         # 模糊查询字段
         if description:
             self.description = (QueueEnum.like.value, description)
@@ -98,3 +107,22 @@ class NoticeQueryParam:
             self.created_id = (QueueEnum.eq.value, created_id)
         if updated_id:
             self.updated_id = (QueueEnum.eq.value, updated_id)
+
+
+# ─── 通知面板 ───
+
+
+class PanelMessageItem(BaseModel):
+    """面板-消息项"""
+    id: int
+    title: str
+    content: str
+    time: str
+    type: str
+
+
+class PanelDataOut(BaseModel):
+    """通知面板聚合数据"""
+    notices: list[NoticeOutSchema] = []
+    messages: list[PanelMessageItem] = []
+    pendings: list[dict] = []

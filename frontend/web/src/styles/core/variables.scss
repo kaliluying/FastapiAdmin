@@ -32,22 +32,18 @@
     "info": (
       "base": #909399,
     ),
+  ),
+  $button: (
+    "hover-bg-color": var(--el-color-primary-light-9),
+    "hover-border-color": var(--el-color-primary),
+    "border-color": var(--el-color-primary),
+    "text-color": var(--el-color-primary),
+  ),
+  $messagebox: (
+    "border-radius": "12px",
+  ),
+  $popover: (
+    "padding": "14px",
+    "border-radius": "10px",
   )
 );
-
-:root {
-  @each $type in (success, warning, danger, error, info) {
-    --el-color-#{$type}: #{map.get(ep.$colors, $type, "base")} !important;
-
-    @each $i in (3, 5, 7, 8, 9) {
-      --el-color-#{$type}-light-#{$i}: #{map.get(ep.$colors, $type, "light-#{$i}")} !important;
-    }
-
-    --el-color-#{$type}-dark-2: #{map.get(ep.$colors, $type, "dark-2")} !important;
-  }
-}
-
-/** 暗黑主题 */
-html.dark {
-  --el-color-primary: #{map.get(ep.$colors, "primary", "base")} !important;
-}

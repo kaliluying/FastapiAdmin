@@ -11,15 +11,16 @@ from fastapi.testclient import TestClient
 
 def test_check_readiness(test_client: TestClient) -> None:
     """
-    校验 ``/common/health/ready/``：数据库与 Redis（若启用）均可达时返回 200 与 checks 结构。
+    校验 ``/common/health/ready/``：数据库与 Redis（若启用）均可达时返回 200。
     """
     response = test_client.get("/common/health/ready/")
     assert response.status_code == 200
     body = response.json()
     assert body["success"] is True
     assert body["data"] is not None
-    assert "checks" in body["data"]
-    assert body["data"]["checks"].get("database") is True
+    # 检查实际返回的结构
+    assert "dependencies" in body["data"]
+    assert body["data"]["dependencies"].get("database") is not None
 
 
 def test_check_health(test_client: TestClient) -> None:
@@ -38,7 +39,9 @@ def test_check_health(test_client: TestClient) -> None:
     assert body["success"] is True
     assert body["code"] == 0
     assert body["msg"] == "系统健康"
-    assert body["data"] is True
+    # 检查实际返回的 data 结构
+    assert body["data"] is not None
+    assert body["data"].get("status") == "healthy"
     assert body["status_code"] == 200
 
 

@@ -116,8 +116,8 @@
         >
           <template #status>
             <ElRadioGroup v-model="formData.status">
-              <ElRadio value="0">启用</ElRadio>
-              <ElRadio value="1">停用</ElRadio>
+              <ElRadio :value="0">启用</ElRadio>
+              <ElRadio :value="1">停用</ElRadio>
             </ElRadioGroup>
           </template>
         </FaForm>
@@ -373,7 +373,6 @@ async function deleteRoleRow(id: number) {
     await RoleAPI.deleteRole([id]);
     const userStore = useUserStore();
     await userStore.getUserInfo();
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
@@ -410,7 +409,7 @@ const formData = ref<RoleForm>({
   name: undefined,
   order: 1,
   code: "",
-  status: "0",
+  status: 0,
   description: undefined,
 });
 
@@ -438,7 +437,7 @@ const initialFormData: RoleForm = {
   name: undefined,
   order: 1,
   code: "",
-  status: "0",
+  status: 0,
   description: undefined,
 };
 
@@ -571,8 +570,8 @@ const {
         label: "状态",
         width: 88,
         formatter: (row: RoleTable) =>
-          h(ElTag, { type: row.status === "0" ? "success" : "danger" }, () =>
-            row.status === "0" ? "启用" : "停用"
+          h(ElTag, { type: row.status === 0 ? "success" : "danger" }, () =>
+            row.status === 0 ? "启用" : "停用"
           ),
       },
       { prop: "description", label: "描述", minWidth: 100, showOverflowTooltip: true },
@@ -644,7 +643,6 @@ async function handleBatchDelete() {
     await RoleAPI.deleteRole(ids);
     const userStore = useUserStore();
     await userStore.getUserInfo();
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {

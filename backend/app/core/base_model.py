@@ -12,6 +12,7 @@ from sqlalchemy.orm import (
 )
 
 if TYPE_CHECKING:
+    from app.api.v1.module_platform.tenant.model import TenantModel
     from app.api.v1.module_system.user.model import UserModel
 
 from app.common.enums import PermissionFilterStrategy
@@ -83,11 +84,11 @@ class ModelMixin(MappedBase):
         comment="UUID全局唯一标识",
         index=True,
     )
-    status: Mapped[str] = mapped_column(
-        String(10),
-        default="0",
+    status: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
         nullable=False,
-        comment="状态(0:正常 1:禁用)",
+        comment="状态",
         index=True,
     )
     description: Mapped[str | None] = mapped_column(
@@ -129,7 +130,7 @@ class TenantMixin(MappedBase):
     """
     租户隔离字段 Mixin
 
-    业务表通过 tenant_id 关联 sys_tenant，实现行级数据隔离。
+    业务表通过 tenant_id 关联 platform_tenant，实现行级数据隔离。
     平台超级管理员（is_superuser 且 tenant_id=1）在数据层不按租户过滤。
     """
 
@@ -137,31 +138,27 @@ class TenantMixin(MappedBase):
 
     tenant_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("sys_tenant.id", ondelete="RESTRICT", onupdate="CASCADE"),
+        ForeignKey("platform_tenant.id", ondelete="RESTRICT", onupdate="CASCADE"),
         nullable=False,
         default=1,
         index=True,
         comment="租户ID",
     )
 
+    @declared_attr
+    def tenant_by(self) -> Mapped[Optional["TenantModel"]]:
+        """
+        租户关联关系（延迟加载，避免循环依赖）。
 
-class TenantAwareMixin(MappedBase):
-    """
-    租户感知 Mixin（轻量级）
-
-    与 TenantMixin 不同，本 Mixin 不包含外键约束，tenant_id 可为 NULL。
-    适用于不需要严格引用完整性的场景，或渐进式改造阶段。
-    平台超级管理员在数据层不按租户过滤。
-    """
-
-    __abstract__ = True
-
-    tenant_id: Mapped[int | None] = mapped_column(
-        Integer,
-        default=None,
-        index=True,
-        comment="租户ID",
-    )
+        返回:
+        - Mapped[Optional[TenantModel]]: 租户 ORM 关系。
+        """
+        return relationship(
+            "TenantModel",
+            lazy="selectin",
+            foreign_keys=lambda: self.tenant_id,  # pyright: ignore[reportArgumentType]
+            uselist=False,
+        )
 
 
 class UserMixin(MappedBase):

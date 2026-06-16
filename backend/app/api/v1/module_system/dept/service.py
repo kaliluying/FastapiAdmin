@@ -1,12 +1,10 @@
-from app.api.v1.module_system.auth.schema import AuthSchema
-from app.core.base_schema import BatchSetAvailable
+from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.exceptions import CustomException
 from app.utils.common_util import (
     get_child_id_map,
     get_child_recursion,
     get_parent_id_map,
     get_parent_recursion,
-    traversal_to_tree,
 )
 
 from .crud import DeptCRUD
@@ -24,7 +22,7 @@ class DeptService:
     """
 
     @classmethod
-    async def get_dept_detail_service(cls, auth: AuthSchema, id: int) -> dict:
+    async def get_dept_detail_service(cls, auth: AuthSchema, id: int) -> DeptOutSchema:
         """
         获取部门详情。
 
@@ -35,13 +33,18 @@ class DeptService:
         返回:
         - dict: 部门详情对象。
         """
-        dept = await DeptCRUD(auth).get_by_id_crud(id=id)
-        result = DeptOutSchema.model_validate(dept).model_dump()
-        if dept and dept.parent_id:
+        dept = await DeptCRUD(auth).get(id=id)
+        if not dept:
+            raise CustomException(msg="部门不存在")
+        # 从列属性构建 dict，避免 Pydantic 访问 ORM 关系触发 async 惰性加载
+        dept_dict = {c.name: getattr(dept, c.name) for c in dept.__table__.columns}
+        dept_dict["children"] = None
+        dept_dict["parent_name"] = None
+        if dept.parent_id:
             parent = await DeptCRUD(auth).get(id=dept.parent_id)
             if parent:
-                result["parent_name"] = parent.name
-        return result
+                dept_dict["parent_name"] = parent.name
+        return DeptOutSchema(**dept_dict)
 
     @classmethod
     async def get_dept_tree_service(
@@ -62,16 +65,16 @@ class DeptService:
         - list[dict]: 部门树形列表对象。
         """
         # 使用树形结构查询，预加载children关系
-        dept_list = await DeptCRUD(auth).get_tree_list_crud(
-            search=search.__dict__, order_by=order_by
+        dept_list = await DeptCRUD(auth).get_tree_list(
+            search=search.__dict__ if search else {}, order_by=order_by
         )
-        # 转换为字典列表
+        # 转换为字典列表，tree_list 已通过 selectin 预加载 children
         dept_dict_list = [DeptOutSchema.model_validate(dept).model_dump() for dept in dept_list]
-        # 使用traversal_to_tree构建树形结构
-        return traversal_to_tree(dept_dict_list)
+        # 仅保留根节点，子树已在 model_dump 中递归序列化
+        return [d for d in dept_dict_list if d.get("parent_id") is None]
 
     @classmethod
-    async def create_dept_service(cls, auth: AuthSchema, data: DeptCreateSchema) -> dict:
+    async def create_dept_service(cls, auth: AuthSchema, data: DeptCreateSchema) -> DeptOutSchema:
         """
         创建部门。
 
@@ -91,11 +94,16 @@ class DeptService:
         obj = await DeptCRUD(auth).get(code=data.code)
         if obj:
             raise CustomException(msg="创建失败，编码已存在")
+
+        # 检查租户配额
+        from app.api.v1.module_platform.tenant.service import TenantService
+        await TenantService.check_quota_service(auth, auth.tenant_id, "dept")
+
         dept = await DeptCRUD(auth).create(data=data)
-        return DeptOutSchema.model_validate(dept).model_dump()
+        return DeptOutSchema.model_validate(dept)
 
     @classmethod
-    async def update_dept_service(cls, auth: AuthSchema, id: int, data: DeptUpdateSchema) -> dict:
+    async def update_dept_service(cls, auth: AuthSchema, id: int, data: DeptUpdateSchema) -> DeptOutSchema:
         """
         更新部门。
 
@@ -110,7 +118,7 @@ class DeptService:
         异常:
         - CustomException: 当部门不存在或名称重复时抛出。
         """
-        dept = await DeptCRUD(auth).get_by_id_crud(id=id)
+        dept = await DeptCRUD(auth).get(id=id)
         if not dept:
             raise CustomException(msg="更新失败，该部门不存在")
         exist_dept = await DeptCRUD(auth).get(name=data.name)
@@ -120,7 +128,7 @@ class DeptService:
         if exist_code and exist_code.id != id:
             raise CustomException(msg="更新失败，部门编码已存在")
         dept = await DeptCRUD(auth).update(id=id, data=data)
-        return DeptOutSchema.model_validate(dept).model_dump()
+        return DeptOutSchema.model_validate(dept)
 
     @classmethod
     async def delete_dept_service(cls, auth: AuthSchema, ids: list[int]) -> None:
@@ -136,29 +144,24 @@ class DeptService:
 
         异常:
         - CustomException: 当删除对象为空时抛出。
+        - CustomException: 当存在子部门时抛出。
         """
         if len(ids) < 1:
             raise CustomException(msg="删除失败，删除对象不能为空")
 
         # 获取所有部门列表，用于构建树形关系
-        all_depts = await DeptCRUD(auth).get_list_crud()
+        all_depts = await DeptCRUD(auth).list()
 
         # 构建子部门ID映射
         child_id_map = get_child_id_map(model_list=all_depts)
 
-        # 收集所有需要删除的部门ID，包括直接指定的ID和它们的所有子部门ID
-        delete_ids_set = set()
-
         for id in ids:
-            # 递归获取该ID的所有子部门ID
-            all_descendants = get_child_recursion(id=id, id_map=child_id_map)
-            delete_ids_set.update(all_descendants)
-
-        # 将集合转换为列表
-        delete_ids = list(delete_ids_set)
+            # 检查是否有子部门
+            if id in child_id_map and child_id_map[id]:
+                raise CustomException(msg="存在子部门，不允许删除父部门")
 
         # 执行批量删除操作
-        await DeptCRUD(auth).delete(ids=delete_ids)
+        await DeptCRUD(auth).delete(ids=ids)
 
     @classmethod
     async def batch_set_available_service(cls, auth: AuthSchema, data: BatchSetAvailable) -> None:
@@ -172,10 +175,10 @@ class DeptService:
         返回:
         - None
         """
-        dept_list = await DeptCRUD(auth).get_list_crud()
+        dept_list = await DeptCRUD(auth).list()
         total_ids = []
 
-        if data.status == "0":
+        if data.status == 0:
             id_map = get_parent_id_map(model_list=dept_list)
             for dept_id in data.ids:
                 enable_ids = get_parent_recursion(id=dept_id, id_map=id_map)
@@ -186,4 +189,4 @@ class DeptService:
                 disable_ids = get_child_recursion(id=dept_id, id_map=id_map)
                 total_ids.extend(disable_ids)
 
-        await DeptCRUD(auth).set_available_crud(ids=total_ids, status=data.status)
+        await DeptCRUD(auth).set(ids=total_ids, status=data.status)

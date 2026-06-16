@@ -62,6 +62,14 @@ const ParamsAPI = {
     });
   },
 
+  batchParams(body: BatchType) {
+    return request<ApiResponse>({
+      url: `${API_PATH}/status/batch`,
+      method: "patch",
+      data: body,
+    });
+  },
+
   exportParams(body: ConfigPageQuery) {
     return request<Blob>({
       url: `${API_PATH}/export`,
@@ -78,8 +86,6 @@ export interface ConfigPageQuery extends PageQuery {
   config_name?: string;
   config_key?: string;
   config_type?: boolean;
-  created_time?: string[];
-  updated_time?: string[];
 }
 
 export interface ConfigTable extends BaseType {
@@ -87,8 +93,6 @@ export interface ConfigTable extends BaseType {
   config_key?: string;
   config_value?: string;
   config_type?: boolean;
-  status?: string;
-  description?: string;
 }
 
 export interface ConfigForm extends BaseFormType {
@@ -96,6 +100,4 @@ export interface ConfigForm extends BaseFormType {
   config_key?: string;
   config_value?: string;
   config_type?: boolean;
-  status?: string;
-  description?: string;
 }

@@ -138,6 +138,21 @@ export function initErrorHandle(app: App) {
  * 5. 版本不同 + 无旧数据 → 仅更新版本号
  */
 class VersionManager {
+  /** 轮询间隔（毫秒） */
+  private static readonly POLL_INTERVAL = 2 * 60 * 1000; // 2 分钟
+
+  /** localStorage key：上次检测到的构建 hash */
+  private static readonly DETECTED_HASH_KEY = "sys-detected-hash";
+
+  /** 当前页面的主脚本路径（Vite 构建时注入的 content hash） */
+  private readonly currentScriptSrc: string;
+
+  constructor() {
+    // 提取当前页面第一个 <script type="module" src="..."> 的 src
+    const scripts = document.querySelectorAll<HTMLScriptElement>("script[type=module]");
+    this.currentScriptSrc = scripts.length > 0 ? scripts[0].src : "";
+  }
+
   private normalizeVersion(version: string): string {
     return version.replace(/^v/, "");
   }
@@ -294,6 +309,50 @@ class VersionManager {
 
     await this.executeUpgrade(storedVersion!, legacyStorage);
   }
+
+  // ── 版本轮询（已打开页面的用户感知新版本部署） ──
+
+  /** 启动版本轮询：每隔 POLL_INTERVAL 检测 index.html 中的构建 hash 是否变化 */
+  startPolling(): void {
+    if (!this.currentScriptSrc) return;
+
+    const poll = async () => {
+      try {
+        const resp = await fetch(`/?_t=${Date.now()}`, { cache: "no-store" });
+        if (!resp.ok) return;
+        const html = await resp.text();
+
+        // 提取第一个 <script type="module" src="..."> 的 src
+        const match = html.match(/<script[^>]+type="module"[^>]+src="([^"]+)"/);
+        if (!match) return;
+
+        const remoteSrc = match[1];
+        if (remoteSrc === this.currentScriptSrc) return;
+
+        // 去重：同一 hash 不重复提示
+        const previousHash = localStorage.getItem(VersionManager.DETECTED_HASH_KEY);
+        if (previousHash === remoteSrc) return;
+        localStorage.setItem(VersionManager.DETECTED_HASH_KEY, remoteSrc);
+
+        this.showUpdateNotification();
+      } catch {
+        // 网络失败静默跳过
+      }
+    };
+
+    poll(); // 首次立刻检测
+    setInterval(poll, VersionManager.POLL_INTERVAL);
+  }
+
+  private showUpdateNotification(): void {
+    ElNotification({
+      title: "新版本已发布",
+      message: "检测到新版本，请刷新页面以获取最新内容。",
+      duration: 0,
+      type: "warning",
+      dangerouslyUseHTMLString: false,
+    });
+  }
 }
 
 export async function processUpgrade(): Promise<void> {
@@ -305,4 +364,14 @@ export function systemUpgrade(): void {
   setTimeout(() => {
     void processUpgrade();
   }, StorageConfig.UPGRADE_DELAY);
+}
+
+let _versionManager: VersionManager | null = null;
+
+/** 启动版本轮询（检测已打开页面是否收到新部署） */
+export function startVersionPolling(): void {
+  if (!_versionManager) {
+    _versionManager = new VersionManager();
+  }
+  _versionManager.startPolling();
 }

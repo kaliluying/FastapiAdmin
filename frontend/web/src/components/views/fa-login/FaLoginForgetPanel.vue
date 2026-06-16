@@ -33,7 +33,6 @@
             clearable
             :placeholder="$t('login.placeholder.password')"
             @keyup="checkCapsLock"
-            @keyup.enter="$emit('submit')"
           >
             <template #prefix>
               <ElIcon><Lock /></ElIcon>
@@ -52,7 +51,6 @@
             clearable
             :placeholder="$t('login.message.password.confirm')"
             @keyup="checkCapsLock"
-            @keyup.enter="$emit('submit')"
           >
             <template #prefix>
               <ElIcon><Lock /></ElIcon>
@@ -88,13 +86,22 @@ import type { FormRules } from "element-plus";
 
 const forgetForm = defineModel<ForgetPasswordForm>("forgetForm", { required: true });
 
-defineProps<{
+defineOptions({ name: "FaLoginForgetPanel" });
+
+interface Props {
   forgetRules: FormRules<ForgetPasswordForm>;
   formKey: number | string;
   forgetLoading: boolean;
-}>();
+}
 
-defineEmits<{ submit: []; toLogin: [] }>();
+withDefaults(defineProps<Props>(), {});
+
+interface Emits {
+  submit: [];
+  toLogin: [];
+}
+
+const emit = defineEmits<Emits>();
 
 const formRef = ref();
 const isCapsLock = ref(false);
@@ -102,6 +109,9 @@ const isCapsLock = ref(false);
 function checkCapsLock(event: KeyboardEvent) {
   if (event instanceof KeyboardEvent) {
     isCapsLock.value = event.getModifierState("CapsLock");
+    if (event.key === "Enter") {
+      emit("submit");
+    }
   }
 }
 

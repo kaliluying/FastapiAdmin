@@ -1,7 +1,7 @@
 import asyncio
 from typing import Any
 
-from app.api.v1.module_system.auth.schema import AuthSchema
+from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
 
 from ..engine.prefect_engine import run_prefect_workflow_sync, utc_now_iso, validate_workflow_graph
@@ -12,7 +12,6 @@ from .schema import (
     WorkflowExecuteResultSchema,
     WorkflowExecuteSchema,
     WorkflowOutSchema,
-    WorkflowPublishSchema,
     WorkflowQueryParam,
     WorkflowUpdateSchema,
 )
@@ -22,11 +21,11 @@ class WorkflowService:
     """工作流：画布存储 + 发布校验 + Prefect 执行"""
 
     @staticmethod
-    def _out(obj: Any) -> dict:
-        return WorkflowOutSchema.model_validate(obj).model_dump(mode="json")
+    def _out(obj: Any) -> WorkflowOutSchema:
+        return WorkflowOutSchema.model_validate(obj)
 
     @classmethod
-    async def get_workflow_detail_service(cls, auth: AuthSchema, id: int) -> dict:
+    async def get_workflow_detail_service(cls, auth: AuthSchema, id: int) -> WorkflowOutSchema:
         """
         获取工作流详情。
 
@@ -51,7 +50,7 @@ class WorkflowService:
         auth: AuthSchema,
         search: WorkflowQueryParam | None = None,
         order_by: list[dict[str, str]] | None = None,
-    ) -> list[dict]:
+    ) -> list[WorkflowOutSchema]:
         """
         获取工作流列表（非分页）。
 
@@ -102,13 +101,14 @@ class WorkflowService:
             search=search.__dict__ if search else {},
             out_schema=WorkflowOutSchema,
         )
-        result["items"] = [
-            WorkflowOutSchema.model_validate(item).model_dump(mode="json") for item in result["items"]
+        result.items = [
+            WorkflowOutSchema.model_validate(item).model_dump(mode="json")
+            for item in result.items
         ]
         return result
 
     @classmethod
-    async def create_workflow_service(cls, auth: AuthSchema, data: WorkflowCreateSchema) -> dict:
+    async def create_workflow_service(cls, auth: AuthSchema, data: WorkflowCreateSchema) -> WorkflowOutSchema:
         """
         创建工作流草稿。
 
@@ -133,7 +133,7 @@ class WorkflowService:
     @classmethod
     async def update_workflow_service(
         cls, auth: AuthSchema, id: int, data: WorkflowUpdateSchema
-    ) -> dict:
+    ) -> WorkflowOutSchema:
         """
         更新工作流。
 
@@ -181,15 +181,14 @@ class WorkflowService:
 
     @classmethod
     async def publish_workflow_service(
-        cls, auth: AuthSchema, id: int, body: WorkflowPublishSchema | None = None
-    ) -> dict:
+        cls, auth: AuthSchema, id: int
+    ) -> WorkflowOutSchema:
         """
         校验 DAG 后发布工作流。
 
         参数:
         - auth (AuthSchema): 认证信息。
         - id (int): 工作流 ID。
-        - body (WorkflowPublishSchema | None): 可选附加参数。
 
         返回:
         - dict: 发布后工作流字典。
@@ -222,9 +221,7 @@ class WorkflowService:
         return cls._out(updated)
 
     @classmethod
-    async def execute_workflow_service(
-        cls, auth: AuthSchema, body: WorkflowExecuteSchema
-    ) -> dict:
+    async def execute_workflow_service(cls, auth: AuthSchema, body: WorkflowExecuteSchema) -> WorkflowExecuteResultSchema:
         """
         执行已发布工作流（Prefect 同步入口在线程池中运行）。
 
@@ -249,12 +246,19 @@ class WorkflowService:
         if not nodes:
             raise CustomException(msg="工作流没有节点")
 
-        codes = {n.get("type") for n in nodes if n.get("type")}
+        codes_set = {n.get("type") for n in nodes if n.get("type")}
+        code_list = list(codes_set)
         templates: dict[str, dict[str, Any]] = {}
-        for code in codes:
-            node_type = await WorkflowNodeTypeCRUD(auth).get(code=code)
+        type_objs = await WorkflowNodeTypeCRUD(auth).get_obj_list_crud(
+            search={"code": ("in", code_list)}
+        )
+        type_map = {t.code: t for t in type_objs}
+        for code in codes_set:
+            node_type = type_map.get(code)
             if not node_type:
-                raise CustomException(msg=f"编排节点类型未注册（请在「工作流编排节点类型」中维护，非定时任务节点）: {code}")
+                raise CustomException(
+                    msg=f"编排节点类型未注册（请在「工作流编排节点类型」中维护，非定时任务节点）: {code}"
+                )
             if not node_type.func or not str(node_type.func).strip():
                 raise CustomException(msg=f"编排节点类型未配置 func 代码块: {code}")
             templates[code] = {
@@ -289,7 +293,7 @@ class WorkflowService:
                 node_results=None,
                 error=str(e),
             )
-            return err.model_dump(mode="json")
+            return err
 
         end = utc_now_iso()
         ok = WorkflowExecuteResultSchema(
@@ -302,4 +306,4 @@ class WorkflowService:
             node_results=raw.get("node_results"),
             error=None,
         )
-        return ok.model_dump(mode="json")
+        return ok

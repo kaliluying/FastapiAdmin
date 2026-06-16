@@ -99,8 +99,8 @@
         >
           <template #status>
             <ElRadioGroup v-model="formData.status">
-              <ElRadio value="0">启用</ElRadio>
-              <ElRadio value="1">停用</ElRadio>
+              <ElRadio :value="0">启用</ElRadio>
+              <ElRadio :value="1">停用</ElRadio>
             </ElRadioGroup>
           </template>
         </FaForm>
@@ -257,7 +257,7 @@ const formData = ref<DictForm>({
   id: undefined,
   dict_name: "",
   dict_type: "",
-  status: "0",
+  status: 0,
   description: undefined,
 });
 
@@ -274,7 +274,7 @@ const initialFormData: DictForm = {
   id: undefined,
   dict_name: "",
   dict_type: "",
-  status: "0",
+  status: 0,
   description: undefined,
 };
 
@@ -379,7 +379,7 @@ const {
         label: "状态",
         width: 88,
         formatter: (row: DictTable) => {
-          const ok = row.status === "0";
+          const ok = row.status === 0;
           const cfg = ok
             ? { type: "success" as const, text: "启用" }
             : { type: "danger" as const, text: "停用" };
@@ -522,7 +522,6 @@ async function deleteDictTypeRow(id: number) {
     dictStore.clearDictData();
     const dictTypes = Object.keys(dictStore.dictData);
     if (dictTypes.length > 0) await dictStore.getDict(dictTypes);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
@@ -540,7 +539,6 @@ async function handleBatchDelete() {
     dictStore.clearDictData();
     const dictTypes = Object.keys(dictStore.dictData);
     if (dictTypes.length > 0) await dictStore.getDict(dictTypes);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {

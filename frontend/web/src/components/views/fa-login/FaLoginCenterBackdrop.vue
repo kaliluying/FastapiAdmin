@@ -17,13 +17,12 @@ import loginIcon from "@fa_imgs/background.svg";
 
 defineOptions({ name: "LoginCenterBackdrop" });
 
-withDefaults(
-  defineProps<{
-    /** 铺满视口并置于底层（与固定顶栏配合） */
-    viewportFixed?: boolean;
-  }>(),
-  { viewportFixed: false }
-);
+interface Props {
+  /** 铺满视口并置于底层（与固定顶栏配合） */
+  viewportFixed?: boolean;
+}
+
+withDefaults(defineProps<Props>(), { viewportFixed: false });
 </script>
 
 <style scoped lang="scss">

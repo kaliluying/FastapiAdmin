@@ -9,11 +9,11 @@ from app.core.validator import DateTimeStr
 class ParamsCreateSchema(BaseModel):
     """配置创建模型"""
 
-    config_name: str = Field(..., max_length=64, description="参数名称")
-    config_key: str = Field(..., max_length=500, description="参数键名")
-    config_value: str | None = Field(default=None, description="参数键值")
-    config_type: bool = Field(default=False, description="系统内置(True:是 False:否)")
-    status: str = Field(default="0", description="状态(True:正常 False:停用)")
+    config_name: str = Field(..., min_length=1, max_length=64, description="参数名称")
+    config_key: str = Field(..., min_length=1, max_length=500, description="参数键名")
+    config_value: str | None = Field(default=None, max_length=500, description="参数键值")
+    config_type: bool = Field(default=False, description="是否系统内置")
+    status: int = Field(default=0, ge=0, le=1, description="状态(0:正常 1:停用)")
     description: str | None = Field(default=None, max_length=500, description="描述")
 
     @field_validator("config_key")
@@ -21,9 +21,15 @@ class ParamsCreateSchema(BaseModel):
     def _validate_config_key(cls, v: str) -> str:
         v = v.strip().lower()
         import re
-
         if not re.match(r"^[a-z][a-z0-9_.-]*$", v):
-            raise ValueError("参数键名必须以小写字母开头，仅包含小写字母/数字/_.-")
+            raise ValueError("参数键名必须以小写字母开头，仅允许小写字母、数字、_ . -")
+        return v
+
+    @field_validator("status")
+    @classmethod
+    def _validate_status(cls, v: int) -> int:
+        if v not in {0, 1}:
+            raise ValueError("状态仅支持 0(正常) 或 1(停用)")
         return v
 
 
@@ -59,11 +65,10 @@ class ParamsQueryParam:
         ),
     ) -> None:
         # 模糊查询字段
-        # 模糊查询字段
         self.config_name = (QueueEnum.like.value, config_name)
         self.config_key = (QueueEnum.like.value, config_key)
         # 精确查询字段
-        self.config_type = config_type
+        self.config_type = (QueueEnum.eq.value, config_type)
         if description:
             self.description = (QueueEnum.like.value, description)
 

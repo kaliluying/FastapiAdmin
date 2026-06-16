@@ -9,6 +9,8 @@ import markdownItHighlightjs from "markdown-it-highlightjs";
 import hljs from "highlight.js";
 import "highlight.js/styles/atom-one-light.css";
 
+defineOptions({ name: "FaMarkdownRenderer" });
+
 interface Props {
   content: string;
   maxLength?: number;

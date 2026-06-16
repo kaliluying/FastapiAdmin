@@ -1,16 +1,35 @@
+""""统一 CRUD 基类 — 同时支持有认证和无认证场景
+
+- 当 `auth` 不为 None 时（Controller 注入）：自动处理租户隔离、数据权限过滤、审计字段填充
+- 当 `auth` 为 None 时（后台任务/脚本）：纯数据操作，无权限/租户过滤
+
+用法:
+    # 带认证（Controller）
+    class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
+        def __init__(self, auth: AuthSchema) -> None:
+            super().__init__(model=UserModel, auth=auth)
+
+    # 无认证（后台任务）
+    class OrderCRUD(CRUDBase[OrderModel, Any, Any]):
+        def __init__(self, session: AsyncSession) -> None:
+            super().__init__(model=OrderModel, session=session)
+"""
+
 import builtins
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 
 from pydantic import BaseModel
-from sqlalchemy import Select, asc, delete, desc, false, func, select, update
+from sqlalchemy import Select, asc, delete, desc, false, func, literal_column, select, update
 from sqlalchemy import inspect as sa_inspect
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.elements import ColumnElement
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.core.base_model import MappedBase
+from app.core.base_schema import AuthSchema, PageResultSchema
+from app.core.database import async_db_session
 from app.core.exceptions import CustomException
 from app.core.permission import Permission
 
@@ -24,50 +43,132 @@ OutSchemaType = TypeVar("OutSchemaType", bound=BaseModel)
 
 
 class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
-    """基础数据层"""
+    """统一数据层基类 — 有认证时自动处理权限，无认证时纯数据操作"""
 
-    def __init__(self, model: type[ModelType], auth: AuthSchema) -> None:
+    def __init__(
+        self,
+        model: type[ModelType],
+        auth: AuthSchema | None = None,
+        session: AsyncSession | None = None,
+    ) -> None:
         """
-        初始化CRUDBase类
+        初始化 CRUDBase。
 
         参数:
-        - model (Type[ModelType]): 数据模型类。
-        - auth (AuthSchema): 认证信息。
-
-        返回:
-        - None
+        - model: 数据模型类
+        - auth: 认证信息（Controller 场景），为 None 时跳过所有权限/租户/审计逻辑
+        - session: 数据库会话（后台任务场景），仅在 auth=None 时使用
         """
         self.model = model
         self.auth = auth
+        self.db = session if session is not None else (auth.db if auth else None)
+        if self.db is None:
+            raise RuntimeError(
+                "CRUDBase 未初始化数据库会话，请传入 auth 或 session 参数"
+            )
 
-    async def get(self, preload: list[str | Any] | None = None, **kwargs) -> ModelType | None:
-        """
-        根据条件获取单个对象
+    def _get_pk_col(self) -> ColumnElement:
+        """获取模型主键列"""
+        mapper = sa_inspect(self.model)
+        pk_cols = list(getattr(mapper, "primary_key", []))
+        if not pk_cols:
+            raise CustomException(msg="模型缺少主键")
+        if len(pk_cols) > 1:
+            raise CustomException(msg="暂不支持复合主键操作")
+        return pk_cols[0]
+
+    @property
+    def _supports_soft_delete(self) -> bool:
+        """模型是否支持软删除"""
+        return all(
+            hasattr(self.model, attr) for attr in ("is_deleted", "deleted_time", "deleted_id")
+        )
+
+    def _soft_delete_values(self) -> dict[str, Any]:
+        """软删除时需要更新的字段值"""
+        data: dict[str, Any] = {"is_deleted": True, "deleted_time": datetime.now()}
+        if self.auth and self.auth.user:
+            data["deleted_id"] = self.auth.user.id
+        return data
+
+    # ── 查询 ──
+    async def _get_one(
+        self, session: AsyncSession, preload: list[str | Any] | None = None, **kwargs
+    ) -> ModelType | None:
+        """内部方法：在指定会话上执行单条查询（get / update 共用）
 
         参数:
-        - preload (Optional[List[Union[str, Any]]]): 预加载关系，支持关系名字符串或SQLAlchemy loader option
+        - session: 数据库会话（只读 or 事务）
+        - preload: 预加载关系
         - **kwargs: 查询条件
 
         返回:
-        - Optional[ModelType]: 对象实例
+        - 对象实例或 None
+        """
+        conditions = await self.__build_conditions(**kwargs)
+        sql = select(self.model).where(*conditions)
+        for opt in self.__loader_options(preload):
+            sql = sql.options(opt)
+        sql = await self.__filter_permissions(sql)
+        result: Result = await session.execute(sql)
+        return result.scalars().first()
 
-        异常:
-        - CustomException: 查询失败时抛出异常
+    async def get(self, preload: list[str | Any] | None = None, **kwargs) -> ModelType | None:
+        """
+        根据条件获取单个对象（使用只读会话，不参与请求事务）
+
+        参数:
+        - preload: 预加载关系
+        - **kwargs: 查询条件
+
+        返回:
+        - 对象实例或 None
+        """
+        try:
+            async with async_db_session() as rdb:
+                return await self._get_one(rdb, preload=preload, **kwargs)
+        except CustomException:
+            raise
+        except Exception as e:
+            raise CustomException(msg=f"获取查询失败: {e!s}")
+
+    async def get_by_id(self, model_id: int) -> ModelType | None:
+        """按主键查询"""
+        return await self.get(id=model_id)
+
+    async def exists(self, **kwargs) -> bool:
+        """
+        检查是否存在符合条件的记录
+
+        参数:
+        - **kwargs: 查询条件
+
+        返回:
+        - 是否存在
+        """
+        return await self.get(**kwargs) is not None
+
+    async def count(self, **kwargs) -> int:
+        """
+        统计符合条件的记录数（使用只读会话，不参与请求事务）
+
+        参数:
+        - **kwargs: 查询条件，支持元组语法
+
+        返回:
+        - 记录数
         """
         try:
             conditions = await self.__build_conditions(**kwargs)
-            sql = select(self.model).where(*conditions)
-            # 应用可配置的预加载选项
-            for opt in self.__loader_options(preload):
-                sql = sql.options(opt)
-
-            sql = await self.__filter_permissions(sql)
-
-            result: Result = await self.auth.db.execute(sql)
-            obj = result.scalars().first()
-            return obj
+            count_sql = select(func.count()).select_from(self.model).where(*conditions)
+            count_sql = await self.__filter_permissions(count_sql)
+            async with async_db_session() as rdb:
+                result = await rdb.execute(count_sql)
+            return result.scalar() or 0
+        except CustomException:
+            raise
         except Exception as e:
-            raise CustomException(msg=f"获取查询失败: {e!s}")
+            raise CustomException(msg=f"统计失败: {e!s}")
 
     async def list(
         self,
@@ -76,29 +177,28 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         preload: list[str | Any] | None = None,
     ) -> Sequence[ModelType]:
         """
-        根据条件获取对象列表
+        根据条件获取对象列表（使用只读会话，不参与请求事务）
 
         参数:
-        - search (Optional[Dict]): 查询条件,格式为 {'id': value, 'name': value}
-        - order_by (Optional[List[Dict[str, str]]]): 排序字段,格式为 [{'id': 'asc'}, {'name': 'desc'}]
-        - preload (Optional[List[Union[str, Any]]]): 预加载关系，支持关系名字符串或SQLAlchemy loader option
+        - search: 查询条件
+        - order_by: 排序字段, 格式为 [{'id': 'asc'}, {'name': 'desc'}]
+        - preload: 预加载关系
 
         返回:
-        - Sequence[ModelType]: 对象列表
-
-        异常:
-        - CustomException: 查询失败时抛出异常
+        - 对象列表
         """
         try:
-            conditions = await self.__build_conditions(**search) if search else []
+            conditions = await self.__build_conditions(**(search or {}))
             order = order_by or [{"id": "asc"}]
-            sql = select(self.model).where(*conditions).order_by(*self.__order_by(order))
-            # 应用可配置的预加载选项
+            sql = select(self.model).where(*conditions).order_by(*self._parse_order(order))
             for opt in self.__loader_options(preload):
                 sql = sql.options(opt)
             sql = await self.__filter_permissions(sql)
-            result: Result = await self.auth.db.execute(sql)
+            async with async_db_session() as rdb:
+                result: Result = await rdb.execute(sql)
             return result.scalars().all()
+        except CustomException:
+            raise
         except Exception as e:
             raise CustomException(msg=f"列表查询失败: {e!s}")
 
@@ -110,41 +210,36 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         preload: builtins.list[str | Any] | None = None,
     ) -> Sequence[ModelType]:
         """
-        获取树形结构数据列表
+        获取树形结构数据列表（使用只读会话，不参与请求事务）
 
         参数:
-        - search (Optional[Dict]): 查询条件
-        - order_by (Optional[List[Dict[str, str]]]): 排序字段
-        - children_attr (str): 子节点属性名
-        - preload (Optional[List[Union[str, Any]]]): 额外预加载关系，若为None则默认包含children_attr
+        - search: 查询条件
+        - order_by: 排序字段
+        - children_attr: 子节点属性名
+        - preload: 额外预加载关系
 
         返回:
-        - Sequence[ModelType]: 树形结构数据列表
-
-        异常:
-        - CustomException: 查询失败时抛出异常
+        - 树形结构数据列表
         """
         try:
-            conditions = await self.__build_conditions(**search) if search else []
+            conditions = await self.__build_conditions(**(search or {}))
             order = order_by or [{"id": "asc"}]
-            sql = select(self.model).where(*conditions).order_by(*self.__order_by(order))
+            sql = select(self.model).where(*conditions).order_by(*self._parse_order(order))
 
-            # 处理预加载选项
             final_preload = preload
-            # 如果没有提供preload且children_attr存在，则添加到预加载选项中
             if preload is None and children_attr and hasattr(self.model, children_attr):
-                # 获取模型默认预加载选项
                 model_defaults = getattr(self.model, "__loader_options__", [])
-                # 将children_attr添加到默认预加载选项中
                 final_preload = [*list(model_defaults), children_attr]
 
-            # 应用预加载选项
             for opt in self.__loader_options(final_preload):
                 sql = sql.options(opt)
 
             sql = await self.__filter_permissions(sql)
-            result: Result = await self.auth.db.execute(sql)
+            async with async_db_session() as rdb:
+                result: Result = await rdb.execute(sql)
             return result.scalars().all()
+        except CustomException:
+            raise
         except Exception as e:
             raise CustomException(msg=f"树形列表查询失败: {e!s}")
 
@@ -154,83 +249,85 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         limit: int,
         order_by: builtins.list[dict[str, str]],
         search: dict,
-        out_schema: type[OutSchemaType],
+        out_schema: type[OutSchemaType] | None = None,
         preload: builtins.list[str | Any] | None = None,
-    ) -> dict:
+    ) -> PageResultSchema:
         """
-        获取分页数据
+        获取分页数据（使用只读会话，不参与请求事务；count 与 data 共享同一会话）
 
         参数:
-        - offset (int): 偏移量
-        - limit (int): 每页数量
-        - order_by (List[Dict[str, str]]): 排序字段
-        - search (Dict): 查询条件
-        - out_schema (Type[OutSchemaType]): 输出数据模型
-        - preload (Optional[List[Union[str, Any]]]): 预加载关系
+        - offset: 偏移量
+        - limit: 每页数量
+        - order_by: 排序字段
+        - search: 查询条件
+        - out_schema: 输出数据模型（None 时返回原始 ORM 对象）
+        - preload: 预加载关系
 
         返回:
-        - Dict: 分页数据
-
-        异常:
-        - CustomException: 查询失败时抛出异常
+        - PageResultSchema: 分页结果
         """
         try:
-            conditions = await self.__build_conditions(**search) if search else []
+            conditions = await self.__build_conditions(**(search or {}))
             order = order_by or [{"id": "asc"}]
-            sql = select(self.model).where(*conditions).order_by(*self.__order_by(order))
-            # 应用预加载选项
-            for opt in self.__loader_options(preload):
-                sql = sql.options(opt)
-            sql = await self.__filter_permissions(sql)
 
-            # 优化count查询：使用主键计数而非全表扫描
             mapper = sa_inspect(self.model)
             pk_cols = list(getattr(mapper, "primary_key", []))
-            if pk_cols:
-                # 使用主键的第一列进行计数（主键必定非NULL，性能更好）
-                count_sql = select(func.count(pk_cols[0])).select_from(self.model)
-            else:
-                # 降级方案：使用count(*)
-                count_sql = select(func.count()).select_from(self.model)
+            pk = pk_cols[0] if pk_cols else literal_column("1")
 
-            if conditions:
-                count_sql = count_sql.where(*conditions)
-            count_sql = await self.__filter_permissions(count_sql)
+            data_sql = select(self.model).where(*conditions)
+            for opt in self.__loader_options(preload):
+                data_sql = data_sql.options(opt)
+            data_sql = await self.__filter_permissions(data_sql)
 
-            total_result = await self.auth.db.execute(count_sql)
-            total = total_result.scalar() or 0
+            count_sql = select(func.count(pk)).select_from(self.model)
+            where_clause = data_sql.whereclause
+            if where_clause is not None:
+                count_sql = count_sql.where(where_clause)
 
-            result: Result = await self.auth.db.execute(sql.offset(offset).limit(limit))
-            objs = result.scalars().all()
+            async with async_db_session() as rdb:
+                total_result = await rdb.execute(count_sql)
+                total = total_result.scalar() or 0
 
-            return {
-                "page_no": offset // limit + 1 if limit else 1,
-                "page_size": limit or 10,
-                "total": total,
-                "has_next": offset + limit < total,
-                "items": [out_schema.model_validate(obj).model_dump() for obj in objs],
-            }
+                result: Result = await rdb.execute(
+                    data_sql.order_by(*self._parse_order(order)).offset(offset).limit(limit)
+                )
+                objs = result.scalars().all()
+
+            items = (
+                [out_schema.model_validate(obj).model_dump() for obj in objs]
+                if out_schema
+                else list(objs)
+            )
+
+            return PageResultSchema(
+                page_no=offset // limit + 1 if limit else 1,
+                page_size=limit or 10,
+                total=total,
+                has_next=offset + limit < total,
+                items=items,
+            )
+        except CustomException:
+            raise
         except Exception as e:
             raise CustomException(msg=f"分页查询失败: {e!s}")
 
-    async def create(self, data: CreateSchemaType | dict) -> ModelType:
-        """
-        创建新对象
+    # ── 创建 ──
+    async def create(self, data: CreateSchemaType) -> ModelType:
+        """创建新对象（有认证时自动填充租户与审计字段）
+
+        事务由 request 级 db_getter 统一管理，本方法不开启独立事务。
 
         参数:
-        - data (Union[CreateSchemaType, Dict]): 对象属性
+        - data: 对象属性
 
         返回:
-        - ModelType: 新创建的对象实例
-
-        异常:
-        - CustomException: 创建失败时抛出异常
+        - 新创建的对象实例
         """
         try:
-            obj_dict = data if isinstance(data, dict) else data.model_dump()
+            obj_dict = data.model_dump()
             obj = self.model(**obj_dict)
 
-            if self.auth.user:
+            if self.auth and self.auth.user:
                 if hasattr(obj, "tenant_id") and getattr(obj, "tenant_id", None) is None:
                     setattr(obj, "tenant_id", self.auth.user.tenant_id)
                 if hasattr(obj, "created_id"):
@@ -238,274 +335,212 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 if hasattr(obj, "updated_id"):
                     setattr(obj, "updated_id", self.auth.user.id)
 
-            self.auth.db.add(obj)
-            await self.auth.db.flush()
-            await self.auth.db.refresh(obj)
+            self.db.add(obj)
+            await self.db.flush()
+            await self.db.refresh(obj)
             return obj
+        except CustomException:
+            raise
         except Exception as e:
             raise CustomException(msg=f"创建失败: {e!s}")
 
-    async def update(self, id: int, data: UpdateSchemaType | dict) -> ModelType:
-        """
-        更新对象
+    # ── 更新 ──
+    async def update(self, id: int, data: UpdateSchemaType) -> ModelType:
+        """更新对象（有认证时检查租户归属 + 填充审计字段）
+
+        事务由 request 级 db_getter 统一管理，本方法不开启独立事务。
 
         参数:
-        - id (int): 对象ID
-        - data (Union[UpdateSchemaType, Dict]): 更新的属性及值
+        - id: 对象 ID
+        - data: 更新属性
 
         返回:
-        - ModelType: 更新后的对象实例
-
-        异常:
-        - CustomException: 更新失败时抛出异常
+        - 更新后的对象实例
         """
         try:
-            obj_dict = (
-                data
-                if isinstance(data, dict)
-                else data.model_dump(exclude_unset=True, exclude={"id"})
-            )
-            # 获取对象时不自动预加载关系，避免循环依赖
-            obj = await self.get(id=id, preload=[])
+            obj_dict = data.model_dump(exclude_unset=True, exclude={"id"})
+            obj = await self._get_one(self.db, id=id, preload=[])
             if not obj:
                 raise CustomException(msg="更新对象不存在")
 
-            if self.auth.user and not self.auth.user.is_superuser:
+            # 租户权限检查（仅在有认证且非超管时）
+            if self.auth and self.auth.user and not self.auth.user.is_superuser:
                 if hasattr(obj, "tenant_id"):
                     obj_tid = getattr(obj, "tenant_id", None)
                     if obj_tid is not None and obj_tid != self.auth.user.tenant_id:
+                        is_platform = getattr(self.model, "__platform_data_shared__", False)
+                        if is_platform and obj_tid == 1:
+                            raise CustomException(msg="平台数据仅管理员可修改")
                         raise CustomException(msg="无权修改其他租户的数据")
 
-            # 设置字段值（只检查一次current_user）
-            if self.auth.user and hasattr(obj, "updated_id"):
+            # 审计字段
+            if self.auth and self.auth.user and hasattr(obj, "updated_id"):
                 setattr(obj, "updated_id", self.auth.user.id)
 
             for key, value in obj_dict.items():
                 if hasattr(obj, key):
                     setattr(obj, key, value)
 
-            await self.auth.db.flush()
-            # 刷新对象时不自动预加载关系
-            await self.auth.db.refresh(obj)
-
-            # 权限二次确认：flush后再次验证对象仍在权限范围内
-            # 防止并发修改导致的权限逃逸（如其他事务修改了created_id）
-            # 验证时也不自动预加载关系
-            verify_obj = await self.get(id=id, preload=[])
-            if not verify_obj:
-                # 对象已被删除或权限已失效
-                raise CustomException(msg="更新失败，对象不存在或无权限访问")
-
+            await self.db.flush()
+            await self.db.refresh(obj)
             return obj
+        except CustomException:
+            raise
         except Exception as e:
             raise CustomException(msg=f"更新失败: {e!s}")
 
-    def __tenant_condition(self, read_mode: bool = False) -> builtins.list[ColumnElement]:
-        """
-        获取租户隔离条件。
-
-        read_mode=True 时对标记了 __platform_data_shared__ 的模型会同时放开
-        tenant_id=1（平台数据），使租户用户也能读取平台共享数据；写入操作不受此影响。
-
-        返回:
-        - List[ColumnElement]: 租户过滤条件列表，超管或无 tenant_id 字段时返回空列表。
-        """
-        if not hasattr(self.model, "tenant_id"):
-            return []
-        if self.auth.user and self.auth.user.is_superuser:
-            return []
-        tid = self.auth.user.tenant_id if self.auth.user else self.auth.tenant_id
-        if tid is not None:
-            own_filter = getattr(self.model, "tenant_id") == tid
-            if read_mode and getattr(self.model, "__platform_data_shared__", False) and tid != 1:
-                platform_filter = getattr(self.model, "tenant_id") == 1
-                return [own_filter | platform_filter]
-            return [own_filter]
-        return []
-
+    # ── 删除 ──
     async def delete(self, ids: builtins.list[int]) -> None:
-        """
-        软删除对象
+        """软删除对象（有认证时加租户隔离 + 填充删除人）
+
+        事务由 request 级 db_getter 统一管理，本方法不开启独立事务。
 
         参数:
-        - ids (List[int]): 对象ID列表
-
-        返回:
-        - None
-
-        异常:
-        - CustomException: 删除失败时抛出异常
+        - ids: 对象 ID 列表
         """
         try:
-            mapper = sa_inspect(self.model)
-            pk_cols = list(getattr(mapper, "primary_key", []))
-            if not pk_cols:
-                raise CustomException(msg="模型缺少主键，无法删除")
-            if len(pk_cols) > 1:
-                raise CustomException(msg="暂不支持复合主键的批量删除")
+            pk = self._get_pk_col()
+            tenant_conds = self.__tenant_condition()
 
-            # 检查模型是否支持软删除
-            if hasattr(self.model, "is_deleted") and hasattr(self.model, "deleted_time") and hasattr(self.model, "deleted_id"):
-                # 执行软删除
-                update_data = {
-                    "is_deleted": True,
-                    "deleted_time": datetime.now()
-                }
-                # 如果有当前用户，设置删除人ID
-                if self.auth.user:
-                    update_data["deleted_id"] = self.auth.user.id
-
-                # 只更新有权限的数据（主键 + 租户隔离）
-                sql = update(self.model).where(pk_cols[0].in_(ids), *self.__tenant_condition()).values(**update_data)
-                await self.auth.db.execute(sql)
-                await self.auth.db.flush()
+            if self._supports_soft_delete:
+                sql = (
+                    update(self.model)
+                    .where(pk.in_(ids), *tenant_conds)
+                    .values(**self._soft_delete_values())
+                )
+                await self.db.execute(sql)
             else:
-                # 不支持软删除的模型，执行物理删除（租户隔离）
-                sql = delete(self.model).where(pk_cols[0].in_(ids), *self.__tenant_condition())
-                await self.auth.db.execute(sql)
-                await self.auth.db.flush()
+                sql = delete(self.model).where(pk.in_(ids), *tenant_conds)
+                await self.db.execute(sql)
+            await self.db.flush()
+        except CustomException:
+            raise
         except Exception as e:
             raise CustomException(msg=f"删除失败: {e!s}")
 
     async def clear(self) -> None:
-        """
-        软清空对象表
+        """软清空对象表（有认证时租户隔离）
 
-        返回:
-        - None
-
-        异常:
-        - CustomException: 清空失败时抛出异常
+        事务由 request 级 db_getter 统一管理，本方法不开启独立事务。
         """
         try:
-            # 检查模型是否支持软删除
-            if hasattr(self.model, "is_deleted") and hasattr(self.model, "deleted_time") and hasattr(self.model, "deleted_id"):
-                # 执行软删除
-                update_data = {
-                    "is_deleted": True,
-                    "deleted_time": datetime.now()
-                }
-                # 如果有当前用户，设置删除人ID
-                if self.auth.user:
-                    update_data["deleted_id"] = self.auth.user.id
+            tenant_conds = self.__tenant_condition()
 
-                # 更新所有数据为软删除状态（租户隔离）
-                sql = update(self.model).where(*self.__tenant_condition()).values(**update_data)
-                await self.auth.db.execute(sql)
-                await self.auth.db.flush()
+            if self._supports_soft_delete:
+                sql = update(self.model).where(*tenant_conds).values(**self._soft_delete_values())
+                await self.db.execute(sql)
             else:
-                # 不支持软删除的模型，执行物理删除
-                sql = delete(self.model)
-                await self.auth.db.execute(sql)
-                await self.auth.db.flush()
+                sql = delete(self.model).where(*tenant_conds)
+                await self.db.execute(sql)
+            await self.db.flush()
+        except CustomException:
+            raise
         except Exception as e:
             raise CustomException(msg=f"清空失败: {e!s}")
 
+    # ── 批量操作 ──
     async def set(self, ids: builtins.list[int], **kwargs) -> None:
-        """
-        批量更新对象
+        """批量更新字段（有认证时租户隔离）
+
+        事务由 request 级 db_getter 统一管理，本方法不开启独立事务。
 
         参数:
-        - ids (List[int]): 对象ID列表
-        - **kwargs: 更新的属性及值
-
-        返回:
-        - None
-
-        异常:
-        - CustomException: 更新失败时抛出异常
+        - ids: 对象 ID 列表
+        - **kwargs: 更新属性及值
         """
         try:
-            mapper = sa_inspect(self.model)
-            pk_cols = list(getattr(mapper, "primary_key", []))
-            if not pk_cols:
-                raise CustomException(msg="模型缺少主键，无法更新")
-            if len(pk_cols) > 1:
-                raise CustomException(msg="暂不支持复合主键的批量更新")
-
-            # 只更新有权限的数据（主键 + 租户隔离）
-            sql = update(self.model).where(pk_cols[0].in_(ids), *self.__tenant_condition()).values(**kwargs)
-            await self.auth.db.execute(sql)
-            await self.auth.db.flush()
+            pk = self._get_pk_col()
+            sql = (
+                update(self.model)
+                .where(pk.in_(ids), *self.__tenant_condition())
+                .values(**kwargs)
+            )
+            await self.db.execute(sql)
+            await self.db.flush()
         except CustomException:
             raise
         except Exception as e:
             raise CustomException(msg=f"批量更新失败: {e!s}")
 
     async def restore(self, ids: builtins.list[int]) -> None:
-        """
-        恢复软删除的对象
+        """恢复软删除对象（有认证时租户隔离）
+
+        事务由 request 级 db_getter 统一管理，本方法不开启独立事务。
 
         参数:
-        - ids (List[int]): 对象ID列表
-
-        返回:
-        - None
-
-        异常:
-        - CustomException: 恢复失败时抛出异常
+        - ids: 对象 ID 列表
         """
         try:
-            mapper = sa_inspect(self.model)
-            pk_cols = list(getattr(mapper, "primary_key", []))
-            if not pk_cols:
-                raise CustomException(msg="模型缺少主键，无法恢复")
-            if len(pk_cols) > 1:
-                raise CustomException(msg="暂不支持复合主键的批量恢复")
-
-            # 检查模型是否支持软删除
-            if hasattr(self.model, "is_deleted") and hasattr(self.model, "deleted_time") and hasattr(self.model, "deleted_id"):
-                # 执行恢复操作
-                update_data = {
-                    "is_deleted": False,
-                    "deleted_time": None,
-                    "deleted_id": None
-                }
-
-                # 只更新有权限的数据（主键 + 租户隔离）
-                sql = update(self.model).where(pk_cols[0].in_(ids), *self.__tenant_condition()).values(**update_data)
-                await self.auth.db.execute(sql)
-                await self.auth.db.flush()
-            else:
+            if not self._supports_soft_delete:
                 raise CustomException(msg="该模型不支持软删除，无法恢复")
+            pk = self._get_pk_col()
+            sql = (
+                update(self.model)
+                .where(pk.in_(ids), *self.__tenant_condition())
+                .values(is_deleted=False, deleted_time=None, deleted_id=None)
+            )
+            await self.db.execute(sql)
+            await self.db.flush()
         except CustomException:
             raise
         except Exception as e:
             raise CustomException(msg=f"恢复失败: {e!s}")
 
+    # ── 内部方法 ──
+    def __tenant_condition(self) -> builtins.list[ColumnElement]:
+        """
+        获取租户隔离条件（无认证时返回空列表）
+
+        返回:
+        - 租户过滤条件列表
+        """
+        if not self.auth or not self.auth.user:
+            return []
+        if self.auth.user.is_superuser:
+            return []
+        if not hasattr(self.model, "tenant_id"):
+            return []
+        tid = self.auth.user.tenant_id
+        if tid is not None:
+            return [getattr(self.model, "tenant_id") == tid]
+        return []
+
     async def __filter_permissions(self, sql: Select) -> Select:
-        """
-        过滤数据权限（仅用于Select）：先按租户隔离，再按业务权限策略过滤。
-        """
-        for condition in self.__tenant_condition(read_mode=True):
-            sql = sql.where(condition)
-        filter = Permission(model=self.model, auth=self.auth)
-        return await filter.filter_query(sql)
+        """过滤数据权限（仅用于 Select）"""
+        if not self.auth:
+            return sql
+        if getattr(self.model, "__platform_data_shared__", False):
+            for condition in self._platform_shared_conditions():
+                sql = sql.where(condition)
+        filter_obj = Permission(model=self.model, auth=self.auth)
+        return await filter_obj.filter_query(sql)
+
+    def _platform_shared_conditions(self) -> builtins.list[ColumnElement]:
+        """平台共享模型读取条件（租户可读 tenant_id=平台或自己的数据）"""
+        if not self.auth or not self.auth.user:
+            return []
+        tid = self.auth.user.tenant_id
+        if tid is not None and tid != 1:
+            return [
+                (getattr(self.model, "tenant_id") == tid)
+                | (getattr(self.model, "tenant_id") == 1)
+            ]
+        return []
 
     async def __build_conditions(self, **kwargs) -> builtins.list[ColumnElement]:
         """
-        构建查询条件
+        构建查询条件（自动添加 is_deleted 过滤）
 
         参数:
-        - **kwargs: 查询参数
+        - **kwargs: 查询参数，支持元组语法: ("like", val), ("in", []), ("between", [a,b]) 等
 
         返回:
-        - List[ColumnElement]: SQL条件表达式列表
-
-        异常:
-        - CustomException: 查询参数不存在时抛出异常
+        - SQL 条件表达式列表
         """
-        conditions = []
-        # 默认添加软删除条件，只查询未删除的数据
-        if hasattr(self.model, "is_deleted"):
-            conditions.append(getattr(self.model, "is_deleted") == False)
+        conditions: builtins.list[ColumnElement] = []
 
-        # 多租户数据隔离：非超管自动按 tenant_id 过滤
-        if hasattr(self.model, "tenant_id"):
-            if not self.auth.user or not self.auth.user.is_superuser:
-                tid = self.auth.user.tenant_id if self.auth.user else self.auth.tenant_id
-                if tid is not None:
-                    conditions.append(getattr(self.model, "tenant_id") == tid)
+        if hasattr(self.model, "is_deleted"):
+            conditions.append(getattr(self.model, "is_deleted") == False)  # noqa: E712
 
         for key, value in kwargs.items():
             if value is None or value == "":
@@ -519,13 +554,21 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                 elif seq == "not None":
                     conditions.append(attr.isnot(None))
                 elif seq == "date" and val:
-                    conditions.append(func.date_format(attr, "%Y-%m-%d") == val)
+                    dt = datetime.strptime(val, "%Y-%m-%d")
+                    conditions.append(attr >= dt)
+                    conditions.append(attr < dt + timedelta(days=1))
                 elif seq == "month" and val:
-                    conditions.append(func.date_format(attr, "%Y-%m") == val)
+                    dt = datetime.strptime(val, "%Y-%m")
+                    next_month = (
+                        dt.replace(year=dt.year + 1, month=1)
+                        if dt.month == 12
+                        else dt.replace(month=dt.month + 1)
+                    )
+                    conditions.append(attr >= dt)
+                    conditions.append(attr < next_month)
                 elif seq == "like" and val:
                     conditions.append(attr.like(f"%{val}%"))
                 elif seq == "in":
-                    # 通用约定：("in", []) 应当返回空集（恒假），不能跳过条件导致查询退化成全量（仅权限过滤）
                     if val is None:
                         continue
                     if isinstance(val, (list, tuple, set)) and len(val) == 0:
@@ -534,38 +577,37 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
                         conditions.append(attr.in_(val))
                 elif seq == "between" and isinstance(val, (list, tuple)) and len(val) == 2:
                     conditions.append(attr.between(val[0], val[1]))
-                elif seq == "!=" or (seq == "ne" and val):
+                elif seq in ("!=", "ne") and val is not None:
                     conditions.append(attr != val)
-                elif seq == ">" or (seq == "gt" and val):
+                elif seq in (">", "gt") and val is not None:
                     conditions.append(attr > val)
-                elif seq == ">=" or (seq == "ge" and val):
+                elif seq in (">=", "ge") and val is not None:
                     conditions.append(attr >= val)
-                elif seq == "<" or (seq == "lt" and val):
+                elif seq in ("<", "lt") and val is not None:
                     conditions.append(attr < val)
-                elif seq == "<=" or (seq == "le" and val):
+                elif seq in ("<=", "le") and val is not None:
                     conditions.append(attr <= val)
-                elif seq == "==" or (seq == "eq" and val):
+                elif seq in ("eq", "==") and val is not None:
                     conditions.append(attr == val)
             else:
                 conditions.append(attr == value)
         return conditions
 
-    def __order_by(self, order_by: builtins.list[dict[str, str]]) -> builtins.list[ColumnElement]:
+    def _parse_order(
+        self, order: builtins.list[dict[str, str]]
+    ) -> builtins.list[ColumnElement]:
         """
-        获取排序字段
+        解析排序参数
 
         参数:
-        - order_by (List[Dict[str, str]]): 排序字段列表,格式为 [{'id': 'asc'}, {'name': 'desc'}]
+        - order: 排序字段列表, 格式为 [{'id': 'asc'}, {'name': 'desc'}]
 
         返回:
-        - List[ColumnElement]: 排序字段列表
-
-        异常:
-        - CustomException: 排序字段不存在时抛出异常
+        - 排序表达式列表
         """
-        columns = []
-        for order in order_by:
-            for field, direction in order.items():
+        columns: builtins.list[ColumnElement] = []
+        for item in order:
+            for field, direction in item.items():
                 column = getattr(self.model, field)
                 columns.append(desc(column) if direction.lower() == "desc" else asc(column))
         return columns
@@ -577,33 +619,27 @@ class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
         构建预加载选项
 
         参数:
-        - preload (Optional[List[Union[str, Any]]]): 预加载关系，支持关系名字符串或SQLAlchemy loader option
+        - preload: 预加载关系，支持关系名字符串或 SQLAlchemy loader option
 
         返回:
-        - List[Any]: 预加载选项列表
+        - 预加载选项列表
         """
-        options = []
-        # 获取模型定义的默认加载选项
+        options: builtins.list[Any] = []
         model_loader_options = getattr(self.model, "__loader_options__", [])
 
-        # 合并所有需要预加载的选项
-        all_preloads = set(model_loader_options)
+        all_preloads: set[str | Any] = set(model_loader_options)
         if preload:
             for opt in preload:
                 if isinstance(opt, str):
                     all_preloads.add(opt)
         elif preload == []:
-            # 如果明确指定空列表，则不使用任何预加载
             all_preloads = set()
 
-        # 处理所有预加载选项
         for opt in all_preloads:
             if isinstance(opt, str):
-                # 使用selectinload来避免在异步环境中的MissingGreenlet错误
                 if hasattr(self.model, opt):
                     options.append(selectinload(getattr(self.model, opt)))
             else:
-                # 直接使用非字符串的加载选项
                 options.append(opt)
 
         return options

@@ -56,11 +56,12 @@ import DeptAPI, { DeptPageQuery } from "@/api/module_system/dept";
 import { formatTree } from "@utils";
 import type { FilterNodeMethodFunction, TreeInstance } from "element-plus";
 
-const props = defineProps({
-  modelValue: {
-    type: [String, Number],
-    default: undefined,
-  },
+interface Props {
+  modelValue?: string | number;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: undefined,
 });
 
 const deptOptions = ref<OptionType[]>([]); // 部门列表

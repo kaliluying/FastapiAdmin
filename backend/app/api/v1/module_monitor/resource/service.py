@@ -1,15 +1,15 @@
+import ast
 import os
 import re
 import shutil
 import urllib.parse
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 from urllib.parse import urlparse
 
 from app.config.setting import settings
 from app.core.exceptions import CustomException
-from app.core.logger import log
+from app.core.logger import logger
 from app.utils.excel_util import ExcelUtil
 
 from .schema import (
@@ -36,18 +36,18 @@ class ResourceService:
     @classmethod
     def _get_resource_root(cls) -> str:
         """
-        获取资源管理根目录（仅允许访问 upload 目录）
+        获取资源管理根目录（仅允许访问 upload/resource 目录）
 
         返回:
-        - str: 资源管理根目录路径（upload 目录）。
+        - str: 资源管理根目录路径（upload/resource 目录）。
         """
         if not settings.STATIC_ENABLE:
             raise CustomException(msg="静态文件服务未启用")
-        # 限制只能管理 upload 目录
-        upload_root = os.path.join(str(settings.STATIC_ROOT), "upload")
-        # 确保 upload 目录存在
-        os.makedirs(upload_root, exist_ok=True)
-        return upload_root
+        # 限制只能管理 upload/resource 目录（与 upload_type="resource" 保持一致）
+        resource_root = os.path.join(str(settings.STATIC_ROOT), "upload", "resource")
+        # 确保 resource 目录存在
+        os.makedirs(resource_root, exist_ok=True)
+        return resource_root
 
     @classmethod
     def _get_safe_path(cls, path: str | None = None) -> str:
@@ -67,9 +67,7 @@ class ResourceService:
 
         # 支持前端传递的完整URL或以STATIC_URL/ROOT_PATH+STATIC_URL开头的URL路径，转换为相对资源路径
         static_prefix = settings.STATIC_URL.rstrip("/")
-        root_prefix = (
-            settings.ROOT_PATH.rstrip("/") if getattr(settings, "ROOT_PATH", "") else ""
-        )
+        root_prefix = settings.ROOT_PATH.rstrip("/") if getattr(settings, "ROOT_PATH", "") else ""
         root_static_prefix = f"{root_prefix}{static_prefix}" if root_prefix else static_prefix
 
         def strip_prefix(p: str) -> str:
@@ -109,13 +107,13 @@ class ResourceService:
 
         # 检查路径遍历攻击
         if ".." in path or "\x00" in path:
-            log.error(f"检测到路径遍历攻击尝试: {path}")
+            logger.error(f"检测到路径遍历攻击尝试: {path}")
             raise CustomException(msg="非法的路径格式")
 
         # URL 解码检查
         decoded_path = urllib.parse.unquote(path)
         if ".." in decoded_path:
-            log.error(f"检测到编码后的路径遍历攻击: {path}")
+            logger.error(f"检测到编码后的路径遍历攻击: {path}")
             raise CustomException(msg="非法的路径格式")
 
         # 构建完整路径
@@ -126,8 +124,13 @@ class ResourceService:
         safe_path_abs = os.path.normpath(os.path.abspath(safe_path))
 
         # 核心安全检查：确保最终路径在允许的根目录下
-        if not safe_path_abs.startswith(resource_root_abs + os.sep) and safe_path_abs != resource_root_abs:
-            log.error(f"路径遍历攻击被阻止: 尝试访问 {safe_path_abs}, 但根目录是 {resource_root_abs}")
+        if (
+            not safe_path_abs.startswith(resource_root_abs + os.sep)
+            and safe_path_abs != resource_root_abs
+        ):
+            logger.error(
+                f"路径遍历攻击被阻止: 尝试访问 {safe_path_abs}, 但根目录是 {resource_root_abs}"
+            )
             raise CustomException(msg="访问路径不在允许范围内")
 
         # 检查路径深度
@@ -174,15 +177,15 @@ class ResourceService:
         # 首先检查原始文件名是否包含路径遍历特征
         # 攻击者可能使用 ..\..\etc\passwd 或 ../../etc/passwd
         dangerous_patterns = [
-            r"\.\.",           # .. 路径遍历
-            r"[\/]",            # 任何斜杠（目录分隔符）
-            r"\x00",            # 空字节
-            r"%2e%2e",          # URL 编码的 ..
-            r"%252e%252e",      # 双重 URL 编码的 ..
+            r"\.\.",  # .. 路径遍历
+            r"[\/]",  # 任何斜杠（目录分隔符）
+            r"\x00",  # 空字节
+            r"%2e%2e",  # URL 编码的 ..
+            r"%252e%252e",  # 双重 URL 编码的 ..
         ]
         for pattern in dangerous_patterns:
             if re.search(pattern, filename, re.IGNORECASE):
-                log.error(f"检测到文件名路径遍历攻击: {filename}")
+                logger.error(f"检测到文件名路径遍历攻击: {filename}")
                 # 返回安全文件名，不包含原始文件名
                 return f"file_{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
@@ -191,7 +194,7 @@ class ResourceService:
         decoded_twice = urllib.parse.unquote(decoded)
         for check in [decoded, decoded_twice]:
             if ".." in check or "/" in check or "\\" in check:
-                log.error(f"检测到编码后的文件名攻击: {filename}")
+                logger.error(f"检测到编码后的文件名攻击: {filename}")
                 return f"file_{datetime.now().strftime('%Y%m%d%H%M%S')}"
 
         # 使用 os.path.basename 提取纯文件名（移除路径）
@@ -269,67 +272,57 @@ class ResourceService:
             static_part = settings.STATIC_URL.lstrip("/")
             file_part = url_path.lstrip("/")
 
-            http_url = f"{base_part}/{static_part}/{file_part}".replace("//", "/").replace(":/", "://")
+            http_url = f"{base_part}/{static_part}/{file_part}".replace("//", "/").replace(
+                ":/", "://"
+            )
         else:
             http_url = f"{settings.STATIC_URL}/{url_path}".replace("//", "/")
 
         return http_url
 
     @classmethod
-    def _get_file_info(cls, file_path: str, base_url: str | None = None) -> dict:
+    def _get_file_info(cls, file_path: str, base_url: str | None = None) -> ResourceItemSchema | None:
         """
-        获取文件或目录的详细信息，如名称、大小、创建时间、修改时间、路径、深度、HTTP URL、是否隐藏、是否为目录等。
+        获取文件或目录的详细信息。
 
         参数:
         - file_path (str): 文件或目录的路径（必须是绝对路径）。
         - base_url (str | None): 基础URL，用于生成完整URL。
 
         返回:
-        - dict: 文件或目录的详细信息字典。
+        - ResourceItemSchema | None: 文件或目录的详细信息，路径不存在时返回 None。
         """
         try:
-            # 直接使用传入的路径（已经是绝对路径）
             safe_path = file_path
             if not os.path.exists(safe_path):
-                return {}
+                return None
 
             stat = os.stat(safe_path)
             path_obj = Path(safe_path)
             resource_root = cls._get_resource_root()
 
-            # 计算相对路径（相对于资源根目录）
             try:
                 relative_path = os.path.relpath(safe_path, resource_root)
             except ValueError:
                 relative_path = os.path.basename(safe_path)
 
-            # 生成HTTP URL路径
             http_url = cls._generate_http_url(safe_path, base_url)
-
-            # 检查是否为隐藏文件（文件名以点开头）
             is_hidden = path_obj.name.startswith(".")
 
-            # 对于目录，设置is_directory字段（兼容前端）
-            is_directory = os.path.isdir(safe_path)
-
-            # 将datetime对象转换为ISO格式的字符串，确保JSON序列化成功
-            created_time = datetime.fromtimestamp(stat.st_ctime).isoformat()
-            modified_time = datetime.fromtimestamp(stat.st_mtime).isoformat()
-
-            return {
-                "name": path_obj.name,
-                "file_url": http_url,  # 统一使用file_url字段
-                "relative_path": relative_path,
-                "is_file": os.path.isfile(safe_path),
-                "is_dir": is_directory,
-                "size": stat.st_size if os.path.isfile(safe_path) else None,
-                "created_time": created_time,
-                "modified_time": modified_time,
-                "is_hidden": is_hidden,
-            }
+            return ResourceItemSchema(
+                name=path_obj.name,
+                file_url=http_url,
+                relative_path=relative_path,
+                is_file=os.path.isfile(safe_path),
+                is_dir=os.path.isdir(safe_path),
+                size=stat.st_size if os.path.isfile(safe_path) else None,
+                created_time=datetime.fromtimestamp(stat.st_ctime),
+                modified_time=datetime.fromtimestamp(stat.st_mtime),
+                is_hidden=is_hidden,
+            )
         except Exception as e:
-            log.error(f"获取文件信息失败: {e!s}")
-            return {}
+            logger.error(f"获取文件信息失败: {e!s}")
+            return None
 
     @classmethod
     async def get_directory_list_service(
@@ -337,7 +330,7 @@ class ResourceService:
         path: str | None = None,
         include_hidden: bool = False,
         base_url: str | None = None,
-    ) -> dict:
+    ) -> ResourceDirectorySchema:
         """
         获取目录列表
 
@@ -379,30 +372,30 @@ class ResourceService:
                     file_info = cls._get_file_info(item_path, base_url)
 
                     if file_info:
-                        items.append(ResourceItemSchema(**file_info))
+                        items.append(file_info)
 
-                        if file_info["is_file"]:
+                        if file_info.is_file:
                             total_files += 1
-                            total_size += file_info.get("size", 0) or 0
-                        elif file_info["is_dir"]:
+                            total_size += file_info.size or 0
+                        elif file_info.is_dir:
                             total_dirs += 1
 
             except PermissionError:
                 raise CustomException(msg="没有权限访问此目录")
 
             return ResourceDirectorySchema(
-                path=display_path,  # 返回HTTP URL路径而不是文件系统路径
+                path=display_path,
                 name=os.path.basename(safe_path),
                 items=items,
                 total_files=total_files,
                 total_dirs=total_dirs,
                 total_size=total_size,
-            ).model_dump()
+            )
 
         except CustomException:
             raise
         except Exception as e:
-            log.error(f"获取目录列表失败: {e!s}")
+            logger.error(f"获取目录列表失败: {e!s}")
             raise CustomException(msg=f"获取目录列表失败: {e!s}")
 
     @classmethod
@@ -411,7 +404,7 @@ class ResourceService:
         search: ResourceSearchQueryParam | None = None,
         order_by: str | None = None,
         base_url: str | None = None,
-    ) -> list[dict]:
+    ) -> list[ResourceItemSchema]:
         """
         搜索资源列表（用于分页和导出）
 
@@ -421,7 +414,7 @@ class ResourceService:
         - base_url (str | None): 基础URL，用于生成完整URL。
 
         返回:
-        - list[dict]: 资源详情字典列表。
+        - list[ResourceItemSchema]: 资源详情列表。
         """
         try:
             # 确定搜索路径
@@ -453,7 +446,7 @@ class ResourceService:
                         # 应用名称过滤
                         if search and hasattr(search, "name") and search.name and search.name[1]:
                             search_keyword = search.name[1].lower()
-                            if search_keyword not in file_info.get("name", "").lower():
+                            if search_keyword not in file_info.name.lower():
                                 continue
 
                         all_resources.append(file_info)
@@ -471,16 +464,16 @@ class ResourceService:
             return sorted_resources
 
         except Exception as e:
-            log.error(f"搜索资源失败: {e!s}")
+            logger.error(f"搜索资源失败: {e!s}")
             raise CustomException(msg=f"搜索资源失败: {e!s}")
 
     @classmethod
-    async def export_resource_service(cls, data_list: list[dict]) -> bytes:
+    async def export_resource_service(cls, data_list: list[ResourceItemSchema]) -> bytes:
         """
         导出资源列表
 
         参数:
-        - data_list (list[dict]): 资源详情字典列表。
+        - data_list (list[ResourceItemSchema]): 资源详情列表。
 
         返回:
         - bytes: Excel文件的二进制数据。
@@ -495,7 +488,7 @@ class ResourceService:
         }
 
         # 复制数据并转换状态
-        export_data = data_list.copy()
+        export_data = [item.model_dump() for item in data_list]
 
         # 格式化文件大小
         for item in export_data:
@@ -542,55 +535,38 @@ class ResourceService:
 
     @classmethod
     def _sort_results(
-        cls, results: list[dict], order_by: str | None = None
-    ) -> list[dict[Any, Any]]:
+        cls, results: list[ResourceItemSchema], order_by: str | None = None
+    ) -> list[ResourceItemSchema]:
         """
         排序搜索结果
 
         参数:
-        - results (list[dict]): 资源详情字典列表。
+        - results (list[ResourceItemSchema]): 资源详情列表。
         - order_by (str | None): 排序参数。
 
         返回:
-        - list[dict]: 排序后的资源详情字典列表。
+        - list[ResourceItemSchema]: 排序后的资源详情列表。
         """
         try:
             # 默认按名称升序排序
             if not order_by:
-                return sorted(results, key=lambda x: x.get("name", ""), reverse=False)
+                return sorted(results, key=lambda x: x.name, reverse=False)
 
             # 解析order_by参数，格式: [{'field':'asc/desc'}]
-
-            sort_conditions = eval(order_by)
+            sort_conditions = ast.literal_eval(order_by)
             if isinstance(sort_conditions, list):
-                # 构建排序键函数
                 def sort_key(item):
-                    """
-                    按多条排序条件从资源项中抽取比较键（支持时间字段转 datetime）。
-
-                    参数:
-                    - item (dict): 单条资源详情字典。
-
-                    返回:
-                    - list: 用于 `sorted` 的多字段键列表。
-                    """
                     keys = []
                     for cond in sort_conditions:
                         field = cond.get("field", "name")
-                        cond.get("direction", "asc")
-                        # 获取字段值，默认为空字符串
-                        value = item.get(field, "")
-                        # 如果是日期字段，转换为可比较的格式
+                        value = getattr(item, field, "")
                         if (
                             field
-                            in [
-                                "created_time",
-                                "modified_time",
-                                "accessed_time",
-                            ]
+                            in ["created_time", "modified_time", "accessed_time"]
                             and value
                         ):
-                            value = datetime.fromisoformat(value)
+                            if isinstance(value, str):
+                                value = datetime.fromisoformat(value)
                         keys.append(value)
                     return keys
 
@@ -629,13 +605,12 @@ class ResourceService:
                 raise CustomException(msg="路径不是文件")
 
             # 返回本地文件路径给 FileResponse 使用
-            log.info(f"定位文件路径: {safe_path}")
             return safe_path
 
         except CustomException:
             raise
         except Exception as e:
-            log.error(f"下载文件失败: {e!s}")
+            logger.error(f"下载文件失败: {e!s}")
             raise CustomException(msg=f"下载文件失败: {e!s}")
 
     @classmethod
@@ -655,15 +630,13 @@ class ResourceService:
         safe_path = cls._get_safe_path(path)
 
         if not os.path.exists(safe_path):
-            log.error(f"路径不存在，跳过: {path}")
+            logger.error(f"路径不存在，跳过: {path}")
             raise CustomException(msg=f"路径不存在: {path}")
 
         if os.path.isfile(safe_path):
             os.remove(safe_path)
-            log.info(f"删除文件成功: {safe_path}")
         elif os.path.isdir(safe_path):
             shutil.rmtree(safe_path)
-            log.info(f"删除目录成功: {safe_path}")
 
     @classmethod
     async def delete_file_service(cls, paths: list[str]) -> None:
@@ -687,7 +660,7 @@ class ResourceService:
             try:
                 cls._delete_single_path(path)
             except Exception as e:
-                log.error(f"删除失败 {path}: {e!s}")
+                logger.error(f"删除失败 {path}: {e!s}")
                 raise CustomException(msg=f"删除失败 {path}: {e!s}")
 
     @classmethod
@@ -750,12 +723,11 @@ class ResourceService:
 
             # 移动文件
             shutil.move(source_path, target_path)
-            log.info(f"移动成功: {source_path} -> {target_path}")
 
         except CustomException:
             raise
         except Exception as e:
-            log.error(f"移动失败: {e!s}")
+            logger.error(f"移动失败: {e!s}")
             raise CustomException(msg=f"移动失败: {e!s}")
 
     @classmethod
@@ -790,12 +762,10 @@ class ResourceService:
             else:
                 shutil.copytree(source_path, target_path, dirs_exist_ok=data.overwrite)
 
-            log.info(f"复制成功: {source_path} -> {target_path}")
-
         except CustomException:
             raise
         except Exception as e:
-            log.error(f"复制失败: {e!s}")
+            logger.error(f"复制失败: {e!s}")
             raise CustomException(msg=f"复制失败: {e!s}")
 
     @classmethod
@@ -821,7 +791,7 @@ class ResourceService:
 
             # 如果新名称被重置，说明检测到攻击
             if safe_new_name.startswith("file_") and safe_new_name != data.new_name:
-                log.error(f"重命名时检测到路径遍历攻击，原始名称: {data.new_name}")
+                logger.error(f"重命名时检测到路径遍历攻击，原始名称: {data.new_name}")
                 raise CustomException(msg="新名称包含非法字符")
 
             # 生成新路径
@@ -832,8 +802,11 @@ class ResourceService:
             new_path_abs = os.path.normpath(os.path.abspath(new_path))
             resource_root_abs = os.path.normpath(os.path.abspath(cls._get_resource_root()))
 
-            if not new_path_abs.startswith(resource_root_abs + os.sep) and new_path_abs != resource_root_abs:
-                log.error(f"重命名时检测到越权访问: {new_path_abs}")
+            if (
+                not new_path_abs.startswith(resource_root_abs + os.sep)
+                and new_path_abs != resource_root_abs
+            ):
+                logger.error(f"重命名时检测到越权访问: {new_path_abs}")
                 raise CustomException(msg="目标路径不在允许范围内")
 
             if os.path.exists(new_path):
@@ -841,12 +814,11 @@ class ResourceService:
 
             # 重命名
             os.rename(old_path, new_path)
-            log.info(f"重命名成功: {old_path} -> {new_path}")
 
         except CustomException:
             raise
         except Exception as e:
-            log.error(f"重命名失败: {e!s}")
+            logger.error(f"重命名失败: {e!s}")
             raise CustomException(msg=f"重命名失败: {e!s}")
 
     @classmethod
@@ -874,7 +846,7 @@ class ResourceService:
 
             # 如果目录名被重置，说明检测到攻击
             if safe_dir_name.startswith("file_") and safe_dir_name != data.dir_name:
-                log.error(f"创建目录时检测到路径遍历攻击，原始名称: {data.dir_name}")
+                logger.error(f"创建目录时检测到路径遍历攻击，原始名称: {data.dir_name}")
                 raise CustomException(msg="目录名称包含非法字符")
 
             # 生成新目录路径
@@ -884,8 +856,11 @@ class ResourceService:
             new_dir_path_abs = os.path.normpath(os.path.abspath(new_dir_path))
             resource_root_abs = os.path.normpath(os.path.abspath(cls._get_resource_root()))
 
-            if not new_dir_path_abs.startswith(resource_root_abs + os.sep) and new_dir_path_abs != resource_root_abs:
-                log.error(f"创建目录时检测到越权访问: {new_dir_path_abs}")
+            if (
+                not new_dir_path_abs.startswith(resource_root_abs + os.sep)
+                and new_dir_path_abs != resource_root_abs
+            ):
+                logger.error(f"创建目录时检测到越权访问: {new_dir_path_abs}")
                 raise CustomException(msg="目标路径不在允许范围内")
 
             if os.path.exists(new_dir_path):
@@ -893,12 +868,11 @@ class ResourceService:
 
             # 创建目录
             os.makedirs(new_dir_path)
-            log.info(f"创建目录成功: {new_dir_path}")
 
         except CustomException:
             raise
         except Exception as e:
-            log.error(f"创建目录失败: {e!s}")
+            logger.error(f"创建目录失败: {e!s}")
             raise CustomException(msg=f"创建目录失败: {e!s}")
 
     @classmethod

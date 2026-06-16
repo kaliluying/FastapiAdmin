@@ -179,7 +179,7 @@ def mobile_validator(value: str | None) -> str | None:
 
 def validate_required_code(value: str | None) -> str:
     """
-    必填编码校验：字母开头，总长 2–16，仅含字母/数字/下划线。
+    必填编码校验：字母开头，总长 2–64，仅含字母/数字/下划线。
 
     参数:
     - value (str | None): 编码。
@@ -193,8 +193,10 @@ def validate_required_code(value: str | None) -> str:
     if value is None or not str(value).strip():
         raise ValueError("编码不能为空")
     v = value.strip()
-    if not re.match(r"^[A-Za-z][A-Za-z0-9_]{1,15}$", v):
-        raise ValueError("编码需字母开头，允许字母/数字/下划线，长度2-16")
+    if len(v) < 2 or len(v) > 64:
+        raise ValueError("编码长度需在 2-64 个字符之间")
+    if not re.match(r"^[A-Za-z][A-Za-z0-9_]*$", v):
+        raise ValueError("编码需以字母开头，仅允许字母、数字、下划线")
     return v
 
 
@@ -256,6 +258,9 @@ def menu_request_validator(data: Any) -> Any:
 
     if data.type == 2 and not data.component_path:
         raise CustomException(code=RET.ERROR.code, msg="组件路径不能为空")
+
+    if data.type == 4 and not getattr(data, "link", None):
+        raise CustomException(code=RET.ERROR.code, msg="外链类型必须填写链接地址")
 
     c = getattr(data, "client", None) or "pc"
     if c not in ("pc", "app"):

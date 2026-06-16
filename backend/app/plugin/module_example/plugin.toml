@@ -4,6 +4,6 @@
 name = "example"
 title = "示例插件"
 version = "1.0.0"
-description = "演示 module_* 目录约定与动态路由注册（demo / demo01）。"
+description = "演示 module_* 目录约定与动态路由注册（demo）。"
 optional = true
 tags = ["demo", "sample"]

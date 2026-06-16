@@ -138,10 +138,12 @@ const props = withDefaults(
   { editId: null }
 );
 
-const emit = defineEmits<{
+interface Emits {
   "update:modelValue": [boolean];
   success: [];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const visible = computed({
   get: () => props.modelValue,

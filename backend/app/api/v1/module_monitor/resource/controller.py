@@ -3,31 +3,32 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends, Form, Query, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 
+from app.api.v1.module_common.file.service import FileService
 from app.common.request import PaginationService
 from app.common.response import ResponseSchema, StreamResponse, SuccessResponse, UploadFileResponse
 from app.core.base_params import PaginationQueryParam
+from app.core.base_schema import UploadResponseSchema
 from app.core.dependencies import AuthPermission
-from app.core.logger import log
 from app.core.router_class import OperationLogRoute
 from app.utils.common_util import bytes2file_response
 
 from .schema import (
     ResourceCopySchema,
     ResourceCreateDirSchema,
+    ResourceItemSchema,
     ResourceMoveSchema,
     ResourceRenameSchema,
     ResourceSearchQueryParam,
 )
 from .service import ResourceService
 
-ResourceRouter = APIRouter(route_class=OperationLogRoute, prefix="/resource", tags=["资源管理"])
+ResourceRouter = APIRouter(route_class=OperationLogRoute, prefix="/resource", tags=["系统监控/资源管理"])
 
 
 @ResourceRouter.get(
     "/list",
     summary="获取目录列表",
-    description="获取指定目录下的文件和子目录列表",
-    response_model=ResponseSchema[list[dict]],
+    response_model=ResponseSchema[list[ResourceItemSchema]],
     dependencies=[Depends(AuthPermission(["module_monitor:resource:query"]))],
 )
 async def get_directory_list_controller(
@@ -57,15 +58,13 @@ async def get_directory_list_controller(
         page_size=page.page_size,
     )
 
-    log.info(f"获取目录列表成功: {getattr(search, 'name', None) or ''}")
     return SuccessResponse(data=result_dict, msg="获取目录列表成功")
 
 
 @ResourceRouter.post(
     "/upload",
     summary="上传文件",
-    description="上传文件到指定目录（调用统一上传接口）",
-    response_model=ResponseSchema[dict],
+    response_model=ResponseSchema[UploadResponseSchema],
     dependencies=[Depends(AuthPermission(["module_monitor:resource:upload"]))],
 )
 async def upload_file_controller(
@@ -85,24 +84,22 @@ async def upload_file_controller(
     - JSONResponse: 包含上传文件信息的JSON响应。
     """
     # 调用统一上传接口，使用 resource 类型
-    result_dict = await FileService.upload_service(
+    result = await FileService.upload_service(
         base_url=str(request.base_url),
         file=file,
         upload_type="resource",
         target_path=target_path,
     )
-    log.info(f"上传文件成功: {result_dict['file_name']}")
-    return SuccessResponse(data=result_dict, msg="上传文件成功")
+    return SuccessResponse(data=result, msg="上传文件成功")
 
 
 @ResourceRouter.get(
     "/download",
     summary="下载文件",
-    description="下载指定文件",
     dependencies=[Depends(AuthPermission(["module_monitor:resource:download"]))],
 )
 async def download_file_controller(
-    path: Annotated[str, Query(description="文件路径")]
+    path: Annotated[str, Query(description="文件路径")],
 ) -> FileResponse:
     """
     下载文件
@@ -120,7 +117,6 @@ async def download_file_controller(
 
     filename = os.path.basename(file_path)
 
-    log.info(f"下载文件成功: {filename}")
     return UploadFileResponse(
         file_path=file_path,
         filename=filename,
@@ -131,7 +127,6 @@ async def download_file_controller(
 @ResourceRouter.delete(
     "/delete",
     summary="删除文件",
-    description="删除指定文件或目录",
     response_model=ResponseSchema[None],
     dependencies=[Depends(AuthPermission(["module_monitor:resource:delete"]))],
 )
@@ -148,14 +143,12 @@ async def delete_files_controller(
     - JSONResponse: 包含删除结果的JSON响应。
     """
     await ResourceService.delete_file_service(paths=paths)
-    log.info(f"删除文件成功: {paths}")
     return SuccessResponse(msg="删除文件成功")
 
 
 @ResourceRouter.post(
     "/move",
     summary="移动文件",
-    description="移动文件或目录",
     response_model=ResponseSchema[None],
     dependencies=[Depends(AuthPermission(["module_monitor:resource:move"]))],
 )
@@ -170,14 +163,12 @@ async def move_file_controller(data: ResourceMoveSchema) -> JSONResponse:
     - JSONResponse: 包含移动结果的JSON响应。
     """
     await ResourceService.move_file_service(data=data)
-    log.info(f"移动文件成功: {data.source_path} -> {data.target_path}")
     return SuccessResponse(msg="移动文件成功")
 
 
 @ResourceRouter.post(
     "/copy",
     summary="复制文件",
-    description="复制文件或目录",
     response_model=ResponseSchema[None],
     dependencies=[Depends(AuthPermission(["module_monitor:resource:copy"]))],
 )
@@ -192,14 +183,12 @@ async def copy_file_controller(data: ResourceCopySchema) -> JSONResponse:
     - JSONResponse: 包含复制结果的JSON响应。
     """
     await ResourceService.copy_file_service(data=data)
-    log.info(f"复制文件成功: {data.source_path} -> {data.target_path}")
     return SuccessResponse(msg="复制文件成功")
 
 
 @ResourceRouter.post(
     "/rename",
     summary="重命名文件",
-    description="重命名文件或目录",
     response_model=ResponseSchema[None],
     dependencies=[Depends(AuthPermission(["module_monitor:resource:rename"]))],
 )
@@ -214,14 +203,12 @@ async def rename_file_controller(data: ResourceRenameSchema) -> JSONResponse:
     - JSONResponse: 包含重命名结果的JSON响应。
     """
     await ResourceService.rename_file_service(data=data)
-    log.info(f"重命名文件成功: {data.old_path} -> {data.new_name}")
     return SuccessResponse(msg="重命名文件成功")
 
 
 @ResourceRouter.post(
     "/create-dir",
     summary="创建目录",
-    description="在指定路径创建新目录",
     response_model=ResponseSchema[None],
     dependencies=[Depends(AuthPermission(["module_monitor:resource:create_dir"]))],
 )
@@ -238,14 +225,12 @@ async def create_directory_controller(
     - JSONResponse: 包含创建目录结果的JSON响应。
     """
     await ResourceService.create_directory_service(data=data)
-    log.info(f"创建目录成功: {data.parent_path}/{data.dir_name}")
     return SuccessResponse(msg="创建目录成功")
 
 
 @ResourceRouter.post(
     "/export",
     summary="导出资源列表",
-    description="导出资源列表",
     response_model=ResponseSchema[None],
     dependencies=[Depends(AuthPermission(["module_monitor:resource:export"]))],
 )
@@ -268,7 +253,6 @@ async def export_resource_list_controller(
     )
     export_result = await ResourceService.export_resource_service(data_list=result_dict_list)
 
-    log.info("导出资源列表成功")
     return StreamResponse(
         data=bytes2file_response(export_result),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

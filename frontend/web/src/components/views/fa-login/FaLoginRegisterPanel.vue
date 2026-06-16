@@ -32,7 +32,6 @@
             clearable
             :placeholder="$t('login.placeholder.password')"
             @keyup="checkCapsLock"
-            @keyup.enter="$emit('submit')"
           >
             <template #prefix>
               <ElIcon><Lock /></ElIcon>
@@ -51,7 +50,6 @@
             clearable
             :placeholder="$t('login.message.password.confirm')"
             @keyup="checkCapsLock"
-            @keyup.enter="$emit('submit')"
           >
             <template #prefix>
               <ElIcon><Lock /></ElIcon>
@@ -104,18 +102,27 @@ import type { FormRules } from "element-plus";
 
 const registerForm = defineModel<RegisterForm>("registerForm", { required: true });
 
-defineProps<{
+defineOptions({ name: "FaLoginRegisterPanel" });
+
+interface Props {
   registerRules: FormRules<RegisterForm>;
   formKey: number | string;
   registerLoading: boolean;
   userAgreementHref: string;
-}>();
+}
+
+withDefaults(defineProps<Props>(), {});
 
 const registerAgreementReadModel = defineModel<boolean>("registerAgreementRead", {
   required: true,
 });
 
-defineEmits<{ submit: []; toLogin: [] }>();
+interface Emits {
+  submit: [];
+  toLogin: [];
+}
+
+const emit = defineEmits<Emits>();
 
 const formRef = ref();
 const isCapsLock = ref(false);
@@ -123,6 +130,9 @@ const isCapsLock = ref(false);
 function checkCapsLock(event: KeyboardEvent) {
   if (event instanceof KeyboardEvent) {
     isCapsLock.value = event.getModifierState("CapsLock");
+    if (event.key === "Enter") {
+      emit("submit");
+    }
   }
 }
 

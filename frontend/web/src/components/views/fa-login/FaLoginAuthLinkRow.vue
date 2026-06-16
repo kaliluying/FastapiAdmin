@@ -16,8 +16,20 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ hint: string; linkText: string }>();
-defineEmits<{ link: [] }>();
+defineOptions({ name: "FaLoginAuthLinkRow" });
+
+interface Props {
+  hint: string;
+  linkText: string;
+}
+
+withDefaults(defineProps<Props>(), {});
+
+interface Emits {
+  link: [];
+}
+
+defineEmits<Emits>();
 </script>
 
 <style scoped lang="scss">

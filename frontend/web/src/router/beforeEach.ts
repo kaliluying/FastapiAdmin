@@ -35,7 +35,7 @@ import {
   resetStorageInvalidated,
   checkStorageInvalidated,
 } from "@utils";
-import { RouteRegistry } from "./dynamicRoutes";
+import { RouteRegistry } from "./core";
 import { MenuProcessor } from "./MenuProcessor";
 
 // --- 模块级单例与守卫状态 ---
@@ -154,10 +154,6 @@ async function handleRouteGuard(
   const loginRedirect = handleLoginStatus(to, userStore);
   if (loginRedirect) return loginRedirect;
 
-  // 多租户：已登录但未选租户时重定向到租户选择页
-  const tenantRedirect = handleTenantGuard(to, userStore);
-  if (tenantRedirect) return tenantRedirect;
-
   if (routeInitFailed) {
     return to.matched.length > 0 ? true : { name: "500", replace: true };
   }
@@ -202,41 +198,6 @@ function handleLoginStatus(
 
   userStore.resetAllState();
   return { name: "Login", query: { redirect: to.fullPath }, replace: true };
-}
-
-/**
- * 多租户守卫：已登录但尚未选择租户时，重定向到租户选择页。
- * 仅在用户有多个租户时生效；单租户时自动选择。
- */
-function handleTenantGuard(
-  to: RouteLocationNormalized,
-  userStore: ReturnType<typeof useUserStore>
-): Record<string, unknown> | undefined {
-  // 未登录或已在租户选择页，不处理
-  if (!userStore.isLogin || to.path === "/tenant-select" || to.name === "TenantSelect") {
-    return undefined;
-  }
-
-  // 匿名公开路径不检查租户
-  if (isAnonymousPublicPath(to.path)) return undefined;
-
-  const tenants = userStore.tenantList;
-  const current = userStore.currentTenant;
-
-  // 已有选中租户，放行
-  if (current) return undefined;
-
-  // 未加载租户列表：先放行，由动态路由初始化后加载
-  if (tenants.length === 0) return undefined;
-
-  // 单租户：自动选择
-  if (tenants.length === 1) {
-    userStore.setCurrentTenant(tenants[0]);
-    return undefined;
-  }
-
-  // 多租户：跳转选择页
-  return { name: "TenantSelect", query: { redirect: to.fullPath }, replace: true };
 }
 
 /** 登录页（项目里同时存在 `/login` 与 `/auth/login` 等多套入口） */
@@ -324,8 +285,11 @@ async function handleDynamicRoutes(to: RouteLocationNormalized, router: Router) 
   loadingService.showLoading();
 
   try {
-    // 1. 获取用户信息
-    await fetchUserInfo();
+    // 1. 获取用户信息（若 login() 已拉取则跳过，避免重复请求）
+    const userStore = useUserStore();
+    if (!userStore.hasGetRoute) {
+      await fetchUserInfo();
+    }
 
     // 2. 获取菜单数据
     const menuList = await menuProcessor.getMenuList();
@@ -422,6 +386,25 @@ export function resetDynamicRoutesSync(): void {
   menuStore.setMenuList([]);
 
   resetRouteInitState();
+}
+
+/**
+ * 刷新动态路由和菜单：卸载旧路由 → 重新拉取菜单 → 注册新路由。
+ * 不拉取用户信息（由调用方并行完成），避免覆盖前端本地状态（主题色等）。
+ */
+export async function refreshMenuAndRoutes(): Promise<void> {
+  routeRegistry?.unregister();
+  IframeRouteManager.getInstance().clear();
+
+  const menuStore = useMenuStore();
+  menuStore.removeAllDynamicRoutes();
+  menuStore.setMenuList([]);
+
+  const menuList = await menuProcessor.getMenuList();
+  routeRegistry?.register(menuList);
+  menuStore.setMenuList(menuList);
+  menuStore.addRemoveRouteFns(routeRegistry?.getRemoveRouteFns() || []);
+  IframeRouteManager.getInstance().save();
 }
 
 /**

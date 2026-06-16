@@ -54,34 +54,33 @@ import FaIconButton from "@/components/widget/fa-icon-button/index.vue";
 
 defineOptions({ name: "FaDialog", inheritAttrs: false });
 
-const props = withDefaults(
-  defineProps<{
-    modelValue: boolean;
-    title?: string;
-    width?: string | number;
-    /** 默认可拖拽；全屏时 Element Plus 会限制拖拽 */
-    draggable?: boolean;
-    /** 透传到 el-dialog 的 class */
-    dialogClass?: string;
-    /** 遮罩层自定义 class */
-    modalClass?: string;
-    /** 表单模式：detail 仅显示确定；create/update 显示取消+确定 */
-    formMode?: "detail" | "create" | "update";
-    /** 确定按钮 loading 状态 */
-    confirmLoading?: boolean;
-    /** 确定按钮文本 */
-    confirmText?: string;
-    /** 取消按钮文本 */
-    cancelText?: string;
-  }>(),
-  {
-    draggable: true,
-    confirmText: "确定",
-    cancelText: "取消",
-  }
-);
+interface Props {
+  modelValue: boolean;
+  title?: string;
+  width?: string | number;
+  /** 默认可拖拽；全屏时 Element Plus 会限制拖拽 */
+  draggable?: boolean;
+  /** 透传到 el-dialog 的 class */
+  dialogClass?: string;
+  /** 遮罩层自定义 class */
+  modalClass?: string;
+  /** 表单模式：detail 仅显示确定；create/update 显示取消+确定 */
+  formMode?: "detail" | "create" | "update";
+  /** 确定按钮 loading 状态 */
+  confirmLoading?: boolean;
+  /** 确定按钮文本 */
+  confirmText?: string;
+  /** 取消按钮文本 */
+  cancelText?: string;
+}
 
-const emit = defineEmits<{
+const props = withDefaults(defineProps<Props>(), {
+  draggable: true,
+  confirmText: "确定",
+  cancelText: "取消",
+});
+
+interface Emits {
   "update:modelValue": [v: boolean];
   close: [];
   opened: [];
@@ -90,7 +89,9 @@ const emit = defineEmits<{
   cancel: [];
   /** 点击确定按钮 */
   confirm: [];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const attrs = useAttrs();
 const fullscreen = ref(false);

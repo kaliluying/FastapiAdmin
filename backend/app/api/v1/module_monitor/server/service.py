@@ -21,7 +21,7 @@ class ServerService:
     """服务监控模块服务层"""
 
     @classmethod
-    async def get_server_monitor_info_service(cls) -> dict:
+    async def get_server_monitor_info_service(cls) -> ServerMonitorSchema:
         """
         获取服务器监控信息
 
@@ -34,7 +34,7 @@ class ServerService:
             sys=cls._get_system_info(),
             py=cls._get_python_info(),
             disks=cls._get_disk_info(),
-        ).model_dump()
+        )
 
     @classmethod
     def _get_cpu_info(cls) -> CpuInfoSchema:

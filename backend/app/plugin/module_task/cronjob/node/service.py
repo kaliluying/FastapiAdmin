@@ -1,7 +1,7 @@
 from apscheduler.jobstores.base import JobLookupError
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.core.ap_scheduler import SchedulerUtil
+from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
 from app.utils.cron_util import CronUtil
 
@@ -52,7 +52,7 @@ class NodeService:
         ]
 
     @classmethod
-    async def get_node_detail_service(cls, auth: AuthSchema, id: int) -> dict:
+    async def get_node_detail_service(cls, auth: AuthSchema, id: int) -> NodeOutSchema:
         """
         获取节点详情
 
@@ -64,7 +64,7 @@ class NodeService:
         - Dict: 节点详情字典
         """
         obj = await NodeCRUD(auth).get_obj_by_id_crud(id=id)
-        return NodeOutSchema.model_validate(obj).model_dump()
+        return NodeOutSchema.model_validate(obj)
 
     @classmethod
     async def get_node_list_service(
@@ -85,7 +85,7 @@ class NodeService:
         - List[Dict]: 节点详情字典列表
         """
         obj_list = await NodeCRUD(auth).get_obj_list_crud(search=search.__dict__, order_by=order_by)
-        return [NodeOutSchema.model_validate(obj).model_dump() for obj in obj_list]
+        return [NodeOutSchema.model_validate(obj) for obj in obj_list]
 
     @classmethod
     async def get_node_page_service(
@@ -119,7 +119,7 @@ class NodeService:
         )
 
     @classmethod
-    async def create_node_service(cls, auth: AuthSchema, data: NodeCreateSchema) -> dict:
+    async def create_node_service(cls, auth: AuthSchema, data: NodeCreateSchema) -> NodeOutSchema:
         """
         创建节点 - 只保存到数据库，不创建调度器任务
 
@@ -137,10 +137,10 @@ class NodeService:
         obj = await NodeCRUD(auth).create_obj_crud(data=data)
         if not obj:
             raise CustomException(msg="创建失败")
-        return NodeOutSchema.model_validate(obj).model_dump()
+        return NodeOutSchema.model_validate(obj)
 
     @classmethod
-    async def update_node_service(cls, auth: AuthSchema, id: int, data: NodeUpdateSchema) -> dict:
+    async def update_node_service(cls, auth: AuthSchema, id: int, data: NodeUpdateSchema) -> NodeOutSchema:
         """
         更新节点 - 只更新数据库，不修改调度器任务
 
@@ -159,7 +159,7 @@ class NodeService:
         obj = await NodeCRUD(auth).update_obj_crud(id=id, data=data)
         if not obj:
             raise CustomException(msg="更新失败")
-        return NodeOutSchema.model_validate(obj).model_dump()
+        return NodeOutSchema.model_validate(obj)
 
     @classmethod
     async def delete_node_service(cls, auth: AuthSchema, ids: list[int]) -> None:
@@ -201,7 +201,9 @@ class NodeService:
         await NodeCRUD(auth).clear_obj_crud()
 
     @classmethod
-    async def execute_node_service(cls, auth: AuthSchema, id: int, execute_data: NodeExecuteSchema) -> dict:
+    async def execute_node_service(
+        cls, auth: AuthSchema, id: int, execute_data: NodeExecuteSchema
+    ) -> dict:
         """
         调试节点 - 根据任务配置创建调度器任务并执行
 
@@ -252,3 +254,24 @@ class NodeService:
             raise CustomException(msg=f"不支持的触发方式: {trigger}")
 
         return {"job_id": id, "status": "executed", "trigger": trigger}
+
+    @classmethod
+    async def batch_set_status_service(cls, auth: AuthSchema, ids: list[int], status: str) -> None:
+        """
+        批量设置节点状态
+
+        参数:
+        - auth (AuthSchema): 认证信息模型
+        - ids (list[int]): 节点ID列表
+        - status (str): 状态值
+
+        返回:
+        - None
+        """
+        if not ids:
+            raise CustomException(msg="请选择要操作的数据")
+
+        await NodeCRUD(auth).update_obj_crud(
+            ids=ids,
+            data={"status": status},
+        )

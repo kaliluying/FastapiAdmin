@@ -1,6 +1,6 @@
 <!-- 数据列表卡片 -->
 <template>
-  <div class="fa-card p-5 h-[28.2rem] overflow-hidden">
+  <div class="fa-card p-5 h-110 overflow-hidden">
     <div class="pb-3.5">
       <p class="text-lg font-medium">{{ title }}</p>
       <p class="text-sm text-g-600">{{ subtitle }}</p>
@@ -66,10 +66,12 @@ const props = withDefaults(defineProps<Props>(), {
 
 const maxHeight = computed(() => `${ITEM_HEIGHT * props.maxCount}px`);
 
-const emit = defineEmits<{
+interface Emits {
   /** 点击更多按钮事件 */
-  (e: "more"): void;
-}>();
+  more: [];
+}
+
+const emit = defineEmits<Emits>();
 
 const handleMore = () => emit("more");
 </script>

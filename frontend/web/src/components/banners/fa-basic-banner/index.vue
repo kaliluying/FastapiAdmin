@@ -160,11 +160,13 @@ const props = withDefaults(defineProps<Props>(), {
   imageConfig: () => ({ src: "", width: "12rem", bottom: "-3rem", right: "0" }),
 });
 
+interface Emits {
+  click: []; // 整体点击事件
+  buttonClick: []; // 按钮点击事件
+}
+
 // 定义组件事件
-const emit = defineEmits<{
-  (e: "click"): void; // 整体点击事件
-  (e: "buttonClick"): void; // 按钮点击事件
-}>();
+const emit = defineEmits<Emits>();
 
 // 计算按钮样式属性
 const buttonColor = computed(() => props.buttonConfig?.color ?? "#fff");

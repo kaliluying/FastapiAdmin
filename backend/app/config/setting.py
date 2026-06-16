@@ -43,7 +43,7 @@ class Settings(BaseSettings):
     SUMMARY: str = "接口汇总"  # 文档概述
     DOCS_URL: str = "/docs"  # Swagger UI路径
     REDOC_URL: str = "/redoc"  # ReDoc路径
-    LJDOC_URL: str = "/ljdoc"   # LangJin UI路径
+    LJDOC_URL: str = "/ljdoc"  # LangJin UI路径
     ROOT_PATH: str = "/api/v1"  # API路由前缀
 
     # ================================================= #
@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     # ******************** 跨域配置 ******************** #
     # ================================================= #
     CORS_ORIGIN_ENABLE: bool = True  # 是否启用跨域
-    ALLOW_ORIGINS: list[str] = ["*"]  # 允许的域名列表
+    ALLOW_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:4173", "http://127.0.0.1:5173", "http://localhost:5180", "http://127.0.0.1:5180"]  # 允许的域名列表
     ALLOW_METHODS: list[str] = ["*"]  # 允许的HTTP方法
     ALLOW_HEADERS: list[str] = ["*"]  # 允许的请求头
     ALLOW_CREDENTIALS: bool = True  # 是否允许携带cookie
@@ -66,8 +66,8 @@ class Settings(BaseSettings):
     # ================================================= #
     SECRET_KEY: str = "vgb0tnl9d58+6n-6h-ea&u^1#s0ccp!794=krylxcjq75vzps$"  # JWT密钥
     ALGORITHM: str = "HS256"  # JWT算法
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 30  # access_token过期时间(秒)30 分钟
-    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 30  # refresh_token过期时间(秒)30 分钟
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 60 * 12  # access_token过期时间(秒)12 小时
+    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 60 * 12  # refresh_token过期时间(秒)12 小时
     TOKEN_TYPE: str = "bearer"  # token类型
     TOKEN_REQUEST_PATH_EXCLUDE: list[str] = ["api/v1/auth/login"]  # JWT / RBAC 路由白名单
     TOKEN_SLIDING_EXPIRE: bool = True  # 是否启用滑动过期(用户操作时自动续期)
@@ -78,6 +78,22 @@ class Settings(BaseSettings):
         "/api/v1/health",
         "/api/v1/common/health",
     ]
+
+    # ================================================= #
+    # ******************* 支付配置 ******************* #
+    # ================================================= #
+    PAYMENT_GATEWAY: str = "mock"  # alipay / wxpay / mock
+    # 支付宝
+    PAYMENT_ALIPAY_APP_ID: str = ""
+    PAYMENT_ALIPAY_PRIVATE_KEY: str = ""
+    PAYMENT_ALIPAY_PUBLIC_KEY: str = ""
+    PAYMENT_ALIPAY_SANDBOX: bool = True
+    # 微信支付
+    PAYMENT_WXPAY_APP_ID: str = ""
+    PAYMENT_WXPAY_MCH_ID: str = ""
+    PAYMENT_WXPAY_API_KEY: str = ""
+    # 站点 URL（用于生成支付通知 URL）
+    SITE_URL: str = "http://localhost:8001"
 
     # 多租户：通配子域与登录租户一致（默认关闭；生产按 base 解析 {code}.base）
     TENANT_HOST_ENFORCE: bool = False
@@ -212,8 +228,6 @@ class Settings(BaseSettings):
     SWAGGER_CSS_URL: str = "static/swagger/swagger-ui/swagger-ui.css"
     SWAGGER_JS_URL: str = "static/swagger/swagger-ui/swagger-ui-bundle.js"
     REDOC_JS_URL: str = "static/swagger/redoc/bundles/redoc.standalone.js"
-    CUSTOM_CSS_URL: str = "static/swagger/custom-ui/styles.css"
-    CUSTOM_JS_URL: str = "static/swagger/custom-ui/scripts.js"
     FAVICON_URL: str = "static/image/favicon.ico"
 
     # ================================================= #
@@ -251,9 +265,10 @@ class Settings(BaseSettings):
         MIDDLEWARES: list[str | None] = [
             "app.core.middlewares.CustomCORSMiddleware" if self.CORS_ORIGIN_ENABLE else None,
             "app.core.middlewares.RequestLogMiddleware" if self.OPERATION_LOG_RECORD else None,
-            "app.core.middleware.security_headers.SecurityHeadersMiddleware",  # 安全响应头
             "app.core.middlewares.CustomGZipMiddleware" if self.GZIP_ENABLE else None,
-            "app.core.middleware.correlation.CorrelationIdMiddleware",  # 请求上下文（最内层）
+            "app.core.middlewares.SecurityHeadersMiddleware",  # 安全响应头
+            "app.core.middlewares.CorrelationIdMiddleware",  # 请求上下文
+            "app.core.middlewares.TenantMiddleware",  # 租户上下文（需 JWT）
         ]
         return MIDDLEWARES
 

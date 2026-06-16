@@ -3,11 +3,11 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends, Path
 from fastapi.responses import JSONResponse
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.common.response import ResponseSchema, StreamResponse, SuccessResponse
 from app.core.base_params import PaginationQueryParam
+from app.core.base_schema import AuthSchema, PageResultSchema
 from app.core.dependencies import AuthPermission
-from app.core.logger import log
+from app.core.logger import logger
 from app.core.router_class import OperationLogRoute
 from app.utils.common_util import bytes2file_response
 
@@ -21,13 +21,12 @@ from .schema import (
 )
 from .service import GenTableService
 
-GenRouter = APIRouter(route_class=OperationLogRoute, prefix="/gencode", tags=["代码生成模块"])
+GenRouter = APIRouter(route_class=OperationLogRoute, prefix="/gencode", tags=["开发工具/代码生成"])
 
 
 @GenRouter.get(
     "/list",
     summary="查询代码生成业务表列表",
-    description="查询代码生成业务表列表",
     response_model=ResponseSchema[list[GenTableOutSchema]],
 )
 async def gen_table_list_controller(
@@ -56,15 +55,13 @@ async def gen_table_list_controller(
         search=search,
         order_by=order_by,
     )
-    log.info("获取代码生成业务表列表成功")
     return SuccessResponse(data=result_dict, msg="获取代码生成业务表列表成功")
 
 
 @GenRouter.get(
     "/db/list",
     summary="查询数据库表列表",
-    description="查询数据库表列表",
-    response_model=ResponseSchema[list[GenDBTableSchema]],
+    response_model=ResponseSchema[PageResultSchema[GenDBTableSchema]],
 )
 async def get_gen_db_table_list_controller(
     page: Annotated[PaginationQueryParam, Depends()],
@@ -89,14 +86,12 @@ async def get_gen_db_table_list_controller(
         page_size=page.page_size,
         search=search,
     )
-    log.info("获取数据库表列表成功")
     return SuccessResponse(data=result_dict, msg="获取数据库表列表成功")
 
 
 @GenRouter.post(
     "/import",
     summary="导入表结构",
-    description="导入表结构",
     response_model=ResponseSchema[bool],
 )
 async def import_gen_table_controller(
@@ -120,14 +115,12 @@ async def import_gen_table_controller(
         auth, table_names
     )
     result = await GenTableService.import_gen_table_service(auth, add_gen_table_list)
-    log.info("导入表结构成功")
     return SuccessResponse(msg="导入表结构成功", data=result)
 
 
 @GenRouter.get(
     "/detail/{table_id}",
     summary="获取业务表详细信息",
-    description="获取业务表详细信息",
     response_model=ResponseSchema[GenTableOutSchema],
 )
 async def gen_table_detail_controller(
@@ -145,14 +138,12 @@ async def gen_table_detail_controller(
     - JSONResponse: 包含业务表详细信息的JSON响应
     """
     gen_table_detail_result = await GenTableService.get_gen_table_detail_service(auth, table_id)
-    log.info(f"获取table_id为{table_id}的信息成功")
     return SuccessResponse(data=gen_table_detail_result, msg="获取业务表详细信息成功")
 
 
 @GenRouter.post(
     "/create",
     summary="创建表结构",
-    description="创建表结构",
     response_model=ResponseSchema[bool],
 )
 async def create_table_controller(
@@ -173,14 +164,12 @@ async def create_table_controller(
     - JSONResponse: 包含创建结果的JSON响应
     """
     result = await GenTableService.create_table_service(auth, body.sql)
-    log.info("创建表结构成功")
     return SuccessResponse(msg="创建表结构成功", data=result)
 
 
 @GenRouter.put(
     "/update/{table_id}",
     summary="编辑业务表信息",
-    description="编辑业务表信息",
     response_model=ResponseSchema[GenTableOutSchema],
 )
 async def update_gen_table_controller(
@@ -203,14 +192,12 @@ async def update_gen_table_controller(
     - JSONResponse: 包含编辑结果的JSON响应
     """
     result_dict = await GenTableService.update_gen_table_service(auth, data, table_id)
-    log.info("编辑业务表信息成功")
     return SuccessResponse(data=result_dict, msg="编辑业务表信息成功")
 
 
 @GenRouter.delete(
     "/delete",
     summary="删除业务表信息",
-    description="删除业务表信息",
     response_model=ResponseSchema[None],
 )
 async def delete_gen_table_controller(
@@ -231,14 +218,12 @@ async def delete_gen_table_controller(
     - JSONResponse: 包含删除结果的JSON响应
     """
     result = await GenTableService.delete_gen_table_service(auth, ids)
-    log.info("删除业务表信息成功")
     return SuccessResponse(msg="删除业务表信息成功", data=result)
 
 
 @GenRouter.patch(
     "/batch/output",
     summary="批量生成代码",
-    description="批量生成代码",
 )
 async def batch_gen_code_controller(
     table_names: Annotated[list[str], Body(description="表名列表")],
@@ -254,19 +239,21 @@ async def batch_gen_code_controller(
     返回:
     - StreamResponse: 包含批量生成代码的ZIP文件流响应
     """
-    batch_gen_code_result = await GenTableService.batch_gen_code_service(auth, table_names)
-    log.info(f"批量生成代码成功,表名列表：{table_names}")
+    batch_gen_code_result, failed_tables = await GenTableService.batch_gen_code_service(auth, table_names)
+    headers = {"Content-Disposition": "attachment; filename=code.zip"}
+    if failed_tables:
+        logger.warning(f"批量生成代码部分失败，跳过表: {failed_tables}")
+        headers["X-Skipped-Tables"] = ",".join(failed_tables)
     return StreamResponse(
         data=bytes2file_response(batch_gen_code_result),
         media_type="application/zip",
-        headers={"Content-Disposition": "attachment; filename=code.zip"},
+        headers=headers,
     )
 
 
 @GenRouter.post(
     "/output/{table_name}",
     summary="生成代码到指定路径",
-    description="生成代码到指定路径",
     response_model=ResponseSchema[bool],
 )
 async def gen_code_local_controller(
@@ -284,15 +271,13 @@ async def gen_code_local_controller(
     - JSONResponse: 包含生成结果的JSON响应
     """
     result = await GenTableService.generate_code_service(auth, table_name)
-    log.info(f"生成代码,表名：{table_name},到指定路径成功")
     return SuccessResponse(msg="生成代码到指定路径成功", data=result)
 
 
 @GenRouter.get(
     "/preview/{table_id}",
     summary="预览代码",
-    description="预览代码",
-    response_model=ResponseSchema[dict],
+    response_model=ResponseSchema[GenTableOutSchema],
 )
 async def preview_code_controller(
     table_id: Annotated[int, Path(description="业务表ID")],
@@ -309,14 +294,12 @@ async def preview_code_controller(
     - JSONResponse: 包含预览代码的JSON响应
     """
     preview_code_result = await GenTableService.preview_code_service(auth, table_id)
-    log.info(f"预览代码,表id：{table_id},成功")
     return SuccessResponse(data=preview_code_result, msg="预览代码成功")
 
 
 @GenRouter.post(
     "/sync_db/{table_name}",
     summary="同步数据库",
-    description="同步数据库",
     response_model=ResponseSchema[None],
 )
 async def sync_db_controller(
@@ -334,14 +317,12 @@ async def sync_db_controller(
     - JSONResponse: 包含同步数据库结果的JSON响应
     """
     result = await GenTableService.sync_db_service(auth, table_name)
-    log.info(f"同步数据库,表名：{table_name},成功")
     return SuccessResponse(msg="同步数据库成功", data=result)
 
 
 @GenRouter.get(
     "/sync_db/preview/{table_name}",
     summary="同步数据库差异预览",
-    description="同步数据库前差异预览（主表 + 可选子表），不落库",
     response_model=ResponseSchema[GenSyncPreviewSchema],
 )
 async def sync_db_preview_controller(

@@ -1,4 +1,4 @@
-from app.api.v1.module_system.auth.schema import AuthSchema
+from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
 
 from .crud import WorkflowNodeTypeCRUD
@@ -14,8 +14,8 @@ class WorkflowNodeTypeService:
     """工作流编排节点类型（与定时任务 task_node 无关）"""
 
     @classmethod
-    def _out(cls, obj) -> dict:
-        return WorkflowNodeTypeOutSchema.model_validate(obj).model_dump(mode="json")
+    def _out(cls, obj) -> WorkflowNodeTypeOutSchema:
+        return WorkflowNodeTypeOutSchema.model_validate(obj)
 
     @classmethod
     async def get_options_service(cls, auth: AuthSchema) -> list[dict]:
@@ -42,7 +42,7 @@ class WorkflowNodeTypeService:
         ]
 
     @classmethod
-    async def get_detail_service(cls, auth: AuthSchema, id: int) -> dict:
+    async def get_detail_service(cls, auth: AuthSchema, id: int) -> WorkflowNodeTypeOutSchema:
         """
         获取编排节点类型详情。
 
@@ -67,7 +67,7 @@ class WorkflowNodeTypeService:
         auth: AuthSchema,
         search: WorkflowNodeTypeQueryParam | None = None,
         order_by: list[dict[str, str]] | None = None,
-    ) -> list[dict]:
+    ) -> list[WorkflowNodeTypeOutSchema]:
         """
         获取编排节点类型列表（非分页）。
 
@@ -118,14 +118,14 @@ class WorkflowNodeTypeService:
             search=search.__dict__ if search else {},
             out_schema=WorkflowNodeTypeOutSchema,
         )
-        result["items"] = [
+        result.items = [
             WorkflowNodeTypeOutSchema.model_validate(item).model_dump(mode="json")
-            for item in result["items"]
+            for item in result.items
         ]
         return result
 
     @classmethod
-    async def create_service(cls, auth: AuthSchema, data: WorkflowNodeTypeCreateSchema) -> dict:
+    async def create_service(cls, auth: AuthSchema, data: WorkflowNodeTypeCreateSchema) -> WorkflowNodeTypeOutSchema:
         """
         创建编排节点类型。
 
@@ -148,7 +148,9 @@ class WorkflowNodeTypeService:
         return cls._out(obj)
 
     @classmethod
-    async def update_service(cls, auth: AuthSchema, id: int, data: WorkflowNodeTypeUpdateSchema) -> dict:
+    async def update_service(
+        cls, auth: AuthSchema, id: int, data: WorkflowNodeTypeUpdateSchema
+    ) -> WorkflowNodeTypeOutSchema:
         """
         更新编排节点类型。
 
@@ -193,3 +195,17 @@ class WorkflowNodeTypeService:
         if not ids:
             raise CustomException(msg="删除ID不能为空")
         await WorkflowNodeTypeCRUD(auth).delete_obj_crud(ids=ids)
+
+    @classmethod
+    async def get_select_service(cls, auth: AuthSchema) -> list[dict]:
+        """
+        获取编排节点类型选择列表。
+
+        参数:
+        - auth (AuthSchema): 认证信息。
+
+        返回:
+        - list[dict]: 选择列表，包含 id 和 name。
+        """
+        objs = await WorkflowNodeTypeCRUD(auth).get_obj_list_crud()
+        return [{"id": o.id, "name": o.name} for o in objs]

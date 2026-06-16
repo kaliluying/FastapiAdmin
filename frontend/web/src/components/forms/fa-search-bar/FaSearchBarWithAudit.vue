@@ -47,22 +47,23 @@ import {
 
 defineOptions({ name: "FaSearchBarWithAudit", inheritAttrs: false });
 
-const props = withDefaults(
-  defineProps<{
-    /** 仅业务条件表单项，不含审计四字段 */
-    items: SearchFormItem[];
-    /** 为 false 时与原生 FaSearchBar 一致，仅使用 `items` */
-    includeAudit?: boolean;
-    /** 传给 getAuditSearchFormItems 的选项 */
-    auditItemOptions?: GetAuditSearchFormItemsOptions;
-  }>(),
-  { includeAudit: true }
-);
+interface Props {
+  /** 仅业务条件表单项，不含审计四字段 */
+  items: SearchFormItem[];
+  /** 为 false 时与原生 FaSearchBar 一致，仅使用 `items` */
+  includeAudit?: boolean;
+  /** 传给 getAuditSearchFormItems 的选项 */
+  auditItemOptions?: GetAuditSearchFormItemsOptions;
+}
 
-const emit = defineEmits<{
+const props = withDefaults(defineProps<Props>(), { includeAudit: true });
+
+interface Emits {
   search: [Record<string, any>];
   reset: [];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const modelValue = defineModel<Record<string, any>>({ default: () => ({}) });
 const attrs = useAttrs();

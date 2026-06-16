@@ -214,9 +214,11 @@ const props = withDefaults(
   { loading: false, linkFromGen: null }
 );
 
-const emit = defineEmits<{
+interface Emits {
   submit: [sql: string, meta?: CreateTableSubmitMeta];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const { copy } = useClipboard();
 const settingsStore = useSettingsStore();

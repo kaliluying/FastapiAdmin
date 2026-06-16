@@ -76,4 +76,6 @@ frontend/docs/*
 frontend/app/*
 !frontend/app/.gitkeep
 
-.workbudddy/*
+.plan/*
+CLAUDE.md
+AGENTS.md

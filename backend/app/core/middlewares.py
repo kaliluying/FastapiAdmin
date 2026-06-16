@@ -1,5 +1,6 @@
 import json
 import time
+import uuid
 
 from starlette.middleware.base import (
     BaseHTTPMiddleware,
@@ -15,8 +16,9 @@ from app.api.v1.module_system.params.service import ParamsService
 from app.common.response import ErrorResponse
 from app.config.setting import settings
 from app.core.exceptions import CustomException
-from app.core.logger import log
+from app.core.logger import RequestContext, logger
 from app.core.security import decode_access_token
+from app.core.tenant import clear_current_tenant, set_current_tenant
 
 
 class CustomCORSMiddleware(CORSMiddleware):
@@ -57,14 +59,26 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
         if session_id:
             return session_id
 
-        # 2. 尝试从 Authorization Header 中提取
+        # 2. 检查 TenantMiddleware 缓存到 scope 的 JWT user_info（避免重复解码）
+        user_info = request.scope.get("_jwt_user_info")
+        if user_info:
+            session_id = user_info.get("session_id")
+            if session_id:
+                request.scope["session_id"] = session_id
+                return session_id
+
+        # 3. 尝试从 Authorization Header 中提取
         try:
             authorization = request.headers.get("Authorization")
             if not authorization:
                 return None
 
-            # 处理Bearer token
-            token = authorization.replace("Bearer ", "").strip()
+            # 处理Bearer token (大小写不敏感)
+            token = authorization
+            if authorization.lower().startswith("bearer "):
+                token = authorization[7:].strip()
+            elif authorization.lower().startswith("bearer"):
+                token = authorization[6:].strip()
 
             # 解码token
             payload = decode_access_token(token)
@@ -106,7 +120,7 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
             f"请求方法: {request.method},"
             f"请求路径: {request.url.path}"
         )
-        log.info(log_fields)
+        logger.info(log_fields)
 
         try:
             # 初始化响应变量
@@ -145,7 +159,7 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
                 ip_black_list = system_config["ip_black_list"]
 
             except Exception as e:
-                log.error(f"获取系统配置失败: {e}")
+                logger.error(f"获取系统配置失败: {e}")
 
             # 检查是否需要拦截请求
             should_block = False
@@ -157,7 +171,7 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
                 block_reason = f"IP地址 {request_ip} 在黑名单中"
 
             # 2. 如果不在黑名单中，检查是否在演示模式下需要拦截
-            elif demo_enable in ["true", "True"] and request.method != "GET":
+            elif demo_enable in (True, "true", "True") and request.method != "GET":
                 # 在演示模式下，非GET请求需要检查白名单
                 is_ip_whitelisted = request_ip in ip_white_list
                 is_path_whitelisted = path in white_api_list_path
@@ -168,18 +182,16 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
 
             if should_block:
                 # 增强安全审计：记录详细的拦截日志
-                log.warning(
-                    " | ".join(
-                        [
-                            f"会话ID: {session_id or '未认证'}",
-                            f"请求被拦截: {block_reason}",
-                            f"请求来源: {request_ip}",
-                            f"请求方法: {request.method}",
-                            f"请求路径: {path}",
-                            f"用户代理: {request.headers.get('user-agent', '未知')}",
-                            f"演示模式: {demo_enable}",
-                        ]
-                    )
+                logger.warning(
+                    " | ".join([
+                        f"会话ID: {session_id or '未认证'}",
+                        f"请求被拦截: {block_reason}",
+                        f"请求来源: {request_ip}",
+                        f"请求方法: {request.method}",
+                        f"请求路径: {path}",
+                        f"用户代理: {request.headers.get('user-agent', '未知')}",
+                        f"演示模式: {demo_enable}",
+                    ])
                 )
                 # 拦截请求
                 return ErrorResponse(msg="演示环境，禁止操作")
@@ -191,15 +203,13 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
             response.headers["X-Process-Time"] = str(process_time)
 
             # 构建响应日志信息
-
-            content_length = response.headers.get("content-length", "0")
-            response_info = f"响应状态: {response.status_code}, 响应内容长度: {content_length}, 处理时间: {round(process_time * 1000, 3)}ms"
-            log.info(response_info)
+            response_info = f"响应状态: {response.status_code}, 处理时间: {round(process_time * 1000, 3)}ms"
+            logger.info(response_info)
 
             return response
 
         except CustomException as e:
-            log.exception(f"中间件处理异常: {e!s}")
+            logger.exception(f"中间件处理异常: {e!s}")
             return ErrorResponse(msg="系统异常，请联系管理员", data=str(e))
 
 
@@ -212,3 +222,140 @@ class CustomGZipMiddleware(GZipMiddleware):
             minimum_size=settings.GZIP_MIN_SIZE,
             compresslevel=settings.GZIP_COMPRESS_LEVEL,
         )
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """安全响应头中间件"""
+
+    def __init__(self, app: ASGIApp) -> None:
+        super().__init__(app)
+        from app.config.setting import settings
+
+        self._hsts = settings.HSTS_ENABLE
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        response = await call_next(request)
+
+        if self._hsts:
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains; preload"
+            )
+
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = (
+            "camera=(), microphone=(), geolocation=(), "
+            "payment=(), usb=(), magnetometer=(), "
+            "gyroscope=()"
+        )
+
+        return response
+
+
+class CorrelationIdMiddleware(BaseHTTPMiddleware):
+    """请求关联 ID 中间件"""
+    
+    def __init__(self, app: ASGIApp) -> None:
+        self.CORRELATION_ID_HEADER = "X-Correlation-ID"
+        super().__init__(app)
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        correlation_id = request.headers.get(self.CORRELATION_ID_HEADER, "")
+        if not correlation_id:
+            correlation_id = str(uuid.uuid4())
+
+        token = RequestContext.set_correlation_id(correlation_id)
+        RequestContext.set_request_path(request.url.path)
+
+        try:
+            response = await call_next(request)
+            response.headers[self.CORRELATION_ID_HEADER] = correlation_id
+            return response
+        finally:
+            RequestContext._correlation_id.reset(token)
+
+
+# ── 租户白名单 ──
+
+_TENANT_WHITELIST_PREFIXES: tuple[str, ...] = (
+    "/docs", "/redoc", "/ljdoc", "/openapi.json", "/metrics", "/static",
+)
+
+_TENANT_WHITELIST_PATHS: tuple[str, ...] = (
+    "/api/v1/system/auth/login",
+    "/api/v1/system/auth/captcha",
+    "/api/v1/system/auth/refresh",
+    "/api/v1/health",
+    "/api/v1/common/health",
+)
+
+
+def _tenant_is_whitelisted(path: str) -> bool:
+    for wp in _TENANT_WHITELIST_PATHS:
+        if path.startswith(wp):
+            return True
+    for prefix in _TENANT_WHITELIST_PREFIXES:
+        if path.startswith(prefix):
+            return True
+    for exclude_path in settings.TENANT_WHITELIST_PATHS:
+        if path.startswith(exclude_path):
+            return True
+    return False
+
+
+def _extract_tenant_from_token(request: Request) -> tuple[int | None, bool]:
+    authorization = request.headers.get("Authorization")
+    if not authorization:
+        return None, False
+    token = authorization
+    if authorization.lower().startswith("bearer "):
+        token = authorization[7:]
+    elif authorization.lower().startswith("bearer"):
+        token = authorization[6:]
+    if not token.strip():
+        return None, False
+    try:
+        payload = decode_access_token(token)
+        if not payload or not hasattr(payload, "sub"):
+            return None, False
+        user_info = json.loads(payload.sub)
+        # 缓存到 request.scope，避免后续中间件/依赖重复解码 JWT
+        request.scope["_jwt_payload"] = payload
+        request.scope["_jwt_user_info"] = user_info
+        tenant_id = user_info.get("tenant_id")
+        is_super_admin = user_info.get("is_super_admin", False)
+        return tenant_id, is_super_admin
+    except Exception:
+        return None, False
+
+
+class TenantMiddleware(BaseHTTPMiddleware):
+    """租户上下文中间件"""
+
+    def __init__(self, app: ASGIApp) -> None:
+        super().__init__(app)
+
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
+        path = request.url.path
+
+        if request.method == "OPTIONS":
+            return await call_next(request)
+
+        if _tenant_is_whitelisted(path):
+            return await call_next(request)
+
+        try:
+            tenant_id, is_super_admin = _extract_tenant_from_token(request)
+            set_current_tenant(tenant_id, is_super_admin)
+            if tenant_id is not None:
+                logger.debug(
+                    "租户上下文已设置: tenant_id={}, is_super_admin={}, path={}",
+                    tenant_id, is_super_admin, path,
+                )
+        except Exception:
+            logger.exception("租户中间件处理异常: path={}", path)
+        try:
+            response = await call_next(request)
+            return response
+        finally:
+            clear_current_tenant()

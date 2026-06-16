@@ -29,7 +29,13 @@
 <script setup lang="ts">
 import type { OAuthProvider } from "@/api/module_system/auth";
 
-defineEmits<{ oauth: [provider: OAuthProvider] }>();
+defineOptions({ name: "FaLoginThirdPartySection" });
+
+interface Emits {
+  oauth: [provider: OAuthProvider];
+}
+
+defineEmits<Emits>();
 
 const { t } = useI18n();
 

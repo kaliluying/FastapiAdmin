@@ -78,7 +78,14 @@
 import { Iphone } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 
-defineEmits<{ back: []; register: [] }>();
+defineOptions({ name: "FaLoginMobilePanel" });
+
+interface Emits {
+  back: [];
+  register: [];
+}
+
+defineEmits<Emits>();
 
 const { t } = useI18n();
 

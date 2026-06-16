@@ -12,7 +12,11 @@
 </template>
 
 <script setup lang="ts">
-defineEmits<{
+defineOptions({ name: "FaSettingHeader" });
+
+interface Emits {
   close: [];
-}>();
+}
+
+defineEmits<Emits>();
 </script>

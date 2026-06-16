@@ -5,7 +5,7 @@
         <h4>热门产品</h4>
       </div>
     </div>
-    <div class="overflow-auto h-full">
+    <ElScrollbar class="h-full">
       <FaTable
         :data="products"
         :style="{ width: '100%' }"
@@ -43,7 +43,7 @@
           </template>
         </ElTableColumn>
       </FaTable>
-    </div>
+    </ElScrollbar>
   </div>
 </template>
 

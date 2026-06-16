@@ -3,11 +3,10 @@ from typing import Annotated
 from fastapi import APIRouter, Body, Depends, Path
 from fastapi.responses import JSONResponse
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.common.response import ResponseSchema, SuccessResponse
 from app.core.base_params import PaginationQueryParam
+from app.core.base_schema import AuthSchema, PageResultSchema
 from app.core.dependencies import AuthPermission
-from app.core.logger import log
 from app.core.router_class import OperationLogRoute
 
 from .schema import (
@@ -21,14 +20,13 @@ from .service import WorkflowNodeTypeService
 WorkflowNodeTypeRouter = APIRouter(
     route_class=OperationLogRoute,
     prefix="/workflow/node-type",
-    tags=["工作流编排节点类型"],
+    tags=["定时任务/工作流节点类型"],
 )
 
 
 @WorkflowNodeTypeRouter.get(
     "/options",
     summary="编排节点类型选项",
-    description="供 Vue Flow 画布左侧拖拽使用（与定时任务 task_node 无关）",
     response_model=ResponseSchema[list[dict]],
 )
 async def get_workflow_node_type_options_controller(
@@ -44,7 +42,6 @@ async def get_workflow_node_type_options_controller(
     - JSONResponse: 成功响应，data 为选项列表。
     """
     result = await WorkflowNodeTypeService.get_options_service(auth=auth)
-    log.info("获取编排节点类型选项成功")
     return SuccessResponse(data=result, msg="获取编排节点类型选项成功")
 
 
@@ -68,14 +65,13 @@ async def get_workflow_node_type_detail_controller(
     - JSONResponse: 成功响应，data 为详情。
     """
     result_dict = await WorkflowNodeTypeService.get_detail_service(auth=auth, id=id)
-    log.info(f"获取编排节点类型详情成功 {id}")
     return SuccessResponse(data=result_dict, msg="获取编排节点类型详情成功")
 
 
 @WorkflowNodeTypeRouter.get(
     "/list",
     summary="编排节点类型列表",
-    response_model=ResponseSchema[list[WorkflowNodeTypeOutSchema]],
+    response_model=ResponseSchema[PageResultSchema[WorkflowNodeTypeOutSchema]],
 )
 async def get_workflow_node_type_list_controller(
     page: Annotated[PaginationQueryParam, Depends()],
@@ -103,7 +99,6 @@ async def get_workflow_node_type_list_controller(
         search=search,
         order_by=order_by,
     )
-    log.info("查询编排节点类型列表成功")
     return SuccessResponse(data=result_dict, msg="查询编排节点类型列表成功")
 
 
@@ -127,7 +122,6 @@ async def create_workflow_node_type_controller(
     - JSONResponse: 成功响应，data 为新记录。
     """
     result_dict = await WorkflowNodeTypeService.create_service(auth=auth, data=data)
-    log.info("创建编排节点类型成功")
     return SuccessResponse(data=result_dict, msg="创建编排节点类型成功")
 
 
@@ -153,7 +147,6 @@ async def update_workflow_node_type_controller(
     - JSONResponse: 成功响应，data 为更新后记录。
     """
     result_dict = await WorkflowNodeTypeService.update_service(auth=auth, id=id, data=data)
-    log.info(f"更新编排节点类型成功 {id}")
     return SuccessResponse(data=result_dict, msg="更新编排节点类型成功")
 
 
@@ -177,5 +170,25 @@ async def delete_workflow_node_type_controller(
     - JSONResponse: 成功提示响应。
     """
     await WorkflowNodeTypeService.delete_service(auth=auth, ids=ids)
-    log.info(f"删除编排节点类型成功 {ids}")
     return SuccessResponse(msg="删除编排节点类型成功")
+
+
+@WorkflowNodeTypeRouter.get(
+    "/select",
+    summary="编排节点类型选择列表",
+    response_model=ResponseSchema[list[dict]],
+)
+async def get_workflow_node_type_select_controller(
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_task:workflow:node-type:query"]))],
+) -> JSONResponse:
+    """
+    获取编排节点类型选择列表。
+
+    参数:
+    - auth (AuthSchema): 认证信息。
+
+    返回:
+    - JSONResponse: 成功响应，data 为选择列表。
+    """
+    result = await WorkflowNodeTypeService.get_select_service(auth=auth)
+    return SuccessResponse(data=result, msg="获取编排节点类型选择列表成功")

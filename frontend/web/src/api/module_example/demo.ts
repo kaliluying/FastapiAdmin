@@ -83,7 +83,7 @@ export default DemoAPI;
 
 export interface DemoPageQuery extends PageQuery {
   name?: string;
-  status?: string;
+  status?: number;
   created_time?: string[];
   updated_time?: string[];
   created_id?: number;
@@ -92,33 +92,26 @@ export interface DemoPageQuery extends PageQuery {
 
 export interface DemoTable extends BaseType {
   name?: string;
-  status?: string;
-  description?: string;
-  created_by?: CommonType;
-  updated_by?: CommonType;
-  deleted_by?: CommonType;
-  a?: number;
-  b?: number;
-  c?: number;
-  d?: boolean;
-  e?: string;
-  f?: string;
-  g?: string;
-  h?: string;
-  i?: Record<string, any>;
+  int_val?: number;
+  bigint_val?: number;
+  float_val?: number;
+  bool_val?: boolean;
+  date_val?: string;
+  time_val?: string;
+  datetime_val?: string;
+  text_val?: string;
+  json_val?: Record<string, any>;
 }
 
 export interface DemoForm extends BaseFormType {
   name?: string;
-  status?: string;
-  description?: string;
-  a?: number;
-  b?: number;
-  c?: number;
-  d?: boolean;
-  e?: string;
-  f?: Date | string;
-  g?: Date | string;
-  h?: string;
-  i?: Record<string, any>;
+  int_val?: number;
+  bigint_val?: number;
+  float_val?: number;
+  bool_val?: boolean;
+  date_val?: string;
+  time_val?: Date | string;
+  datetime_val?: Date | string;
+  text_val?: string;
+  json_val?: Record<string, any>;
 }

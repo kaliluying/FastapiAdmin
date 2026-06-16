@@ -1,6 +1,6 @@
 <!-- 时间轴列表卡片 -->
 <template>
-  <div class="fa-card p-5 h-[28.2rem] overflow-hidden">
+  <div class="fa-card p-5 h-110 overflow-hidden">
     <div class="pb-3.5">
       <p class="text-lg font-medium">{{ title }}</p>
       <p class="text-sm text-g-600">{{ subtitle }}</p>
@@ -50,7 +50,7 @@ interface Props {
   /** 时间轴列表数据 */
   list: TimelineItem[];
   /** 标题 */
-  title: string;
+  title?: string;
   /** 副标题 */
   subtitle?: string;
   /** 最大显示数量 */

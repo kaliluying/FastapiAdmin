@@ -19,9 +19,9 @@
         中
         <code>demo</code>
         、
-        <code>demo/demo01</code>
+        <code>demo/subdir</code>
         、
-        <code>gen_demo02</code>
+        <code>gen_demo</code>
         对照）。权限为
         <code>包名:模块名:操作</code>
         ，第三段是操作类型（如

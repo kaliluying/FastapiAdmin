@@ -13,7 +13,7 @@ from sqlalchemy.sql.expression import null
 
 from app.config.setting import settings
 from app.core.exceptions import CustomException
-from app.core.logger import log
+from app.core.logger import logger
 
 
 def import_module(module: str, desc: str) -> Any:
@@ -32,10 +32,10 @@ def import_module(module: str, desc: str) -> Any:
         module = importlib.import_module(module_path)  # pyright: ignore[reportAssignmentType]
         return getattr(module, module_class)
     except ModuleNotFoundError:
-        log.error(f"❗️ 导入{desc}失败,未找到模块:{module}")
+        logger.error(f"❗️ 导入{desc}失败,未找到模块:{module}")
         raise
     except AttributeError:
-        log.error(f"❗ ️导入{desc}失败,未找到模块方法:{module}")
+        logger.error(f"❗ ️导入{desc}失败,未找到模块方法:{module}")
         raise
 
 
@@ -60,10 +60,10 @@ async def import_modules_async(modules: list, desc: str, **kwargs) -> None:
             module_obj = importlib.import_module(module_path)
             await getattr(module_obj, module_name)(**kwargs)
         except ModuleNotFoundError:
-            log.error(f"❌️ 导入{desc}失败,未找到模块:{module}")
+            logger.error(f"❌️ 导入{desc}失败,未找到模块:{module}")
             raise
         except AttributeError:
-            log.error(f"❌️ 导入{desc}失败,未找到模块方法:{module}")
+            logger.error(f"❌️ 导入{desc}失败,未找到模块方法:{module}")
             raise
 
 

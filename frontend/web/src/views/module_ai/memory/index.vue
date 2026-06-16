@@ -251,7 +251,6 @@ async function deleteSessionRow(id: string) {
   try {
     await confirmDelete();
     await AiChatAPI.deleteSession([id]);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
@@ -266,7 +265,6 @@ async function handleBatchDelete() {
     await confirmBatchDelete(ids.length);
     batchDeleting.value = true;
     await AiChatAPI.deleteSession(ids as unknown as string[]);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
@@ -511,7 +509,6 @@ async function handleSaveTitle(row: ChatSession) {
 
   try {
     await AiChatAPI.updateSession(row.id, { title: newTitle });
-    ElMessage.success("更新成功");
     row.title = newTitle;
     editingRowId.value = null;
   } catch (error: unknown) {

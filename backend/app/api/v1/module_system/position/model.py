@@ -19,6 +19,7 @@ class PositionModel(ModelMixin, TenantMixin, UserMixin):
     __loader_options__: list[str] = ["users", "created_by", "updated_by", "deleted_by"]
 
     name: Mapped[str] = mapped_column(String(64), nullable=False, comment="岗位名称")
+    code: Mapped[str] = mapped_column(String(64), nullable=False, comment="岗位编码")
     order: Mapped[int] = mapped_column(Integer, nullable=False, default=1, comment="显示排序")
 
     # 关联关系

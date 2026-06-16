@@ -7,7 +7,7 @@ class ImportFieldModel(BaseModel):
     Excel 导入时单字段映射配置（数据库列、Excel 列、默认值、是否必选等）。
     """
 
-    model_config = ConfigDict(alias_generator=to_camel, from_attributes=True)
+    model_config = ConfigDict(alias_generator=to_camel)
 
     base_column: str | None = Field(description="数据库字段名", default=None)
     excel_column: str | None = Field(description="excel字段名", default=None)
@@ -50,7 +50,7 @@ class ImportModel(BaseModel):
     Excel 导入请求体：目标表、Sheet、文件名及字段映射列表。
     """
 
-    model_config = ConfigDict(alias_generator=to_camel, from_attributes=True)
+    model_config = ConfigDict(alias_generator=to_camel)
 
     table_name: str | None = Field(description="表名", default=None)
     sheet_name: str | None = Field(description="Sheet名", default=None)

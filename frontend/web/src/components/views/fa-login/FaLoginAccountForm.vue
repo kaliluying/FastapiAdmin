@@ -51,8 +51,7 @@
             show-password
             clearable
             :placeholder="$t('login.placeholder.password')"
-            @keyup="checkCapsLock"
-            @keyup.enter="$emit('submit')"
+            @keyup="onPasswordKeyup"
           >
             <template #prefix>
               <ElIcon><Lock /></ElIcon>
@@ -179,7 +178,9 @@ import type { Account, AccountKey } from "@views/module_system/auth/login/types"
 
 const loginForm = defineModel<LoginFormData>("loginForm", { required: true });
 
-defineProps<{
+defineOptions({ name: "FaLoginAccountForm" });
+
+interface Props {
   rules: FormRules;
   captchaState: CaptchaInfo;
   codeLoading: boolean;
@@ -189,12 +190,14 @@ defineProps<{
   isDark: boolean;
   dragVerifyTextColor: string;
   loading: boolean;
-}>();
+}
+
+withDefaults(defineProps<Props>(), {});
 
 const isPassing = defineModel<boolean>("isPassing", { required: true });
 const isClickPass = defineModel<boolean>("isClickPass", { required: true });
 
-defineEmits<{
+interface Emits {
   submit: [];
   setupAccount: [key: AccountKey];
   getCaptcha: [];
@@ -203,15 +206,20 @@ defineEmits<{
   forget: [];
   register: [];
   oauth: [provider: "wechat" | "qq" | "github" | "gitee"];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const formRef = ref();
 const dragVerifyRef = ref<{ reset?: () => void } | null>(null);
 const isCapsLock = ref(false);
 
-function checkCapsLock(event: KeyboardEvent) {
+function onPasswordKeyup(event: KeyboardEvent) {
   if (event instanceof KeyboardEvent) {
     isCapsLock.value = event.getModifierState("CapsLock");
+    if (event.key === "Enter") {
+      emit("submit");
+    }
   }
 }
 

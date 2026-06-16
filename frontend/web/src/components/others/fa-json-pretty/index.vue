@@ -20,9 +20,14 @@ import { computed } from "vue";
 import VueJsonPretty from "vue-json-pretty";
 import "vue-json-pretty/lib/styles.css";
 
-const props = defineProps({
-  value: { type: [String, Object, Array, Number, Boolean], default: "" },
-  height: { type: String, default: "240px" },
+interface Props {
+  value?: string | Record<string, any> | any[] | number | boolean;
+  height?: string;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  value: "",
+  height: "240px",
 });
 
 const parsed = computed(() => {

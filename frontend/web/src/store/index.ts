@@ -1,7 +1,6 @@
 import type { App } from "vue";
 import { createPinia } from "pinia";
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
-import { router } from "@/router";
 import { useUserStore } from "./modules/user.store";
 import { useDictStore } from "./modules/dict.store";
 import { useNoticeStore } from "./modules/notice.store";
@@ -73,13 +72,8 @@ export async function refreshAppCaches(opts: RefreshCacheOptions = {}) {
   await Promise.allSettled(tasks);
 
   if (refreshRoutes) {
-    const { resetDynamicRoutesSync } = await import("@/router/beforeEach");
-    resetDynamicRoutesSync();
-    await router.replace({
-      path: router.currentRoute.value.path,
-      query: router.currentRoute.value.query,
-      hash: router.currentRoute.value.hash,
-    });
+    const { refreshMenuAndRoutes } = await import("@/router/beforeEach");
+    await refreshMenuAndRoutes();
   }
 
   if (clearTags) {

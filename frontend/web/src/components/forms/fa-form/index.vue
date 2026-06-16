@@ -277,7 +277,7 @@ export interface FormItem {
 }
 
 // 表单配置
-interface FormProps {
+interface Props {
   /** 表单数据 */
   items: FormItem[];
   /** 每列的宽度（基于 24 格布局） */
@@ -319,7 +319,7 @@ interface SanitizeOutputOptions {
   keepFalse: boolean;
 }
 
-const props = withDefaults(defineProps<FormProps>(), {
+const props = withDefaults(defineProps<Props>(), {
   items: () => [],
   span: 6,
   gutter: 12,
@@ -334,12 +334,12 @@ const props = withDefaults(defineProps<FormProps>(), {
   maxHeight: "75vh",
 });
 
-interface FormEmits {
+interface Emits {
   reset: [];
   submit: [Record<string, any>];
 }
 
-const emit = defineEmits<FormEmits>();
+const emit = defineEmits<Emits>();
 
 const modelValue = defineModel<Record<string, any>>({ default: {} });
 const initialModelValue = ref<Record<string, any>>({});
@@ -520,9 +520,20 @@ const getSanitizedOutput = () => {
 };
 
 const getProps = (item: FormItem) => {
-  if (item.props) return item.props;
-  const props = { ...item };
-  rootProps.forEach((key) => delete (props as Record<string, any>)[key]);
+  let props: Record<string, any>;
+  if (item.props) {
+    props = { ...item.props };
+  } else {
+    props = { ...item };
+    rootProps.forEach((key) => delete props[key]);
+  }
+
+  // 对于日期选择器组件，确保 type 被传递给 FaDatePicker
+  const datePickerTypes = ["date", "daterange", "datetime", "datetimerange", "monthrange"];
+  if (item.type && datePickerTypes.includes(item.type) && !props.type) {
+    props.type = item.type;
+  }
+
   return props;
 };
 

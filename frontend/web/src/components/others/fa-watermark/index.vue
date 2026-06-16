@@ -28,7 +28,7 @@ import { useSettingsStore } from "@stores";
 
 defineOptions({ name: "FaWatermark" });
 
-interface WatermarkProps {
+interface Props {
   /** 水印内容 */
   content?: string;
   /** 水印是否可见 */
@@ -51,7 +51,7 @@ interface WatermarkProps {
   zIndex?: number;
 }
 
-const props = withDefaults(defineProps<WatermarkProps>(), {
+const props = withDefaults(defineProps<Props>(), {
   content: AppConfig.systemInfo.name,
   visible: false,
   fontSize: 16,

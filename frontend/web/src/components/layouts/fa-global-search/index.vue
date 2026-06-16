@@ -75,16 +75,28 @@
       <template #footer>
         <div class="dialog-footer box-border flex-c border-t-d pt-4.5 pb-1">
           <div class="flex-cc">
-            <FaSvgIcon icon="fluent:arrow-enter-left-20-filled" class="keyboard" />
+            <FaSvgIcon
+              icon="fluent:arrow-enter-left-20-filled"
+              class="mr-2 box-border h-5 w-5.5 rounded border border-g-400 px-1 text-g-500 shadow-[0_2px_0_var(--default-border-dashed)]"
+            />
             <span class="mr-3.5 text-xs text-g-700">{{ $t("search.selectKeydown") }}</span>
           </div>
           <div class="flex-c">
-            <FaSvgIcon icon="ri:arrow-up-wide-fill" class="keyboard" />
-            <FaSvgIcon icon="ri:arrow-down-wide-fill" class="keyboard" />
+            <FaSvgIcon
+              icon="ri:arrow-up-wide-fill"
+              class="mr-2 box-border h-5 w-5.5 rounded border border-g-400 px-1 text-g-500 shadow-[0_2px_0_var(--default-border-dashed)]"
+            />
+            <FaSvgIcon
+              icon="ri:arrow-down-wide-fill"
+              class="mr-2 box-border h-5 w-5.5 rounded border border-g-400 px-1 text-g-500 shadow-[0_2px_0_var(--default-border-dashed)]"
+            />
             <span class="mr-3.5 text-xs text-g-700">{{ $t("search.switchKeydown") }}</span>
           </div>
           <div class="flex-c">
-            <i class="keyboard w-8! flex-cc"><p class="text-[10px] font-medium">ESC</p></i>
+            <i
+              class="mr-2 box-border h-5 rounded border border-g-400 px-1 text-g-500 shadow-[0_2px_0_var(--default-border-dashed)] w-8! flex-cc"
+              ><p class="text-[10px] font-medium">ESC</p></i
+            >
             <span class="mr-3.5 text-xs text-g-700">{{ $t("search.exitKeydown") }}</span>
           </div>
         </div>
@@ -407,23 +419,5 @@ const highlightOnHoverHistory = (index: number) => {
   :deep(.el-dialog) {
     background-color: #252526;
   }
-}
-</style>
-
-<style scoped>
-@reference '@styles/core/tailwind.css';
-
-.keyboard {
-  @apply mr-2 
-    box-border
-    h-5 
-    w-5.5
-    rounded
-    border 
-    border-g-400 
-    px-1 
-    text-g-500
-    shadow-[0_2px_0_var(--default-border-dashed)] 
-    last-of-type:mr-1.5;
 }
 </style>

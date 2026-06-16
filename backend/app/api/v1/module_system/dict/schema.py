@@ -20,11 +20,19 @@ class DictTypeCreateSchema(BaseModel):
     """
 
     dict_name: str = Field(..., min_length=1, max_length=64, description="字典名称")
-    dict_type: str = Field(..., min_length=1, max_length=64, description="字典类型")
-    status: str = Field(default="0", description="状态（0正常 1停用）")
+    dict_type: str = Field(..., min_length=1, max_length=255, description="字典类型编码")
+    status: int = Field(default=0, ge=0, le=1, description="状态(0:正常 1:停用)")
     description: str | None = Field(default=None, max_length=255, description="描述")
 
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value: int):
+        if value not in {0, 1}:
+            raise ValueError("状态仅支持 0(正常) 或 1(停用)")
+        return value
+
     @field_validator("dict_name")
+    @classmethod
     def validate_dict_name(cls, value: str):
         """
         校验字典名称为非空字符串。
@@ -43,6 +51,7 @@ class DictTypeCreateSchema(BaseModel):
         return value.strip()
 
     @field_validator("dict_type")
+    @classmethod
     def validate_dict_type(cls, value: str):
         """
         校验字典类型：小写字母开头，仅包含小写字母/数字/下划线。
@@ -93,7 +102,6 @@ class DictTypeQueryParam:
             examples=["2025-01-01 00:00:00", "2025-12-31 23:59:59"],
         ),
     ) -> None:
-        super().__init__()
 
         # 模糊查询字段
         self.dict_name = (QueueEnum.like.value, dict_name)
@@ -114,18 +122,25 @@ class DictDataCreateSchema(BaseModel):
     字典数据表对应pydantic模型
     """
 
-    dict_sort: int = Field(..., ge=1, le=999, description="字典排序")
-    dict_label: str = Field(..., max_length=100, description="字典标签")
-    dict_value: str = Field(..., max_length=100, description="字典键值")
-    dict_type: str = Field(..., max_length=100, description="字典类型")
-    dict_type_id: int = Field(..., description="字典类型ID")
+    dict_sort: int = Field(..., ge=1, le=999, description="排序")
+    dict_label: str = Field(..., min_length=1, max_length=255, description="字典标签")
+    dict_value: str = Field(..., min_length=1, max_length=255, description="字典键值")
+    dict_type: str = Field(..., max_length=255, description="字典类型")
+    dict_type_id: int = Field(..., gt=0, description="字典类型ID")
     css_class: str | None = Field(
-        default=None, max_length=100, description="样式属性（其他样式扩展）"
+        default=None, max_length=255, description="样式属性"
     )
-    list_class: str | None = Field(default=None, description="表格回显样式")
-    is_default: bool = Field(default=False, description="是否默认（True是 False否）")
-    status: str = Field(default="0", description="状态（0正常 1停用）")
+    list_class: str | None = Field(default=None, max_length=255, description="表格回显样式")
+    is_default: bool = Field(default=False, description="是否默认")
+    status: int = Field(default=0, ge=0, le=1, description="状态(0:正常 1:停用)")
     description: str | None = Field(default=None, max_length=255, description="描述")
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value: int) -> int:
+        if value not in (0, 1):
+            raise ValueError("状态仅支持 0(正常) 或 1(停用)")
+        return value
 
     @model_validator(mode="after")
     def validate_after(self):

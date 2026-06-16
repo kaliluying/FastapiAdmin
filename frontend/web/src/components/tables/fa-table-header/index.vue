@@ -192,11 +192,13 @@ const columns = defineModel<ColumnOption[]>("columns", {
   default: () => [],
 });
 
-const emit = defineEmits<{
-  (e: "refresh"): void;
-  (e: "search"): void;
-  (e: "update:showSearchBar", value: boolean): void;
-}>();
+interface Emits {
+  refresh: [];
+  search: [];
+  "update:showSearchBar": [value: boolean];
+}
+
+const emit = defineEmits<Emits>();
 
 /**
  * 获取列的显示状态

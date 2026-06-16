@@ -9,52 +9,37 @@ from app.core.validator import DateTimeStr, validate_required_code
 class DeptCreateSchema(BaseModel):
     """部门创建模型"""
 
-    name: str = Field(..., max_length=64, description="部门名称")
+    name: str = Field(..., min_length=1, max_length=64, description="部门名称")
     order: int = Field(default=1, ge=0, description="显示顺序")
-    code: str = Field(..., max_length=16, description="部门编码")
+    code: str = Field(..., min_length=2, max_length=64, description="部门编码")
     leader: str | None = Field(default=None, max_length=32, description="部门负责人")
-    phone: str | None = Field(default=None, max_length=11, description="手机")
-    email: str | None = Field(default=None, max_length=64, description="邮箱")
+    phone: str | None = Field(default=None, max_length=20, description="联系电话")
+    email: str | None = Field(default=None, max_length=128, description="邮箱")
     parent_id: int | None = Field(default=None, ge=0, description="父部门ID")
-    status: str = Field(default="0", description="是否启用(0:启用 1:禁用)")
-    description: str | None = Field(default=None, max_length=255, description="备注说明")
+    status: int = Field(default=0, ge=0, le=1, description="状态(0:正常 1:禁用)")
+    description: str | None = Field(default=None, max_length=255, description="备注")
 
     @field_validator("name")
     @classmethod
     def validate_name(cls, value: str):
-        """
-        校验并规范化部门名称（去空格、非空）。
-
-        参数:
-        - value (str): 部门名称。
-
-        返回:
-        - str: 规范化后的部门名称。
-
-        异常:
-        - ValueError: 部门名称为空时抛出。
-        """
-        if not value or len(value.strip()) == 0:
+        """校验部门名称：不能为空"""
+        if not value or not value.strip():
             raise ValueError("部门名称不能为空")
-        value = value.replace(" ", "")
-        return value
+        return value.strip()
 
     @field_validator("code")
     @classmethod
     def validate_code(cls, value: str):
-        """
-        校验部门编码（与角色编码规则一致，见 `validate_required_code`）。
-
-        参数:
-        - value (str): 部门编码。
-
-        返回:
-        - str: 规范化后的部门编码。
-
-        异常:
-        - ValueError: 编码不满足格式要求时抛出。
-        """
+        """校验部门编码：字母开头，2-64 位，仅含字母/数字/下划线"""
         return validate_required_code(value)
+
+    @field_validator("status")
+    @classmethod
+    def validate_status(cls, value: int):
+        """校验状态：仅支持 0(正常)、1(禁用)"""
+        if value not in {0, 1}:
+            raise ValueError("状态仅支持 0(正常) 或 1(禁用)")
+        return value
 
 
 class DeptUpdateSchema(DeptCreateSchema):
@@ -67,6 +52,7 @@ class DeptOutSchema(DeptCreateSchema, BaseSchema):
     model_config = ConfigDict(from_attributes=True)
 
     parent_name: str | None = Field(default=None, max_length=64, description="父部门名称")
+    children: list["DeptOutSchema"] | None = Field(default=None, description="子部门列表")
 
 
 class DeptQueryParam:

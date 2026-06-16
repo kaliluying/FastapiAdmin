@@ -24,7 +24,9 @@ from app.core.tenant import get_current_tenant_id, get_is_super_admin
 logger = logging.getLogger(__name__)
 
 # 系统表名集合（不对这些表进行租户过滤，避免死循环）
-_SYSTEM_TABLE_NAMES: frozenset[str] = frozenset({"sys_tenant"})
+_SYSTEM_TABLE_NAMES: frozenset[str] = frozenset({"platform_tenant"})
+
+_registered = False
 
 
 def _has_tenant_column(mapper_or_entity) -> bool:
@@ -72,7 +74,9 @@ def _collect_tenant_mappers(execute_state) -> set[Mapper]:
     if execute_state.bind_mapper and _has_tenant_column(execute_state.bind_mapper):
         mapper = inspect(execute_state.bind_mapper)
         if not _is_system_table(mapper.mapped_table):
-            tenant_mappers.add(mapper)
+            # 跳过 __platform_data_shared__ 模型（由 CRUD 层处理共享逻辑）
+            if not getattr(mapper.class_, "__platform_data_shared__", False):
+                tenant_mappers.add(mapper)
 
     # 检查语句中所有实体（多实体查询 / join）
     stmt = execute_state.statement
@@ -82,7 +86,9 @@ def _collect_tenant_mappers(execute_state) -> set[Mapper]:
             if entity is not None and _has_tenant_column(entity):
                 mapper = inspect(entity)
                 if not _is_system_table(mapper.mapped_table):
-                    tenant_mappers.add(mapper)
+                    # 跳过 __platform_data_shared__ 模型
+                    if not getattr(mapper.class_, "__platform_data_shared__", False):
+                        tenant_mappers.add(mapper)
 
     return tenant_mappers
 

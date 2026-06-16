@@ -1,5 +1,5 @@
 <template>
-  <div class="fa-card p-5 h-[28.2rem] overflow-hidden">
+  <div class="fa-card p-5 h-134 overflow-hidden">
     <div class="fa-card-header">
       <div class="title">
         <h4>代办事项</h4>
@@ -87,6 +87,27 @@ const list = reactive<TodoItem[]>([
     complate: false,
     type: "计划",
     target: "明天工作计划",
+  },
+  {
+    username: "王思聪",
+    date: "下午 06:30",
+    complate: false,
+    type: "计划",
+    target: "明天工作内容",
+  },
+  {
+    username: "范小荷",
+    date: "下午 06:30",
+    complate: false,
+    type: "计划",
+    target: "一起去看电影",
+  },
+  {
+    username: "张无忌",
+    date: "下午 06:30",
+    complate: false,
+    type: "计划",
+    target: "练习乾坤大挪移",
   },
 ]);
 </script>

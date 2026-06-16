@@ -540,7 +540,6 @@ async function handleResetPassword(row: UserInfo) {
       return;
     }
     await UserAPI.resetUserPassword({ id: row.id!, password: value });
-    ElMessage.success("密码已重置");
   } catch {
     // 用户取消
   }
@@ -618,8 +617,8 @@ const {
         label: "状态",
         width: 88,
         formatter: (row: UserInfo) =>
-          h(ElTag, { type: row.status === "0" ? "success" : "danger" }, () =>
-            row.status === "0" ? "启用" : "停用"
+          h(ElTag, { type: row.status === 0 ? "success" : "danger" }, () =>
+            row.status === 0 ? "启用" : "停用"
           ),
       },
       {
@@ -724,7 +723,7 @@ const formData = ref<UserForm>({
   email: undefined,
   mobile: undefined,
   is_superuser: false,
-  status: "0",
+  status: 0,
   description: undefined,
 });
 
@@ -768,7 +767,7 @@ const initialFormData: UserForm = {
   email: undefined,
   mobile: undefined,
   is_superuser: false,
-  status: "0",
+  status: 0,
   description: undefined,
 };
 
@@ -874,7 +873,7 @@ async function handleOpenDialog(type: "create" | "update" | "detail", id?: numbe
     .map((item) => ({
       value: item.id as number,
       label: item.name as string,
-      disabled: item.status === "1",
+      disabled: item.status === 1,
     }))
     .filter((opt) => !opt.disabled);
 
@@ -885,7 +884,7 @@ async function handleOpenDialog(type: "create" | "update" | "detail", id?: numbe
     .map((item) => ({
       value: item.id as number,
       label: item.name as string,
-      disabled: item.status === "1",
+      disabled: item.status === 1,
     }))
     .filter((opt) => !opt.disabled);
 }

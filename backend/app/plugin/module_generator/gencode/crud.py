@@ -1,12 +1,13 @@
+import asyncio
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from sqlalchemy import Inspector, inspect, select, text
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.config.setting import settings
 from app.core.base_crud import CRUDBase
-from app.core.logger import log
+from app.core.base_schema import AuthSchema
+from app.core.logger import logger
 
 from .model import GenTableColumnModel, GenTableModel
 from .schema import (
@@ -166,16 +167,24 @@ class GenTableCRUD(CRUDBase[GenTableModel, GenTableSchema, GenTableSchema]):
                 )
                 table_comment = comment or ""
             except Exception as e:
-                log.warning(f"获取表 {table_name} 的注释失败: {e}")
+                logger.warning(f"获取表 {table_name} 的注释失败: {e}")
                 table_comment = ""
 
             # 统一处理 search 为 None 的情况，避免重复判断
             if search:
                 # 表名过滤：忽略大小写，支持模糊匹配
-                if search.table_name and search.table_name[1] and search.table_name[1].lower() not in table_name.lower():
+                if (
+                    search.table_name
+                    and search.table_name[1]
+                    and search.table_name[1].lower() not in table_name.lower()
+                ):
                     continue
                 # 表注释过滤：忽略大小写，支持模糊匹配；table_comment 为 None 时视为空字符串
-                if search.table_comment and search.table_comment[1] and search.table_comment[1] not in table_comment:
+                if (
+                    search.table_comment
+                    and search.table_comment[1]
+                    and search.table_comment[1] not in table_comment
+                ):
                     continue
 
             table_info = {
@@ -266,7 +275,9 @@ class GenTableCRUD(CRUDBase[GenTableModel, GenTableSchema, GenTableSchema]):
         # PostgreSQL
         if db_type in {"postgresql", "postgres"}:
             # pg_description 需要通过 objsubid=0 获取 table comment
-            where_sql = "WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND c.relkind = 'r'"
+            where_sql = (
+                "WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND c.relkind = 'r'"
+            )
             params = {"offset": offset, "limit": limit}
             if name_kw:
                 where_sql += " AND c.relname ILIKE :name_kw"
@@ -319,21 +330,42 @@ class GenTableCRUD(CRUDBase[GenTableModel, GenTableSchema, GenTableSchema]):
         返回:
         - list[GenDBTableSchema]: 数据库表信息对象列表。
         """
-        # 处理空列表情况
         if not table_names:
             return []
-        # 调用get_db_table_list获取所有表信息
-        all_tables = await self.get_db_table_list()
 
-        # 过滤出指定名称的表
-        table_names_set = set(table_names)  # 转换为集合以提高查找效率
-        filtered_tables = [
-            GenDBTableSchema(**table)
-            for table in all_tables
-            if table["table_name"] in table_names_set
-        ]
+        database_name = settings.DATABASE_NAME
+        database_type = settings.DATABASE_TYPE
 
-        return filtered_tables
+        from app.core.database import engine
+
+        inspector: Inspector = inspect(engine)
+        all_table_names = set(inspector.get_table_names())
+
+        results = []
+        for table_name in table_names:
+            if table_name not in all_table_names:
+                continue
+            try:
+                table_comment = inspector.get_table_comment(table_name)
+                comment = (
+                    table_comment.get("text", "")
+                    if isinstance(table_comment, dict)
+                    else (table_comment or "")
+                )
+            except Exception as e:
+                logger.warning(f"获取表 {table_name} 的注释失败: {e}")
+                comment = ""
+
+            results.append(
+                GenDBTableSchema(
+                    database_name=database_name,
+                    table_name=table_name,
+                    table_type=database_type,
+                    table_comment=comment or "",
+                )
+            )
+
+        return results
 
     async def check_table_exists(self, table_name: str) -> bool:
         """
@@ -374,7 +406,7 @@ class GenTableCRUD(CRUDBase[GenTableModel, GenTableSchema, GenTableSchema]):
             )
             return comment or ""
         except Exception as e:
-            log.warning(f"获取表 {table_name} 的注释失败: {e}")
+            logger.warning(f"获取表 {table_name} 的注释失败: {e}")
             return ""
 
     async def execute_sql(self, sql: str) -> bool:
@@ -392,7 +424,7 @@ class GenTableCRUD(CRUDBase[GenTableModel, GenTableSchema, GenTableSchema]):
             await self.auth.db.execute(text(sql))
             return True
         except Exception as e:
-            log.error(f"执行SQL时发生错误: {e}")
+            logger.error(f"执行SQL时发生错误: {e}")
             return False
 
 
@@ -460,11 +492,8 @@ class GenTableColumnCRUD(CRUDBase[GenTableColumnModel, GenTableColumnSchema, Gen
             # 判断是否为自增列（基于数据库类型和列类型）
             is_increment = column.get("autoincrement", False) in (True, "auto")
             # 获取列长度（如果适用）
-            column_length = None
-            # 使用getattr安全地获取length属性，避免访问不存在时抛出AttributeError
-            column_length = getattr(column["type"], "length", None)
-            if column_length is not None:
-                column_length = str(getattr(column["type"], "length", ""))
+            col_len = getattr(column["type"], "length", None)
+            column_length = str(col_len) if col_len is not None else ""
 
             # 构造列信息字典
             column_info = {
@@ -547,9 +576,11 @@ class GenTableColumnCRUD(CRUDBase[GenTableColumnModel, GenTableColumnSchema, Gen
             raise ValueError("数据表名称不能为空")
 
         try:
-            # 直接调用同步方法获取列信息
-            columns_info = GenTableColumnCRUD._sync_get_table_columns(
-                settings.DATABASE_TYPE, table_name
+            # 在线程池中执行同步 inspect 操作，避免阻塞事件循环
+            columns_info = await asyncio.to_thread(
+                GenTableColumnCRUD._sync_get_table_columns,
+                settings.DATABASE_TYPE,
+                table_name,
             )
 
             # 转换为GenTableColumnOutSchema对象列表
@@ -557,7 +588,7 @@ class GenTableColumnCRUD(CRUDBase[GenTableColumnModel, GenTableColumnSchema, Gen
 
             return columns_list
         except Exception as e:
-            log.error(f"获取表{table_name}的字段列表时出错: {e!s}")
+            logger.error(f"获取表{table_name}的字段列表时出错: {e!s}")
             # 确保即使出错也返回空列表而不是None
             raise
 
@@ -604,9 +635,7 @@ class GenTableColumnCRUD(CRUDBase[GenTableColumnModel, GenTableColumnSchema, Gen
         返回:
         - GenTableColumnModel | None: 业务表字段列表信息对象。
         """
-        # 将对象转换为字典，避免SQLAlchemy直接操作对象时出现的状态问题
-        data_dict = data.model_dump(exclude_unset=True)
-        return await self.update(id=id, data=data_dict)
+        return await self.update(id=id, data=data)
 
     async def delete_gen_table_column_by_table_id_crud(self, table_ids: list[int]) -> None:
         """根据业务表ID批量删除业务表字段。

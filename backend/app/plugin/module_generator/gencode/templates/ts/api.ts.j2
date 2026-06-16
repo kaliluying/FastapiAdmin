@@ -1,11 +1,10 @@
-import request from "@utils/http";
+import { request } from "@utils";
 
 // API 前缀来自分系统包 module_xxx → /xxx
 // 对齐 module_example/demo：业务接口固定为 /{prefix}/{module_name}
 const API_PATH = "/{{ api_route_prefix }}/{{ module_name }}";
 
 const {{ class_name }}API = {
-  /** 获取列表 */
   get{{ class_name }}List(query: {{ class_name }}PageQuery) {
     return request<ApiResponse<PageResult<{{ class_name }}Table>>>({
       url: `${API_PATH}/list`,
@@ -14,15 +13,13 @@ const {{ class_name }}API = {
     });
   },
 
-  /** 获取详情 */
-  get{{ class_name }}Detail(id: number) {
+  get{{ class_name }}Detail(query: number) {
     return request<ApiResponse<{{ class_name }}Table>>({
-      url: `${API_PATH}/detail/${id}`,
+      url: `${API_PATH}/detail/${query}`,
       method: "get",
     });
   },
 
-  /** 新增 */
   create{{ class_name }}(body: {{ class_name }}Form) {
     return request<ApiResponse>({
       url: `${API_PATH}/create`,
@@ -31,7 +28,6 @@ const {{ class_name }}API = {
     });
   },
 
-  /** 修改 */
   update{{ class_name }}(id: number, body: {{ class_name }}Form) {
     return request<ApiResponse>({
       url: `${API_PATH}/update/${id}`,
@@ -40,16 +36,14 @@ const {{ class_name }}API = {
     });
   },
 
-  /** 删除（支持批量） */
-  delete{{ class_name }}(ids: number[]) {
+  delete{{ class_name }}(body: number[]) {
     return request<ApiResponse>({
       url: `${API_PATH}/delete`,
       method: "delete",
-      data: ids,
+      data: body,
     });
   },
 
-  /** 批量启用/停用 */
   batch{{ class_name }}(body: BatchType) {
     return request<ApiResponse>({
       url: `${API_PATH}/available/setting`,
@@ -58,26 +52,23 @@ const {{ class_name }}API = {
     });
   },
 
-  /** 导出 Excel */
-  export{{ class_name }}(query: {{ class_name }}PageQuery) {
+  export{{ class_name }}(body: {{ class_name }}PageQuery) {
     return request<Blob>({
       url: `${API_PATH}/export`,
       method: "post",
-      data: query,
+      data: body,
       responseType: "blob",
     });
   },
 
-  /** 下载导入模板 */
   downloadTemplate{{ class_name }}() {
-    return request<Blob>({
+    return request<ApiResponse>({
       url: `${API_PATH}/download/template`,
       method: "post",
       responseType: "blob",
     });
   },
 
-  /** 导入 Excel */
   import{{ class_name }}(body: FormData) {
     return request<ApiResponse>({
       url: `${API_PATH}/import`,
@@ -100,7 +91,7 @@ export default {{ class_name }}API;
 export interface {{ class_name }}PageQuery extends PageQuery {
   {% for column in columns %}
   {# 主键列默认不参与查询 #}
-  {% if column.is_query and column.column_name != pk_column_name and column.query_type != "BETWEEN" and column.column_name not in ['created_time', 'updated_time'] %}
+  {% if column.is_query and column.column_name != pk_column_name and column.column_name not in ['created_time', 'updated_time'] %}
   {{ column.column_name }}?: {{
     'string' if column.query_type == 'LIKE'
     else (column.python_type | python_to_ts_type)

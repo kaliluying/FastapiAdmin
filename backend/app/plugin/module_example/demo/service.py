@@ -4,10 +4,9 @@ from typing import Any
 import pandas as pd
 from fastapi import UploadFile
 
-from app.api.v1.module_system.auth.schema import AuthSchema
-from app.core.base_schema import BatchSetAvailable
+from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.exceptions import CustomException
-from app.core.logger import log
+from app.core.logger import logger
 from app.utils.excel_util import ExcelUtil
 
 from .crud import DemoCRUD
@@ -25,7 +24,7 @@ class DemoService:
     """
 
     @classmethod
-    async def detail_service(cls, auth: AuthSchema, id: int) -> dict:
+    async def detail_service(cls, auth: AuthSchema, id: int) -> DemoOutSchema:
         """
         详情
 
@@ -34,12 +33,12 @@ class DemoService:
         - id (int): 示例ID
 
         返回:
-        - dict: 示例模型实例字典
+        - DemoOutSchema: 示例详情
         """
-        obj = await DemoCRUD(auth).get_by_id_crud(id=id)
+        obj = await DemoCRUD(auth).get(id=id)
         if not obj:
             raise CustomException(msg="该数据不存在")
-        return DemoOutSchema.model_validate(obj).model_dump()
+        return DemoOutSchema.model_validate(obj)
 
     @classmethod
     async def list_service(
@@ -47,7 +46,7 @@ class DemoService:
         auth: AuthSchema,
         search: DemoQueryParam | None = None,
         order_by: list[dict[str, str]] | None = None,
-    ) -> list[dict]:
+    ) -> list[DemoOutSchema]:
         """
         列表查询
 
@@ -57,11 +56,11 @@ class DemoService:
         - order_by (list[dict[str, str]] | None): 排序参数
 
         返回:
-        - list[dict]: 示例模型实例字典列表
+        - list[DemoOutSchema]: 示例列表
         """
         search_dict = search.__dict__ if search else None
-        obj_list = await DemoCRUD(auth).list_crud(search=search_dict, order_by=order_by)
-        return [DemoOutSchema.model_validate(obj).model_dump() for obj in obj_list]
+        obj_list = await DemoCRUD(auth).list(search=search_dict, order_by=order_by)
+        return [DemoOutSchema.model_validate(obj) for obj in obj_list]
 
     @classmethod
     async def page_service(
@@ -89,16 +88,17 @@ class DemoService:
         order_by_list = order_by or [{"id": "asc"}]
         offset = (page_no - 1) * page_size
 
-        result = await DemoCRUD(auth).page_crud(
+        result = await DemoCRUD(auth).page(
             offset=offset,
             limit=page_size,
             order_by=order_by_list,
             search=search_dict,
+            out_schema=DemoOutSchema,
         )
         return result
 
     @classmethod
-    async def create_service(cls, auth: AuthSchema, data: DemoCreateSchema) -> dict:
+    async def create_service(cls, auth: AuthSchema, data: DemoCreateSchema) -> DemoOutSchema:
         """
         创建
 
@@ -107,16 +107,16 @@ class DemoService:
         - data (DemoCreateSchema): 示例创建模型
 
         返回:
-        - dict: 示例模型实例字典
+        - DemoOutSchema: 新创建的示例
         """
         obj = await DemoCRUD(auth).get(name=data.name)
         if obj:
             raise CustomException(msg="创建失败，名称已存在")
-        obj = await DemoCRUD(auth).create_crud(data=data)
-        return DemoOutSchema.model_validate(obj).model_dump()
+        obj = await DemoCRUD(auth).create(data=data)
+        return DemoOutSchema.model_validate(obj)
 
     @classmethod
-    async def update_service(cls, auth: AuthSchema, id: int, data: DemoUpdateSchema) -> dict:
+    async def update_service(cls, auth: AuthSchema, id: int, data: DemoUpdateSchema) -> DemoOutSchema:
         """
         更新
 
@@ -126,20 +126,18 @@ class DemoService:
         - data (DemoUpdateSchema): 示例更新模型
 
         返回:
-        - dict: 示例模型实例字典
+        - DemoOutSchema: 更新后的示例
         """
-        # 检查数据是否存在
-        obj = await DemoCRUD(auth).get_by_id_crud(id=id)
+        obj = await DemoCRUD(auth).get(id=id)
         if not obj:
             raise CustomException(msg="更新失败，该数据不存在")
 
-        # 检查名称是否重复
         exist_obj = await DemoCRUD(auth).get(name=data.name)
         if exist_obj and exist_obj.id != id:
             raise CustomException(msg="更新失败，名称重复")
 
-        obj = await DemoCRUD(auth).update_crud(id=id, data=data)
-        return DemoOutSchema.model_validate(obj).model_dump()
+        obj = await DemoCRUD(auth).update(id=id, data=data)
+        return DemoOutSchema.model_validate(obj)
 
     @classmethod
     async def delete_service(cls, auth: AuthSchema, ids: list[int]) -> None:
@@ -156,13 +154,12 @@ class DemoService:
         if len(ids) < 1:
             raise CustomException(msg="删除失败，删除对象不能为空")
 
-        # 检查所有要删除的数据是否存在
         for id in ids:
-            obj = await DemoCRUD(auth).get_by_id_crud(id=id)
+            obj = await DemoCRUD(auth).get(id=id)
             if not obj:
                 raise CustomException(msg=f"删除失败，ID为{id}的数据不存在")
 
-        await DemoCRUD(auth).delete_crud(ids=ids)
+        await DemoCRUD(auth).delete(ids=ids)
 
     @classmethod
     async def set_available_service(cls, auth: AuthSchema, data: BatchSetAvailable) -> None:
@@ -176,7 +173,7 @@ class DemoService:
         返回:
         - None
         """
-        await DemoCRUD(auth).set_available_crud(ids=data.ids, status=data.status)
+        await DemoCRUD(auth).set(ids=data.ids, status=data.status)
 
     @classmethod
     async def batch_export_service(cls, obj_list: list[dict[str, Any]]) -> bytes:
@@ -199,12 +196,9 @@ class DemoService:
             "created_id": "创建者",
         }
 
-        # 复制数据并转换状态
         data = obj_list.copy()
         for item in data:
-            # 处理状态
-            item["status"] = "启用" if item.get("status") == "0" else "停用"
-            # 处理创建者
+            item["status"] = "启用" if item.get("status") == 0 else "停用"
             creator_info = item.get("created_id")
             if isinstance(creator_info, dict):
                 item["created_id"] = creator_info.get("name", "未知")
@@ -232,7 +226,6 @@ class DemoService:
         header_dict = {"名称": "name", "状态": "status", "描述": "description"}
 
         try:
-            # 读取Excel文件
             contents = await file.read()
             df = pd.read_excel(io.BytesIO(contents))
             await file.close()
@@ -240,15 +233,12 @@ class DemoService:
             if df.empty:
                 raise CustomException(msg="导入文件为空")
 
-            # 检查表头是否完整
             missing_headers = [header for header in header_dict if header not in df.columns]
             if missing_headers:
                 raise CustomException(msg=f"导入文件缺少必要的列: {', '.join(missing_headers)}")
 
-            # 重命名列名
             df.rename(columns=header_dict, inplace=True)
 
-            # 验证必填字段
             required_fields = ["name", "status"]
             errors = []
             for field in required_fields:
@@ -264,25 +254,21 @@ class DemoService:
             success_count = 0
             count = 0
 
-            # 处理每一行数据
             for _index, row in df.iterrows():
                 count += 1
                 try:
-                    # 数据转换前的类型检查
                     try:
-                        status = "0" if row["status"] == "正常" else "1"
+                        status = 0 if row["status"] == "正常" else 1
                     except ValueError:
                         error_msgs.append(f"第{count}行: 状态必须是'正常'或'停用'")
                         continue
 
-                    # 构建用户数据
                     data = {
                         "name": str(row["name"]),
                         "status": status,
                         "description": str(row["description"]),
                     }
 
-                    # 处理用户导入
                     exists_obj = await DemoCRUD(auth).get(name=data["name"])
                     if exists_obj:
                         if update_support:
@@ -298,14 +284,13 @@ class DemoService:
                     error_msgs.append(f"第{count}行: {e!s}")
                     continue
 
-            # 返回详细的导入结果
             result = f"成功导入 {success_count} 条数据"
             if error_msgs:
                 result += "\n错误信息:\n" + "\n".join(error_msgs)
             return result
 
         except Exception as e:
-            log.error(f"批量导入用户失败: {e!s}")
+            logger.error(f"批量导入用户失败: {e!s}")
             raise CustomException(msg=f"导入失败: {e!s}")
 
     @classmethod

@@ -20,17 +20,16 @@ from fastapi import Request
 from redis.asyncio.client import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.api.v1.module_system.user.crud import UserCRUD
 from app.api.v1.module_system.user.model import UserModel
 from app.api.v1.module_system.user.schema import UserRegisterSchema
 from app.api.v1.module_system.user.service import UserService
 from app.config.setting import settings
+from app.core.base_schema import AuthSchema, JWTOutSchema
 from app.core.exceptions import CustomException
-from app.core.logger import log
+from app.core.logger import logger
 from app.core.redis_crud import RedisCURD
 
-from .schema import JWTOutSchema
 from .service import LoginService
 
 OAuthProvider = Literal["wechat", "qq", "github", "gitee"]
@@ -52,13 +51,11 @@ def _frontend_error_redirect(frontend_base: str, message: str) -> str:
 def _frontend_success_redirect(
     frontend_base: str, access_token: str, refresh_token: str, token_type: str
 ) -> str:
-    q = urlencode(
-        {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": token_type,
-        }
-    )
+    q = urlencode({
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": token_type,
+    })
     sep = "&" if "?" in frontend_base else "?"
     return f"{frontend_base}{sep}{q}"
 
@@ -114,7 +111,9 @@ def build_authorize_url(
             "scope": "snsapi_login",
             "state": state,
         }
-        return "https://open.weixin.qq.com/connect/qrconnect?" + urlencode(params) + "#wechat_redirect"
+        return (
+            "https://open.weixin.qq.com/connect/qrconnect?" + urlencode(params) + "#wechat_redirect"
+        )
 
     if provider == "qq":
         params = {
@@ -138,7 +137,7 @@ async def _http_json(method: str, url: str, **kwargs: Any) -> Any:
             return r.json()
         except json.JSONDecodeError:
             text = r.text
-            log.error(f"OAuth 非 JSON 响应: {text[:500]}")
+            logger.error(f"OAuth 非 JSON 响应: {text[:500]}")
             raise CustomException(msg="OAuth 接口返回异常")
 
 
@@ -150,7 +149,9 @@ async def _http_text(method: str, url: str, **kwargs: Any) -> str:
         return r.text
 
 
-async def exchange_github_token(client_id: str, client_secret: str, code: str, redirect_uri: str) -> str:
+async def exchange_github_token(
+    client_id: str, client_secret: str, code: str, redirect_uri: str
+) -> str:
     data = await _http_json(
         "POST",
         "https://github.com/login/oauth/access_token",
@@ -170,16 +171,16 @@ async def exchange_github_token(client_id: str, client_secret: str, code: str, r
     return str(token)
 
 
-async def exchange_gitee_token(client_id: str, client_secret: str, code: str, redirect_uri: str) -> str:
-    qs = urlencode(
-        {
-            "grant_type": "authorization_code",
-            "code": code,
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "redirect_uri": redirect_uri,
-        }
-    )
+async def exchange_gitee_token(
+    client_id: str, client_secret: str, code: str, redirect_uri: str
+) -> str:
+    qs = urlencode({
+        "grant_type": "authorization_code",
+        "code": code,
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "redirect_uri": redirect_uri,
+    })
     data = await _http_json("GET", f"https://gitee.com/oauth/token?{qs}")
     if not isinstance(data, dict):
         raise CustomException(msg="Gitee token 响应格式错误")
@@ -190,14 +191,12 @@ async def exchange_gitee_token(client_id: str, client_secret: str, code: str, re
 
 
 async def exchange_wechat_token(app_id: str, secret: str, code: str) -> tuple[str, str]:
-    qs = urlencode(
-        {
-            "appid": app_id,
-            "secret": secret,
-            "code": code,
-            "grant_type": "authorization_code",
-        }
-    )
+    qs = urlencode({
+        "appid": app_id,
+        "secret": secret,
+        "code": code,
+        "grant_type": "authorization_code",
+    })
     data = await _http_json("GET", f"https://api.weixin.qq.com/sns/oauth2/access_token?{qs}")
     if not isinstance(data, dict):
         raise CustomException(msg="微信 token 响应格式错误")
@@ -208,16 +207,16 @@ async def exchange_wechat_token(app_id: str, secret: str, code: str) -> tuple[st
     return str(token), str(openid)
 
 
-async def exchange_qq_token(client_id: str, client_secret: str, code: str, redirect_uri: str) -> tuple[str, str]:
-    qs = urlencode(
-        {
-            "grant_type": "authorization_code",
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "code": code,
-            "redirect_uri": redirect_uri,
-        }
-    )
+async def exchange_qq_token(
+    client_id: str, client_secret: str, code: str, redirect_uri: str
+) -> tuple[str, str]:
+    qs = urlencode({
+        "grant_type": "authorization_code",
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "code": code,
+        "redirect_uri": redirect_uri,
+    })
     text = await _http_text("GET", f"https://graph.qq.com/oauth2.0/token?{qs}")
     parts = dict(p.split("=", 1) for p in text.split("&") if "=" in p)
     token = parts.get("access_token")
@@ -279,13 +278,11 @@ async def fetch_wechat_profile(access_token: str, openid: str) -> tuple[str, str
 
 
 async def fetch_qq_profile(access_token: str, app_id: str, openid: str) -> tuple[str, str]:
-    qs = urlencode(
-        {
-            "access_token": access_token,
-            "oauth_consumer_key": app_id,
-            "openid": openid,
-        }
-    )
+    qs = urlencode({
+        "access_token": access_token,
+        "oauth_consumer_key": app_id,
+        "openid": openid,
+    })
     user = await _http_json("GET", f"https://graph.qq.com/user/get_user_info?{qs}")
     if not isinstance(user, dict):
         raise CustomException(msg="QQ 用户信息格式错误")
@@ -315,7 +312,7 @@ async def ensure_oauth_user(
 ) -> UserModel:
     auth = AuthSchema(db=db, user=None, tenant_id=1, check_data_scope=False)
     username = _username_for_oauth(provider, unique_id)
-    existing = await UserCRUD(auth).get_by_username_crud(username=username)
+    existing = await UserCRUD(auth).get(username=username)
     if existing:
         return existing
 
@@ -325,11 +322,18 @@ async def ensure_oauth_user(
         name=(display_name or username)[:32],
         role_ids=list(settings.OAUTH_DEFAULT_ROLE_IDS),
     )
-    await UserService.register_user_service(auth=auth, data=reg)
-    user = await UserCRUD(auth).get_by_username_crud(username=username)
+    try:
+        await UserService.register_user_service(auth=auth, data=reg)
+    except Exception:
+        # 并发创建可能触发唯一约束冲突，回退到再次查询
+        existing = await UserCRUD(auth).get(username=username)
+        if existing:
+            return existing
+        raise CustomException(msg="OAuth 注册失败")
+    user = await UserCRUD(auth).get(username=username)
     if not user:
         raise CustomException(msg="OAuth 注册失败")
-    log.info(f"OAuth 自动注册用户: {username} ({provider})")
+    logger.info(f"OAuth 自动注册用户: {username} ({provider})")
     return user
 
 
@@ -377,12 +381,12 @@ async def complete_oauth_login(
         raise CustomException(msg="不支持的 OAuth 渠道")
 
     user = await ensure_oauth_user(db=db, provider=provider, unique_id=uid, display_name=name)
-    if user.status == "1":
+    if user.status == 1:
         raise CustomException(msg="用户已被停用")
 
-    user = await UserCRUD(AuthSchema(db=db, user=None, check_data_scope=False)).update_last_login_crud(
-        id=user.id
-    )
+    user = await UserCRUD(
+        AuthSchema(db=db, user=None, tenant_id=1, check_data_scope=False)
+    ).update_last_login_crud(id=user.id)
     if not user:
         raise CustomException(msg="用户不存在")
 
@@ -411,9 +415,7 @@ async def save_oauth_state(
         raise CustomException(msg="缓存 OAuth 状态失败")
 
 
-def oauth_service_frontend_redirect_from_token(
-    frontend_base: str, token: JWTOutSchema
-) -> str:
+def oauth_service_frontend_redirect_from_token(frontend_base: str, token: JWTOutSchema) -> str:
     return _frontend_success_redirect(
         frontend_base,
         token.access_token,

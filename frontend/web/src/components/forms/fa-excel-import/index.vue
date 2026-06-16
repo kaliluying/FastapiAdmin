@@ -3,12 +3,13 @@
   <div class="inline-block">
     <ElUpload
       :auto-upload="false"
-      accept=".xlsx, .xls"
+      :accept="accept"
       :show-file-list="false"
+      :disabled="disabled"
       @change="handleFileChange"
     >
-      <ElButton type="primary" v-ripple>
-        <slot>导入 Excel</slot>
+      <ElButton type="primary" v-ripple :loading="loading">
+        <slot>{{ buttonText }}</slot>
       </ElButton>
     </ElUpload>
   </div>
@@ -19,6 +20,24 @@ import * as XLSX from "xlsx";
 import type { UploadFile } from "element-plus";
 
 defineOptions({ name: "FaExcelImport" });
+
+interface Props {
+  /** 接受的文件类型 */
+  accept?: string;
+  /** 按钮文本 */
+  buttonText?: string;
+  /** 加载状态 */
+  loading?: boolean;
+  /** 是否禁用 */
+  disabled?: boolean;
+}
+
+withDefaults(defineProps<Props>(), {
+  accept: ".xlsx, .xls",
+  buttonText: "导入 Excel",
+  loading: false,
+  disabled: false,
+});
 
 // Excel 导入工具函数
 async function importExcel(file: File): Promise<Array<Record<string, unknown>>> {
@@ -44,10 +63,12 @@ async function importExcel(file: File): Promise<Array<Record<string, unknown>>> 
 }
 
 // 定义 emits
-const emit = defineEmits<{
+interface Emits {
   "import-success": [data: Array<Record<string, unknown>>];
   "import-error": [error: Error];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 // 处理文件导入
 const handleFileChange = async (uploadFile: UploadFile) => {

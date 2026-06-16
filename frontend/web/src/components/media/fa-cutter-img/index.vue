@@ -49,7 +49,7 @@ import ImgCutter from "vue-img-cutter";
 
 defineOptions({ name: "FaCutterImg" });
 
-interface CutterProps {
+interface Props {
   // 基础配置
   /** 是否模态框 */
   isModal?: boolean;
@@ -119,7 +119,7 @@ interface CutterResult {
   dataURL: string;
 }
 
-const props = withDefaults(defineProps<CutterProps>(), {
+const props = withDefaults(defineProps<Props>(), {
   // 基础配置默认值
   isModal: false,
   tool: true,
@@ -156,7 +156,14 @@ const props = withDefaults(defineProps<CutterProps>(), {
   previewMode: true,
 });
 
-const emit = defineEmits(["update:imgUrl", "error", "imageLoadComplete", "imageLoadError"]);
+interface Emits {
+  "update:imgUrl": [value: string];
+  error: [error: any];
+  imageLoadComplete: [result: CutterResult];
+  imageLoadError: [error: any];
+}
+
+const emit = defineEmits<Emits>();
 
 const temImgPath = ref("");
 const imgCutterModal = ref();

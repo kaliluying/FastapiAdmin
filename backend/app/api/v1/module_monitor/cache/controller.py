@@ -8,19 +8,17 @@ from app.api.v1.module_monitor.cache.schema import CacheInfoSchema, CacheMonitor
 from app.common.response import ResponseSchema, SuccessResponse
 from app.core.dependencies import AuthPermission, redis_getter
 from app.core.exceptions import CustomException
-from app.core.logger import log
 from app.core.router_class import OperationLogRoute
 
 from .service import CacheService
 
-CacheRouter = APIRouter(route_class=OperationLogRoute, prefix="/cache", tags=["缓存监控"])
+CacheRouter = APIRouter(route_class=OperationLogRoute, prefix="/cache", tags=["系统监控/缓存监控"])
 
 
 @CacheRouter.get(
     "/info",
     dependencies=[Depends(AuthPermission(["module_monitor:cache:query"]))],
     summary="获取缓存监控信息",
-    description="获取缓存监控信息",
     response_model=ResponseSchema[CacheMonitorSchema],
 )
 async def get_monitor_cache_info_controller(
@@ -36,7 +34,6 @@ async def get_monitor_cache_info_controller(
     - JSONResponse: 包含缓存监控统计信息的JSON响应
     """
     result = await CacheService.get_cache_monitor_statistical_info_service(redis=redis)
-    log.info("获取缓存监控信息成功")
     return SuccessResponse(data=result, msg="获取缓存监控信息成功")
 
 
@@ -44,7 +41,6 @@ async def get_monitor_cache_info_controller(
     "/get/names",
     dependencies=[Depends(AuthPermission(["module_monitor:cache:query"]))],
     summary="获取缓存名称列表",
-    description="获取缓存名称列表",
     response_model=ResponseSchema[list[CacheInfoSchema]],
 )
 async def get_monitor_cache_name_controller() -> JSONResponse:
@@ -55,7 +51,6 @@ async def get_monitor_cache_name_controller() -> JSONResponse:
     - JSONResponse: 包含缓存名称列表的JSON响应
     """
     result = await CacheService.get_cache_monitor_cache_name_service()
-    log.info("获取缓存名称列表成功")
     return SuccessResponse(data=result, msg="获取缓存名称列表成功")
 
 
@@ -63,7 +58,6 @@ async def get_monitor_cache_name_controller() -> JSONResponse:
     "/get/keys/{cache_name}",
     dependencies=[Depends(AuthPermission(["module_monitor:cache:query"]))],
     summary="获取缓存键名列表",
-    description="获取缓存键名列表",
     response_model=ResponseSchema[list[CacheInfoSchema]],
 )
 async def get_monitor_cache_key_controller(
@@ -81,7 +75,6 @@ async def get_monitor_cache_key_controller(
     result = await CacheService.get_cache_monitor_cache_key_service(
         redis=redis, cache_name=cache_name
     )
-    log.info(f"获取缓存{cache_name}的键名列表成功")
     return SuccessResponse(data=result, msg=f"获取缓存{cache_name}的键名列表成功")
 
 
@@ -89,7 +82,6 @@ async def get_monitor_cache_key_controller(
     "/get/value/{cache_name}/{cache_key}",
     dependencies=[Depends(AuthPermission(["module_monitor:cache:query"]))],
     summary="获取缓存值",
-    description="获取缓存值",
     response_model=ResponseSchema[CacheInfoSchema],
 )
 async def get_monitor_cache_value_controller(
@@ -110,7 +102,6 @@ async def get_monitor_cache_value_controller(
     result = await CacheService.get_cache_monitor_cache_value_service(
         redis=redis, cache_name=cache_name, cache_key=cache_key
     )
-    log.info(f"获取缓存{cache_name}:{cache_key}的值成功")
     return SuccessResponse(data=result, msg=f"获取缓存{cache_name}:{cache_key}的值成功")
 
 
@@ -118,7 +109,6 @@ async def get_monitor_cache_value_controller(
     "/delete/name/{cache_name}",
     dependencies=[Depends(AuthPermission(["module_monitor:cache:delete"]))],
     summary="清除指定缓存名称的所有缓存",
-    description="清除指定缓存名称的所有缓存",
     response_model=ResponseSchema[None],
 )
 async def clear_monitor_cache_name_controller(
@@ -138,7 +128,6 @@ async def clear_monitor_cache_name_controller(
     )
     if not result:
         raise CustomException(msg="清除缓存失败", data=result)
-    log.info(f"清除缓存{cache_name}成功")
     return SuccessResponse(msg=f"{cache_name}对应键值清除成功", data=result)
 
 
@@ -146,7 +135,6 @@ async def clear_monitor_cache_name_controller(
     "/delete/key/{cache_key}",
     dependencies=[Depends(AuthPermission(["module_monitor:cache:delete"]))],
     summary="清除指定缓存键",
-    description="清除指定缓存键",
     response_model=ResponseSchema[None],
 )
 async def clear_monitor_cache_key_controller(
@@ -166,7 +154,6 @@ async def clear_monitor_cache_key_controller(
     )
     if not result:
         raise CustomException(msg="清除缓存失败", data=result)
-    log.info(f"清除缓存键{cache_key}成功")
     return SuccessResponse(msg=f"{cache_key}清除成功", data=result)
 
 
@@ -174,7 +161,6 @@ async def clear_monitor_cache_key_controller(
     "/delete/all",
     dependencies=[Depends(AuthPermission(["module_monitor:cache:delete"]))],
     summary="清除所有缓存",
-    description="清除所有缓存",
     response_model=ResponseSchema[None],
 )
 async def clear_monitor_cache_all_controller(
@@ -192,5 +178,4 @@ async def clear_monitor_cache_all_controller(
     result = await CacheService.clear_cache_monitor_all_service(redis=redis)
     if not result:
         raise CustomException(msg="清除缓存失败", data=result)
-    log.info("清除所有缓存成功")
     return SuccessResponse(msg="所有缓存清除成功", data=result)

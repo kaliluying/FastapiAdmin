@@ -193,7 +193,8 @@ export interface GenSyncPreviewSchema {
   table_name: string;
   added: string[];
   removed: string[];
-  unchanged: string[];
   changed: GenSyncColumnChange[];
-  sub_tables?: GenSyncPreviewSchema[];
+  unchanged: number;
+  sub_table_name?: string;
+  sub?: GenSyncPreviewSchema;
 }

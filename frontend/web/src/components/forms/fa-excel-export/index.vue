@@ -46,7 +46,7 @@ interface ColumnConfig {
 }
 
 /** 导出配置选项 */
-interface ExportOptions {
+interface Props {
   /** 数据源 */
   data: ExportData[];
   /** 文件名（不含扩展名） */
@@ -90,7 +90,7 @@ interface ExportOptions {
   };
 }
 
-const props = withDefaults(defineProps<ExportOptions>(), {
+const props = withDefaults(defineProps<Props>(), {
   filename: () => `export_${new Date().toISOString().slice(0, 10)}`,
   sheetName: "Sheet1",
   type: "primary",
@@ -108,12 +108,14 @@ const props = withDefaults(defineProps<ExportOptions>(), {
   workbookOptions: () => ({}),
 });
 
-const emit = defineEmits<{
+interface Emits {
   "before-export": [data: ExportData[]];
   "export-success": [filename: string, rowCount: number];
   "export-error": [error: ExportError];
   "export-progress": [progress: number];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 /** 导出错误类型 */
 class ExportError extends Error {

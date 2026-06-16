@@ -19,6 +19,8 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: "FaSettingDrawer" });
+
 interface Props {
   modelValue: boolean;
 }
@@ -29,7 +31,7 @@ interface Emits {
   (e: "close"): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {});
 const emit = defineEmits<Emits>();
 
 const visible = computed({

@@ -65,6 +65,7 @@ class SuccessResponse(JSONResponse):
             success=success,
         ).model_dump()
         super().__init__(content=jsonable_response_content(content), status_code=status_code)
+        self.headers["Content-Type"] = "application/json; charset=utf-8"
 
 
 class ErrorResponse(JSONResponse):
@@ -99,6 +100,7 @@ class ErrorResponse(JSONResponse):
             success=success,
         ).model_dump()
         super().__init__(content=jsonable_response_content(content), status_code=status_code)
+        self.headers["Content-Type"] = "application/json; charset=utf-8"
 
 
 class StreamResponse(StreamingResponse):

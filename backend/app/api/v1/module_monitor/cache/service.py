@@ -12,7 +12,7 @@ class CacheService:
     """
 
     @classmethod
-    async def get_cache_monitor_statistical_info_service(cls, redis: Redis) -> dict:
+    async def get_cache_monitor_statistical_info_service(cls, redis: Redis) -> CacheMonitorSchema:
         """
         获取缓存监控信息。
 
@@ -30,29 +30,25 @@ class CacheService:
             {"name": key.split("_")[1], "value": str(value.get("calls"))}
             for key, value in command_stats_dict.items()
         ]
-        result = CacheMonitorSchema(command_stats=command_stats, db_size=db_size, info=info)
-
-        return result.model_dump()
+        return CacheMonitorSchema(command_stats=command_stats, db_size=db_size, info=info)
 
     @classmethod
-    async def get_cache_monitor_cache_name_service(cls) -> list:
+    async def get_cache_monitor_cache_name_service(cls) -> list[CacheInfoSchema]:
         """
         获取缓存名称列表信息。
 
         返回:
         - list: 缓存名称列表信息。
         """
-        name_list = [
+        return [
             CacheInfoSchema(
                 cache_key="",
                 cache_name=key_config.key,
                 cache_value="",
                 remark=key_config.remark,
-            ).model_dump()
+            )
             for key_config in RedisInitKeyConfig
         ]
-
-        return name_list
 
     @classmethod
     async def get_cache_monitor_cache_key_service(cls, redis: Redis, cache_name: str) -> list:
@@ -76,7 +72,7 @@ class CacheService:
     @classmethod
     async def get_cache_monitor_cache_value_service(
         cls, redis: Redis, cache_name: str, cache_key: str
-    ) -> dict:
+    ) -> CacheInfoSchema:
         """
         获取缓存内容信息。
 
@@ -95,7 +91,7 @@ class CacheService:
             cache_name=cache_name,
             cache_value=cache_value,
             remark="",
-        ).model_dump()
+        )
 
     @classmethod
     async def clear_cache_monitor_cache_name_service(cls, redis: Redis, cache_name: str) -> bool:

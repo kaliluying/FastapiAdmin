@@ -1,10 +1,12 @@
+from datetime import datetime
+
 import jwt
 from fastapi import Form, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.security.utils import get_authorization_scheme_param
 
-from app.api.v1.module_system.auth.schema import JWTPayloadSchema
 from app.config.setting import settings
+from app.core.base_schema import JWTPayloadSchema
 from app.core.exceptions import CustomException
 
 
@@ -106,6 +108,9 @@ def create_access_token(payload: JWTPayloadSchema) -> str:
     - str: 生成的JWT访问令牌。
     """
     payload_dict = payload.model_dump(exclude_none=False)
+    # PyJWT 2.x 不支持 datetime 对象，需转为 Unix 时间戳
+    if isinstance(payload_dict.get("exp"), datetime):
+        payload_dict["exp"] = int(payload_dict["exp"].timestamp())
     return jwt.encode(
         payload=payload_dict,
         key=settings.SECRET_KEY,
@@ -146,37 +151,3 @@ def decode_access_token(token: str) -> JWTPayloadSchema:
 
     except jwt.InvalidTokenError:
         raise CustomException(msg="token已失效,请重新登录", code=10401, status_code=401)
-
-
-def decode_access_token_with_tenant(token: str) -> tuple[JWTPayloadSchema, int | None, bool]:
-    """解析JWT访问令牌并提取租户信息。
-
-    在标准 JWT 解码基础上，额外从 payload.sub（OnlineOutSchema JSON）
-    中提取 tenant_id 和 is_super_admin 字段。
-
-    参数:
-        token: JWT 访问令牌字符串。
-
-    返回:
-        tuple[JWTPayloadSchema, int | None, bool]:
-            (payload, tenant_id, is_super_admin)。
-            tenant_id 为 None 表示未设置；is_super_admin 默认 False。
-
-    异常:
-        CustomException: 解析失败时抛出，状态码为 401。
-    """
-    payload = decode_access_token(token)
-
-    tenant_id: int | None = None
-    is_super_admin: bool = False
-
-    try:
-        import json
-        if payload.sub:
-            user_info = json.loads(payload.sub)
-            tenant_id = user_info.get("tenant_id")
-            is_super_admin = user_info.get("is_super_admin", False)
-    except (json.JSONDecodeError, TypeError, AttributeError):
-        pass
-
-    return payload, tenant_id, is_super_admin

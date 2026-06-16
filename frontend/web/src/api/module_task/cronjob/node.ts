@@ -56,6 +56,14 @@ const NodeAPI = {
     });
   },
 
+  batchNode(body: BatchType) {
+    return request<ApiResponse>({
+      url: `${API_PATH}/status/batch`,
+      method: "patch",
+      data: body,
+    });
+  },
+
   executeNode(id: number, params: ExecuteNodeParams = { trigger: "now" }) {
     return request<ApiResponse<ExecuteNodeResult>>({
       url: `${API_PATH}/execute/${id}`,
@@ -70,10 +78,6 @@ export default NodeAPI;
 export interface NodePageQuery extends PageQuery {
   name?: string;
   code?: string;
-  created_id?: number;
-  updated_id?: number;
-  created_time?: string[];
-  updated_time?: string[];
 }
 
 export type TriggerType = "now" | "cron" | "interval" | "date";

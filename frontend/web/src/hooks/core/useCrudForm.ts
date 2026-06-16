@@ -9,8 +9,8 @@ import type { CrudDialogState, DialogType } from "./useCrudDialog";
  * @example
  * ```ts
  * const crud = useCrudForm<DeptForm>({
- *   formData: ref({ id: undefined, name: "", status: "0" }),
- *   initialFormData: { id: undefined, name: "", status: "0" },
+ *   formData: ref({ id: undefined, name: "", status: 0 }),
+ *   initialFormData: { id: undefined, name: "", status: 0 },
  *   dialogVisible,        // 来自 useCrudDialog()
  *   dataFormRef,          // FaForm 的 ref
  *   formRenderKey,        // 用于 :key 重新渲染

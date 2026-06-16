@@ -8,10 +8,14 @@
 </template>
 
 <script setup lang="ts">
+defineOptions({ name: "FaSectionTitle" });
+
 interface Props {
   title: string;
   style?: Record<string, any>;
 }
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), {
+  style: () => ({}),
+});
 </script>

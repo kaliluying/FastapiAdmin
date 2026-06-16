@@ -1,8 +1,8 @@
 from collections.abc import Sequence
 from typing import Any
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.core.base_crud import CRUDBase
+from app.core.base_schema import AuthSchema
 
 from .model import NodeModel
 from .schema import (
@@ -21,7 +21,6 @@ class NodeCRUD(CRUDBase[NodeModel, NodeCreateSchema, NodeUpdateSchema]):
         参数:
         - auth (AuthSchema): 认证信息模型
         """
-        self.auth = auth
         super().__init__(model=NodeModel, auth=auth)
 
     async def get_obj_by_id_crud(

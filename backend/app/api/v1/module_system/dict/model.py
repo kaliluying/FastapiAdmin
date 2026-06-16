@@ -18,9 +18,7 @@ class DictTypeModel(ModelMixin, TenantMixin):
     __platform_data_shared__: bool = True
 
     dict_name: Mapped[str] = mapped_column(String(64), nullable=False, comment="字典名称")
-    dict_type: Mapped[str] = mapped_column(
-        String(255), nullable=False, comment="字典类型"
-    )
+    dict_type: Mapped[str] = mapped_column(String(255), nullable=False, comment="字典类型")
 
     # 关系定义
     dict_data_list: Mapped[list["DictDataModel"]] = relationship(
@@ -39,7 +37,10 @@ class DictDataModel(ModelMixin, TenantMixin):
     """
 
     __tablename__: str = "sys_dict_data"
-    __table_args__: dict[str, str] = {"comment": "字典数据表"}
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "dict_type_id", "dict_value", name="uq_dict_data_value"),
+        {"comment": "字典数据表"},
+    )
     __loader_options__: list[str] = []
     __platform_data_shared__: bool = True
 

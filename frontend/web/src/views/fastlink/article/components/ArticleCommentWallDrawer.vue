@@ -98,9 +98,11 @@ const props = defineProps<{
   modelValue: boolean;
 }>();
 
-const emit = defineEmits<{
+interface Emits {
   "update:modelValue": [boolean];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const visible = computed({
   get: () => props.modelValue,

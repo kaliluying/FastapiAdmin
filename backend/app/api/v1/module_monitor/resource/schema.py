@@ -120,7 +120,7 @@ class ResourceRenameSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     old_path: str = Field(..., description="原路径")
-    new_name: str = Field(..., description="新名称")
+    new_name: str = Field(..., max_length=255, description="新名称")
 
     @field_validator("old_path", "new_name")
     @classmethod

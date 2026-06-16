@@ -146,10 +146,10 @@
           </template>
           <template #status>
             <ElRadioGroup v-model="formData.status">
-              <ElRadio value="0">待处理</ElRadio>
-              <ElRadio value="1">处理中</ElRadio>
-              <ElRadio value="2">已完成</ElRadio>
-              <ElRadio value="3">已关闭</ElRadio>
+              <ElRadio :value="0">待处理</ElRadio>
+              <ElRadio :value="1">处理中</ElRadio>
+              <ElRadio :value="2">已完成</ElRadio>
+              <ElRadio :value="3">已关闭</ElRadio>
             </ElRadioGroup>
           </template>
           <template #assigned_id>
@@ -418,7 +418,7 @@ const formData = ref<TicketForm & { reply_content?: string }>({
   title: "",
   ticket_type: "suggestion",
   ticket_content: "",
-  status: "0",
+  status: 0,
   description: undefined,
   assigned_id: undefined,
   reply_content: undefined,
@@ -439,7 +439,7 @@ const initialFormData: TicketForm & { reply_content?: string } = {
   title: "",
   ticket_type: "suggestion",
   ticket_content: "",
-  status: "0",
+  status: 0,
   description: undefined,
   assigned_id: undefined,
   reply_content: undefined,
@@ -454,7 +454,7 @@ const { submitLoading, handleCloseDialog, handleOpenDialog, handleSubmit } = use
   dialogVisible,
   dataFormRef,
   formRenderKey: ticketFormRenderKey,
-  detailApi: TicketAPI.detailTicket as any,
+  detailApi: TicketAPI.detailTicket,
   createApi: TicketAPI.createTicket,
   updateApi: TicketAPI.updateTicket,
   titles: { create: "提交工单", update: "处理工单", detail: "工单详情" },
@@ -557,7 +557,7 @@ const {
         label: "状态",
         width: 100,
         formatter: (row: TicketTable) =>
-          h(ElTag, { type: statusTag(row.status) }, () => statusLabel(row.status)),
+          h(ElTag, { type: statusTag(String(row.status)) }, () => statusLabel(String(row.status))),
       },
       {
         prop: "assigned_by",
@@ -662,7 +662,6 @@ async function deleteTicketRow(id: number) {
   try {
     await confirmDelete();
     await TicketAPI.deleteTicket([id]);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
@@ -723,7 +722,7 @@ function formatTicketOperationCell(row: TicketTable) {
 
 async function closeTicket(id: number) {
   try {
-    await TicketAPI.updateTicket(id, { status: "3" });
+    await TicketAPI.updateTicket(id, { status: 3 });
     ElMessage.success("工单已关闭");
     await refreshData();
   } catch {
@@ -738,7 +737,6 @@ async function handleBatchDelete() {
     await confirmBatchDelete(ids.length);
     batchDeleting.value = true;
     await TicketAPI.deleteTicket(ids);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {

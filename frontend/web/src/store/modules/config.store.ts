@@ -29,7 +29,7 @@
  */
 import { store } from "@stores";
 import ParamsAPI, { ConfigTable } from "@/api/module_system/params";
-import TenantAPI from "@/api/module_system/tenant";
+import TenantAPI from "@/api/module_platform/tenant";
 import { defineStore } from "pinia";
 import { ref } from "vue";
 
@@ -42,6 +42,9 @@ export const useConfigStore = defineStore(
     const isConfigLoaded = ref(false);
     // 是否正在加载配置
     const configLoading = ref(false);
+    // 最近一次 fetch 时间戳，用于 force=true 时防止短期重复请求
+    let _lastFetchedAt = 0;
+    const MIN_FETCH_INTERVAL_MS = 5000;
 
     /**
      * 获取系统配置 + 租户配置
@@ -49,7 +52,14 @@ export const useConfigStore = defineStore(
      * @param tenantId 租户ID（默认 1），登录页等公开场景使用
      */
     async function getConfig(force = false, tenantId = 1) {
-      if ((isConfigLoaded.value && !force) || configLoading.value) {
+      if (configLoading.value) {
+        return;
+      }
+      // force=true 时也需防短期内重复请求
+      if (!force && isConfigLoaded.value) {
+        return;
+      }
+      if (force && Date.now() - _lastFetchedAt < MIN_FETCH_INTERVAL_MS) {
         return;
       }
       configLoading.value = true;
@@ -83,6 +93,7 @@ export const useConfigStore = defineStore(
         }
 
         isConfigLoaded.value = true;
+        _lastFetchedAt = Date.now();
       } finally {
         configLoading.value = false;
       }

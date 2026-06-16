@@ -44,7 +44,7 @@ const DeptAPI = {
 
   batchDept(body: BatchType) {
     return request<ApiResponse>({
-      url: `${API_PATH}/available/setting`,
+      url: `${API_PATH}/status/batch`,
       method: "patch",
       data: body,
     });
@@ -68,19 +68,14 @@ export interface DeptTable extends BaseType {
   email?: string;
   parent_id?: number;
   parent_name?: string;
-  status?: string;
-  description?: string;
   children?: DeptTable[];
 }
 
 export interface DeptForm extends BaseFormType {
   name?: string;
-  order?: number;
   code: string;
   leader?: string;
   phone?: string;
   email?: string;
   parent_id?: number;
-  status?: string;
-  description?: string;
 }

@@ -16,18 +16,18 @@ const updateFavicon = (url: string) => {
 };
 
 const syncFromConfig = () => {
-  const { tenant_name, tenant_favicon } = useConfigStore().configData;
-  if (tenant_name?.config_value) document.title = tenant_name.config_value;
-  if (tenant_favicon?.config_value) updateFavicon(tenant_favicon.config_value);
+  const { name, favicon } = useConfigStore().configData;
+  if (name?.config_value) document.title = name.config_value;
+  if (favicon?.config_value) updateFavicon(favicon.config_value);
 };
 
 export function useSiteConfig() {
   const configStore = useConfigStore();
 
-  /** 初始化：拉取配置并同步标题/favicon */
+  /** 初始化：强制拉取配置并同步标题/favicon */
   const initSiteConfig = async () => {
     try {
-      await configStore.getConfig();
+      await configStore.getConfig(true);
       syncFromConfig();
     } catch (error) {
       console.error("[SiteConfig] 获取配置失败:", error);

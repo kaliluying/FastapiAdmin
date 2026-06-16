@@ -15,7 +15,7 @@ from typing import Any
 from prefect import flow, task
 
 from app.core.ap_scheduler import SchedulerUtil
-from app.core.logger import log
+from app.core.logger import logger
 
 
 def _parse_args(args_str: str | None) -> list[Any]:
@@ -71,16 +71,16 @@ def validate_workflow_graph(nodes: list[dict], edges: list[dict]) -> None:
         raise ValueError("工作流图存在环路，无法执行")
 
 
-def topological_sort(nodes: list[dict], edges: list[dict]) -> list[dict]:
+def _topological_levels(nodes: list[dict], edges: list[dict]) -> list[list[dict]]:
     """
-    按拓扑顺序返回节点（调用方须先保证无环）。
+    按拓扑层级分组节点：同一层级内节点互不依赖，可并行执行。
 
     参数:
     - nodes (list[dict]): 节点列表。
     - edges (list[dict]): 边列表。
 
     返回:
-    - list[dict]: 拓扑有序节点。
+    - list[list[dict]]: 按层级分组的节点列表，顺序保证层间依赖。
     """
     id_to_node = {n["id"]: n for n in nodes}
     in_degree: dict[str, int] = {n["id"]: 0 for n in nodes}
@@ -88,16 +88,18 @@ def topological_sort(nodes: list[dict], edges: list[dict]) -> list[dict]:
     for e in edges:
         adj[e["source"]].append(e["target"])
         in_degree[e["target"]] += 1
-    q: deque[str] = deque([nid for nid in in_degree if in_degree[nid] == 0])
-    out: list[dict] = []
-    while q:
-        u = q.popleft()
-        out.append(id_to_node[u])
-        for v in adj[u]:
-            in_degree[v] -= 1
-            if in_degree[v] == 0:
-                q.append(v)
-    return out
+    levels: list[list[dict]] = []
+    current = [nid for nid in in_degree if in_degree[nid] == 0]
+    while current:
+        levels.append([id_to_node[nid] for nid in current])
+        next_level: list[str] = []
+        for nid in current:
+            for target in adj[nid]:
+                in_degree[target] -= 1
+                if in_degree[target] == 0:
+                    next_level.append(target)
+        current = next_level
+    return levels
 
 
 @task(name="workflow-node", retries=0)
@@ -141,42 +143,49 @@ def run_workflow_prefect_flow(
     flow_variables: dict[str, Any],
 ) -> dict[str, Any]:
     """
-    Prefect Flow：按拓扑顺序提交并收集各节点结果。
+    Prefect Flow：按拓扑层级并行提交，层间串行收集结果。
+
+    同层级节点互不依赖，使用 submit() 批量提交后统一收集，
+    避免 .submit() → .result() 逐节点串行阻塞。
 
     参数:
     - ordered_nodes (list[dict]): 已排序节点列表。
     - edges (list[dict]): 边列表。
-    - node_templates (dict[str, dict[str, Any]]): 类型编码到 {func, args, kwargs}，来自 task_workflow_node_type。
+    - node_templates (dict[str, dict[str, Any]]): 类型编码到 {func, args, kwargs}。
     - flow_variables (dict[str, Any]): 流程变量。
 
     返回:
     - dict[str, Any]: 含 node_results、status 等。
     """
+    levels = _topological_levels(ordered_nodes, edges)
     results: dict[str, Any] = {}
-    for node in ordered_nodes:
-        nid = node["id"]
-        ntype = node.get("type") or ""
-        tpl = node_templates.get(ntype)
-        if not tpl or not tpl.get("func"):
-            raise ValueError(f"未知或未配置节点类型: {ntype}")
-        data = node.get("data") or {}
-        args_str = data.get("args") if data.get("args") is not None else tpl.get("args")
-        kwargs_str = data.get("kwargs") if data.get("kwargs") is not None else tpl.get("kwargs")
-        upstream: dict[str, Any] = {}
-        for e in edges:
-            if e.get("target") == nid and e.get("source") in results:
-                upstream[e["source"]] = results[e["source"]]
-        fut = prefect_node_task.submit(
-            nid,
-            ntype,
-            tpl["func"],
-            args_str,
-            kwargs_str,
-            upstream,
-            flow_variables,
-        )
-        results[nid] = fut.result()
-    log.info(
+    for level in levels:
+        futures: dict[str, Any] = {}
+        for node in level:
+            nid = node["id"]
+            ntype = node.get("type") or ""
+            tpl = node_templates.get(ntype)
+            if not tpl or not tpl.get("func"):
+                raise ValueError(f"未知或未配置节点类型: {ntype}")
+            data = node.get("data") or {}
+            args_str = data.get("args") if data.get("args") is not None else tpl.get("args")
+            kwargs_str = data.get("kwargs") if data.get("kwargs") is not None else tpl.get("kwargs")
+            upstream: dict[str, Any] = {}
+            for e in edges:
+                if e.get("target") == nid and e.get("source") in results:
+                    upstream[e["source"]] = results[e["source"]]
+            futures[nid] = prefect_node_task.submit(
+                nid,
+                ntype,
+                tpl["func"],
+                args_str,
+                kwargs_str,
+                upstream,
+                flow_variables,
+            )
+        for nid, fut in futures.items():
+            results[nid] = fut.result()
+    logger.info(
         "Prefect workflow 完成: nodes=%s",
         list(results.keys()),
     )
@@ -193,7 +202,7 @@ def run_prefect_workflow_sync(
     flow_variables: dict[str, Any],
 ) -> dict[str, Any]:
     """
-    同步入口：校验 DAG、拓扑排序后执行 Prefect Flow。
+    同步入口：校验 DAG 后执行 Prefect Flow（Flow 内部按层级并行调度）。
 
     参数:
     - nodes (list[dict]): 画布节点。
@@ -205,9 +214,8 @@ def run_prefect_workflow_sync(
     - dict[str, Any]: Flow 执行汇总结果。
     """
     validate_workflow_graph(nodes, edges)
-    ordered = topological_sort(nodes, edges)
     return run_workflow_prefect_flow(
-        ordered_nodes=ordered,
+        ordered_nodes=nodes,
         edges=edges,
         node_templates=node_templates,
         flow_variables=flow_variables or {},

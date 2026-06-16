@@ -89,18 +89,21 @@ import {
   resolveIconForFaSvgIcon,
 } from "@utils";
 
-const props = defineProps({
-  modelValue: {
-    type: String,
-    default: "",
-  },
-  width: {
-    type: String,
-    default: "500px",
-  },
+interface Props {
+  modelValue?: string;
+  width?: string;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: "",
+  width: "500px",
 });
 
-const emit = defineEmits(["update:modelValue"]);
+interface Emits {
+  "update:modelValue": [value: string];
+}
+
+const emit = defineEmits<Emits>();
 
 const iconSelectRef = ref();
 const popoverContentRef = ref();
@@ -109,9 +112,7 @@ const activeTab = ref("svg");
 
 const svgIcons = ref<string[]>([]);
 const elementIcons = ref<string[]>(Object.keys(ElementPlusIconsVue));
-const selectedIcon = defineModel("modelValue", {
-  type: String,
-  required: true,
+const selectedIcon = defineModel<string | undefined>("modelValue", {
   default: "",
 });
 

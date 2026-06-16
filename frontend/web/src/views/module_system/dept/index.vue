@@ -96,8 +96,8 @@
         >
           <template #status>
             <ElRadioGroup v-model="formData.status">
-              <ElRadio value="0">启用</ElRadio>
-              <ElRadio value="1">停用</ElRadio>
+              <ElRadio :value="0">启用</ElRadio>
+              <ElRadio :value="1">停用</ElRadio>
             </ElRadioGroup>
           </template>
         </FaForm>
@@ -281,7 +281,6 @@ async function deleteDeptRow(id: number) {
     await confirmDelete();
     await DeptAPI.deleteDept([id]);
     await userStore.getUserInfo();
-    ElMessage.success("删除成功");
     selectedRows.value = [];
     await loadDeptData();
   } catch {
@@ -318,7 +317,7 @@ const formData = ref<DeptForm>({
   code: "",
   order: 1,
   parent_id: undefined,
-  status: "0",
+  status: 0,
   description: undefined,
 });
 
@@ -344,7 +343,7 @@ const initialFormData: DeptForm = {
   code: "",
   order: 1,
   parent_id: undefined,
-  status: "0",
+  status: 0,
   description: undefined,
 };
 
@@ -392,8 +391,8 @@ const { columnChecks, columns } = useTableColumns<DeptTable>(() => [
     label: "状态",
     width: 88,
     formatter: (row: DeptTable) =>
-      h(ElTag, { type: row.status === "0" ? "success" : "danger" }, () =>
-        row.status === "0" ? "启用" : "停用"
+      h(ElTag, { type: row.status === 0 ? "success" : "danger" }, () =>
+        row.status === 0 ? "启用" : "停用"
       ),
   },
   { prop: "order", label: "排序", width: 88, showOverflowTooltip: true },
@@ -498,7 +497,6 @@ async function handleBatchDelete() {
     batchDeleting.value = true;
     await DeptAPI.deleteDept(ids);
     await userStore.getUserInfo();
-    ElMessage.success("删除成功");
     selectedRows.value = [];
     await loadDeptData();
   } catch {

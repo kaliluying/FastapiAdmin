@@ -1,20 +1,30 @@
+"""
+系统级模块 - module_system
+
+租户内部管理功能，受租户隔离限制：
+- 认证授权 (auth)
+- 用户管理 (user)
+- 角色管理 (role)
+- 部门管理 (dept)
+- 岗位管理 (position)
+- 字典管理 (dict)
+- 公告管理 (notice)
+- 参数管理 (params)
+- 日志管理 (log)
+- 工单管理 (ticket)
+"""
 from fastapi import APIRouter
 
-from app.common.response import ResponseSchema as ResponseSchema
-
-from .auth.controller import AuthRouter
-from .dept.controller import DeptRouter
-from .dict.controller import DictRouter
-from .log.controller import LogRouter
-from .menu.controller import MenuRouter
-from .notice.controller import NoticeRouter
-from .params.controller import ParamsRouter
-from .position.controller import PositionRouter
-from .role.controller import RoleRouter
-from .tenant.controller import TenantRouter
-from .user.controller import UserRouter
-from .ticket.controller import TicketRouter
-from .plugin.controller import PluginRouter
+from app.api.v1.module_system.auth.controller import AuthRouter
+from app.api.v1.module_system.dept.controller import DeptRouter
+from app.api.v1.module_system.dict.controller import DictRouter
+from app.api.v1.module_system.log import LogRouter
+from app.api.v1.module_system.notice.controller import NoticeRouter
+from app.api.v1.module_system.params.controller import ParamsRouter
+from app.api.v1.module_system.position.controller import PositionRouter
+from app.api.v1.module_system.role.controller import RoleRouter
+from app.api.v1.module_system.ticket.controller import TicketRouter
+from app.api.v1.module_system.user.controller import UserRouter
 
 system_router = APIRouter(prefix="/system")
 
@@ -22,12 +32,9 @@ system_router.include_router(AuthRouter)
 system_router.include_router(DeptRouter)
 system_router.include_router(DictRouter)
 system_router.include_router(LogRouter)
-system_router.include_router(MenuRouter)
 system_router.include_router(NoticeRouter)
 system_router.include_router(ParamsRouter)
 system_router.include_router(PositionRouter)
 system_router.include_router(RoleRouter)
-system_router.include_router(TenantRouter)
-system_router.include_router(UserRouter)
 system_router.include_router(TicketRouter)
-system_router.include_router(PluginRouter)
+system_router.include_router(UserRouter)

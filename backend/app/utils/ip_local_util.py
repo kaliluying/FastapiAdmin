@@ -3,7 +3,7 @@ import re
 import httpx
 
 from app.config.setting import settings
-from app.core.logger import log
+from app.core.logger import logger
 
 
 class IpLocalUtil:
@@ -58,11 +58,7 @@ class IpLocalUtil:
         if not ip:
             return None
         if settings.DEBUG or not settings.IP_LOCATION_ENABLE:
-            return (
-                "内网IP"
-                if cls.is_private_ip(ip)
-                else "未解析(已关闭归属地查询)"
-            )
+            return "内网IP" if cls.is_private_ip(ip) else "未解析(已关闭归属地查询)"
         return await cls.get_ip_location(ip)
 
     @classmethod
@@ -78,7 +74,7 @@ class IpLocalUtil:
         """
         # 校验IP格式
         if not cls.is_valid_ip(ip):
-            log.error(f"IP格式不合法: {ip}")
+            logger.error(f"IP格式不合法: {ip}")
             return "未知"
 
         # 内网IP直接返回
@@ -95,7 +91,7 @@ class IpLocalUtil:
                     return f"{result.get('country', '')}-{result.get('prov', '')}-{result.get('city', '')}-{result.get('area', '')}-{result.get('isp', '')}"
 
         except Exception as e:
-            log.error(f"获取IP归属地失败: {e}")
+            logger.error(f"获取IP归属地失败: {e}")
             return "未知"
 
     @classmethod
@@ -115,5 +111,5 @@ class IpLocalUtil:
             if response.status_code == 200:
                 return response
         except Exception as e:
-            log.error(f"IP 归属地 API 请求失败: {url} - {e}")
+            logger.error(f"IP 归属地 API 请求失败: {url} - {e}")
         return None
