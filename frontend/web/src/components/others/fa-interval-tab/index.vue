@@ -81,15 +81,19 @@ interface WeekOption {
 }
 
 // 定义props
-const props = defineProps<{
+interface Props {
   cronValue?: string;
-}>();
+}
+
+const props = withDefaults(defineProps<Props>(), {});
 
 // 定义emits
-const emit = defineEmits<{
+interface Emits {
   (e: "confirm", value: string): void;
   (e: "cancel"): void;
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const formRef = ref();
 

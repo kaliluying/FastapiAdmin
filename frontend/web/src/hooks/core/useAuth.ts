@@ -61,10 +61,13 @@ export const useAuth = () => {
   const hasAuth = (auth: string): boolean => {
     if (!auth) return true;
 
+    // 超管直接放行所有权限
+    if (userStore.basicInfo?.is_superuser) return true;
+
     const userPrems = userStore.prems;
     const roles = userStore.basicInfo?.roles as { code?: string }[] | undefined;
 
-    // 与 directives/permission hasPerm 一致：超级管理员、通配
+    // 与 directives/permission hasPerm 一致：超级管理员角色、通配
     if (roles?.some((r) => r.code === ROLE_ROOT)) return true;
     if (userPrems.includes("*:*:*")) return true;
 

@@ -249,8 +249,17 @@ const configStore = useConfigStore();
 const activeTabRef = ref("apiWhitelist");
 
 // 与父组件的 v-model 同步
-const props = defineProps<{ modelValue: boolean }>();
-const emit = defineEmits(["update:modelValue"]);
+interface Props {
+  modelValue: boolean;
+}
+
+const props = withDefaults(defineProps<Props>(), {});
+
+interface Emits {
+  (e: "update:modelValue", value: boolean): void;
+}
+
+const emit = defineEmits<Emits>();
 const drawerVisible = computed({
   get: () => props.modelValue,
   set: (val: boolean) => emit("update:modelValue", val),

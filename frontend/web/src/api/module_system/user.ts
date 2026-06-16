@@ -1,5 +1,5 @@
 import { request } from "@utils";
-import { MenuTable, MenuForm } from "@/api/module_system/menu";
+import { MenuTable, MenuForm } from "@/api/module_platform/menu";
 
 const API_PATH = "/system/user";
 
@@ -101,7 +101,7 @@ export const UserAPI = {
 
   batchUser(body: BatchType) {
     return request<ApiResponse>({
-      url: `${API_PATH}/available/setting`,
+      url: `${API_PATH}/status/batch`,
       method: "patch",
       data: body,
     });
@@ -149,6 +149,7 @@ export interface RegisterForm {
   username: string;
   password: string;
   confirmPassword: string;
+  email?: string;
 }
 
 export interface UserPageQuery extends PageQuery {
@@ -157,10 +158,6 @@ export interface UserPageQuery extends PageQuery {
   mobile?: string;
   email?: string;
   dept_id?: number;
-  status?: string;
-  created_time?: string[];
-  created_id?: number;
-  updated_id?: number;
 }
 
 export interface searchSelectDataType {
@@ -264,6 +261,8 @@ export interface UserForm extends BaseFormType {
   email?: string;
   mobile?: string;
   is_superuser?: boolean;
+  avatar?: string;
+  tenant_id?: number;
 }
 
 export interface CurrentUserFormState {

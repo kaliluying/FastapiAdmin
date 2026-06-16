@@ -7,8 +7,8 @@ from pydantic import (
     model_validator,
 )
 
+from app.api.v1.module_platform.menu.schema import MenuOutSchema
 from app.api.v1.module_system.dept.schema import DeptOutSchema
-from app.api.v1.module_system.menu.schema import MenuOutSchema
 from app.common.enums import QueueEnum
 from app.core.base_schema import BaseSchema
 from app.core.validator import (
@@ -30,7 +30,7 @@ class RoleCreateSchema(BaseModel):
         le=5,
         description="数据权限范围(1:仅本人 2:本部门 3:本部门及以下 4:全部 5:自定义)",
     )
-    status: str = Field(default="0", max_length=1, description="状态(0:正常 1:禁用)")
+    status: int = Field(default=0, ge=0, le=1, description="状态(0:正常 1:禁用)")
     description: str | None = Field(default=None, max_length=255, description="描述")
 
     @field_validator("code")
@@ -41,9 +41,9 @@ class RoleCreateSchema(BaseModel):
 
     @field_validator("status")
     @classmethod
-    def validate_status(cls, value: str):
+    def validate_status(cls, value: int):
         """校验状态：仅支持 0(正常)、1(禁用)"""
-        if value not in {"0", "1"}:
+        if value not in {0, 1}:
             raise ValueError("状态仅支持 0(正常) 或 1(禁用)")
         return value
 

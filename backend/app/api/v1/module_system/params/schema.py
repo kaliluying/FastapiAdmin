@@ -13,7 +13,7 @@ class ParamsCreateSchema(BaseModel):
     config_key: str = Field(..., min_length=1, max_length=500, description="参数键名")
     config_value: str | None = Field(default=None, max_length=500, description="参数键值")
     config_type: bool = Field(default=False, description="是否系统内置")
-    status: str = Field(default="0", max_length=1, description="状态(0:正常 1:停用)")
+    status: int = Field(default=0, ge=0, le=1, description="状态(0:正常 1:停用)")
     description: str | None = Field(default=None, max_length=500, description="描述")
 
     @field_validator("config_key")
@@ -27,8 +27,8 @@ class ParamsCreateSchema(BaseModel):
 
     @field_validator("status")
     @classmethod
-    def _validate_status(cls, v: str) -> str:
-        if v not in {"0", "1"}:
+    def _validate_status(cls, v: int) -> int:
+        if v not in {0, 1}:
             raise ValueError("状态仅支持 0(正常) 或 1(停用)")
         return v
 
@@ -65,11 +65,10 @@ class ParamsQueryParam:
         ),
     ) -> None:
         # 模糊查询字段
-        # 模糊查询字段
         self.config_name = (QueueEnum.like.value, config_name)
         self.config_key = (QueueEnum.like.value, config_key)
         # 精确查询字段
-        self.config_type = config_type
+        self.config_type = (QueueEnum.eq.value, config_type)
         if description:
             self.description = (QueueEnum.like.value, description)
 

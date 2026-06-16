@@ -45,9 +45,11 @@ const hasAnyAuthItem = computed(() => {
   return props.list.some((item) => !item.auth || hasAuth(item.auth));
 });
 
-const emit = defineEmits<{
-  (e: "click", item: ButtonMoreItem): void;
-}>();
+interface Emits {
+  click: [item: ButtonMoreItem];
+}
+
+const emit = defineEmits<Emits>();
 
 const handleClick = (item: ButtonMoreItem) => {
   emit("click", item);

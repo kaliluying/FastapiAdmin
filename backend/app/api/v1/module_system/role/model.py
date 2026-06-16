@@ -7,8 +7,8 @@ from app.common.enums import PermissionFilterStrategy
 from app.core.base_model import MappedBase, ModelMixin, TenantMixin
 
 if TYPE_CHECKING:
+    from app.api.v1.module_platform.menu.model import MenuModel
     from app.api.v1.module_system.dept.model import DeptModel
-    from app.api.v1.module_system.menu.model import MenuModel
     from app.api.v1.module_system.user.model import UserModel
 
 
@@ -30,7 +30,7 @@ class RoleMenusModel(MappedBase):
     )
     menu_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("sys_menu.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("platform_menu.id", ondelete="CASCADE", onupdate="CASCADE"),
         primary_key=True,
         comment="菜单ID",
     )

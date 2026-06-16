@@ -224,28 +224,6 @@ onMounted(initScrollState);
 </script>
 
 <style scoped>
-@reference '@styles/core/tailwind.css';
-
-.button-arrow {
-  @apply absolute 
-    top-1/2
-    z-2 
-    flex
-    items-center
-    justify-center
-    size-7.5
-    text-g-600 
-    cursor-pointer
-    rounded 
-    transition-all
-    duration-300
-    -translate-y-1/2 
-    hover:text-g-900 
-    hover:bg-g-200;
-}
-</style>
-
-<style scoped>
 :deep(.el-scrollbar__bar.is-horizontal) {
   bottom: 5px;
   display: none;

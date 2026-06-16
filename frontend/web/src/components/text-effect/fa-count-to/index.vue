@@ -12,8 +12,10 @@
 import { computed, watch, nextTick, onUnmounted, shallowRef } from "vue";
 import { useTransition, TransitionPresets } from "@vueuse/core";
 
+defineOptions({ name: "FaCountTo" });
+
 // 类型定义
-interface CountToProps {
+interface Props {
   /** 目标值 */
   target: number;
   /** 动画持续时间（毫秒） */
@@ -36,7 +38,7 @@ interface CountToProps {
   disabled?: boolean;
 }
 
-interface CountToEmits {
+interface Emits {
   started: [value: number];
   finished: [value: number];
   paused: [value: number];
@@ -64,7 +66,7 @@ const MAX_DECIMALS = 10;
 const DEFAULT_EASING = "easeOutExpo";
 const DEFAULT_DURATION = 2000;
 
-const props = withDefaults(defineProps<CountToProps>(), {
+const props = withDefaults(defineProps<Props>(), {
   target: 0,
   duration: DEFAULT_DURATION,
   autoStart: true,
@@ -77,7 +79,7 @@ const props = withDefaults(defineProps<CountToProps>(), {
   disabled: false,
 });
 
-const emit = defineEmits<CountToEmits>();
+const emit = defineEmits<Emits>();
 
 // 工具函数
 const validateNumber = (value: number, name: string, defaultValue: number): number => {

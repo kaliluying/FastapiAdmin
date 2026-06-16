@@ -93,11 +93,18 @@ import loginIcon from "@fa_imgs/background.svg";
 import { useConfigStore } from "@stores";
 import { themeAnimation } from "@utils";
 
-defineProps<{
+defineOptions({ name: "FaLoginLeftView" });
+
+interface Props {
   hideContent?: boolean;
   /** 顶栏已展示 Logo/标题/版本时隐藏左侧重复顶栏 */
   hideTopBranding?: boolean;
-}>();
+}
+
+withDefaults(defineProps<Props>(), {
+  hideContent: false,
+  hideTopBranding: false,
+});
 
 const configStore = useConfigStore();
 

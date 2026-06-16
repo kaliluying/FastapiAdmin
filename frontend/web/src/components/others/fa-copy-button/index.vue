@@ -17,15 +17,14 @@ defineOptions({
 
 const { t } = useI18n();
 
-const props = defineProps({
-  text: {
-    type: String,
-    default: "",
-  },
-  style: {
-    type: Object,
-    default: () => ({}),
-  },
+interface Props {
+  text?: string;
+  style?: Record<string, any>;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  text: "",
+  style: () => ({}),
 });
 
 async function handleClipboard() {

@@ -114,21 +114,15 @@ class WorkflowQueryParam:
         created_id: int | None = Query(None, description="创建人"),
         updated_id: int | None = Query(None, description="更新人"),
     ) -> None:
-        self.name = (QueueEnum.like.value, name)
-        self.code = (QueueEnum.like.value, code)
-        self.workflow_status = (QueueEnum.eq.value, status)
-        self.created_id = (QueueEnum.eq.value, created_id)
-        self.updated_id = (QueueEnum.eq.value, updated_id)
+        self.name = (QueueEnum.like.value, name) if name else None
+        self.code = (QueueEnum.like.value, code) if code else None
+        self.workflow_status = (QueueEnum.eq.value, status) if status else None
+        self.created_id = (QueueEnum.eq.value, created_id) if created_id else None
+        self.updated_id = (QueueEnum.eq.value, updated_id) if updated_id else None
         if created_time and len(created_time) == 2:
             self.created_time = (QueueEnum.between.value, (created_time[0], created_time[1]))
         if updated_time and len(updated_time) == 2:
             self.updated_time = (QueueEnum.between.value, (updated_time[0], updated_time[1]))
-
-
-class WorkflowPublishSchema(BaseModel):
-    """发布工作流（可选备注）"""
-
-    remark: str | None = Field(default=None, description="备注")
 
 
 class WorkflowExecuteSchema(BaseModel):

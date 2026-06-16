@@ -147,6 +147,8 @@
 
 <script setup lang="ts">
 import { Lock } from "@element-plus/icons-vue";
+
+defineOptions({ name: "FaScreenLock" });
 import type { FormInstance, FormRules } from "element-plus";
 import { ElInput } from "element-plus";
 import { useI18n } from "vue-i18n";

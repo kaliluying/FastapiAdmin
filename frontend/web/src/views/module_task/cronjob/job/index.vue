@@ -136,7 +136,7 @@
         </template>
       </FaTableHeader>
 
-      <div v-loading="jobLoading" class="job-cards-container mt-3 min-h-0 flex-1 overflow-auto">
+      <ElScrollbar v-loading="jobLoading" class="job-cards-container mt-3 min-h-0 flex-1">
         <ElEmpty
           v-if="!jobLoading && (!jobList || jobList.length === 0)"
           :image-size="80"
@@ -241,7 +241,7 @@
             </ElCard>
           </ElCol>
         </ElRow>
-      </div>
+      </ElScrollbar>
     </ElCard>
 
     <FaDialog v-model="consoleVisible" title="调度器控制台" width="900px">
@@ -352,7 +352,7 @@ import FaTableHeaderLeft from "@/components/tables/fa-table-header-left/index.vu
 import FaJsonPretty from "@/components/others/fa-json-pretty/index.vue";
 import { useTable } from "@/hooks/core/useTable";
 import type { ColumnOption } from "@/types/component";
-import { ElDivider, ElMessage, ElMessageBox, ElTag } from "element-plus";
+import { ElDivider, ElMessageBox, ElTag } from "element-plus";
 import { computed, h, nextTick, onMounted, ref } from "vue";
 import { Terminal, TerminalApi } from "vue-web-terminal";
 
@@ -591,8 +591,8 @@ const {
         label: "状态",
         minWidth: 80,
         formatter: (row) =>
-          h(ElTag, { type: getLogStatusType(row.status), size: "small" }, () =>
-            getLogStatusLabel(row.status)
+          h(ElTag, { type: getLogStatusType(String(row.status)), size: "small" }, () =>
+            getLogStatusLabel(String(row.status))
           ),
       },
       {
@@ -654,7 +654,6 @@ async function deleteLogRow(id: number | undefined) {
       type: "warning",
     });
     await JobAPI.deleteJobLog([id]);
-    ElMessage.success("删除成功");
     logfaTableRef.value?.elTableRef?.clearSelection();
     await refreshLogRemove();
   } catch {
@@ -673,7 +672,6 @@ async function handleLogBatchDelete() {
     });
     logBatchDeleting.value = true;
     await JobAPI.deleteJobLog(ids);
-    ElMessage.success("删除成功");
     logSelectedRows.value = [];
     await refreshLogRemove();
   } catch {

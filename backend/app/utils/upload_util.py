@@ -10,7 +10,7 @@ from fastapi import UploadFile
 
 from app.config.setting import settings
 from app.core.exceptions import CustomException
-from app.core.logger import log
+from app.core.logger import logger
 
 DANGEROUS_EXTENSIONS = {
     ".py",
@@ -242,7 +242,7 @@ class UploadUtil:
         if detected_type:
             expected_ext = MIME_TYPE_MAPPING.get(detected_type, "")
             if expected_ext and expected_ext != claimed_extension.lower():
-                log.warning(
+                logger.warning(
                     f"文件类型不匹配: 声明扩展名={claimed_extension}, 检测类型={detected_type}"
                 )
         return True
@@ -379,7 +379,7 @@ class UploadUtil:
 
         # 检查路径穿越
         if ".." in target_path or "\x00" in target_path:
-            log.error(f"检测到目标路径穿越攻击: {target_path}")
+            logger.error(f"检测到目标路径穿越攻击: {target_path}")
             raise CustomException(msg="非法的目标路径")
 
         # 规范化路径：移除多余的斜杠、点号
@@ -448,8 +448,7 @@ class UploadUtil:
         original_filename = file.filename
 
         if not cls.check_path_traversal(original_filename):
-            log.error(f"检测到路径穿越攻击: {original_filename}")
-            raise CustomException(msg="文件名包含非法字符")
+            raise CustomException(msg="文件名包含非法字符", data=original_filename)
 
         extension = cls.get_extension_from_filename(original_filename)
         if not extension:
@@ -478,11 +477,14 @@ class UploadUtil:
             if target_path and upload_type == "resource":
                 # target_path 是相对于 upload/resource 的子目录
                 # 清理路径，防止路径穿越
+                # 资源管理模块：文件直接保存在目标目录，不自动创建日期子目录
                 safe_target = cls._sanitize_target_path(target_path)
-                dir_path = settings.UPLOAD_FILE_PATH.joinpath(
-                    type_subdir, safe_target, datetime.now().strftime("%Y/%m/%d")
-                )
+                dir_path = settings.UPLOAD_FILE_PATH.joinpath(type_subdir, safe_target)
+            elif upload_type == "resource":
+                # 资源管理模块根目录上传：直接保存在 upload/resource/ 下
+                dir_path = settings.UPLOAD_FILE_PATH.joinpath(type_subdir)
             else:
+                # 其他类型：按日期子目录组织
                 dir_path = settings.UPLOAD_FILE_PATH.joinpath(
                     type_subdir, datetime.now().strftime("%Y/%m/%d")
                 )
@@ -492,7 +494,7 @@ class UploadUtil:
             filepath = dir_path.joinpath(safe_filename)
 
             if not filepath.resolve().is_relative_to(settings.UPLOAD_FILE_PATH.resolve()):
-                log.error(f"检测到路径穿越攻击，目标路径: {filepath}")
+                logger.error(f"检测到路径穿越攻击，目标路径: {filepath}")
                 raise CustomException(msg="非法的文件路径")
 
             file_url = urljoin(base_url, str(filepath))
@@ -502,13 +504,12 @@ class UploadUtil:
                 while chunk := await file.read(chunk_size):
                     await f.write(chunk)
 
-            log.info(f"文件上传成功: {safe_filename}")
             return safe_filename, filepath, file_url
 
         except CustomException:
             raise
         except Exception as e:
-            log.error(f"文件上传失败: {e}")
+            logger.error(f"文件上传失败: {e}")
             raise CustomException(msg=f"文件上传失败: {e}")
 
     @staticmethod

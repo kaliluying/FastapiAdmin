@@ -100,7 +100,7 @@ class Jinja2TemplateUtil:
     @classmethod
     def business_name_to_slug(cls, business_name: str | None) -> str:
         """
-        业务路径可含斜杠（如 ``demo/demo01``）用于目录与路由前缀；
+        业务路径可含斜杠（如 ``demo/subdir``）用于目录与路由前缀；
         Python 函数/方法名仅使用最后一段并规范为合法 snake_case 片段。
 
         参数:

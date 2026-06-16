@@ -2,7 +2,7 @@ import { request } from "@utils";
 
 const API_PATH = "/system/auth";
 
-/** 第三方 OAuth 登录渠道（与后端 `/system/auth/oauth/{provider}` 一致） */
+/** 方案提供方 */
 export type OAuthProvider = "wechat" | "qq" | "github" | "gitee";
 
 const AuthAPI = {
@@ -87,33 +87,79 @@ const AuthAPI = {
       data: { tenant_id: tenantId },
     });
   },
+  /** 租户自助注册（PRD §4.5） */
+  tenantRegister(body: TenantRegisterForm) {
+    return request<ApiResponse<TenantRegisterResult>>({
+      url: `${API_PATH}/tenant/register`,
+      method: "post",
+      data: body,
+    });
+  },
 };
 
 export default AuthAPI;
 
-/** 登录表单数据 */
+export interface TenantRegisterForm {
+  username: string;
+  password: string;
+  email: string;
+  tenant_name?: string;
+}
+
+export interface TenantRegisterResult {
+  user_id: number;
+  username: string;
+  tenant_id: number;
+  tenant_name: string;
+  tenant_code: string;
+  package: string | null;
+  trial_end: string;
+  message: string;
+}
+
+// ─── Auth 类型定义 ───
+
+/** 登录表单 */
 export interface LoginFormData {
   username: string;
   password: string;
-  captcha_key: string;
-  captcha: string;
-  remember: boolean;
-  login_type: string;
+  captcha?: string;
+  captcha_key?: string;
+  remember?: boolean;
+  login_type?: string;
 }
 
-// 刷新令牌
-export interface RefreshToekenBody {
-  refresh_token: string;
-}
-
-/** 登录响应 */
+/** 登录成功返回 (JWTOutSchema) */
 export interface LoginResult {
   access_token: string;
   refresh_token: string;
   token_type: string;
   expires_in: number;
   tenants?: TenantOption[];
-  user_info?: UserInfoBrief;
+}
+
+/** 刷新 Token 请求体 */
+export interface RefreshToekenBody {
+  refresh_token: string;
+}
+
+/** 退出登录请求体 */
+export interface LogoutBody {
+  token: string;
+}
+
+/** 免登录用户 (AutoLoginUserSchema) */
+export interface AutoLoginUser {
+  id: number;
+  username: string;
+  name: string;
+  avatar?: string | null;
+}
+
+/** 免登录 Token (AutoLoginTokenSchema) */
+export interface AutoLoginToken {
+  token: string;
+  user: AutoLoginUser;
 }
 
 /** 租户选项 */
@@ -123,16 +169,7 @@ export interface TenantOption {
   code: string;
 }
 
-/** 用户简要信息 */
-export interface UserInfoBrief {
-  id: number;
-  username: string;
-  name: string;
-  avatar?: string;
-  is_super_admin?: boolean;
-}
-
-/** 选择租户响应 */
+/** 选择租户返回 (SelectTenantOutSchema) */
 export interface SelectTenantResult {
   access_token: string;
   token_type: string;
@@ -144,23 +181,4 @@ export interface CaptchaInfo {
   enable: boolean;
   key: string;
   img_base: string;
-}
-
-/** 退出登录操作 */
-export interface LogoutBody {
-  token: string;
-}
-
-/** 免登录用户信息 */
-export interface AutoLoginUser {
-  id: number;
-  username: string;
-  name: string;
-  avatar: string | null;
-}
-
-/** 免登录Token响应 */
-export interface AutoLoginToken {
-  token: string;
-  user: AutoLoginUser;
 }

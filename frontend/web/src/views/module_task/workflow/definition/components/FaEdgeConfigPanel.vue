@@ -35,15 +35,16 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from "vue";
-import { ElButton, ElColorPicker, ElMessage, ElIcon } from "element-plus";
+import { ElButton, ElColorPicker, ElIcon } from "element-plus";
 import { Close } from "@element-plus/icons-vue";
 import FaForm from "@/components/forms/fa-form/index.vue";
 
-const props = defineProps({
-  edge: {
-    type: Object,
-    default: () => ({}),
-  },
+interface Props {
+  edge?: Record<string, any>;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  edge: () => ({}),
 });
 
 const emit = defineEmits(["close", "save", "delete"]);
@@ -148,7 +149,6 @@ function handleClose() {
 
 function handleSave() {
   emit("save", formData.value);
-  ElMessage.success("保存成功");
 }
 
 function handleDelete() {

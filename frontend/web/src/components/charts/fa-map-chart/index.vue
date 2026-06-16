@@ -34,11 +34,13 @@ const props = withDefaults(defineProps<MapChartProps & { dynamic?: boolean }>(),
   dynamic: false,
 });
 
-// 定义 emit
-const emit = defineEmits<{
+interface Emits {
   renderComplete: [];
   regionClick: [region: { name: string; adcode: string; level: string }];
-}>();
+}
+
+// 定义 emit
+const emit = defineEmits<Emits>();
 
 // 检查是否为空数据
 const isEmpty = computed(() => {

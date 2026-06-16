@@ -15,7 +15,7 @@
     "wx_login": null,
     "qq_login": null,
     "dept_id": 1,
-    "status": "0",
+    "status": 0,
     "description": "系统超级管理员",
     "created_id": null,
     "updated_id": null
@@ -29,14 +29,14 @@
     "email": "admin@example.com",
     "gender": "0",
     "avatar": "https://service.fastapiadmin.com/api/v1/static/image/avatar.png",
-    "is_superuser": false,
+    "is_superuser": true,
     "last_login": null,
     "gitee_login": null,
     "github_login": null,
     "wx_login": null,
     "qq_login": null,
     "dept_id": 2,
-    "status": "0",
+    "status": 0,
     "description": "技术部门管理员",
     "created_id": 1,
     "updated_id": null
@@ -57,7 +57,7 @@
     "wx_login": null,
     "qq_login": null,
     "dept_id": 3,
-    "status": "0",
+    "status": 0,
     "description": "后端开发工程师",
     "created_id": 1,
     "updated_id": null
@@ -78,7 +78,7 @@
     "wx_login": null,
     "qq_login": null,
     "dept_id": 5,
-    "status": "0",
+    "status": 0,
     "description": "产品经理",
     "created_id": 1,
     "updated_id": null
@@ -99,9 +99,53 @@
     "wx_login": null,
     "qq_login": null,
     "dept_id": 6,
-    "status": "0",
+    "status": 0,
     "description": "人力资源专员",
     "created_id": 1,
     "updated_id": null
+  },
+  {
+    "tenant_id": 3,
+    "username": "zhang_admin",
+    "password": "$2b$12$rej/LQJMp5Zujt2YglsaCulQ4wNzYlPupSG0glJPYGzt.nSMV5QDe",
+    "name": "张明",
+    "mobile": "13800001001",
+    "email": "zhang@star-tech.dev",
+    "status": 0,
+    "is_superuser": false,
+    "description": "星辰科技管理员"
+  },
+  {
+    "tenant_id": 3,
+    "username": "wang_dev",
+    "password": "$2b$12$rej/LQJMp5Zujt2YglsaCulQ4wNzYlPupSG0glJPYGzt.nSMV5QDe",
+    "name": "王华",
+    "mobile": "13800001002",
+    "email": "wang@star-tech.dev",
+    "status": 0,
+    "is_superuser": false,
+    "description": "星辰科技研发工程师"
+  },
+  {
+    "tenant_id": 4,
+    "username": "li_admin",
+    "password": "$2b$12$rej/LQJMp5Zujt2YglsaCulQ4wNzYlPupSG0glJPYGzt.nSMV5QDe",
+    "name": "李芳",
+    "mobile": "13800002001",
+    "email": "li@inno.work",
+    "status": 0,
+    "is_superuser": false,
+    "description": "创新工坊创始人"
+  },
+  {
+    "tenant_id": 4,
+    "username": "zhao_eng",
+    "password": "$2b$12$rej/LQJMp5Zujt2YglsaCulQ4wNzYlPupSG0glJPYGzt.nSMV5QDe",
+    "name": "赵强",
+    "mobile": "13800002002",
+    "email": "zhao@inno.work",
+    "status": 0,
+    "is_superuser": false,
+    "description": "创新工坊技术合伙人"
   }
 ]

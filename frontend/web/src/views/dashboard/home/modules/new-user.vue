@@ -1,5 +1,5 @@
 <template>
-  <div class="fa-card flex flex-col p-5 h-[34.2rem] overflow-hidden">
+  <div class="fa-card flex flex-col p-5 h-134 overflow-hidden">
     <div class="fa-card-header">
       <div class="title">
         <h4>新用户</h4>
@@ -24,7 +24,7 @@
     >
       <template #default>
         <ElTableColumn type="index" label="序号" width="60" />
-        <ElTableColumn label="头像" prop="avatar" width="130px">
+        <ElTableColumn label="头像" prop="avatar" width="140px">
           <template #default="scope">
             <div class="flex items-center">
               <img class="size-9 rounded-lg" :src="scope.row.avatar" alt="avatar" loading="eager" />
@@ -41,14 +41,7 @@
           </template>
         </ElTableColumn>
 
-        <ElTableColumn label="性别" prop="avatar">
-          <template #default="scope">
-            <div class="flex items-center">
-              <span class="ml-2">{{ scope.row.sex === 1 ? "男" : "女" }}</span>
-            </div>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn label="库存" prop="stock" width="100px">
+        <ElTableColumn label="库存" prop="stock" width="90px">
           <template #default="scope">
             <div
               class="inline-block px-2 py-1 text-xs font-medium rounded"
@@ -58,8 +51,7 @@
             </div>
           </template>
         </ElTableColumn>
-        <ElTableColumn label="销量" prop="sales" />
-        <ElTableColumn label="进度" width="240">
+        <ElTableColumn label="进度" width="180">
           <template #default="scope">
             <ElProgress
               :percentage="scope.row.pro"

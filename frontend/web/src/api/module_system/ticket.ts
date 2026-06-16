@@ -40,17 +40,14 @@ export default TicketAPI;
 export interface TicketPageQuery extends PageQuery {
   title?: string;
   ticket_type?: string;
-  status?: string;
-  created_id?: number;
   assigned_id?: number;
 }
 
 export interface TicketTable extends BaseType {
   title: string;
   ticket_content?: string;
-  content: string;
+  summary?: string;
   ticket_type: string;
-  status: string;
   images?: string;
   reply?: string;
   assigned_id?: number;
@@ -61,8 +58,8 @@ export interface TicketTable extends BaseType {
 
 export interface TicketCreateForm {
   title: string;
-  ticket_content: string;
-  content?: string;
+  ticket_content?: string;
+  summary?: string;
   ticket_type: string;
   images?: string;
   description?: string;
@@ -71,23 +68,21 @@ export interface TicketCreateForm {
 export interface TicketUpdateForm {
   title?: string;
   ticket_content?: string;
-  content?: string;
+  summary?: string;
   ticket_type?: string;
-  status?: string;
+  status?: number;
   reply?: string;
   assigned_id?: number;
   description?: string;
 }
 
-export interface TicketForm {
+export interface TicketForm extends BaseFormType {
   id?: number;
   title: string;
-  ticket_content: string;
-  content?: string;
+  ticket_content?: string;
+  summary?: string;
   ticket_type: string;
   images?: string;
-  description?: string;
-  status?: string;
   reply?: string;
   assigned_id?: number;
 }

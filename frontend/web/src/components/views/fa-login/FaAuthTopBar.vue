@@ -121,14 +121,18 @@ defineOptions({ name: "AuthTopBar" });
 
 const DEFAULT_APP_VERSION = "3.0.0";
 
-const props = defineProps<{
+interface Props {
   /** 登录区表单水平对齐；未传入时不展示布局切换 */
   panelAlign?: LoginPanelAlign | null;
-}>();
+}
 
-const emit = defineEmits<{
+const props = withDefaults(defineProps<Props>(), {});
+
+interface Emits {
   "update:panelAlign": [value: LoginPanelAlign];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const layoutAlignOptions: {
   value: LoginPanelAlign;

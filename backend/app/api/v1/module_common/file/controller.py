@@ -14,21 +14,20 @@ from fastapi import (
 from fastapi.responses import FileResponse, JSONResponse
 
 from app.common.response import ResponseSchema, SuccessResponse, UploadFileResponse
+from app.core.base_schema import UploadResponseSchema
 from app.core.dependencies import AuthPermission
-from app.core.logger import log
 from app.core.router_class import OperationLogRoute
 from app.utils.upload_util import UploadUtil
 
 from .service import FileService
 
-FileRouter = APIRouter(route_class=OperationLogRoute, prefix="/file", tags=["文件管理"])
+FileRouter = APIRouter(route_class=OperationLogRoute, prefix="/file", tags=["公共服务/文件管理"])
 
 
 @FileRouter.post(
     "/upload",
     summary="上传文件",
-    description="统一文件上传入口，支持多种上传类型，可指定目标目录",
-    response_model=ResponseSchema[dict],
+    response_model=ResponseSchema[UploadResponseSchema],
     dependencies=[Depends(AuthPermission(["module_common:file:upload"]))],
 )
 async def upload_controller(
@@ -56,20 +55,18 @@ async def upload_controller(
     返回:
     - JSONResponse: 包含上传文件详情的JSON响应
     """
-    result_dict = await FileService.upload_service(
+    result = await FileService.upload_service(
         base_url=str(request.base_url),
         file=file,
         upload_type=upload_type or "file",
         target_path=target_path,
     )
-    log.info(f"上传文件成功 {result_dict}")
-    return SuccessResponse(data=result_dict, msg="上传文件成功")
+    return SuccessResponse(data=result, msg="上传文件成功")
 
 
 @FileRouter.post(
     "/download",
     summary="下载文件",
-    description="下载文件",
     dependencies=[Depends(AuthPermission(["module_common:file:download"]))],
 )
 async def download_controller(
@@ -91,5 +88,4 @@ async def download_controller(
     result = await FileService.download_service(file_path=file_path)
     if delete:
         background_tasks.add_task(UploadUtil.delete_file, Path(result.file_path))
-    log.info("下载文件成功")
     return UploadFileResponse(file_path=result.file_path, filename=result.file_name)

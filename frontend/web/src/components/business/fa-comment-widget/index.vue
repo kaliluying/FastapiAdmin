@@ -42,10 +42,25 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { commentList, Comment } from "@/mock/temp/commentDetail";
+import { type Comment } from "@/mock/temp/commentDetail";
 import { ElMessage } from "element-plus";
 
-const comments = commentList;
+defineOptions({ name: "FaCommentWidget" });
+
+interface Props {
+  comments?: Comment[];
+}
+
+withDefaults(defineProps<Props>(), {
+  comments: () => [],
+});
+
+interface Emits {
+  "add-comment": [comment: Comment];
+  "add-reply": [commentId: number, author: string, content: string];
+}
+
+const emit = defineEmits<Emits>();
 
 const newComment = ref<Partial<Comment>>({
   author: "",
@@ -60,7 +75,7 @@ const addComment = () => {
     return;
   }
 
-  comments.value.push({
+  emit("add-comment", {
     id: Date.now(),
     author: newComment.value.author.trim(),
     content: newComment.value.content.trim(),
@@ -79,34 +94,12 @@ const addReply = (commentId: number, replyAuthor: string, replyContent: string) 
     return;
   }
 
-  const comment = findComment(comments.value, commentId);
-  if (comment) {
-    comment.replies.push({
-      id: Date.now(),
-      author: replyAuthor.trim(),
-      content: replyContent.trim(),
-      timestamp: new Date().toISOString(),
-      replies: [],
-    });
-    showReplyForm.value = null;
-    ElMessage.success("回复发布成功");
-  }
+  emit("add-reply", commentId, replyAuthor.trim(), replyContent.trim());
+  showReplyForm.value = null;
+  ElMessage.success("回复发布成功");
 };
 
 const toggleReply = (commentId: number) => {
   showReplyForm.value = showReplyForm.value === commentId ? null : commentId;
-};
-
-const findComment = (comments: Comment[], commentId: number): Comment | undefined => {
-  for (const comment of comments) {
-    if (comment.id === commentId) {
-      return comment;
-    }
-    const found = findComment(comment.replies, commentId);
-    if (found) {
-      return found;
-    }
-  }
-  return undefined;
 };
 </script>

@@ -36,9 +36,9 @@ class PaginationQueryParam:
                 self.order_by = json.loads(order_by)
             except ValueError:
                 # 如果解析失败，使用默认排序
-                self.order_by = [{"updated_time": "desc"}]
+                self.order_by = [{"id": "desc"}]
         else:
-            self.order_by = [{"updated_time": "desc"}]
+            self.order_by = [{"id": "desc"}]
 
 
 class BaseQueryParam:

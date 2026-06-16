@@ -444,7 +444,7 @@ const {
 function handleBreadcrumbClick(item: { path: string }) {
   currentPath.value = item.path;
   updateBreadcrumb();
-  void getData();
+  void getData({ path: currentPath.value === "/" ? undefined : currentPath.value });
 }
 
 function handleFileNameClick(row: ResourceItem) {
@@ -455,7 +455,7 @@ function handleFileNameClick(row: ResourceItem) {
       currentPath.value = `${currentPath.value}/${row.name}`;
     }
     updateBreadcrumb();
-    void getData();
+    void getData({ path: currentPath.value });
   } else {
     handleFilePreview(row);
   }

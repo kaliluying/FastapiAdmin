@@ -1,3 +1,4 @@
+import traceback
 from typing import Any
 
 from fastapi import FastAPI, Request, status
@@ -9,7 +10,7 @@ from starlette.responses import JSONResponse
 
 from app.common.constant import RET
 from app.common.response import ErrorResponse
-from app.core.logger import log
+from app.core.logger import logger
 
 
 class CustomException(Exception):
@@ -67,18 +68,29 @@ def handle_exception(app: FastAPI) -> None:
 
     @app.exception_handler(CustomException)
     async def CustomExceptionHandler(request: Request, exc: CustomException) -> JSONResponse:
-        """
-        自定义异常处理器
+        """自定义异常处理器
 
         参数:
-        - request (Request): 请求对象。
-        - exc (CustomException): 自定义异常实例。
+            request: 请求对象。
+            exc: 自定义异常实例。
 
         返回:
-        - JSONResponse: 包含错误信息的 JSON 响应。
+            JSONResponse: 包含错误信息的 JSON 响应。
         """
-        log.error(
-            f"[自定义异常] {request.method} {request.url.path} | 错误码: {exc.code} | 错误信息: {exc.msg} | 详情: {exc.data}"
+        # 从 traceback 提取异常抛出的真实位置
+        source = "unknown"
+        if exc.__traceback__:
+            tb = traceback.extract_tb(exc.__traceback__)
+            if tb:
+                frame = tb[-1]
+                source = f"{frame.filename}:{frame.lineno}:{frame.name}"
+
+        logger.error(
+            f"[异常] {request.method} {request.url.path} | "
+            f"来源: {source} | "
+            f"错误码: {exc.code} | "
+            f"错误信息: {exc.msg} | "
+            f"详情: {exc.data}"
         )
         return ErrorResponse(
             msg=exc.msg,
@@ -99,7 +111,7 @@ def handle_exception(app: FastAPI) -> None:
         返回:
         - JSONResponse: 包含错误信息的 JSON 响应。
         """
-        log.error(
+        logger.error(
             f"[HTTP异常] {request.method} {request.url.path} | 状态码: {exc.status_code} | 错误信息: {exc.detail}"
         )
         return ErrorResponse(msg=exc.detail, status_code=exc.status_code)
@@ -134,7 +146,7 @@ def handle_exception(app: FastAPI) -> None:
                 if "," in msg
                 else msg.replace("Value error", "").strip()
             )
-        log.error(
+        logger.error(
             f"[参数验证异常] {request.method} {request.url.path} | 错误信息: {msg} | 原始错误: {exc.errors()}"
         )
         return ErrorResponse(
@@ -157,7 +169,7 @@ def handle_exception(app: FastAPI) -> None:
         返回:
         - JSONResponse: 包含错误信息的 JSON 响应。
         """
-        log.error(
+        logger.error(
             f"[响应验证异常] {request.method} {request.url.path} | 错误信息: 响应数据格式错误 | 详情: {exc.errors()}"
         )
         return ErrorResponse(
@@ -179,7 +191,7 @@ def handle_exception(app: FastAPI) -> None:
         - JSONResponse: 包含错误信息的 JSON 响应。
         """
         exc_type = type(exc).__name__
-        log.error(
+        logger.error(
             f"[数据库异常] {request.method} {request.url.path} | 错误类型: {exc_type} | 错误详情: {exc!s}"
         )
 
@@ -221,7 +233,7 @@ def handle_exception(app: FastAPI) -> None:
         返回:
         - JSONResponse: 包含错误信息的 JSON 响应。
         """
-        log.error(f"[值异常] {request.method} {request.url.path} | 错误信息: {exc!s}")
+        logger.error(f"[值异常] {request.method} {request.url.path} | 错误信息: {exc!s}")
         return ErrorResponse(msg=str(exc), status_code=status.HTTP_400_BAD_REQUEST)
 
     @app.exception_handler(FieldValidationError)
@@ -238,7 +250,7 @@ def handle_exception(app: FastAPI) -> None:
         返回:
         - JSONResponse: 包含错误信息的 JSON 响应。
         """
-        log.error(f"[字段验证异常] {request.method} {request.url.path} | 错误信息: {exc.message}")
+        logger.error(f"[字段验证异常] {request.method} {request.url.path} | 错误信息: {exc.message}")
         return ErrorResponse(msg=exc.message, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
     @app.exception_handler(Exception)
@@ -254,7 +266,7 @@ def handle_exception(app: FastAPI) -> None:
         - JSONResponse: 包含错误信息的 JSON 响应。
         """
         exc_type = type(exc).__name__
-        log.error(
+        logger.error(
             f"[未捕获异常] {request.method} {request.url.path} | 错误类型: {exc_type} | 错误详情: {exc!s}"
         )
         # 对于未捕获的异常，返回通用错误信息

@@ -222,7 +222,6 @@ async function deleteNodeTypeRow(id: number | undefined) {
       type: "warning",
     });
     await WorkflowNodeTypeAPI.deleteWorkflowNodeType([id]);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
@@ -241,7 +240,6 @@ async function handleBatchDelete() {
     });
     batchDeleting.value = true;
     await WorkflowNodeTypeAPI.deleteWorkflowNodeType(ids);
-    ElMessage.success("删除成功");
     selectedRows.value = [];
     await refreshRemove();
   } catch {
@@ -504,12 +502,10 @@ async function submitForm() {
   try {
     if (editingId.value) {
       await WorkflowNodeTypeAPI.updateWorkflowNodeType(editingId.value, formData.value);
-      ElMessage.success("更新成功");
       dialogVisible.value = false;
       await refreshUpdate();
     } else {
       await WorkflowNodeTypeAPI.createWorkflowNodeType(formData.value);
-      ElMessage.success("创建成功");
       dialogVisible.value = false;
       await refreshCreate();
     }

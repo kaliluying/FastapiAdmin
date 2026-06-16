@@ -1,30 +1,62 @@
 [
   {
     "name": "基础版",
-    "code": "BASIC",
-    "status": "0",
+    "code": "basic",
+    "status": 0,
     "sort": 1,
-    "description": "基础功能套餐，包含用户、角色、部门管理"
+    "description": "适合个人和小团队使用",
+    "price": 0,
+    "period": "month",
+    "trial_days": 7,
+    "max_users": 10,
+    "max_roles": 5,
+    "max_depts": 10,
+    "max_storage_mb": 1024,
+    "rate_limit": 30
   },
   {
     "name": "标准版",
-    "code": "STANDARD",
-    "status": "0",
+    "code": "standard",
+    "status": 0,
     "sort": 2,
-    "description": "标准功能套餐，包含基础功能+菜单+字典+参数配置"
+    "description": "适合成长型企业",
+    "price": 29900,
+    "period": "month",
+    "trial_days": 0,
+    "max_users": 50,
+    "max_roles": 20,
+    "max_depts": 50,
+    "max_storage_mb": 10240,
+    "rate_limit": 60
   },
   {
     "name": "专业版",
-    "code": "PROFESSIONAL",
-    "status": "0",
+    "code": "pro",
+    "status": 0,
     "sort": 3,
-    "description": "专业功能套餐，包含标准功能+日志+通知+工单"
+    "description": "适合中型企业",
+    "price": 99900,
+    "period": "month",
+    "trial_days": 0,
+    "max_users": 200,
+    "max_roles": 50,
+    "max_depts": 200,
+    "max_storage_mb": 102400,
+    "rate_limit": 120
   },
   {
     "name": "企业版",
-    "code": "ENTERPRISE",
-    "status": "0",
+    "code": "enterprise",
+    "status": 0,
     "sort": 4,
-    "description": "企业功能套餐，包含所有功能+插件+多租户"
+    "description": "适合大型企业和组织",
+    "price": 299900,
+    "period": "year",
+    "trial_days": 0,
+    "max_users": 1000,
+    "max_roles": 200,
+    "max_depts": 1000,
+    "max_storage_mb": 1024000,
+    "rate_limit": 300
   }
 ]

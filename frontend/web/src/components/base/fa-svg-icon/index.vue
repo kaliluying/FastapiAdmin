@@ -13,7 +13,9 @@ interface Props {
   icon?: string;
 }
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), {
+  icon: "",
+});
 
 const attrs = useAttrs();
 

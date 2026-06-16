@@ -1,113 +1,188 @@
-<!-- 日志管理：Fa 布局 + useTable，与 dict 页一致 -->
+<!-- 日志管理：登录日志 + 操作日志 -->
 <template>
   <div class="fa-full-height">
-    <FaSearchBar
-      v-show="showSearchBar"
-      ref="searchBarRef"
-      v-model="searchForm"
-      :items="logSearchItems"
-      :rules="searchBarRules"
-      :is-expand="false"
-      :show-expand="true"
-      :show-reset="true"
-      :show-search="true"
-      :disabled-search="false"
-      :default-expanded="false"
-      @search="handleSearchBarSearch"
-      @reset="onResetSearch"
-    >
-      <template #created_id>
-        <FaUserTableSelect
-          :model-value="searchForm.created_id == null ? undefined : searchForm.created_id"
-          @update:model-value="(v: number | undefined) => (searchForm.created_id = v)"
-          @confirm-click="afterUserSelectSearch"
-          @clear-click="afterUserSelectSearch"
-        />
-      </template>
-    </FaSearchBar>
+    <ElTabs v-model="activeTab" type="card">
+      <ElTabPane label="操作日志" name="operation">
+        <FaSearchBar
+          v-show="opShowSearchBar"
+          ref="opSearchBarRef"
+          v-model="opSearchForm"
+          :items="opSearchItems"
+          :rules="opSearchBarRules"
+          :is-expand="false"
+          :show-expand="true"
+          :show-reset="true"
+          :show-search="true"
+          :disabled-search="false"
+          :default-expanded="false"
+          @search="handleOpSearch"
+          @reset="onOpResetSearch"
+        >
+          <template #created_id>
+            <FaUserTableSelect
+              :model-value="opSearchForm.created_id == null ? undefined : opSearchForm.created_id"
+              @update:model-value="(v: number | undefined) => (opSearchForm.created_id = v)"
+              @confirm-click="afterOpUserSelectSearch"
+              @clear-click="afterOpUserSelectSearch"
+            />
+          </template>
+        </FaSearchBar>
 
-    <ElCard
-      shadow="hover"
-      class="fa-table-card"
-      :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
-    >
-      <FaTableHeader
-        v-model:columns="columnChecks"
-        v-model:showSearchBar="showSearchBar"
-        :loading="loading"
-        @refresh="refreshData"
-      >
-        <template #left>
-          <FaTableHeaderLeft
-            :remove-ids="selectedIds"
-            :perm-export="['module_system:log:export']"
-            :perm-delete="['module_system:log:delete']"
-            :delete-loading="batchDeleting"
-            @export="openExport"
-            @delete="handleBatchDelete"
+        <ElCard
+          shadow="hover"
+          class="fa-table-card"
+          :style="{ 'margin-top': opShowSearchBar ? '12px' : '0' }"
+        >
+          <FaTableHeader
+            v-model:columns="opColumnChecks"
+            v-model:showSearchBar="opShowSearchBar"
+            :loading="opLoading"
+            @refresh="opRefreshData"
+          >
+            <template #left>
+              <FaTableHeaderLeft
+                :remove-ids="opSelectedIds"
+                :perm-export="['module_system:log:export']"
+                :perm-delete="['module_system:log:delete']"
+                :delete-loading="opBatchDeleting"
+                @export="openOpExport"
+                @delete="handleOpBatchDelete"
+              />
+            </template>
+          </FaTableHeader>
+
+          <FaTable
+            ref="opTableRef"
+            :loading="opLoading"
+            :data="opData"
+            :columns="opColumns"
+            :pagination="opPagination"
+            @selection-change="onOpTableSelectionChange"
+            @pagination:size-change="opHandleSizeChange"
+            @pagination:current-change="opHandleCurrentChange"
           />
-        </template>
-      </FaTableHeader>
+        </ElCard>
 
-      <FaTable
-        ref="faTableRef"
-        :loading="loading"
-        :data="data"
-        :columns="columns"
-        :pagination="pagination"
-        @selection-change="onTableSelectionChange"
-        @pagination:size-change="handleSizeChange"
-        @pagination:current-change="handleCurrentChange"
-      />
-    </ElCard>
+        <FaDialog
+          v-model="opDialogVisible.visible"
+          :title="opDialogVisible.title"
+          width="960px"
+          dialog-class="crud-embed-dialog"
+          modal-class="crud-embed-dialog"
+          form-mode="detail"
+          @confirm="handleOpCloseDialog"
+        >
+          <FaDescriptions
+            :column="8"
+            :data="opFormData"
+            :items="opDetailItems"
+            label-width="200px"
+            max-height="75vh"
+          >
+            <template #request_method="{ row }">
+              <ElTag :type="getMethodType(row?.request_method as string)">{{
+                row?.request_method
+              }}</ElTag>
+            </template>
+            <template #response_code="{ row }">
+              <ElTag :type="getStatusCodeType(row?.response_code as number)">{{
+                row?.response_code
+              }}</ElTag>
+            </template>
+            <template #request_payload="{ row }">
+              <FaJsonPretty :value="row?.request_payload as any" height="80px" />
+            </template>
+            <template #response_json="{ row }">
+              <FaJsonPretty :value="row?.response_json as any" height="140px" />
+            </template>
+          </FaDescriptions>
+        </FaDialog>
 
-    <FaDialog
-      v-model="dialogVisible.visible"
-      :title="dialogVisible.title"
-      width="960px"
-      dialog-class="crud-embed-dialog"
-      modal-class="crud-embed-dialog"
-      form-mode="detail"
-      @confirm="handleCloseDialog"
-    >
-      <FaDescriptions
-        :column="8"
-        :data="formData"
-        :items="logDetailItems"
-        label-width="200px"
-        max-height="75vh"
-      >
-        <template #type="{ row }">
-          <ElTag :type="row?.type === 1 ? 'success' : 'primary'">
-            {{ row?.type === 1 ? "登录日志" : "操作日志" }}
-          </ElTag>
-        </template>
-        <template #request_method="{ row }">
-          <ElTag :type="getMethodType(row?.request_method as string)">
-            {{ row?.request_method }}
-          </ElTag>
-        </template>
-        <template #response_code="{ row }">
-          <ElTag :type="getStatusCodeType(row?.response_code as number)">
-            {{ row?.response_code }}
-          </ElTag>
-        </template>
-        <template #request_payload="{ row }">
-          <FaJsonPretty :value="row?.request_payload as any" height="80px" />
-        </template>
-        <template #response_json="{ row }">
-          <FaJsonPretty :value="row?.response_json as any" height="140px" />
-        </template>
-      </FaDescriptions>
-    </FaDialog>
+        <FaExportDialog
+          v-model="opExportVisible"
+          :content-config="opExportContentConfig"
+          :query-params="opExportQueryParams"
+          :page-data="opData"
+          :selection-data="opSelectedRows"
+        />
+      </ElTabPane>
 
-    <FaExportDialog
-      v-model="exportVisible"
-      :content-config="logExportContentConfig"
-      :query-params="exportQueryParams"
-      :page-data="data"
-      :selection-data="selectedRows"
-    />
+      <ElTabPane label="登录日志" name="login">
+        <FaSearchBar
+          v-show="loginShowSearchBar"
+          ref="loginSearchBarRef"
+          v-model="loginSearchForm"
+          :items="loginSearchItems"
+          :rules="loginSearchBarRules"
+          :is-expand="false"
+          :show-expand="true"
+          :show-reset="true"
+          :show-search="true"
+          :disabled-search="false"
+          :default-expanded="false"
+          :button-left-limit="0"
+          @search="handleLoginSearch"
+          @reset="onLoginResetSearch"
+        />
+
+        <ElCard
+          shadow="hover"
+          class="fa-table-card"
+          :style="{ 'margin-top': loginShowSearchBar ? '12px' : '0' }"
+        >
+          <FaTableHeader
+            v-model:columns="loginColumnChecks"
+            v-model:showSearchBar="loginShowSearchBar"
+            :loading="loginLoading"
+            @refresh="loginRefreshData"
+          >
+            <template #left>
+              <FaTableHeaderLeft
+                :remove-ids="loginSelectedIds"
+                :perm-delete="['module_system:login_log:delete']"
+                :delete-loading="loginBatchDeleting"
+                @delete="handleLoginBatchDelete"
+              />
+            </template>
+          </FaTableHeader>
+
+          <FaTable
+            ref="loginTableRef"
+            :loading="loginLoading"
+            :data="loginData"
+            :columns="loginColumns"
+            :pagination="loginPagination"
+            @selection-change="onLoginTableSelectionChange"
+            @pagination:size-change="loginHandleSizeChange"
+            @pagination:current-change="loginHandleCurrentChange"
+          />
+        </ElCard>
+
+        <FaDialog
+          v-model="loginDialogVisible.visible"
+          :title="loginDialogVisible.title"
+          width="640px"
+          dialog-class="crud-embed-dialog"
+          modal-class="crud-embed-dialog"
+          form-mode="detail"
+          @confirm="handleLoginCloseDialog"
+        >
+          <FaDescriptions
+            :column="2"
+            :data="loginFormData"
+            :items="loginDetailItems"
+            label-width="120px"
+            max-height="75vh"
+          >
+            <template #status="{ row }">
+              <ElTag :type="row?.status === 1 ? 'success' : 'danger'">{{
+                row?.status === 1 ? "成功" : "失败"
+              }}</ElTag>
+            </template>
+          </FaDescriptions>
+        </FaDialog>
+      </ElTabPane>
+    </ElTabs>
   </div>
 </template>
 
@@ -119,7 +194,12 @@ import { useTableSelection } from "@/hooks/core/useTableSelection";
 import { confirmDelete, confirmBatchDelete } from "@/hooks/core/useConfirm";
 import { cleanEmptyArrayParams, stripPaginationParams } from "@/utils/query";
 import type { ColumnOption } from "@/types/component";
-import LogAPI, { type LogPageQuery, type LogTable } from "@/api/module_system/log";
+import OperationLogAPI, {
+  type OperationLogPageQuery,
+  type OperationLogTable,
+  type LoginLogTable,
+  LoginLogAPI,
+} from "@/api/module_system/log";
 import { useAuth } from "@/hooks/core/useAuth";
 import { renderTableOperationCell, type TableOperationAction } from "@utils";
 import type { IObject } from "@/components/modal/types";
@@ -127,7 +207,7 @@ import type { SearchFormItem } from "@/components/forms/fa-search-bar/index.vue"
 import FaUserTableSelect from "@/components/forms/fa-search-bar/FaUserTableSelect.vue";
 import FaSearchBar from "@/components/forms/fa-search-bar/index.vue";
 import FaCopyButton from "@/components/others/fa-copy-button/index.vue";
-import { ElTag, ElMessage } from "element-plus";
+import { ElTag } from "element-plus";
 
 defineOptions({
   name: "Log",
@@ -136,47 +216,26 @@ defineOptions({
 
 const { hasAuth } = useAuth();
 
-type LogSearchForm = {
+const activeTab = ref<"operation" | "login">("operation");
+
+// ==================== 操作日志 ====================
+
+type OpSearchForm = {
   request_path?: string;
-  type?: number;
   created_id?: number;
   created_time?: string[];
 };
 
-function normalizeLogQuery(params: Record<string, unknown>): LogPageQuery {
-  return cleanEmptyArrayParams({ ...params }) as unknown as LogPageQuery;
-}
-
-function buildLogReplaceParams(p: LogSearchForm): Record<string, unknown> {
-  return {
-    request_path: p.request_path,
-    type:
-      p.type !== undefined && p.type !== null && p.type !== ("" as unknown as number)
-        ? Number(p.type)
-        : undefined,
-    created_id: p.created_id,
-    created_time:
-      Array.isArray(p.created_time) && p.created_time.length === 2 ? p.created_time : undefined,
-  };
-}
-
-const searchForm = ref<LogSearchForm>({
+const opSearchForm = ref<OpSearchForm>({
   request_path: undefined,
-  type: undefined,
   created_id: undefined,
   created_time: undefined,
 });
+const opShowSearchBar = ref(true);
+const opSearchBarRef = ref<InstanceType<typeof FaSearchBar> | null>(null);
+const opSearchBarRules: Record<string, unknown> = {};
 
-const showSearchBar = ref(true);
-const searchBarRef = ref<InstanceType<typeof FaSearchBar> | null>(null);
-const searchBarRules: Record<string, unknown> = {};
-
-const logTypeOptions = ref([
-  { label: "登录日志", value: 1 },
-  { label: "操作日志", value: 2 },
-]);
-
-const logSearchItems = computed<SearchFormItem[]>(() => [
+const opSearchItems = computed<SearchFormItem[]>(() => [
   {
     label: "请求路径",
     key: "request_path",
@@ -185,23 +244,7 @@ const logSearchItems = computed<SearchFormItem[]>(() => [
     clearable: true,
     span: 6,
   },
-  {
-    label: "日志类型",
-    key: "type",
-    type: "select",
-    props: {
-      placeholder: "请选择日志类型",
-      options: logTypeOptions.value,
-      clearable: true,
-    },
-    span: 6,
-  },
-  {
-    label: "创建人",
-    key: "created_id",
-    type: "input",
-    span: 6,
-  },
+  { label: "创建人", key: "created_id", type: "input", span: 6 },
   {
     label: "创建时间",
     key: "created_time",
@@ -219,161 +262,428 @@ const logSearchItems = computed<SearchFormItem[]>(() => [
   },
 ]);
 
-const faTableRef = ref<{ elTableRef?: { clearSelection: () => void } } | null>(null);
-const { selectedRows, selectedIds, batchDeleting, onTableSelectionChange } =
-  useTableSelection<LogTable>();
+function buildOpReplaceParams(p: OpSearchForm): Record<string, unknown> {
+  return {
+    request_path: p.request_path,
+    created_id: p.created_id,
+    created_time:
+      Array.isArray(p.created_time) && p.created_time.length === 2 ? p.created_time : undefined,
+  };
+}
+
+const opTableRef = ref<{ elTableRef?: { clearSelection: () => void } } | null>(null);
+const {
+  selectedRows: opSelectedRows,
+  selectedIds: opSelectedIds,
+  batchDeleting: opBatchDeleting,
+  onTableSelectionChange: onOpTableSelectionChange,
+} = useTableSelection<OperationLogTable>();
 
 const {
-  columns,
-  columnChecks,
-  data,
-  loading,
-  pagination,
-  searchParams,
-  getData,
-  replaceSearchParams,
-  resetSearchParams,
-  handleSizeChange,
-  handleCurrentChange,
-  refreshData,
-  refreshRemove,
+  columns: opColumns,
+  columnChecks: opColumnChecks,
+  data: opData,
+  loading: opLoading,
+  pagination: opPagination,
+  searchParams: opSearchParams,
+  getData: opGetData,
+  replaceSearchParams: opReplaceSearchParams,
+  resetSearchParams: opResetSearchParams,
+  handleSizeChange: opHandleSizeChange,
+  handleCurrentChange: opHandleCurrentChange,
+  refreshData: opRefreshData,
+  refreshRemove: opRefreshRemove,
 } = useTable({
   core: {
-    apiFn: LogAPI.listLog,
-    apiParams: {
-      page_no: 1,
-      page_size: 10,
-    },
-    columnsFactory: (): ColumnOption<LogTable>[] => [
+    apiFn: OperationLogAPI.list,
+    apiParams: { page_no: 1, page_size: 10 },
+    columnsFactory: (): ColumnOption<OperationLogTable>[] => [
       { type: "selection", width: 48, fixed: "left" },
       { type: "globalIndex", width: 56, label: "序号" },
-      {
-        prop: "type",
-        label: "日志类型",
-        minWidth: 100,
-        formatter: (row: LogTable) =>
-          h(ElTag, { type: row.type === 1 ? "success" : "primary" }, () =>
-            row.type === 1 ? "登录日志" : "操作日志"
-          ),
-      },
       { prop: "request_path", label: "请求路径", minWidth: 200, showOverflowTooltip: true },
       {
         prop: "request_method",
         label: "请求方法",
         minWidth: 100,
-        formatter: (row: LogTable) =>
+        formatter: (row: OperationLogTable) =>
           h(ElTag, { type: getMethodType(row.request_method) }, () => row.request_method ?? ""),
       },
       {
         prop: "response_code",
         label: "状态码",
         minWidth: 100,
-        formatter: (row: LogTable) =>
+        formatter: (row: OperationLogTable) =>
           h(ElTag, { type: getStatusCodeType(row.response_code) }, () =>
             String(row.response_code ?? "")
           ),
       },
-      {
-        prop: "request_ip",
-        label: "请求IP",
-        minWidth: 180,
-        formatter: (row: LogTable) =>
-          h("span", { class: "inline-flex items-center flex-wrap gap-0.5" }, [
-            row.request_ip ?? "",
-            row.request_ip
-              ? h(FaCopyButton, {
-                  text: row.request_ip,
-                  style: { marginLeft: "2px" },
-                })
-              : null,
-          ]),
-      },
       { prop: "process_time", label: "处理时间", minWidth: 120 },
-      { prop: "request_browser", label: "浏览器", minWidth: 220, showOverflowTooltip: true },
-      { prop: "request_os", label: "系统", minWidth: 100 },
       { prop: "description", label: "描述", minWidth: 120, showOverflowTooltip: true },
       { prop: "created_time", label: "创建时间", width: 168, showOverflowTooltip: true },
-      {
-        prop: "created_id",
-        label: "创建人",
-        minWidth: 120,
-        formatter: (row: LogTable) => row.created_by?.name ?? "—",
-      },
-      {
-        prop: "updated_id",
-        label: "更新人",
-        minWidth: 120,
-        formatter: (row: LogTable) => row.updated_by?.name ?? "—",
-      },
       {
         prop: "operation",
         label: "操作",
         width: 160,
         fixed: "right",
         align: "right",
-        formatter: (row: LogTable) => formatLogOperationCell(row),
+        formatter: (row: OperationLogTable) => formatOpActionCell(row),
       },
     ],
   },
 });
 
-const logCrudCols = computed(() =>
-  columns.value.map((c: ColumnOption<LogTable>) => {
-    const t = (c as { type?: string }).type;
-    return {
-      prop: c.prop,
-      label: c.label,
-      type: t === "selection" ? ("selection" as const) : ("default" as const),
-      show: true,
-    };
-  })
+const opCrudCols = computed(() =>
+  opColumns.value.map((c: ColumnOption<OperationLogTable>) => ({
+    prop: c.prop,
+    label: c.label,
+    type:
+      (c as { type?: string }).type === "selection" ? ("selection" as const) : ("default" as const),
+    show: true,
+  }))
 );
 
-const exportQueryParams = computed(() => {
-  const sp = stripPaginationParams(searchParams as Record<string, unknown>);
-  return normalizeLogQuery(sp);
+const opExportQueryParams = computed(() => {
+  const sp = stripPaginationParams(opSearchParams as Record<string, unknown>);
+  return cleanEmptyArrayParams({ ...sp }) as unknown as OperationLogPageQuery;
 });
 
-const logExportContentConfig = computed(() => ({
+const opExportContentConfig = computed(() => ({
   permPrefix: "module_system:log",
-  cols: logCrudCols.value,
+  cols: opCrudCols.value,
   exportsBlobAction: async (params: IObject) => {
-    const merged = normalizeLogQuery({
-      ...(exportQueryParams.value as unknown as Record<string, unknown>),
-      ...params,
-    } as Record<string, unknown>);
-    const res = await LogAPI.exportLog(merged as LogPageQuery);
+    const res = await (OperationLogAPI as any).exportLog(
+      cleanEmptyArrayParams({
+        ...(opExportQueryParams.value as unknown as Record<string, unknown>),
+        ...params,
+      })
+    );
     return res.data as Blob;
   },
 }));
 
-const formData = ref<LogTable>({});
+const opFormData = ref<OperationLogTable>({} as OperationLogTable);
 
-const logDetailItems: import("@/components/others/fa-descriptions/index.vue").DescriptionsItem[] = [
-  // 基础信息
-  { label: "日志类型", prop: "type", slot: "type" },
-  { label: "描述", prop: "description", span: 4 },
-  // 请求信息
+const opDetailItems: import("@/components/others/fa-descriptions/index.vue").DescriptionsItem[] = [
+  { label: "描述", prop: "description", span: 8 },
   { label: "请求路径", prop: "request_path" },
   { label: "请求方法", prop: "request_method", slot: "request_method" },
-  { label: "请求IP", prop: "request_ip" },
-  { label: "登录地点", prop: "login_location" },
-  { label: "浏览器", prop: "request_browser" },
-  { label: "操作系统", prop: "request_os" },
-  // 响应信息
   { label: "响应状态码", prop: "response_code", slot: "response_code" },
   { label: "处理时间", prop: "process_time" },
-  // 详细数据（各占一行）
   { label: "请求参数", prop: "request_payload", slot: "request_payload", span: 8 },
   { label: "响应数据", prop: "response_json", slot: "response_json", span: 8 },
-  // 元信息
-  { label: "创建人", prop: "created_by.name" },
-  { label: "更新人", prop: "updated_by.name" },
   { label: "创建时间", prop: "created_time" },
-  { label: "更新时间", prop: "updated_time" },
 ];
 
-const { dialogVisible, closeDialog } = useCrudDialog();
+const { dialogVisible: opDialogVisible, closeDialog: opCloseDialog } = useCrudDialog();
+const { exportVisible: opExportVisible, openExport: openOpExport } = useImportExport();
+
+async function handleOpSearch(params: OpSearchForm) {
+  await opSearchBarRef.value?.validate?.();
+  opReplaceSearchParams(buildOpReplaceParams(params));
+  opGetData();
+}
+
+async function applyOpSearchFromForm() {
+  await opSearchBarRef.value?.validate?.();
+  opReplaceSearchParams(buildOpReplaceParams(opSearchForm.value));
+  opGetData();
+}
+
+async function afterOpUserSelectSearch() {
+  await nextTick();
+  await applyOpSearchFromForm();
+}
+
+function onOpResetSearch() {
+  opSearchForm.value = { request_path: undefined, created_id: undefined, created_time: undefined };
+  void opResetSearchParams();
+}
+
+async function handleOpCloseDialog() {
+  opCloseDialog();
+  Object.assign(opFormData.value, {});
+}
+
+async function handleOpOpenDetail(id: number) {
+  opDialogVisible.title = "操作日志详情";
+  const response = await OperationLogAPI.detail(id);
+  Object.assign(opFormData.value, response.data.data ?? {});
+  opDialogVisible.visible = true;
+}
+
+async function deleteOpRow(id: number) {
+  try {
+    await confirmDelete();
+    await OperationLogAPI.delete([id]);
+    opTableRef.value?.elTableRef?.clearSelection();
+    await opRefreshRemove();
+  } catch {
+    /* 用户取消 */
+  }
+}
+
+function buildOpRowActions(row: OperationLogTable): TableOperationAction[] {
+  const all: TableOperationAction[] = [
+    {
+      key: "detail",
+      label: "详情",
+      artType: "view",
+      perm: "module_system:log:detail",
+      run: () => {
+        if (row.id != null) void handleOpOpenDetail(row.id);
+      },
+    },
+    {
+      key: "delete",
+      label: "删除",
+      artType: "delete",
+      icon: "ri:delete-bin-4-line",
+      perm: "module_system:log:delete",
+      run: () => {
+        if (row.id != null) deleteOpRow(row.id);
+      },
+    },
+  ];
+  return all.filter((a) => a.perm != null && hasAuth(a.perm));
+}
+
+function formatOpActionCell(row: OperationLogTable) {
+  return renderTableOperationCell(buildOpRowActions(row), {
+    wrapperClass: "inline-flex flex-wrap items-center justify-end gap-1 log-table-actions",
+  });
+}
+
+async function handleOpBatchDelete() {
+  const ids = opSelectedIds.value;
+  if (ids.length === 0) return;
+  try {
+    await confirmBatchDelete(ids.length);
+    opBatchDeleting.value = true;
+    await OperationLogAPI.delete(ids);
+    opTableRef.value?.elTableRef?.clearSelection();
+    await opRefreshRemove();
+  } catch {
+    /* 用户取消 */
+  } finally {
+    opBatchDeleting.value = false;
+  }
+}
+
+// ==================== 登录日志 ====================
+
+type LoginSearchForm = { username?: string; status?: number };
+
+const loginSearchForm = ref<LoginSearchForm>({ username: undefined, status: undefined });
+const loginShowSearchBar = ref(true);
+const loginSearchBarRef = ref<InstanceType<typeof FaSearchBar> | null>(null);
+const loginSearchBarRules: Record<string, unknown> = {};
+
+const loginStatusOptions = ref([
+  { label: "成功", value: 1 },
+  { label: "失败", value: 2 },
+]);
+
+const loginSearchItems = computed<SearchFormItem[]>(() => [
+  {
+    label: "用户名",
+    key: "username",
+    type: "input",
+    placeholder: "请输入用户名",
+    clearable: true,
+    span: 6,
+  },
+  {
+    label: "登录状态",
+    key: "status",
+    type: "select",
+    props: { placeholder: "请选择状态", options: loginStatusOptions.value, clearable: true },
+    span: 6,
+  },
+]);
+
+function buildLoginReplaceParams(p: LoginSearchForm): Record<string, unknown> {
+  return {
+    username: p.username || undefined,
+    status:
+      p.status !== undefined && p.status !== null && p.status !== ("" as unknown as number)
+        ? Number(p.status)
+        : undefined,
+  };
+}
+
+const loginTableRef = ref<{ elTableRef?: { clearSelection: () => void } } | null>(null);
+const {
+  selectedIds: loginSelectedIds,
+  batchDeleting: loginBatchDeleting,
+  onTableSelectionChange: onLoginTableSelectionChange,
+} = useTableSelection<LoginLogTable>();
+
+const {
+  columns: loginColumns,
+  columnChecks: loginColumnChecks,
+  data: loginData,
+  loading: loginLoading,
+  pagination: loginPagination,
+  getData: loginGetData,
+  replaceSearchParams: loginReplaceSearchParams,
+  resetSearchParams: loginResetSearchParams,
+  handleSizeChange: loginHandleSizeChange,
+  handleCurrentChange: loginHandleCurrentChange,
+  refreshData: loginRefreshData,
+  refreshRemove: loginRefreshRemove,
+} = useTable({
+  core: {
+    apiFn: LoginLogAPI.list,
+    apiParams: { page_no: 1, page_size: 10 },
+    columnsFactory: (): ColumnOption<LoginLogTable>[] => [
+      { type: "selection", width: 48, fixed: "left" },
+      { type: "globalIndex", width: 56, label: "序号" },
+      {
+        prop: "status",
+        label: "登录状态",
+        width: 88,
+        formatter: (row: LoginLogTable) =>
+          h(ElTag, { type: row.status === 1 ? "success" : "danger" }, () =>
+            row.status === 1 ? "成功" : "失败"
+          ),
+      },
+      { prop: "username", label: "用户名", minWidth: 120, showOverflowTooltip: true },
+      {
+        prop: "login_ip",
+        label: "登录IP",
+        minWidth: 140,
+        formatter: (row: LoginLogTable) =>
+          h("span", { class: "inline-flex items-center gap-0.5" }, [
+            row.login_ip ?? "",
+            row.login_ip
+              ? h(FaCopyButton, { text: row.login_ip, style: { marginLeft: "2px" } })
+              : null,
+          ]),
+      },
+      { prop: "login_location", label: "登录地点", minWidth: 160, showOverflowTooltip: true },
+      { prop: "request_os", label: "操作系统", minWidth: 120 },
+      { prop: "request_browser", label: "浏览器", minWidth: 180, showOverflowTooltip: true },
+      { prop: "msg", label: "提示消息", minWidth: 200, showOverflowTooltip: true },
+      { prop: "created_time", label: "登录时间", width: 168, showOverflowTooltip: true },
+      {
+        prop: "operation",
+        label: "操作",
+        width: 120,
+        fixed: "right",
+        align: "right",
+        formatter: (row: LoginLogTable) => formatLoginActionCell(row),
+      },
+    ],
+  },
+});
+
+const loginFormData = ref<LoginLogTable>({} as LoginLogTable);
+
+const loginDetailItems = [
+  { label: "登录状态", prop: "status", slot: "status" },
+  { label: "用户名", prop: "username" },
+  { label: "登录IP", prop: "login_ip" },
+  { label: "登录地点", prop: "login_location" },
+  { label: "操作系统", prop: "request_os" },
+  { label: "浏览器", prop: "request_browser" },
+  { label: "提示消息", prop: "msg", span: 2 },
+  { label: "登录时间", prop: "created_time" },
+];
+
+const { dialogVisible: loginDialogVisible, closeDialog: loginCloseDialog } = useCrudDialog();
+
+async function handleLoginSearch(params: LoginSearchForm) {
+  await loginSearchBarRef.value?.validate?.();
+  loginReplaceSearchParams(buildLoginReplaceParams(params));
+  loginGetData();
+}
+
+function onLoginResetSearch() {
+  loginSearchForm.value = { username: undefined, status: undefined };
+  void loginResetSearchParams();
+}
+
+async function handleLoginOpenDetail(id: number) {
+  loginDialogVisible.title = "登录日志详情";
+  const response = await LoginLogAPI.detail(id);
+  Object.assign(loginFormData.value, response.data.data ?? {});
+  loginDialogVisible.visible = true;
+}
+
+function handleLoginCloseDialog() {
+  loginCloseDialog();
+}
+
+async function deleteLoginRow(id: number) {
+  try {
+    await confirmDelete();
+    await LoginLogAPI.delete([id]);
+    loginTableRef.value?.elTableRef?.clearSelection();
+    await loginRefreshRemove();
+  } catch {
+    /* 用户取消 */
+  }
+}
+
+function buildLoginRowActions(row: LoginLogTable): TableOperationAction[] {
+  const all: TableOperationAction[] = [
+    {
+      key: "detail",
+      label: "详情",
+      artType: "view",
+      perm: "module_system:login_log:query",
+      run: () => {
+        if (row.id != null) void handleLoginOpenDetail(row.id);
+      },
+    },
+    {
+      key: "delete",
+      label: "删除",
+      artType: "delete",
+      icon: "ri:delete-bin-4-line",
+      perm: "module_system:login_log:delete",
+      run: () => {
+        if (row.id != null) deleteLoginRow(row.id);
+      },
+    },
+  ];
+  return all.filter((a) => a.perm != null && hasAuth(a.perm));
+}
+
+function formatLoginActionCell(row: LoginLogTable) {
+  return renderTableOperationCell(buildLoginRowActions(row), {
+    wrapperClass: "inline-flex flex-wrap items-center justify-end gap-1 loginlog-table-actions",
+  });
+}
+
+async function handleLoginBatchDelete() {
+  const ids = loginSelectedIds.value;
+  if (ids.length === 0) return;
+  try {
+    await confirmBatchDelete(ids.length);
+    loginBatchDeleting.value = true;
+    await LoginLogAPI.delete(ids);
+    loginTableRef.value?.elTableRef?.clearSelection();
+    await loginRefreshRemove();
+  } catch {
+    /* 用户取消 */
+  } finally {
+    loginBatchDeleting.value = false;
+  }
+}
+
+// 修复：登录日志 tab 在组件挂载时数据已请求但 DOM 未就绪，首次切换到时重新请求
+const loginTabLoaded = ref(false);
+watch(activeTab, (tab) => {
+  if (tab === "login" && !loginTabLoaded.value) {
+    loginTabLoaded.value = true;
+    nextTick(() => {
+      loginGetData();
+    });
+  }
+});
+
+// ==================== 通用 ====================
 
 function getStatusCodeType(code?: number) {
   if (code === undefined) return "info";
@@ -390,109 +700,25 @@ function getMethodType(method?: string) {
   if (method === "DELETE") return "danger";
   return "info";
 }
-
-const { exportVisible, openExport } = useImportExport();
-
-async function handleSearchBarSearch(params: LogSearchForm) {
-  await searchBarRef.value?.validate?.();
-  replaceSearchParams(buildLogReplaceParams(params));
-  getData();
-}
-
-async function applyLogSearchFromForm() {
-  await searchBarRef.value?.validate?.();
-  replaceSearchParams(buildLogReplaceParams(searchForm.value));
-  getData();
-}
-
-async function afterUserSelectSearch() {
-  await nextTick();
-  await applyLogSearchFromForm();
-}
-
-function onResetSearch() {
-  searchForm.value = {
-    request_path: undefined,
-    type: undefined,
-    created_id: undefined,
-    created_time: undefined,
-  };
-  void resetSearchParams();
-}
-
-async function resetForm() {
-  Object.assign(formData.value, {});
-}
-
-async function handleCloseDialog() {
-  closeDialog();
-  await resetForm();
-}
-
-async function handleOpenDialog(id: number) {
-  dialogVisible.title = "日志详情";
-  const response = await LogAPI.detailLog(id);
-  Object.assign(formData.value, response.data.data ?? {});
-  dialogVisible.visible = true;
-}
-
-async function deleteLogRow(id: number) {
-  try {
-    await confirmDelete();
-    await LogAPI.deleteLog([id]);
-    ElMessage.success("删除成功");
-    faTableRef.value?.elTableRef?.clearSelection();
-    await refreshRemove();
-  } catch {
-    // 用户取消
-  }
-}
-
-function buildLogRowActions(row: LogTable): TableOperationAction[] {
-  const all: TableOperationAction[] = [
-    {
-      key: "detail",
-      label: "详情",
-      artType: "view",
-      perm: "module_system:log:detail",
-      run: () => {
-        if (row.id != null) void handleOpenDialog(row.id);
-      },
-    },
-    {
-      key: "delete",
-      label: "删除",
-      artType: "delete",
-      icon: "ri:delete-bin-4-line",
-      perm: "module_system:log:delete",
-      run: () => {
-        if (row.id != null) deleteLogRow(row.id);
-      },
-    },
-  ];
-  return all.filter((a) => a.perm != null && hasAuth(a.perm));
-}
-
-function formatLogOperationCell(row: LogTable) {
-  return renderTableOperationCell(buildLogRowActions(row), {
-    wrapperClass: "inline-flex flex-wrap items-center justify-end gap-1 log-table-actions",
-  });
-}
-
-async function handleBatchDelete() {
-  const ids = selectedIds.value;
-  if (ids.length === 0) return;
-  try {
-    await confirmBatchDelete(ids.length);
-    batchDeleting.value = true;
-    await LogAPI.deleteLog(ids);
-    ElMessage.success("删除成功");
-    faTableRef.value?.elTableRef?.clearSelection();
-    await refreshRemove();
-  } catch {
-    // 用户取消
-  } finally {
-    batchDeleting.value = false;
-  }
-}
 </script>
+
+<style scoped lang="scss">
+:deep(.el-tabs) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+:deep(.el-tabs__content) {
+  flex: 1;
+  min-height: 0;
+  overflow: visible;
+}
+
+:deep(.el-tab-pane) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+</style>

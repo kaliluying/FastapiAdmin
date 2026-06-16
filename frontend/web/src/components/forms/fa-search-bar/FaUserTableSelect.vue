@@ -18,14 +18,20 @@
 import type { ISelectConfig } from "@/components/others/fa-table-select/index.vue";
 import UserAPI, { UserPageQuery } from "@/api/module_system/user";
 
-// 父组件双向绑定的值（选中用户ID）
-const props = defineProps<{ modelValue?: number }>();
+defineOptions({ name: "FaUserTableSelect" });
 
-// 事件向上派发，支持父组件监听和 v-model（仅回传选中用户ID）
-const emit = defineEmits<{
+interface Props {
+  modelValue?: number;
+}
+
+const props = withDefaults(defineProps<Props>(), {});
+
+interface Emits {
   confirmClick: [data: IUser[]];
   "update:modelValue": [val: number | undefined];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const selectConfig: ISelectConfig = {
   pk: "id",

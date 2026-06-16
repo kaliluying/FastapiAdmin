@@ -242,10 +242,6 @@
                             <ElLink href="#page-demo" type="primary" underline="never">
                               示例管理
                             </ElLink>
-                            ·
-                            <ElLink href="#page-demo01" type="primary" underline="never">
-                              三级菜单
-                            </ElLink>
                           </div>
                         </li>
                         <li>
@@ -914,10 +910,7 @@ const MANUAL_TOC: ManualModule[] = [
   {
     anchor: "mod-example",
     title: "七、示例模块",
-    pages: [
-      { anchor: "page-demo", title: "示例管理" },
-      { anchor: "page-demo01", title: "三级菜单" },
-    ],
+    pages: [{ anchor: "page-demo", title: "示例管理" }],
   },
   {
     anchor: "mod-dashboard",

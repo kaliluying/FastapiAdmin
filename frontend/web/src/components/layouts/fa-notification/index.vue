@@ -1,7 +1,7 @@
 <!-- 通知组件 -->
 <template>
   <div
-    class="fa-notification-panel fa-card-sm shadow-xl!"
+    class="absolute top-14.5 right-5 w-90 h-125 overflow-hidden transition-all duration-300 origin-top will-change-[top,left] max-[640px]:top-[65px] max-[640px]:right-0 max-[640px]:w-full max-[640px]:h-[80vh] fa-card-sm shadow-xl!"
     :style="{
       transform: show ? 'scaleY(1)' : 'scaleY(0.9)',
       opacity: show ? 1 : 0,
@@ -156,13 +156,17 @@ type NoticeType = "email" | "message" | "collection" | "user" | "notice";
 
 const { t } = useI18n();
 
-const props = defineProps<{
+interface Props {
   value: boolean;
-}>();
+}
 
-const emit = defineEmits<{
+const props = withDefaults(defineProps<Props>(), {});
+
+interface Emits {
   "update:value": [value: boolean];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const show = ref(false);
 const visible = ref(false);
@@ -390,25 +394,6 @@ watch(
 </script>
 
 <style scoped>
-@reference '@styles/core/tailwind.css';
-
-.fa-notification-panel {
-  @apply absolute 
-    top-14.5 
-    right-5 
-    w-90 
-    h-125 
-    overflow-hidden 
-    transition-all 
-    duration-300
-    origin-top 
-    will-change-[top,left] 
-    max-[640px]:top-[65px]
-    max-[640px]:right-0
-    max-[640px]:w-full 
-    max-[640px]:h-[80vh];
-}
-
 .bar-active {
   color: var(--theme-color) !important;
   border-bottom: 2px solid var(--theme-color);

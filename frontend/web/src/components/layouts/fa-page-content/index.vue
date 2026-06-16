@@ -48,7 +48,7 @@
       :bottom="28"
       class="z-90"
     >
-      <FaSvgIcon icon="ri:arrow-up-circle-line" class="text-2xl text-g-600" />
+      <FaSvgIcon icon="ri:arrow-up-circle-line" class="text-2xl text-theme" />
     </ElBacktop>
   </div>
 </template>

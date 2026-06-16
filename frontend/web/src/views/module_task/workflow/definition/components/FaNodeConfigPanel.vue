@@ -65,11 +65,12 @@ import WorkflowNodeTypeAPI, {
   type WorkflowNodeTypeOption,
 } from "@/api/module_task/workflow/node-type";
 
-const props = defineProps({
-  node: {
-    type: Object,
-    default: () => ({}),
-  },
+interface Props {
+  node?: Record<string, any>;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  node: () => ({}),
 });
 
 const emit = defineEmits(["close", "save", "delete"]);
@@ -159,7 +160,7 @@ watch(
         }
       }
 
-      Object.assign(formData, {
+      Object.assign(formData.value, {
         type: newNode.type || "",
         label: newNode.data?.label || "",
         args: newNode.data?.args || "",
@@ -192,7 +193,6 @@ function handleSave() {
     kwargs: formData.value.kwargsStr,
     description: formData.value.description,
   });
-  ElMessage.success("保存成功");
 }
 
 function handleDelete() {

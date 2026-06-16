@@ -2,7 +2,7 @@
  * 功能验收手册：除「用户 / 角色」在 `index.vue` 中详述外，其余页用「完整性验收」结构展示。
  *
  * **何为完整性**：`notes` 与当前页**已实现**的界面与操作项对应，用于验收时逐条核对**是否漏项**（不评价交互好坏）。
- * **与后端菜单对齐**：标题与 `sys_menu.json` 中菜单页 `component_path` 一致；壳层/静态页见各条说明。
+ * **与后端菜单对齐**：标题与 `platform_menu` 初始化数据中菜单页 `component_path` 一致；壳层/静态页见各条说明。
  * **`path` 字段**：默认可视为 `src/views/` 下相对路径；`../layouts` 与 `locales` 等见各条。
  */
 export type CompactManualPage = {
@@ -24,14 +24,14 @@ export const MANUAL_SYSTEM_TAIL_PAGES: CompactManualPage[] = [
   {
     anchor: "page-menu",
     title: "菜单管理",
-    path: "module_system/menu/index.vue",
+    path: "module_platform/menu/index.vue",
     notes: [
       "检索：FaSearchBar（菜单名称等）。",
       "分区：Tab「PC 桌面菜单管理 / APP 移动端菜单管理」两套树数据。",
       "主区：树形表格（勾选、行点击）；展开/收起工具按钮。",
       "工具栏：新增、批量删除、批量更多(patch)、刷新、列配置、显示搜索栏。",
       "弹层：详情 Descriptions；新增/编辑 Drawer（目录 / 菜单 / 按钮 / 外链等类型与路由、图标、权限标识）。",
-      "权限：`module_system:menu:create|delete|patch` + 行级 detail/update/delete。",
+      "权限：`module_platform:menu:create|delete|patch` + 行级 detail/update/delete。",
     ],
   },
   {
@@ -311,15 +311,6 @@ export const MANUAL_MODULES_AFTER_SYSTEM: ManualModuleSection[] = [
           "完整性：按页面可见按钮与表单字段逐项点验即可。",
         ],
       },
-      {
-        anchor: "page-demo01",
-        title: "三级菜单",
-        path: "module_example/demo01/index.vue",
-        notes: [
-          "占位或简单展示的叶子页，用于验证多级菜单路由与 KeepAlive。",
-          "完整性：侧栏进入后路由正确、页面无报错即可。",
-        ],
-      },
     ],
   },
   {
@@ -565,7 +556,7 @@ export const MANUAL_MODULES_AFTER_SYSTEM: ManualModuleSection[] = [
         title: "LangJin文档",
         path: "module_swagger/ljdoc/index.vue",
         notes: [
-          "LangJin 文档 iframe；sys_menu 中节点类型可为 4（菜单页）。",
+          "LangJin 文档 iframe；platform_menu 中节点类型可为 4（菜单页）。",
           "完整性：同上，依赖后端或 meta 配置的文档 URL。",
         ],
       },

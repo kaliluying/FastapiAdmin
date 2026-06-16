@@ -76,8 +76,8 @@
           :items="demoDetailItems"
           max-height="70vh"
         >
-          <template #i="{ row }">
-            <FaJsonPretty v-if="row?.i != null" :value="row?.i" height="140px" />
+          <template #json_val="{ row }">
+            <FaJsonPretty v-if="row?.json_val != null" :value="row?.json_val" height="140px" />
           </template>
         </FaDescriptions>
       </template>
@@ -99,7 +99,7 @@
           :show-submit="false"
           class="crud-dialog-art-form"
         >
-          <template #i>
+          <template #json_val>
             <div class="flex flex-col gap-2">
               <div
                 v-for="(item, index) in metadataList"
@@ -205,8 +205,8 @@ const showSearchBar = ref(true);
 const searchBarRef = ref<{ validate: () => Promise<boolean> } | null>(null);
 const searchBarRules: Record<string, unknown> = {};
 const statusOptions = ref([
-  { label: "启用", value: "0" },
-  { label: "停用", value: "1" },
+  { label: "启用", value: 0 },
+  { label: "停用", value: 1 },
 ]);
 /** 名称、状态；创建人/更新人/时间由 FaSearchBarWithAudit 追加 */
 const demoBusinessSearchItems = computed(() => [
@@ -269,34 +269,36 @@ const {
         label: "状态",
         width: 88,
         formatter: (row: DemoTable) => {
-          const ok = row.status === "0";
+          const ok = row.status === 0;
           const cfg = ok
             ? { type: "success" as const, text: "启用" }
             : { type: "info" as const, text: "停用" };
           return h(ElTag, { type: cfg.type }, () => cfg.text);
         },
       },
-      { prop: "a", label: "整数", minWidth: 88, showOverflowTooltip: true },
-      { prop: "b", label: "大整数", minWidth: 100, showOverflowTooltip: true },
-      { prop: "c", label: "浮点数", minWidth: 88, showOverflowTooltip: true },
+      { prop: "int_val", label: "整数", minWidth: 88, showOverflowTooltip: true },
+      { prop: "bigint_val", label: "大整数", minWidth: 100, showOverflowTooltip: true },
+      { prop: "float_val", label: "浮点数", minWidth: 88, showOverflowTooltip: true },
       {
-        prop: "d",
+        prop: "bool_val",
         label: "布尔",
         width: 80,
         formatter: (row: DemoTable) =>
-          h(ElTag, { type: row.d ? "success" : "danger" }, () => (row.d ? "是" : "否")),
+          h(ElTag, { type: row.bool_val ? "success" : "danger" }, () =>
+            row.bool_val ? "是" : "否"
+          ),
       },
-      { prop: "e", label: "日期", minWidth: 112, showOverflowTooltip: true },
-      { prop: "f", label: "时间", minWidth: 96, showOverflowTooltip: true },
-      { prop: "g", label: "日期时间", minWidth: 168, showOverflowTooltip: true },
-      { prop: "h", label: "长文本", minWidth: 120, showOverflowTooltip: true },
+      { prop: "date_val", label: "日期", minWidth: 112, showOverflowTooltip: true },
+      { prop: "time_val", label: "时间", minWidth: 96, showOverflowTooltip: true },
+      { prop: "datetime_val", label: "日期时间", minWidth: 168, showOverflowTooltip: true },
+      { prop: "text_val", label: "长文本", minWidth: 120, showOverflowTooltip: true },
       {
-        prop: "i",
+        prop: "json_val",
         label: "元数据",
         minWidth: 160,
         formatter: (row: DemoTable) => {
-          if (row.i == null) return h("span", { class: "text-g-500" }, "—");
-          return h(FaJsonPretty, { value: row.i, height: "120px" });
+          if (row.json_val == null) return h("span", { class: "text-g-500" }, "—");
+          return h(FaJsonPretty, { value: row.json_val, height: "120px" });
         },
       },
       { prop: "description", label: "描述", minWidth: 120, showOverflowTooltip: true },
@@ -379,21 +381,21 @@ const demoDetailItems: import("@/components/others/fa-descriptions/index.vue").D
         map: { "0": { type: "success", text: "启用" }, "1": { type: "danger", text: "停用" } },
       },
     },
-    { label: "整数", prop: "a" },
-    { label: "大整数", prop: "b" },
-    { label: "浮点数", prop: "c" },
+    { label: "整数", prop: "int_val" },
+    { label: "大整数", prop: "bigint_val" },
+    { label: "浮点数", prop: "float_val" },
     {
       label: "布尔值",
-      prop: "d",
+      prop: "bool_val",
       tag: {
         map: { true: { type: "success", text: "是" }, false: { type: "danger", text: "否" } },
       },
     },
-    { label: "日期", prop: "e" },
-    { label: "时间", prop: "f" },
-    { label: "日期时间", prop: "g" },
-    { label: "长文本", prop: "h" },
-    { label: "元数据", prop: "i", slot: "i" },
+    { label: "日期", prop: "date_val" },
+    { label: "时间", prop: "time_val" },
+    { label: "日期时间", prop: "datetime_val" },
+    { label: "长文本", prop: "text_val" },
+    { label: "元数据", prop: "json_val", slot: "json_val" },
     { label: "描述", prop: "description" },
     { label: "创建人", prop: "created_by.name" },
     { label: "更新人", prop: "updated_by.name" },
@@ -415,34 +417,34 @@ const demoDialogFormItems: FormItem[] = [
     type: "radiogroup",
     props: {
       options: [
-        { label: "启用", value: "0" },
-        { label: "停用", value: "1" },
+        { label: "启用", value: 0 },
+        { label: "停用", value: 1 },
       ],
     },
   },
-  { key: "a", label: "整数", type: "number", props: { placeholder: "请输入整数" } },
-  { key: "b", label: "大整数", type: "number", props: { placeholder: "请输入大整数" } },
+  { key: "int_val", label: "整数", type: "number", props: { placeholder: "请输入整数" } },
+  { key: "bigint_val", label: "大整数", type: "number", props: { placeholder: "请输入大整数" } },
   {
-    key: "c",
+    key: "float_val",
     label: "浮点数",
     type: "number",
     props: { placeholder: "请输入浮点数", step: 0.01, precision: 2 },
   },
-  { key: "d", label: "布尔值", type: "switch" },
+  { key: "bool_val", label: "布尔值", type: "switch" },
   {
-    key: "e",
+    key: "date_val",
     label: "日期",
     type: "date",
     props: { placeholder: "请选择日期", valueFormat: "YYYY-MM-DD", style: "width: 100%" },
   },
   {
-    key: "f",
+    key: "time_val",
     label: "时间",
     type: "timepicker",
     props: { placeholder: "请选择时间", valueFormat: "HH:mm:ss", style: "width: 100%" },
   },
   {
-    key: "g",
+    key: "datetime_val",
     label: "日期时间",
     type: "datetime",
     props: {
@@ -452,7 +454,7 @@ const demoDialogFormItems: FormItem[] = [
     },
   },
   {
-    key: "h",
+    key: "text_val",
     label: "长文本",
     type: "input",
     props: { type: "textarea", rows: 4, placeholder: "请输入长文本" },
@@ -469,23 +471,23 @@ const demoDialogFormItems: FormItem[] = [
       placeholder: "请输入描述",
     },
   },
-  { key: "i", label: "元数据", type: "input" /* 由 #i 插槽接管 */ },
+  { key: "json_val", label: "元数据", type: "input" /* 由 #json_val 插槽接管 */ },
 ];
 
 const formData = ref<DemoForm>({
   id: undefined,
   name: "",
-  status: "0",
+  status: 0,
   description: undefined,
-  a: undefined,
-  b: undefined,
-  c: undefined,
-  d: true,
-  e: undefined,
-  f: undefined,
-  g: undefined,
-  h: undefined,
-  i: undefined,
+  int_val: undefined,
+  bigint_val: undefined,
+  float_val: undefined,
+  bool_val: true,
+  date_val: undefined,
+  time_val: undefined,
+  datetime_val: undefined,
+  text_val: undefined,
+  json_val: undefined,
 });
 
 const rules = reactive({
@@ -507,17 +509,17 @@ const { importVisible, exportVisible, openImport, openExport } = useImportExport
 const initialFormData: DemoForm = {
   id: undefined,
   name: "",
-  status: "0",
+  status: 0,
   description: undefined,
-  a: undefined,
-  b: undefined,
-  c: undefined,
-  d: true,
-  e: undefined,
-  f: undefined,
-  g: undefined,
-  h: undefined,
-  i: undefined,
+  int_val: undefined,
+  bigint_val: undefined,
+  float_val: undefined,
+  bool_val: true,
+  date_val: undefined,
+  time_val: undefined,
+  datetime_val: undefined,
+  text_val: undefined,
+  json_val: undefined,
 };
 
 const handleSearch = async (params: DemoSearchFormParams) => {
@@ -557,7 +559,6 @@ function buildDemoRowActions(row: DemoTable): TableOperationAction[] {
       key: "detail",
       label: "详情",
       artType: "view",
-      icon: "ri:file-list-3-line",
       perm: "module_example:demo:detail",
       run: () => void openDetailDialog(row),
     },
@@ -606,10 +607,11 @@ async function openEditDialog(type: "add" | "edit", row?: DemoTable) {
     demoFormRenderKey.value += 1;
   } else if (row?.id) {
     dialogVisible.title = "修改";
+    demoFormRenderKey.value += 1;
     const response = await DemoAPI.getDemoDetail(row.id);
     Object.assign(formData.value, response.data.data);
-    if (formData.value.i && typeof formData.value.i === "object") {
-      metadataList.value = Object.entries(formData.value.i).map(([key, value]) => ({
+    if (formData.value.json_val && typeof formData.value.json_val === "object") {
+      metadataList.value = Object.entries(formData.value.json_val).map(([key, value]) => ({
         key,
         value: String(value),
       }));
@@ -645,9 +647,9 @@ async function handleSubmit() {
           metadataObj[item.key.trim()] = item.value;
         }
       });
-      submitData.i = Object.keys(metadataObj).length > 0 ? metadataObj : undefined;
+      submitData.json_val = Object.keys(metadataObj).length > 0 ? metadataObj : undefined;
     } else {
-      submitData.i = undefined;
+      submitData.json_val = undefined;
     }
     const id = formData.value.id;
     try {
@@ -671,7 +673,6 @@ const deleteDemoRow = async (row: DemoTable) => {
   try {
     await confirmDelete(`确定删除「${row.name ?? row.id}」吗？此操作不可恢复！`);
     await DemoAPI.deleteDemo([row.id!]);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
@@ -686,7 +687,6 @@ async function handleBatchDelete() {
     await confirmBatchDelete(ids.length);
     batchDeleting.value = true;
     await DemoAPI.deleteDemo(ids);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {

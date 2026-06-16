@@ -19,6 +19,8 @@
 
 <script setup lang="ts">
 import { useSettingsStore } from "@stores";
+
+defineOptions({ name: "FaMenuLayoutSettings" });
 import { useSettingsConfig } from "../composables/useSettingsConfig";
 import { useSettingsState } from "../composables/useSettingsState";
 

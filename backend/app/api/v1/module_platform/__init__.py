@@ -5,21 +5,39 @@
 - 租户管理 (tenant)
 - 套餐管理 (package)
 - 插件管理 (plugin)
-- 登录日志 (loginlog)
-- 工单管理 (ticket)
+- 邮件服务 (email)
+- 订单与支付 (order)
+- 发票管理 (invoice)
+- 租户自助服务 (self_service)
+- 菜单管理 (menu)
 """
 from fastapi import APIRouter
 
-from app.api.v1.module_platform.loginlog.controller import LoginLogRouter
+from app.api.v1.module_platform.email.controller import EmailRouter
+from app.api.v1.module_platform.invoice.controller import PlatformInvoiceRouter, TenantInvoiceRouter
+from app.api.v1.module_platform.menu.controller import MenuRouter
+from app.api.v1.module_platform.order.controller import (
+    OrderRouter,
+    PaymentRouter,
+    RefundRouter,
+    TenantOrderRouter,
+)
 from app.api.v1.module_platform.package.controller import PackageRouter
 from app.api.v1.module_platform.plugin.controller import PluginRouter
+from app.api.v1.module_platform.self_service.controller import TenantSelfServiceRouter
 from app.api.v1.module_platform.tenant.controller import TenantRouter
-from app.api.v1.module_platform.ticket.controller import TicketRouter
 
-platform_router = APIRouter(prefix="/platform", tags=["平台管理"])
+platform_router = APIRouter(prefix="/platform")
 
-platform_router.include_router(TenantRouter, prefix="/tenant")
-platform_router.include_router(PackageRouter, prefix="/package")
-platform_router.include_router(PluginRouter, prefix="/plugin")
-platform_router.include_router(LoginLogRouter)
-platform_router.include_router(TicketRouter, prefix="/ticket")
+platform_router.include_router(TenantRouter)
+platform_router.include_router(PackageRouter)
+platform_router.include_router(PluginRouter)
+platform_router.include_router(EmailRouter)
+platform_router.include_router(OrderRouter)
+platform_router.include_router(PaymentRouter)
+platform_router.include_router(RefundRouter)
+platform_router.include_router(PlatformInvoiceRouter)
+platform_router.include_router(TenantInvoiceRouter)
+platform_router.include_router(TenantOrderRouter)
+platform_router.include_router(TenantSelfServiceRouter)
+platform_router.include_router(MenuRouter)

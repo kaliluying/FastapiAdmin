@@ -25,6 +25,8 @@ import { CanvasRenderer } from "echarts/renderers";
 
 import { useResizeObserver } from "@vueuse/core";
 
+defineOptions({ name: "FaECharts" });
+
 // 按需注册组件
 echarts.use([
   RadarChart,
@@ -37,11 +39,16 @@ echarts.use([
   LegendComponent,
 ]);
 
-const props = defineProps<{
+interface Props {
   options: echarts.EChartsCoreOption;
   width?: string;
   height?: string;
-}>();
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  width: "100%",
+  height: "100%",
+});
 
 const chartRef = ref<HTMLDivElement | null>(null);
 let chartInstance: echarts.ECharts | null = null;

@@ -149,7 +149,7 @@ interface PaginationOptions {
 }
 
 /** FaTable 组件的 Props 接口 */
-interface FaTableProps extends TableProps<Record<string, any>> {
+interface Props extends TableProps<Record<string, any>> {
   /** 加载状态 */
   loading?: boolean;
   /** 列渲染配置 */
@@ -168,7 +168,7 @@ interface FaTableProps extends TableProps<Record<string, any>> {
   disableRowDrag?: boolean;
 }
 
-const props = withDefaults(defineProps<FaTableProps>(), {
+const props = withDefaults(defineProps<Props>(), {
   columns: () => [],
   fit: true,
   showHeader: true,
@@ -314,12 +314,14 @@ const mergedTableProps = computed(() => ({
     : undefined,
 }));
 
-const emit = defineEmits<{
+interface Emits {
   (e: "pagination:size-change", val: number): void;
   (e: "pagination:current-change", val: number): void;
   (e: "update:data", val: Record<string, unknown>[]): void;
   (e: "row-order-change", val: Record<string, unknown>[]): void;
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 /** 无 data 时用固定空数组，避免 v-model 每次拿到新 [] */
 const emptyDataStub = ref<Record<string, unknown>[]>([]);

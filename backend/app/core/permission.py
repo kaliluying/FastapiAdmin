@@ -3,10 +3,8 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.sql.elements import ColumnElement
 
-from app.api.v1.module_system.auth.schema import AuthSchema
-from app.api.v1.module_system.dept.model import DeptModel
-from app.api.v1.module_system.user.model import UserModel
 from app.common.enums import PermissionFilterStrategy
+from app.core.base_schema import AuthSchema
 from app.utils.common_util import get_child_id_map, get_child_recursion
 
 
@@ -90,7 +88,7 @@ class Permission:
         """
         基于角色授权的权限过滤（适用于菜单等）
 
-        只显示用户角色授权的菜单
+        只显示用户角色授权的菜单，同时受租户套餐约束。
         """
         roles = getattr(self.auth.user, "roles", []) or []
         if not roles:
@@ -102,7 +100,19 @@ class Permission:
         menu_ids = set()
         for role in roles:
             if hasattr(role, "menus") and role.menus:
-                menu_ids.update(menu.id for menu in role.menus if menu.status == "0")
+                menu_ids.update(menu.id for menu in role.menus if menu.status == 0)
+
+        # 租户用户：菜单列表也受套餐约束（请求级缓存避免重复 DB 查询）
+        if self.auth.tenant_id and menu_ids:
+            cache_attr = "_cached_package_menu_ids"
+            cached = getattr(self.auth, cache_attr, None)
+            if cached is None:
+                from app.api.v1.module_platform.package.service import PackageService
+                allowed_ids = set(await PackageService.get_tenant_available_menu_ids(self.auth, self.auth.tenant_id))
+                object.__setattr__(self.auth, cache_attr, allowed_ids)
+            else:
+                allowed_ids = cached
+            menu_ids = menu_ids & allowed_ids
 
         if menu_ids:
             id_attr = getattr(self.model, "id", None)
@@ -188,6 +198,8 @@ class Permission:
 
         适用于大多数业务模型
         """
+        from app.api.v1.module_system.user.model import UserModel
+
         # 如果模型没有创建人created_id字段,则不限制
         if not hasattr(self.model, "created_id"):
             return None
@@ -273,6 +285,7 @@ class Permission:
         # 处理本部门及以下数据权限（3）
         if self.DATA_SCOPE_DEPT_AND_CHILD in data_scopes and user_dept_id is not None:
             try:
+                from app.api.v1.module_system.dept.model import DeptModel
                 dept_sql = select(DeptModel)
                 dept_result = await self.auth.db.execute(dept_sql)
                 dept_objs = dept_result.scalars().all()

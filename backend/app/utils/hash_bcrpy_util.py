@@ -8,7 +8,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from itsdangerous import URLSafeSerializer
 from passlib.context import CryptContext
 
-from app.core.logger import log
+from app.core.logger import logger
 
 # 密码加密配置
 PwdContext = CryptContext(
@@ -181,7 +181,7 @@ class ItsDCipher:
         try:
             ciphertext = serializer.dumps(plaintext)
         except Exception as e:
-            log.error(f"ItsDangerous encrypt failed: {e}")
+            logger.error(f"ItsDangerous encrypt failed: {e}")
             ciphertext = Md5Cipher.encrypt(plaintext)
         return ciphertext
 
@@ -202,6 +202,6 @@ class ItsDCipher:
         try:
             plaintext = serializer.loads(ciphertext)
         except Exception as e:
-            log.error(f"ItsDangerous decrypt failed: {e}")
+            logger.error(f"ItsDangerous decrypt failed: {e}")
             plaintext = ciphertext
         return plaintext

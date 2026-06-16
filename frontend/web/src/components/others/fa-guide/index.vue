@@ -60,25 +60,32 @@
 
 <script setup lang="ts">
 defineOptions({ name: "FaGuide" });
-import { computed, type PropType } from "vue";
+import { computed } from "vue";
 import { useSettingsStore } from "@stores";
 import { MenuTypeEnum } from "@/enums/appEnum";
 
 const settingStore = useSettingsStore();
 const { t } = useI18n();
 
-const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    default: false,
-  },
-  teleport: {
-    type: [String, Object] as PropType<string | HTMLElement | null>,
-    default: "body",
-  },
+interface Props {
+  modelValue?: boolean;
+  teleport?: string | HTMLElement | null;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: false,
+  teleport: "body" as const,
 });
 
-const emit = defineEmits(["update:modelValue", "change", "prev", "next", "skip"]);
+interface Emits {
+  "update:modelValue": [value: boolean];
+  change: [index: number];
+  prev: [];
+  next: [];
+  skip: [];
+}
+
+const emit = defineEmits<Emits>();
 
 const open = computed({
   get: () => props.modelValue,

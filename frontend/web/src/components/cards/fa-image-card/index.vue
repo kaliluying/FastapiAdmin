@@ -53,9 +53,9 @@ defineOptions({ name: "FaImageCard" });
 
 interface Props {
   /** 图片地址 */
-  imageUrl: string;
+  imageUrl?: string;
   /** 标题 */
-  title: string;
+  title?: string;
   /** 分类 */
   category?: string;
   /** 阅读时间 */
@@ -78,9 +78,11 @@ const props = withDefaults(defineProps<Props>(), {
   date: "",
 });
 
-const emit = defineEmits<{
-  (e: "click", card: Props): void;
-}>();
+interface Emits {
+  click: [card: Props];
+}
+
+const emit = defineEmits<Emits>();
 
 const handleClick = () => {
   emit("click", props);

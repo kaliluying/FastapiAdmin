@@ -3,7 +3,7 @@ import json
 from redis.asyncio.client import Redis
 
 from app.common.enums import RedisInitKeyConfig
-from app.core.logger import log
+from app.core.logger import logger
 from app.core.redis_crud import RedisCURD
 from app.core.security import decode_access_token
 
@@ -41,7 +41,7 @@ class OnlineService:
                 if cls._match_search_conditions(session_info, search):
                     online_users.append(session_info)
             except Exception as e:
-                log.error(f"解析在线用户数据失败: {e}")
+                logger.error(f"解析在线用户数据失败: {e}")
                 continue
         # 按照 login_time 倒序排序
         online_users.sort(key=lambda x: x.get("login_time", ""), reverse=True)
@@ -49,41 +49,33 @@ class OnlineService:
         return online_users
 
     @classmethod
-    async def delete_online_service(cls, redis: Redis, session_id: str) -> bool:
+    async def delete_online_service(cls, redis: Redis, session_id: str) -> None:
         """
         强制下线指定在线用户
 
         参数:
         - redis (Redis): Redis异步客户端实例。
         - session_id (str): 在线用户会话ID。
-
-        返回:
-        - bool: 如果操作成功则返回True，否则返回False。
         """
         # 删除 token
         await RedisCURD(redis).delete(f"{RedisInitKeyConfig.ACCESS_TOKEN.key}:{session_id}")
         await RedisCURD(redis).delete(f"{RedisInitKeyConfig.REFRESH_TOKEN.key}:{session_id}")
 
-        log.info(f"强制下线用户会话: {session_id}")
-        return True
+        logger.info(f"强制下线用户会话: {session_id}")
 
     @classmethod
-    async def clear_online_service(cls, redis: Redis) -> bool:
+    async def clear_online_service(cls, redis: Redis) -> None:
         """
         强制下线所有在线用户
 
         参数:
         - redis (Redis): Redis异步客户端实例。
-
-        返回:
-        - bool: 如果操作成功则返回True，否则返回False。
         """
         # 删除 token
         await RedisCURD(redis).clear(f"{RedisInitKeyConfig.ACCESS_TOKEN.key}:*")
         await RedisCURD(redis).clear(f"{RedisInitKeyConfig.REFRESH_TOKEN.key}:*")
 
-        log.info("清除所有在线用户会话成功")
-        return True
+        logger.info("清除所有在线用户会话成功")
 
     @staticmethod
     def _match_search_conditions(online_info: dict, search: OnlineQueryParam | None = None) -> bool:

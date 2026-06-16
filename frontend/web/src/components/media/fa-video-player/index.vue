@@ -11,11 +11,11 @@ defineOptions({ name: "FaVideoPlayer" });
 
 interface Props {
   /** 播放器容器 ID */
-  playerId: string;
+  playerId?: string;
   /** 视频源URL */
-  videoUrl: string;
+  videoUrl?: string;
   /** 视频封面图URL */
-  posterUrl: string;
+  posterUrl?: string;
   /** 是否自动播放 */
   autoplay?: boolean;
   /** 音量大小(0-1) */

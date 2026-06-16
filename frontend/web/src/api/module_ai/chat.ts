@@ -113,6 +113,7 @@ export interface AiChatResponse {
     name: string;
     arguments: Record<string, any>;
   }> | null;
+  action: Record<string, any> | null;
 }
 
 export interface ChatSessionDetail {

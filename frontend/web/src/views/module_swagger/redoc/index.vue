@@ -16,7 +16,7 @@ import { IframeRouteManager } from "@/router";
 
 defineOptions({ name: "Redoc", inheritAttrs: false });
 
-const url = ref(import.meta.env.VITE_APP_BASE_API + "/redoc");
+const url = import.meta.env.VITE_APP_BASE_API + "/redoc";
 
 const route = useRoute();
 const isLoading = ref(true);
@@ -33,8 +33,8 @@ onBeforeUnmount(() => {
 onMounted(() => {
   const iframeRoute = IframeRouteManager.getInstance().findByPath(route.path);
 
-  if (iframeRoute?.meta) {
-    iframeUrl.value = iframeRoute.meta.link || "";
+  if (iframeRoute?.meta?.link) {
+    iframeUrl.value = iframeRoute.meta.link;
   }
 });
 

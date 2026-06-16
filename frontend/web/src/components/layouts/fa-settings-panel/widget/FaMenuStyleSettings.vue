@@ -22,6 +22,8 @@
 
 <script setup lang="ts">
 import AppConfig from "@/config";
+
+defineOptions({ name: "FaMenuStyleSettings" });
 import { MenuTypeEnum, type MenuThemeEnum } from "@/enums/appEnum";
 import { useSettingsStore } from "@stores";
 

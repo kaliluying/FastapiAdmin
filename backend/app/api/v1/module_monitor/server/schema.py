@@ -1,10 +1,8 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 
 class CpuInfoSchema(BaseModel):
     """CPU信息模型"""
-
-    model_config = ConfigDict(from_attributes=True)
 
     cpu_num: int = Field(description="CPU核心数")
     used: float = Field(ge=0, le=100, description="CPU用户使用率(%)")
@@ -15,8 +13,6 @@ class CpuInfoSchema(BaseModel):
 class MemoryInfoSchema(BaseModel):
     """内存信息模型"""
 
-    model_config = ConfigDict(from_attributes=True)
-
     total: str = Field(description="内存总量")
     used: str = Field(description="已用内存")
     free: str = Field(description="剩余内存")
@@ -25,8 +21,6 @@ class MemoryInfoSchema(BaseModel):
 
 class SysInfoSchema(BaseModel):
     """系统信息模型"""
-
-    model_config = ConfigDict(from_attributes=True)
 
     computer_ip: str = Field(description="服务器IP")
     computer_name: str = Field(description="服务器名称")
@@ -37,8 +31,6 @@ class SysInfoSchema(BaseModel):
 
 class PyInfoSchema(BaseModel):
     """Python运行信息模型"""
-
-    model_config = ConfigDict(from_attributes=True)
 
     name: str = Field(description="Python名称")
     version: str = Field(description="Python版本")
@@ -54,8 +46,6 @@ class PyInfoSchema(BaseModel):
 class DiskInfoSchema(BaseModel):
     """磁盘信息模型"""
 
-    model_config = ConfigDict(from_attributes=True)
-
     dir_name: str = Field(description="磁盘路径")
     sys_type_name: str = Field(description="文件系统类型")
     type_name: str = Field(description="磁盘类型")
@@ -67,8 +57,6 @@ class DiskInfoSchema(BaseModel):
 
 class ServerMonitorSchema(BaseModel):
     """服务器监控信息模型"""
-
-    model_config = ConfigDict(from_attributes=True)
 
     cpu: CpuInfoSchema = Field(description="CPU信息")
     mem: MemoryInfoSchema = Field(description="内存信息")

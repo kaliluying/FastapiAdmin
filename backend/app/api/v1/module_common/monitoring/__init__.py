@@ -1,3 +1,3 @@
-from .health import health_router
+from .health import HealthRouter
 
-__all__ = ["health_router"]
+__all__ = ["HealthRouter"]

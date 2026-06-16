@@ -5,6 +5,7 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueCon
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.base_model import MappedBase, ModelMixin, TenantMixin, UserMixin
+from app.core.base_schema import AuthSchema
 
 if TYPE_CHECKING:
     from app.api.v1.module_platform.tenant.model import TenantModel
@@ -69,7 +70,7 @@ class UserModel(ModelMixin, TenantMixin, UserMixin):
     __tablename__: str = "sys_user"
     __table_args__ = (UniqueConstraint("tenant_id", "username"), {"comment": "用户表"})
     __loader_options__: list[str] = [
-        "tenant",
+        "tenant_by",
         "dept",
         "roles",
         "positions",
@@ -144,7 +145,5 @@ class UserModel(ModelMixin, TenantMixin, UserMixin):
     )
 
 
-# 修复 Pydantic 循环引用问题
-from app.core.auth_schema import AuthSchema
-
+# 修复 Pydantic 循环引用问题：UserModel 定义完成后重建 AuthSchema
 AuthSchema.model_rebuild()

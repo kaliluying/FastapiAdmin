@@ -245,7 +245,6 @@ const handleSessionCommand = async (command: string, session: ChatSession) => {
       });
       await AiChatAPI.updateSession(session.id, { title: value });
       session.title = value;
-      ElMessage.success("重命名成功");
     } catch (error) {
       if (error !== "cancel") {
         ElMessage.error("重命名失败");

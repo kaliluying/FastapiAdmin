@@ -214,15 +214,14 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = defineProps({
-  visible: {
-    type: Boolean,
-    default: false,
-  },
-  workflow: {
-    type: Object as () => WorkflowTable | undefined,
-    default: undefined,
-  },
+interface Props {
+  visible?: boolean;
+  workflow?: WorkflowTable;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  visible: false,
+  workflow: undefined,
 });
 
 const emit = defineEmits(["update:visible", "refresh"]);
@@ -677,7 +676,6 @@ function handleDeleteNode() {
         type: "warning",
       });
       deleteNode(nodeId, getNodes, setNodes, getEdges, setEdges);
-      ElMessage.success("节点删除成功");
       handleClosePanel();
       saveToHistory(nodes.value as Node[], edges.value as Edge[]);
     } catch {
@@ -706,7 +704,6 @@ function handleDeleteEdge() {
         type: "warning",
       });
       deleteEdge(edgeId, getEdges, setEdges);
-      ElMessage.success("连线删除成功");
       handleClosePanel();
       saveToHistory(nodes.value as Node[], edges.value as Edge[]);
     } catch {
@@ -743,7 +740,7 @@ watch(
   () => props.workflow,
   (newWorkflow) => {
     if (newWorkflow) {
-      Object.assign(formData, {
+      Object.assign(formData.value, {
         code: newWorkflow.code,
         name: newWorkflow.name,
         description: newWorkflow.description,
@@ -752,7 +749,7 @@ watch(
       nodes.value = newWorkflow.nodes || [];
       edges.value = newWorkflow.edges || [];
     } else {
-      Object.assign(formData, {
+      Object.assign(formData.value, {
         code: "",
         name: "",
         description: "",

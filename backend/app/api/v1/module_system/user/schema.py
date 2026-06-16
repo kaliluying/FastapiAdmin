@@ -10,7 +10,7 @@ from pydantic import (
     model_validator,
 )
 
-from app.api.v1.module_system.menu.schema import MenuOutSchema
+from app.api.v1.module_platform.menu.schema import MenuOutSchema
 from app.api.v1.module_system.role.schema import RoleOutSchema
 from app.common.enums import QueueEnum
 from app.core.base_schema import BaseSchema, CommonSchema, TenantBySchema, UserBySchema
@@ -193,9 +193,9 @@ class UserCreateSchema(CurrentUserUpdateSchema):
 
     model_config = ConfigDict(from_attributes=True)
 
-    username: str | None = Field(default=None, min_length=3, max_length=32, description="用户名")
+    username: str | None = Field(default=None, max_length=32, description="用户名")
     password: str | None = Field(default=None, min_length=6, max_length=128, description="密码")
-    status: str = Field(default="0", max_length=1, description="状态(0:正常 1:禁用)")
+    status: int = Field(default=0, ge=0, le=1, description="状态(0:正常 1:禁用)")
     description: str | None = Field(default=None, max_length=255, description="备注")
     is_superuser: bool | None = Field(default=False, description="是否超管")
     dept_id: int | None = Field(default=None, description="部门ID")
@@ -205,22 +205,22 @@ class UserCreateSchema(CurrentUserUpdateSchema):
 
     @field_validator("status")
     @classmethod
-    def validate_status(cls, value: str):
+    def validate_status(cls, value: int):
         """校验状态：仅支持 0(正常)、1(禁用)"""
-        if value not in {"0", "1"}:
+        if value not in {0, 1}:
             raise ValueError("状态仅支持 0(正常) 或 1(禁用)")
         return value
 
     @field_validator("username")
     @classmethod
     def validate_username(cls, value: str | None):
-        """校验账号：字母开头，3-32 位"""
+        """校验账号：字母开头，2-32 位"""
         if not value:
             return value
         v = value.strip()
         import re
-        if not re.match(r"^[A-Za-z][A-Za-z0-9_.-]{2,31}$", v):
-            raise ValueError("账号需以字母开头，3-32 位，仅允许字母、数字、_ . -")
+        if not re.match(r"^[A-Za-z][A-Za-z0-9_.-]{1,31}$", v):
+            raise ValueError("账号需以字母开头，2-32 位，仅允许字母、数字、_ . -")
         return v
 
     @field_validator("password")
@@ -246,6 +246,8 @@ class UserOutSchema(UserUpdateSchema, BaseSchema, UserBySchema, TenantBySchema):
     """响应"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes=True)
+
+    username: str | None = Field(default=None, max_length=32, description="用户名")
 
     tenant_id: int | None = Field(
         default=None,

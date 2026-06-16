@@ -1,6 +1,6 @@
 /**
  * 功能验收手册 — 侧栏「筛选目录」扩展词
- * 含与 sys_menu 对齐前的俗称、简称，避免改名后搜不到。
+ * 含与 platform_menu 对齐前的俗称、简称，避免改名后搜不到。
  */
 
 /** 模块级补充检索词 */
@@ -29,8 +29,7 @@ export const MANUAL_PAGE_SEARCH_ALIASES: Readonly<Record<string, readonly string
   "page-ai-fachat": ["FA 聊天", "fachat"],
   "page-ai-memory": ["记忆管理", "memory"],
   "page-portal": ["应用门户", "portal"],
-  "page-demo": ["示例一", "demo"],
-  "page-demo01": ["示例二", "demo01", "三级"],
+  "page-demo": ["示例", "demo"],
   "page-swagger": ["Swagger", "swagger"],
   "page-redoc": ["Redoc", "redoc"],
   "page-ljdoc": ["LJDoc", "ljdoc", "LangJin"],

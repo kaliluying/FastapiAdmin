@@ -26,6 +26,8 @@ logger = logging.getLogger(__name__)
 # 系统表名集合（不对这些表进行租户过滤，避免死循环）
 _SYSTEM_TABLE_NAMES: frozenset[str] = frozenset({"platform_tenant"})
 
+_registered = False
+
 
 def _has_tenant_column(mapper_or_entity) -> bool:
     """检查映射类或实体是否有 ``tenant_id`` 列。

@@ -184,7 +184,7 @@ function onRefreshFailed() {
 // --- Axios 实例 ---------------------------------------------------------------
 
 export const request: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_APP_BASE_API,
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: Number(import.meta.env.VITE_TIMEOUT) || 15000,
   headers: { "Content-Type": "application/json;charset=utf-8" },
   paramsSerializer: (params) => qs.stringify(params, { indices: false }),
@@ -305,12 +305,16 @@ request.interceptors.response.use(
     if ((status === 401 && !hasApiCode) || data?.code === ResultEnum.TOKEN_EXPIRED) {
       const config = error.config as InternalAxiosRequestConfig | undefined;
 
-      // 若 refresh 或 logout 接口自身返回 401，不再递归续期，直接跳转登录
-      if (
-        !config ||
-        config.url?.includes("auth/token/refresh") ||
-        config.url?.includes("auth/logout")
-      ) {
+      // 若 refresh 接口自身返回 401，不在此处跳转登录 ——
+      // 交由下方 catch 块的 redirectToLogin 统一处理，避免双通知
+      if (config?.url?.includes("auth/token/refresh")) {
+        return Promise.reject(
+          new HttpError(data?.msg || "刷新令牌过期，请重新登录", ApiStatus.unauthorized)
+        );
+      }
+
+      // 无请求配置（罕见）或 logout 自身返回 401，直接跳转登录
+      if (!config || config.url?.includes("auth/logout")) {
         await redirectToLogin("登录状态异常，请重新登录");
         return Promise.reject(new HttpError("Unauthorized", ApiStatus.unauthorized));
       }
@@ -353,13 +357,13 @@ request.interceptors.response.use(
     // ── 业务错误（按 code 分类） ──
     if (data?.code === ResultEnum.ERROR) {
       ElMessage.error(data.msg || "请求错误");
-      return Promise.reject(new Error(data.msg || "请求错误"));
+      return Promise.reject(new HttpError(data.msg || "请求错误", ApiStatus.error));
     } else if (data?.code === ResultEnum.UNAUTHORIZED) {
       ElMessage.error(data.msg || "暂无权限");
-      return Promise.reject(new Error(data.msg || "请求错误"));
+      return Promise.reject(new HttpError(data.msg || "请求错误", ApiStatus.unauthorized));
     } else if (data?.code === ResultEnum.EXCEPTION) {
       ElMessage.error(data.msg || "服务异常");
-      return Promise.reject(new Error(data.msg || "服务异常"));
+      return Promise.reject(new HttpError(data.msg || "服务异常", ApiStatus.error));
     } else {
       ElMessage.error("请求处理失败，请稍后重试");
       return Promise.reject(new Error("请求处理失败"));

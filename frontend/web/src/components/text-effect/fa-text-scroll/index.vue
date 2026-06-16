@@ -67,7 +67,7 @@ type ThemeType =
 /**
  * 文本滚动组件属性接口
  */
-export interface TextScrollProps {
+export interface Props {
   /** 滚动文本内容 */
   text?: string;
   /** 主题类型 */
@@ -88,7 +88,7 @@ export interface TextScrollProps {
   alwaysScroll?: boolean;
 }
 
-const props = withDefaults(defineProps<TextScrollProps>(), {
+const props = withDefaults(defineProps<Props>(), {
   text: "",
   direction: "left",
   speed: 80,
@@ -100,9 +100,11 @@ const props = withDefaults(defineProps<TextScrollProps>(), {
   alwaysScroll: true,
 });
 
-const emit = defineEmits<{
+interface Emits {
   close: [];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const handleClose = () => {
   emit("close");

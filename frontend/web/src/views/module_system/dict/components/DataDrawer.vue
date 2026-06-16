@@ -300,9 +300,7 @@ async function fetchDictDataListMerged(params: Record<string, unknown>) {
     dict_type: props.dictType,
     dict_type_id: props.dictTypeId,
     status:
-      params.status !== undefined && params.status !== null && params.status !== ""
-        ? String(params.status)
-        : undefined,
+      params.status !== undefined && params.status !== null ? Number(params.status) : undefined,
     created_time: Array.isArray(params.created_time)
       ? (params.created_time as string[])
       : undefined,
@@ -403,7 +401,7 @@ const {
         label: "状态",
         width: 100,
         formatter: (row: DictDataTable) => {
-          const ok = row.status === "0";
+          const ok = row.status === 0;
           const cfg = ok
             ? { type: "success" as const, text: "启用" }
             : { type: "danger" as const, text: "停用" };
@@ -520,7 +518,7 @@ const formData = ref<DictDataForm>({
   css_class: "",
   list_class: undefined,
   is_default: false,
-  status: "0",
+  status: 0,
   description: "",
   dict_type_id: undefined,
 });
@@ -627,7 +625,7 @@ const initialFormData: DictDataForm = {
   css_class: "",
   list_class: undefined,
   is_default: false,
-  status: "0",
+  status: 0,
   description: "",
   dict_type_id: props.dictTypeId,
 };
@@ -661,7 +659,7 @@ function onResetSearch() {
 async function resetForm() {
   dataFormRef.value?.resetFields();
   dataFormRef.value?.clearValidate();
-  Object.assign(formData, {
+  Object.assign(formData.value, {
     ...initialFormData,
     dict_type_id: props.dictTypeId,
     dict_type: props.dictType,
@@ -682,14 +680,14 @@ async function handleOpenDialog(type: "create" | "update" | "detail", id?: numbe
       detailFormData.value = response.data.data ?? {};
     } else if (type === "update") {
       dialogVisible.title = "修改字典数据";
-      Object.assign(formData, response.data.data);
+      Object.assign(formData.value, response.data.data);
     }
   } else {
     dialogVisible.title = "新增字典数据";
     Object.assign(formData.value, initialFormData);
     formData.value.dict_type = props.dictType;
     formData.value.dict_type_id = props.dictTypeId;
-    formData.value.status = "0";
+    formData.value.status = 0;
     formData.value.id = undefined;
   }
   dictDataFormRenderKey.value += 1;
@@ -763,11 +761,10 @@ async function deleteDictDataRow(id: number) {
     await DictAPI.deleteDictData([id]);
     dictStore.clearDictData();
     if (props.dictType) await dictStore.getDict([props.dictType]);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
-    // 用户取消
+    ElMessage.error("删除失败");
   }
 }
 
@@ -780,7 +777,6 @@ async function handleBatchDelete() {
     await DictAPI.deleteDictData(ids);
     dictStore.clearDictData();
     if (props.dictType) await dictStore.getDict([props.dictType]);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {

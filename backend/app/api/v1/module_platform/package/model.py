@@ -1,34 +1,34 @@
-from datetime import datetime
-
-from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
-from app.core.base_model import MappedBase
+from app.core.base_model import MappedBase, ModelMixin
 
 
-class PackageModel(MappedBase):
+class PackageModel(ModelMixin):
     """
     套餐模型 - 定义租户可用的功能套餐
+
+    status: 0=正常 1=禁用
     """
 
     __tablename__: str = "platform_package"
     __table_args__: dict[str, str] = {"comment": "租户套餐表"}
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment="主键ID")
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, comment="套餐名称")
     code: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, comment="套餐编码")
-    status: Mapped[str] = mapped_column(
-        String(10), nullable=False, default="0", comment="状态(0:正常 1:禁用)"
-    )
     sort: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="排序")
-    description: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, default=None, comment="描述"
-    )
-    create_time: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now, nullable=False, comment="创建时间"
-    )
-    update_time: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now, onupdate=datetime.now, nullable=False, comment="更新时间"
+    # ─── 定价与计费 ───
+    price: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="价格(分)")
+    period: Mapped[str] = mapped_column(String(10), nullable=False, default="month", comment="计费周期(month/year)")
+    trial_days: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="免费试用天数")
+    # ─── 配额限制 ───
+    max_users: Mapped[int] = mapped_column(Integer, nullable=False, default=10, comment="最大用户数")
+    max_roles: Mapped[int] = mapped_column(Integer, nullable=False, default=5, comment="最大角色数")
+    max_depts: Mapped[int] = mapped_column(Integer, nullable=False, default=10, comment="最大部门数")
+    max_storage_mb: Mapped[int] = mapped_column(Integer, nullable=False, default=1024, comment="最大存储(MB)")
+    # ─── 速率限制 ───
+    rate_limit: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=60, comment="API速率限制(请求/10秒)"
     )
 
     @validates("name")
@@ -67,8 +67,36 @@ class PackageMenuModel(MappedBase):
     )
     menu_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("sys_menu.id", ondelete="CASCADE", onupdate="CASCADE"),
+        ForeignKey("platform_menu.id", ondelete="CASCADE", onupdate="CASCADE"),
         nullable=False,
         index=True,
         comment="菜单ID",
+    )
+
+
+class PackagePluginModel(MappedBase):
+    """
+    套餐-插件关联表 — 定义套餐包含的插件资源
+    """
+
+    __tablename__: str = "platform_package_plugin"
+    __table_args__ = (
+        UniqueConstraint("package_id", "plugin_id", name="uq_package_plugin"),
+        {"comment": "套餐插件关联表"},
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True, comment="主键ID")
+    package_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("platform_package.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+        index=True,
+        comment="套餐ID",
+    )
+    plugin_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("platform_plugin.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+        index=True,
+        comment="插件ID",
     )

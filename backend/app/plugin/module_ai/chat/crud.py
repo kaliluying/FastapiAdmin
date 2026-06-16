@@ -6,9 +6,9 @@ from agno.db.postgres import PostgresDb
 from agno.db.sqlite import SqliteDb
 from agno.session.team import TeamSession
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.config.setting import settings
-from app.core.logger import log
+from app.core.base_schema import AuthSchema
+from app.core.logger import logger
 
 from .schema import ChatSessionCreateSchema, ChatSessionUpdateSchema
 
@@ -48,10 +48,6 @@ class ChatSessionCRUD:
 
         return db_mapping[db_type]()
 
-    def __del__(self) -> None:
-        """析构时关闭数据库连接"""
-        self.db.close()
-
     async def get_by_id_crud(self, session_id: str) -> TeamSession | None:
         """
         获取会话详情。
@@ -67,7 +63,7 @@ class ChatSessionCRUD:
                 session_id=session_id, session_type=self.SESSION_TYPE, user_id=self.user_id
             )
         except Exception as e:
-            log.error(f"获取会话详情失败: {e}")
+            logger.error(f"获取会话详情失败: {e}")
             return None
 
     async def list_crud(
@@ -91,7 +87,7 @@ class ChatSessionCRUD:
                 return result[0]
             return result if isinstance(result, list) else []
         except Exception as e:
-            log.error(f"获取会话列表失败: {e}")
+            logger.error(f"获取会话列表失败: {e}")
             return []
 
     async def create_crud(self, data: ChatSessionCreateSchema) -> TeamSession | None:
@@ -130,7 +126,7 @@ class ChatSessionCRUD:
             result = self.db.upsert_session(session=session)
             return result
         except Exception as e:
-            log.exception(f"创建会话失败: {e}")
+            logger.exception(f"创建会话失败: {e}")
             return None
 
     async def update_crud(self, session_id: str, data: ChatSessionUpdateSchema) -> bool:
@@ -153,7 +149,7 @@ class ChatSessionCRUD:
             )
             return True
         except Exception as e:
-            log.error(f"更新会话失败: {e}")
+            logger.error(f"更新会话失败: {e}")
             return False
 
     async def delete_crud(self, session_ids: list[str]) -> bool:
@@ -171,5 +167,5 @@ class ChatSessionCRUD:
                 self.db.delete_session(session_id=session_id, user_id=self.user_id)
             return True
         except Exception as e:
-            log.error(f"删除会话失败: {e}")
+            logger.error(f"删除会话失败: {e}")
             return False

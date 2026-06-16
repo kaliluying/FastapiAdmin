@@ -30,7 +30,7 @@ defineSlots<{
   buttons?: () => void;
 }>();
 
-interface ResultPageProps {
+interface Props {
   /** 成功/失败 */
   type: "success" | "fail";
   /** 标题 */
@@ -41,7 +41,7 @@ interface ResultPageProps {
   iconCode: string;
 }
 
-withDefaults(defineProps<ResultPageProps>(), {
+withDefaults(defineProps<Props>(), {
   type: "success",
   title: "",
   message: "",

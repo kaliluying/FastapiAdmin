@@ -190,7 +190,7 @@ export interface SearchFormItem {
 }
 
 // 表单配置
-interface SearchBarProps {
+interface Props {
   /** 表单数据 */
   items: SearchFormItem[];
   /** 每列的宽度（基于 24 格布局） */
@@ -234,7 +234,7 @@ interface SanitizeOutputOptions {
   keepFalse: boolean;
 }
 
-const props = withDefaults(defineProps<SearchBarProps>(), {
+const props = withDefaults(defineProps<Props>(), {
   items: () => [],
   span: 6,
   gutter: 12,
@@ -250,12 +250,12 @@ const props = withDefaults(defineProps<SearchBarProps>(), {
   sanitizeOutput: () => ({}),
 });
 
-interface SearchBarEmits {
+interface Emits {
   reset: [];
   search: [Record<string, any>];
 }
 
-const emit = defineEmits<SearchBarEmits>();
+const emit = defineEmits<Emits>();
 
 const modelValue = defineModel<Record<string, any>>({ default: {} });
 const initialModelValue = ref<Record<string, any>>({});

@@ -1,8 +1,8 @@
 from collections.abc import Sequence
 from typing import Any
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.core.base_crud import CRUDBase
+from app.core.base_schema import AuthSchema
 
 from .model import JobModel
 from .schema import JobCreateSchema, JobUpdateSchema

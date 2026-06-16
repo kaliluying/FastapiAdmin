@@ -5,6 +5,7 @@
     :subtitle="bannerSubtitle"
     boxStyle="bg-theme/10!"
     titleColor="var(--fa-gray-900)"
+    subtitleColor="var(--fa-gray-500)"
     :decoration="false"
     :meteorConfig="{
       enabled: true,
@@ -25,7 +26,12 @@
     @click="handleBannerClick"
   >
     <div class="flex items-center gap-4 mt-2">
-      <ElAvatar v-if="currentUser.avatar" :size="56" :src="currentUser.avatar" />
+      <ElAvatar
+        v-if="currentUser.avatar"
+        :size="80"
+        :src="currentUser.avatar"
+        style="background-color: transparent"
+      />
       <ElIcon v-else :size="56" class="text-g-500"><UserFilled /></ElIcon>
       <div>
         <div class="text-lg font-semibold text-g-800">{{ currentUser.name }}</div>

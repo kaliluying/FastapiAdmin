@@ -41,15 +41,15 @@ import defaultIcon from "@imgs/3d/icon1.webp";
 defineOptions({ name: "FaCardBanner" });
 
 // 定义卡片横幅组件的属性接口
-interface CardBannerProps {
+interface Props {
   /** 高度 */
   height?: string;
   /** 图片路径 */
   image?: string;
   /** 标题文本 */
-  title: string;
+  title?: string;
   /** 描述文本 */
-  description: string;
+  description?: string;
   /** 主按钮配置 */
   button?: {
     /** 是否显示 */
@@ -75,7 +75,7 @@ interface CardBannerProps {
 }
 
 // 定义组件属性默认值
-withDefaults(defineProps<CardBannerProps>(), {
+withDefaults(defineProps<Props>(), {
   height: "100%",
   image: defaultIcon,
   title: "",
@@ -96,11 +96,13 @@ withDefaults(defineProps<CardBannerProps>(), {
   }),
 });
 
+interface Emits {
+  click: []; // 主按钮点击事件
+  cancel: []; // 取消按钮点击事件
+}
+
 // 定义组件事件
-const emit = defineEmits<{
-  (e: "click"): void; // 主按钮点击事件
-  (e: "cancel"): void; // 取消按钮点击事件
-}>();
+const emit = defineEmits<Emits>();
 
 // 主按钮点击处理函数
 const handleClick = () => {

@@ -48,8 +48,6 @@ defineOptions({ name: "DashboardWorkplace" });
 </script>
 
 <style scoped>
-@reference "@styles/core/tailwind.css";
-
 :deep(.el-card) {
   --el-card-border-radius: calc(var(--custom-radius) + 2px);
 

@@ -12,7 +12,7 @@ class PositionCreateSchema(BaseModel):
     name: str = Field(..., min_length=1, max_length=64, description="岗位名称")
     code: str = Field(..., min_length=1, max_length=64, description="岗位编码")
     order: int = Field(default=1, ge=0, description="显示排序")
-    status: str = Field(default="0", max_length=1, description="状态(0:正常 1:禁用)")
+    status: int = Field(default=0, ge=0, le=1, description="状态(0:正常 1:禁用)")
     description: str | None = Field(default=None, max_length=255, description="描述")
 
     @field_validator("name")
@@ -33,8 +33,8 @@ class PositionCreateSchema(BaseModel):
 
     @field_validator("status")
     @classmethod
-    def _validate_status(cls, v: str) -> str:
-        if v not in {"0", "1"}:
+    def _validate_status(cls, v: int) -> int:
+        if v not in {0, 1}:
             raise ValueError("状态仅支持 0(正常) 或 1(禁用)")
         return v
 

@@ -10,20 +10,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def test_client() -> TestClient:
-    """创建 TestClient 用于 API 测试。
-
-    scope=session 确保只创建一次 app，避免 prometheus registry 冲突。
-    """
-    # 清除 prometheus 注册表（避免 Duplicated timeseries）
-    try:
-        from prometheus_client import REGISTRY
-
-        REGISTRY._collector_to_names.clear()
-    except Exception:
-        pass
-
+    """创建 TestClient 用于 API 测试。"""
     from main import create_app
 
     app = create_app()

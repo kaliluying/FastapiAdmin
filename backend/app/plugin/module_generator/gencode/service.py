@@ -19,12 +19,13 @@ from sqlglot.expressions import (
     Update,
 )
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.common.constant import GenConstant
+from app.common.enums import QueueEnum
 from app.config.path_conf import BASE_DIR
 from app.config.setting import settings
+from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
-from app.core.logger import log
+from app.core.logger import logger
 
 from .crud import GenTableColumnCRUD, GenTableCRUD
 from .schema import (
@@ -62,7 +63,7 @@ def handle_service_exception(func: Callable) -> Callable:
     return wrapper
 
 
-_MENU_TYPE_CATALOG = 1  # 与 sys_menu.type、前端 MenuTypeEnum.CATALOG 一致
+_MENU_TYPE_CATALOG = 1  # 与 platform_menu.type、前端 MenuTypeEnum.CATALOG 一致
 _MENU_TYPE_MENU = 2
 
 
@@ -82,9 +83,9 @@ class GenTableService:
         pn = (package_name or "").strip()
         # 1) 选择上级目录：从上级菜单 route_path 第一段推断 module_xxx
         if parent_catalog_id is not None:
-            from app.api.v1.module_system.menu.crud import MenuCRUD
+            from app.api.v1.module_platform.menu.crud import MenuCRUD
 
-            m = await MenuCRUD(auth).get_by_id_crud(parent_catalog_id)
+            m = await MenuCRUD(auth).get(id=parent_catalog_id)
             if not m:
                 raise CustomException(msg="上级菜单不存在")
             route_path = (getattr(m, "route_path", None) or "").strip()
@@ -110,9 +111,9 @@ class GenTableService:
         """上级菜单仅允许目录：与前端树只展示目录一致，避免挂到菜单/按钮下。"""
         if parent_menu_id is None:
             return
-        from app.api.v1.module_system.menu.crud import MenuCRUD
+        from app.api.v1.module_platform.menu.crud import MenuCRUD
 
-        m = await MenuCRUD(auth).get_by_id_crud(parent_menu_id)
+        m = await MenuCRUD(auth).get(id=parent_menu_id)
         if not m:
             raise CustomException(msg="上级菜单不存在")
         if m.type != _MENU_TYPE_CATALOG:
@@ -161,7 +162,7 @@ class GenTableService:
         business_name: str,
     ) -> int:
         """创建或复用 type=1 模块目录；固定为「目录 → 菜单 → 按钮」中的第一层目录。"""
-        from app.api.v1.module_system.menu.schema import MenuCreateSchema
+        from app.api.v1.module_platform.menu.schema import MenuCreateSchema
         from app.utils.common_util import CamelCaseUtil
 
         pn = (package_name or "").strip()
@@ -176,10 +177,10 @@ class GenTableService:
             )
         else:
             existing = await menu_crud.get(
-                name=dir_key, type=_MENU_TYPE_CATALOG, parent_id=("None", None)
+                name=dir_key, type=_MENU_TYPE_CATALOG, parent_id=(QueueEnum.none.value, None)
             )
         if existing:
-            log.info(
+            logger.info(
                 f"代码生成：复用模块目录菜单 id={existing.id} name={dir_key!r} parent={parent_catalog_id!r}"
             )
             return int(existing.id)
@@ -212,7 +213,7 @@ class GenTableService:
                 description="模块目录（代码生成）",
             )
         )
-        log.info(
+        logger.info(
             f"代码生成：新建模块目录菜单 id={created.id} name={dir_key!r} under_parent={parent_catalog_id!r}"
         )
         return int(created.id)
@@ -241,7 +242,7 @@ class GenTableService:
 
     @classmethod
     @handle_service_exception
-    async def get_gen_table_detail_service(cls, auth: AuthSchema, table_id: int) -> dict:
+    async def get_gen_table_detail_service(cls, auth: AuthSchema, table_id: int) -> GenTableOutSchema:
         """获取详细信息。
 
         参数:
@@ -252,7 +253,7 @@ class GenTableService:
         - dict: 包含业务表详细信息的字典。
         """
         gen_table = await cls.get_gen_table_by_id_service(auth, table_id)
-        return gen_table.model_dump()
+        return gen_table
 
     @classmethod
     @handle_service_exception
@@ -270,7 +271,7 @@ class GenTableService:
         - list[dict]: 包含业务表列表信息的字典列表。
         """
         gen_table_list_result = await GenTableCRUD(auth=auth).get_gen_table_list(search)
-        return [GenTableOutSchema.model_validate(obj).model_dump() for obj in gen_table_list_result]
+        return [GenTableOutSchema.model_validate(obj) for obj in gen_table_list_result]
 
     @classmethod
     @handle_service_exception
@@ -504,7 +505,7 @@ class GenTableService:
                 if not isinstance(sql_statement, (Create, Comment, Alter)):
                     continue
                 exc_sql = sql_statement.sql(dialect=settings.DATABASE_TYPE)
-                log.info(f"执行SQL语句: {exc_sql}")
+                logger.info(f"执行SQL语句: {exc_sql}")
 
                 # ALTER 仅允许添加外键约束，避免任意 ALTER 带来的破坏性
                 if isinstance(sql_statement, Alter):
@@ -524,6 +525,15 @@ class GenTableService:
                         )
                 if not await gen_table_crud.execute_sql(exc_sql):
                     raise CustomException(msg=f"执行SQL语句 {exc_sql} 失败，请检查数据库")
+
+            # 建表成功后自动导入到代码生成模块
+            if table_names:
+                gen_table_list = await cls.get_gen_db_table_list_by_name_service(
+                    auth, table_names
+                )
+                if gen_table_list:
+                    await cls.import_gen_table_service(auth, gen_table_list)
+
             return True
 
         except Exception as e:
@@ -533,7 +543,7 @@ class GenTableService:
     @handle_service_exception
     async def update_gen_table_service(
         cls, auth: AuthSchema, data: GenTableSchema, table_id: int
-    ) -> dict[str, Any]:
+    ) -> GenTableOutSchema:
         """编辑业务表信息。
 
         参数:
@@ -555,21 +565,54 @@ class GenTableService:
                 if not result:
                     raise CustomException(msg="更新业务表信息失败")
 
-                # 处理data.columns为None的情况
-                if data.columns:
+                if data.columns is not None:
+                    db_columns = await GenTableColumnCRUD(auth).list_gen_table_column_crud(
+                        search={"table_id": table_id}
+                    )
+                    db_column_map = {c.column_name: c for c in db_columns if c.column_name}
+                    submitted_names = {
+                        c.column_name
+                        for c in data.columns
+                        if hasattr(c, "column_name") and c.column_name
+                    }
+
                     for gen_table_column in data.columns:
-                        # 确保column有id字段
-                        if hasattr(gen_table_column, "id") and gen_table_column.id:
-                            column_schema = GenTableColumnSchema(**gen_table_column.model_dump())
-                            await GenTableColumnCRUD(auth).update_gen_table_column_crud(
-                                gen_table_column.id, column_schema
+                        col_id = getattr(gen_table_column, "id", None)
+                        col_name = getattr(gen_table_column, "column_name", None)
+                        if col_id and col_name and col_name in db_column_map:
+                            # 只更新前端实际修改的字段（利用 Pydantic model_fields_set）
+                            update_data = gen_table_column.model_dump(
+                                exclude_unset=True, exclude={"id", "super_column"}
                             )
+                            if update_data:
+                                await GenTableColumnCRUD(auth).update(
+                                    id=col_id, data=update_data
+                                )
+                        else:
+                            # 新增列：前端新增但库中无对应记录
+                            column_schema = GenTableColumnSchema(
+                                table_id=table_id,
+                                **gen_table_column.model_dump(
+                                    exclude={"id", "super_column"}
+                                ),
+                            )
+                            GenUtils.init_column_field(column_schema, gen_table_info)
+                            await GenTableColumnCRUD(auth).create_gen_table_column_crud(
+                                column_schema
+                            )
+
+                    # 删除前端已移除的列
+                    for db_name, db_col in db_column_map.items():
+                        if db_name not in submitted_names:
+                            db_id = getattr(db_col, "id", None)
+                            if db_id:
+                                await GenTableColumnCRUD(auth).delete(ids=[db_id])
                 # 重新获取带有预加载关系的对象，避免懒加载导致的MissingGreenlet错误
                 updated_gen_table = await GenTableCRUD(auth).get_gen_table_by_id(table_id)
                 out = GenTableOutSchema.model_validate(updated_gen_table)
                 await cls.set_pk_column(out)
                 await cls.hydrate_sub_table(auth, out)
-                return out.model_dump()
+                return out
             except CustomException:
                 raise
             except Exception as e:
@@ -642,7 +685,7 @@ class GenTableService:
                 table_out = GenTableOutSchema.model_validate(gen_table)
                 result.append(table_out)
             except Exception as e:
-                log.error(f"转换业务表时出错: {e!s}")
+                logger.error(f"转换业务表时出错: {e!s}")
                 continue
         return result
 
@@ -687,7 +730,7 @@ class GenTableService:
                 out_key = Jinja2TemplateUtil.get_file_name(template, gen_table)
                 preview_code_result[out_key] = render_content
             except Exception as e:
-                log.error(f"渲染模板 {template} 时出错: {e!s}")
+                logger.error(f"渲染模板 {template} 时出错: {e!s}")
                 out_key = Jinja2TemplateUtil.get_file_name(template, gen_table)
                 preview_code_result[out_key] = f"渲染错误: {e!s}"
         if gen_table.sub and gen_table.sub_table:
@@ -700,7 +743,7 @@ class GenTableService:
                     out_key = Jinja2TemplateUtil.get_file_name(template, sub_table)
                     preview_code_result[out_key] = render_content
                 except Exception as e:
-                    log.error(f"渲染子表模板 {template} 时出错: {e!s}")
+                    logger.error(f"渲染子表模板 {template} 时出错: {e!s}")
                     out_key = Jinja2TemplateUtil.get_file_name(template, sub_table)
                     preview_code_result[out_key] = f"渲染错误: {e!s}"
         return preview_code_result
@@ -733,8 +776,8 @@ class GenTableService:
         render_info = await cls.__get_gen_render_info(auth, table_name)
         gen_table_schema: GenTableOutSchema = render_info[3]
 
-        from app.api.v1.module_system.menu.crud import MenuCRUD
-        from app.api.v1.module_system.menu.schema import MenuCreateSchema
+        from app.api.v1.module_platform.menu.crud import MenuCRUD
+        from app.api.v1.module_platform.menu.schema import MenuCreateSchema
         from app.utils.common_util import CamelCaseUtil
 
         # 按“上级目录”规则矫正最终包名（分系统根）
@@ -748,12 +791,54 @@ class GenTableService:
         if not mn:
             raise CustomException(msg="模块名不能为空")
         permission_prefix = ":".join([s for s in [pn, mn] if s])
-        # 创建菜单 CRUD 实例
-        menu_crud = MenuCRUD(auth)
         if not gen_table_schema.function_name:
             raise CustomException(msg="功能名称不能为空")
         if not gen_table_schema.package_name:
             raise CustomException(msg="包名不能为空")
+
+        # 1. 先写代码文件（风险最高，放最前，失败不产生菜单孤儿数据）
+        async def _write_templates(
+            templates: list[str], ctx: dict[str, Any], table_schema: GenTableOutSchema
+        ) -> None:
+            for template in templates:
+                try:
+                    render_content = await env.get_template(template).render_async(**ctx)
+                    file_name = Jinja2TemplateUtil.get_file_name(template, table_schema)
+                    full_path = BASE_DIR.parent.joinpath(file_name)
+                    gen_path = str(full_path)
+                    if not gen_path:
+                        raise CustomException(msg="【代码生成】生成路径为空")
+                    os.makedirs(os.path.dirname(gen_path), exist_ok=True)
+                    await anyio.Path(gen_path).write_text(render_content, encoding="utf-8")
+                    # Python 插件目录需保证包层级可导入：为分系统/模块目录补齐 __init__.py
+                    pn_inner = (table_schema.package_name or "").strip()
+                    mn_inner = (table_schema.module_name or "").strip()
+                    if pn_inner and mn_inner:
+                        plugin_base = BASE_DIR.parent.joinpath(f"backend/app/plugin/{pn_inner}")
+                        module_base = plugin_base.joinpath(mn_inner)
+                        for d in (plugin_base, module_base):
+                            init_path = d.joinpath("__init__.py")
+                            if not init_path.exists():
+                                os.makedirs(str(d), exist_ok=True)
+                                await anyio.Path(str(init_path)).write_text(
+                                    "# -*- coding: utf-8 -*-", encoding="utf-8"
+                                )
+                except Exception as e:
+                    raise CustomException(
+                        msg=f"渲染模板失败，表名：{table_schema.table_name}，详细错误信息：{e!s}"
+                    )
+
+        await _write_templates(render_info[0], render_info[2], gen_table_schema)
+        if gen_table_schema.sub and gen_table_schema.sub_table:
+            gen_table_schema.sub_table.package_name = gen_table_schema.package_name
+            sub_ctx = Jinja2TemplateUtil.prepare_sub_render_context(
+                gen_table_schema, gen_table_schema.sub_table
+            )
+            sub_templates = Jinja2TemplateUtil.get_sub_table_template_list()
+            await _write_templates(sub_templates, sub_ctx, gen_table_schema.sub_table)
+
+        # 2. 代码成功写入后，再创建菜单（避免失败时产生孤儿菜单数据）
+        menu_crud = MenuCRUD(auth)
         await cls._assert_parent_menu_is_catalog(auth, gen_table_schema.parent_menu_id)
         # 1. 目录 + 菜单 + 按钮：先取/建模块目录（名称规则见 _catalog_menu_dir_key）
         dir_menu_id = await cls._get_or_create_package_directory_menu(
@@ -859,7 +944,14 @@ class GenTableService:
             },
         ]
         for button in buttons:
-            # 检查按钮权限是否已存在
+            existing_btn = await menu_crud.get(
+                permission=button["permission"],
+                type=3,
+                parent_id=parent_menu.id,
+            )
+            if existing_btn:
+                logger.info(f"按钮权限已存在，跳过创建: {button['permission']}")
+                continue
             await menu_crud.create(
                 MenuCreateSchema(
                     name=button["name"],
@@ -882,58 +974,14 @@ class GenTableService:
                     description=f"{gen_table_schema.function_name}功能按钮",
                 )
             )
-            log.info(f"成功创建按钮权限: {button['name']}")
-        log.info(f"成功创建{gen_table_schema.function_name}菜单及按钮权限")
-
-        # 2. 菜单创建成功后，再生成页面代码（主表 + 可选子表）
-        async def _write_templates(
-            templates: list[str], ctx: dict[str, Any], table_schema: GenTableOutSchema
-        ) -> None:
-            for template in templates:
-                try:
-                    render_content = await env.get_template(template).render_async(**ctx)
-                    file_name = Jinja2TemplateUtil.get_file_name(template, table_schema)
-                    full_path = BASE_DIR.parent.joinpath(file_name)
-                    gen_path = str(full_path)
-                    if not gen_path:
-                        raise CustomException(msg="【代码生成】生成路径为空")
-                    os.makedirs(os.path.dirname(gen_path), exist_ok=True)
-                    await anyio.Path(gen_path).write_text(render_content, encoding="utf-8")
-                    # Python 插件目录需保证包层级可导入：为分系统/模块目录补齐 __init__.py
-                    # 生成规则固定为 backend/app/plugin/{module_xxx}/{module_name}/...
-                    pn = (table_schema.package_name or "").strip()
-                    mn = (table_schema.module_name or "").strip()
-                    if pn and mn:
-                        plugin_base = BASE_DIR.parent.joinpath(f"backend/app/plugin/{pn}")
-                        module_base = plugin_base.joinpath(mn)
-                        for d in (plugin_base, module_base):
-                            init_path = d.joinpath("__init__.py")
-                            if not init_path.exists():
-                                os.makedirs(str(d), exist_ok=True)
-                                await anyio.Path(str(init_path)).write_text(
-                                    "# -*- coding: utf-8 -*-", encoding="utf-8"
-                                )
-                except Exception as e:
-                    raise CustomException(
-                        msg=f"渲染模板失败，表名：{table_schema.table_name}，详细错误信息：{e!s}"
-                    )
-
-        await _write_templates(render_info[0], render_info[2], gen_table_schema)
-        if gen_table_schema.sub and gen_table_schema.sub_table:
-            # 子表与主表同分系统，使用自己的模块名，实现同级目录
-            gen_table_schema.sub_table.package_name = gen_table_schema.package_name
-            # 确保子表使用自己的模块名，与主表同级目录
-            sub_ctx = Jinja2TemplateUtil.prepare_sub_render_context(
-                gen_table_schema, gen_table_schema.sub_table
-            )
-            sub_templates = Jinja2TemplateUtil.get_sub_table_template_list()
-            await _write_templates(sub_templates, sub_ctx, gen_table_schema.sub_table)
+            logger.info(f"成功创建按钮权限: {button['name']}")
+        logger.info(f"成功创建{gen_table_schema.function_name}菜单及按钮权限")
 
         return True
 
     @classmethod
     @handle_service_exception
-    async def batch_gen_code_service(cls, auth: AuthSchema, table_names: list[str]) -> bytes:
+    async def batch_gen_code_service(cls, auth: AuthSchema, table_names: list[str]) -> tuple[bytes, list[str]]:
         """
         批量生成代码并打包为ZIP。
         - 备注：内存生成并压缩，兼容多模板类型；供下载使用。
@@ -950,6 +998,7 @@ class GenTableService:
             raise CustomException(msg="表名列表不能为空")
         zip_buffer = io.BytesIO()
         file_count = 0
+        failed_tables: list[str] = []
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
             for table_name in valid_names:
                 try:
@@ -978,7 +1027,8 @@ class GenTableService:
                             zip_file.writestr(out_path, render_content)
                             file_count += 1
                 except Exception as e:
-                    log.error(f"批量生成代码时处理表 {table_name} 出错: {e!s}")
+                    logger.error(f"批量生成代码时处理表 {table_name} 出错: {e!s}")
+                    failed_tables.append(table_name)
                     # 继续处理其他表，不中断整个过程
                     continue
         zip_data = zip_buffer.getvalue()
@@ -987,7 +1037,7 @@ class GenTableService:
             raise CustomException(
                 msg="未能生成任何代码文件：请检查所选表是否存在于代码生成配置中，或主子表、字段配置是否正确"
             )
-        return zip_data
+        return zip_data, failed_tables
 
     @classmethod
     @handle_service_exception
@@ -1175,7 +1225,7 @@ class GenTableService:
                 sub_name_raw
             )
         except Exception as e:
-            log.warning(f"获取子表 {sub_name_raw} 字段失败: {e!s}")
+            logger.warning(f"获取子表 {sub_name_raw} 字段失败: {e!s}")
             gen_table.sub = False
             gen_table.sub_table = None
             gen_table.master_sub_hint = f"无法读取子表结构：{e!s}"
@@ -1280,7 +1330,7 @@ class GenTableService:
 
     @classmethod
     @handle_service_exception
-    async def sync_db_preview_service(cls, auth: AuthSchema, table_name: str) -> dict[str, Any]:
+    async def sync_db_preview_service(cls, auth: AuthSchema, table_name: str) -> GenSyncPreviewSchema:
         """
         同步数据库前差异预览（主表 + 可选子表）。
 
@@ -1341,7 +1391,7 @@ class GenTableService:
                 unchanged=s_unchanged,
             )
 
-        return preview.model_dump()
+        return preview
 
     @classmethod
     def _assert_master_sub_config_valid(cls, gen_table: GenTableOutSchema) -> None:
@@ -1437,7 +1487,7 @@ class GenTableColumnService:
             "table_id": table_id
         })
         result = [
-            GenTableColumnOutSchema.model_validate(gen_table_column).model_dump()
+            GenTableColumnOutSchema.model_validate(gen_table_column)
             for gen_table_column in gen_table_column_list_result
         ]
         return result

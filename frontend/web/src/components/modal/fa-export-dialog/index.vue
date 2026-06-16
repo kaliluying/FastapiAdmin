@@ -85,7 +85,7 @@ function saveBlobDownload(blob: Blob, rawName: string) {
 /**
  * 导出模态框组件属性定义
  */
-interface FaExportDialogProps {
+interface Props {
   /** 内容配置 */
   contentConfig: Pick<
     IContentConfig,
@@ -100,7 +100,7 @@ interface FaExportDialogProps {
 }
 
 // 定义接收的属性
-const props = defineProps<FaExportDialogProps>();
+const props = withDefaults(defineProps<Props>(), {});
 
 const remoteExportEnabled = computed(
   () => !!(props.contentConfig.exportsAction || props.contentConfig.exportsBlobAction)

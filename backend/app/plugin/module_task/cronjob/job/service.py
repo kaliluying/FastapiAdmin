@@ -1,5 +1,5 @@
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.core.ap_scheduler import SchedulerUtil
+from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
 
 from .crud import JobCRUD
@@ -17,7 +17,7 @@ class JobService:
     """
 
     @classmethod
-    async def get_job_log_detail_service(cls, auth: AuthSchema, id: int) -> dict:
+    async def get_job_log_detail_service(cls, auth: AuthSchema, id: int) -> JobOutSchema:
         """
         获取执行日志详情
 
@@ -31,7 +31,7 @@ class JobService:
         obj = await JobCRUD(auth).get_obj_by_id_crud(id=id)
         if not obj:
             raise CustomException(msg="执行日志不存在")
-        return JobOutSchema.model_validate(obj).model_dump()
+        return JobOutSchema.model_validate(obj)
 
     @classmethod
     async def get_job_log_list_service(
@@ -56,7 +56,7 @@ class JobService:
         obj_list = await JobCRUD(auth).get_obj_list_crud(
             search=search.__dict__ if search else None, order_by=order_by
         )
-        return [JobOutSchema.model_validate(obj).model_dump() for obj in obj_list]
+        return [JobOutSchema.model_validate(obj) for obj in obj_list]
 
     @classmethod
     async def get_job_log_page_service(
@@ -119,7 +119,7 @@ class JobService:
         obj = await JobCRUD(auth).create_obj_crud(data=data)
         if not obj:
             raise CustomException(msg="创建执行日志失败")
-        return JobOutSchema.model_validate(obj).model_dump()
+        return JobOutSchema.model_validate(obj)
 
     @classmethod
     async def update_job_log_service(
@@ -151,7 +151,7 @@ class JobService:
         obj = await JobCRUD(auth).update_obj_crud(id=id, data=data)
         if not obj:
             raise CustomException(msg="更新执行日志失败")
-        return JobOutSchema.model_validate(obj).model_dump()
+        return JobOutSchema.model_validate(obj)
 
     @classmethod
     async def delete_job_log_service(cls, auth: AuthSchema, ids: list[int]) -> None:

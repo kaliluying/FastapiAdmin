@@ -16,7 +16,7 @@ class DeptCreateSchema(BaseModel):
     phone: str | None = Field(default=None, max_length=20, description="联系电话")
     email: str | None = Field(default=None, max_length=128, description="邮箱")
     parent_id: int | None = Field(default=None, ge=0, description="父部门ID")
-    status: str = Field(default="0", max_length=1, description="状态(0:正常 1:禁用)")
+    status: int = Field(default=0, ge=0, le=1, description="状态(0:正常 1:禁用)")
     description: str | None = Field(default=None, max_length=255, description="备注")
 
     @field_validator("name")
@@ -35,9 +35,9 @@ class DeptCreateSchema(BaseModel):
 
     @field_validator("status")
     @classmethod
-    def validate_status(cls, value: str):
+    def validate_status(cls, value: int):
         """校验状态：仅支持 0(正常)、1(禁用)"""
-        if value not in {"0", "1"}:
+        if value not in {0, 1}:
             raise ValueError("状态仅支持 0(正常) 或 1(禁用)")
         return value
 
@@ -52,6 +52,7 @@ class DeptOutSchema(DeptCreateSchema, BaseSchema):
     model_config = ConfigDict(from_attributes=True)
 
     parent_name: str | None = Field(default=None, max_length=64, description="父部门名称")
+    children: list["DeptOutSchema"] | None = Field(default=None, description="子部门列表")
 
 
 class DeptQueryParam:

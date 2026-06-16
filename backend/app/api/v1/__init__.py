@@ -17,19 +17,25 @@ from typing import TYPE_CHECKING
 
 # 使用 TYPE_CHECKING 避免循环导入
 if TYPE_CHECKING:
-    from app.api.v1.module_platform.loginlog.model import LoginLogModel
+    from app.api.v1.module_platform.email.model import (
+        EmailConfigModel,
+        EmailLogModel,
+        EmailTemplateModel,
+    )
+    from app.api.v1.module_platform.invoice.model import InvoiceModel
+    from app.api.v1.module_platform.menu.model import MenuModel
+    from app.api.v1.module_platform.order.model import OrderModel, PaymentRecordModel, RefundModel
     from app.api.v1.module_platform.package.model import PackageMenuModel, PackageModel
     from app.api.v1.module_platform.plugin.model import PluginModel
     from app.api.v1.module_platform.tenant.model import TenantModel, TenantUserModel
-    from app.api.v1.module_platform.ticket.model import TicketModel
     from app.api.v1.module_system.dept.model import DeptModel
     from app.api.v1.module_system.dict.model import DictDataModel, DictTypeModel
-    from app.api.v1.module_system.menu.model import MenuModel
+    from app.api.v1.module_system.log.model import LoginLogModel, OperationLogModel
     from app.api.v1.module_system.notice.model import NoticeModel
-    from app.api.v1.module_system.operationlog.model import OperationLogModel
     from app.api.v1.module_system.params.model import ParamsModel
     from app.api.v1.module_system.position.model import PositionModel
     from app.api.v1.module_system.role.model import RoleDeptsModel, RoleMenusModel, RoleModel
+    from app.api.v1.module_system.ticket.model import TicketModel
     from app.api.v1.module_system.user.model import (
         UserModel,
         UserPositionsModel,
@@ -40,15 +46,22 @@ __all__ = [
     "DeptModel",
     "DictDataModel",
     "DictTypeModel",
+    "EmailConfigModel",
+    "EmailLogModel",
+    "EmailTemplateModel",
+    "InvoiceModel",
     "LoginLogModel",
     "MenuModel",
     "NoticeModel",
     "OperationLogModel",
+    "OrderModel",
     "PackageMenuModel",
     "PackageModel",
     "ParamsModel",
+    "PaymentRecordModel",
     "PluginModel",
     "PositionModel",
+    "RefundModel",
     "RoleDeptsModel",
     "RoleMenusModel",
     "RoleModel",

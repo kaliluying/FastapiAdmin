@@ -20,17 +20,16 @@ from fastapi import Request
 from redis.asyncio.client import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.api.v1.module_system.user.crud import UserCRUD
 from app.api.v1.module_system.user.model import UserModel
 from app.api.v1.module_system.user.schema import UserRegisterSchema
 from app.api.v1.module_system.user.service import UserService
 from app.config.setting import settings
+from app.core.base_schema import AuthSchema, JWTOutSchema
 from app.core.exceptions import CustomException
-from app.core.logger import log
+from app.core.logger import logger
 from app.core.redis_crud import RedisCURD
 
-from .schema import JWTOutSchema
 from .service import LoginService
 
 OAuthProvider = Literal["wechat", "qq", "github", "gitee"]
@@ -138,7 +137,7 @@ async def _http_json(method: str, url: str, **kwargs: Any) -> Any:
             return r.json()
         except json.JSONDecodeError:
             text = r.text
-            log.error(f"OAuth 非 JSON 响应: {text[:500]}")
+            logger.error(f"OAuth 非 JSON 响应: {text[:500]}")
             raise CustomException(msg="OAuth 接口返回异常")
 
 
@@ -313,7 +312,7 @@ async def ensure_oauth_user(
 ) -> UserModel:
     auth = AuthSchema(db=db, user=None, tenant_id=1, check_data_scope=False)
     username = _username_for_oauth(provider, unique_id)
-    existing = await UserCRUD(auth).get_by_username_crud(username=username)
+    existing = await UserCRUD(auth).get(username=username)
     if existing:
         return existing
 
@@ -323,11 +322,18 @@ async def ensure_oauth_user(
         name=(display_name or username)[:32],
         role_ids=list(settings.OAUTH_DEFAULT_ROLE_IDS),
     )
-    await UserService.register_user_service(auth=auth, data=reg)
-    user = await UserCRUD(auth).get_by_username_crud(username=username)
+    try:
+        await UserService.register_user_service(auth=auth, data=reg)
+    except Exception:
+        # 并发创建可能触发唯一约束冲突，回退到再次查询
+        existing = await UserCRUD(auth).get(username=username)
+        if existing:
+            return existing
+        raise CustomException(msg="OAuth 注册失败")
+    user = await UserCRUD(auth).get(username=username)
     if not user:
         raise CustomException(msg="OAuth 注册失败")
-    log.info(f"OAuth 自动注册用户: {username} ({provider})")
+    logger.info(f"OAuth 自动注册用户: {username} ({provider})")
     return user
 
 
@@ -375,11 +381,11 @@ async def complete_oauth_login(
         raise CustomException(msg="不支持的 OAuth 渠道")
 
     user = await ensure_oauth_user(db=db, provider=provider, unique_id=uid, display_name=name)
-    if user.status == "1":
+    if user.status == 1:
         raise CustomException(msg="用户已被停用")
 
     user = await UserCRUD(
-        AuthSchema(db=db, user=None, check_data_scope=False)
+        AuthSchema(db=db, user=None, tenant_id=1, check_data_scope=False)
     ).update_last_login_crud(id=user.id)
     if not user:
         raise CustomException(msg="用户不存在")

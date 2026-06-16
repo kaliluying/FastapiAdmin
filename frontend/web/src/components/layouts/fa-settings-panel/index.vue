@@ -34,7 +34,9 @@ interface Props {
   open?: boolean;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  open: false,
+});
 
 // 使用设置面板逻辑
 const settingsPanel = useSettingsPanel();

@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -11,8 +13,8 @@ class TenantCreateSchema(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=100, description="租户名称")
     code: str = Field(..., min_length=2, max_length=100, description="租户编码")
-    status: str = Field(default="0", max_length=1, description="状态(0:正常 1:禁用)")
-    description: str | None = Field(default=None, max_length=255, description="描述")
+    status: int = Field(default=0, ge=0, le=1, description="状态(0:正常 1:禁用)")
+    description: str | None = Field(default=None, description="描述")
     start_time: DateTimeStr | None = Field(default=None, description="开始时间")
     end_time: DateTimeStr | None = Field(default=None, description="结束时间")
     contact_name: str | None = Field(default=None, max_length=64, description="联系人姓名")
@@ -23,6 +25,15 @@ class TenantCreateSchema(BaseModel):
     logo_url: str | None = Field(default=None, max_length=500, description="Logo URL")
     sort: int = Field(default=0, ge=0, description="排序")
     package_id: int | None = Field(default=None, gt=0, description="关联套餐ID")
+    version: str | None = Field(default=None, max_length=20, description="版本号")
+    favicon: str | None = Field(default=None, max_length=500, description="favicon地址")
+    login_bg: str | None = Field(default=None, max_length=500, description="登录背景地址")
+    copyright: str | None = Field(default=None, max_length=255, description="版权信息")
+    keep_record: str | None = Field(default=None, max_length=100, description="备案号")
+    help_doc: str | None = Field(default=None, max_length=500, description="帮助文档地址")
+    privacy: str | None = Field(default=None, max_length=500, description="隐私政策地址")
+    clause: str | None = Field(default=None, max_length=500, description="服务条款地址")
+    git_code: str | None = Field(default=None, max_length=500, description="源码地址")
 
     @field_validator("name")
     @classmethod
@@ -44,8 +55,8 @@ class TenantCreateSchema(BaseModel):
 
     @field_validator("status")
     @classmethod
-    def _validate_status(cls, v: str) -> str:
-        if v not in {"0", "1"}:
+    def _validate_status(cls, v: int) -> int:
+        if v not in {0, 1}:
             raise ValueError("状态仅支持 0(正常) 或 1(禁用)")
         return v
 
@@ -68,13 +79,13 @@ class TenantCreateSchema(BaseModel):
         return self
 
 
-class TenantUpdateSchema(BaseModel):
+class TenantUpdateSchema(TenantCreateSchema):
     """更新租户"""
 
-    name: str | None = Field(default=None, max_length=100, description="租户名称")
-    code: str | None = Field(default=None, max_length=100, description="租户编码")
-    status: str | None = Field(default=None, max_length=1, description="状态(0:正常 1:禁用)")
-    description: str | None = Field(default=None, max_length=255, description="描述")
+    name: str | None = Field(default=None, max_length=100, description="租户名称")  # type: ignore[assignment]
+    code: str | None = Field(default=None, max_length=100, description="租户编码")  # type: ignore[assignment]
+    status: int | None = Field(default=None, ge=0, le=1, description="状态(0:正常 1:禁用)")
+    description: str | None = Field(default=None, description="描述")
     start_time: DateTimeStr | None = Field(default=None, description="开始时间")
     end_time: DateTimeStr | None = Field(default=None, description="结束时间")
     contact_name: str | None = Field(default=None, max_length=64, description="联系人姓名")
@@ -85,6 +96,15 @@ class TenantUpdateSchema(BaseModel):
     logo_url: str | None = Field(default=None, max_length=500, description="Logo URL")
     sort: int | None = Field(default=None, ge=0, description="排序")
     package_id: int | None = Field(default=None, gt=0, description="关联套餐ID")
+    version: str | None = Field(default=None, max_length=20, description="版本号")
+    favicon: str | None = Field(default=None, max_length=500, description="favicon地址")
+    login_bg: str | None = Field(default=None, max_length=500, description="登录背景地址")
+    copyright: str | None = Field(default=None, max_length=255, description="版权信息")
+    keep_record: str | None = Field(default=None, max_length=100, description="备案号")
+    help_doc: str | None = Field(default=None, max_length=500, description="帮助文档地址")
+    privacy: str | None = Field(default=None, max_length=500, description="隐私政策地址")
+    clause: str | None = Field(default=None, max_length=500, description="服务条款地址")
+    git_code: str | None = Field(default=None, max_length=500, description="源码地址")
 
     @field_validator("code")
     @classmethod
@@ -98,10 +118,10 @@ class TenantUpdateSchema(BaseModel):
 
     @field_validator("status")
     @classmethod
-    def _validate_status(cls, v: str | None) -> str | None:
+    def _validate_status(cls, v: int | None) -> int | None:
         if v is None:
             return v
-        if v not in {"0", "1"}:
+        if v not in {0, 1}:
             raise ValueError("状态仅支持 0(正常) 或 1(禁用)")
         return v
 
@@ -130,6 +150,7 @@ class TenantOutSchema(TenantCreateSchema, BaseSchema):
     model_config = ConfigDict(from_attributes=True)
 
 
+@dataclass
 class TenantQueryParam:
     """租户查询参数"""
 
@@ -191,61 +212,52 @@ class TenantUserOutSchema(BaseModel):
     name: str = Field(default="", description="用户姓名")
 
 
-# ============ P1: 配额管理 ============
-
-
-class TenantQuotaOutSchema(BaseModel):
-    """租户配额响应"""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    tenant_id: int
-    max_users: int
-    max_roles: int
-    max_storage_mb: int
-    max_depts: int
-
-
-class TenantQuotaUpdateSchema(BaseModel):
-    """租户配额更新"""
-
-    max_users: int | None = Field(default=None, ge=0, description="最大用户数")
-    max_roles: int | None = Field(default=None, ge=0, description="最大角色数")
-    max_storage_mb: int | None = Field(default=None, ge=0, description="最大存储(MB)")
-    max_depts: int | None = Field(default=None, ge=0, description="最大部门数")
-
-
 # ============ P1: 租户配置 ============
 
 
 class TenantConfigItem(BaseModel):
-    """单个配置项"""
+    """租户配置项"""
 
-    config_key: str = Field(..., min_length=1, max_length=100, description="配置键")
-    config_value: str = Field(..., max_length=65535, description="配置值")
-    config_type: str = Field(default="string", max_length=20, description="配置类型(string/json/int/bool)")
-
-    @field_validator("config_type")
-    @classmethod
-    def _validate_config_type(cls, v: str) -> str:
-        if v not in {"string", "json", "int", "bool"}:
-            raise ValueError("配置类型仅支持 string、json、int、bool")
-        return v
+    key: str = Field(..., description="配置键")
+    value: str | None = Field(default=None, description="配置值")
 
 
-class TenantConfigOutSchema(TenantConfigItem):
+class TenantConfigOutSchema(BaseModel):
     """租户配置响应"""
 
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
-    tenant_id: int
+    config_key: str = Field(..., description="配置键")
+    config_value: str | None = Field(default=None, description="配置值")
 
 
-# ============ P1: 租户菜单 ============
+# ============ 续期 ============
 
 
-class TenantMenuSetSchema(BaseModel):
-    """批量设置租户菜单权限"""
+class TenantRenewSchema(BaseModel):
+    """租户续期"""
 
-    menu_ids: list[int] = Field(..., description="菜单ID列表")
+    end_time: DateTimeStr = Field(..., description="新的结束时间")
+
+    @model_validator(mode="after")
+    def _validate_end_time(self):
+        from datetime import datetime
+
+        if self.end_time <= datetime.now():
+            raise ValueError("续期时间必须晚于当前时间")
+        return self
+
+
+# ============ 套餐变更预览 ============
+
+
+class PackageChangePreviewOut(BaseModel):
+    """套餐变更影响预览响应"""
+
+    new_package_id: int = Field(..., description="新套餐ID")
+    new_package_name: str = Field(default="", description="新套餐名称")
+    affected_roles: list[dict] = Field(default_factory=list, description="受影响的角色列表（名称、用户数）")
+    removed_menus: list[dict] = Field(default_factory=list, description="将被移除的菜单清单（名称、路径）")
+    added_menus: list[dict] = Field(default_factory=list, description="新增的菜单清单（名称、路径）")
+    quota_changes: dict = Field(default_factory=dict, description="配额变化对比")
+    total_affected_users: int = Field(default=0, description="受影响用户数总计")

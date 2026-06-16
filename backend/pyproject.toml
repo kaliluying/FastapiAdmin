@@ -7,6 +7,7 @@ requires-python = ">=3.10"
 dependencies = [
     "agno==2.5.8",
     "aiofiles==24.1.0",                         # 文件操作
+    "aiosmtplib>=3.0.2",                        # 异步 SMTP 邮件发送（fastapi-mail 要求 >=3.0.2）
     "aiosqlite==0.17.0",                        # sqlite 异步操作数据库
     "alembic==1.15.1",                          # 数据库迁移
     "apscheduler==3.11.0",                      # 定时任务
@@ -17,7 +18,6 @@ dependencies = [
     "click==8.1.7",                             # 命令行参数解析
     "croniter>=1.0.12,<5.0.0",                  # cron（与 prefect 约束一致；部署 requirements.txt 同源）
     "cryptography==45.0.2",                     # mysql8 密码加密
-    "dependency-injector==4.49.0",                # 依赖注入容器
     "fastapi==0.115.2",                         # fastapi 框架
     "fastapi-limiter==0.1.6",                   # 接口限流
     "greenlet==3.1.1",                          # 协程框架
@@ -32,11 +32,10 @@ dependencies = [
     "passlib==1.7.4",                           # 密码加密
     "prefect>=3.5.0,<4",                        # 工作流编排（与 typer>=0.19 兼容；部署与 requirements.txt 一致）
     "pillow==11.0.0",                           # 图片处理
-    "prometheus-fastapi-instrumentator==7.1.0",   # Prometheus 指标采集
     "psutil==6.1.0",                            # 系统信息
     "psycopg==3.3.2",                           # postgresql 同步操作数据库基于 psycopg是psycopg2升级版：psycopg2 是一个 pure-Python PostgreSQL 适配器。
     "psycopg-binary==3.3.2",                    # postgresql 异步操作数据库基于 psycopg2：asyncpg 是 psycopg2 的异步版本，psycopg2 是一个 pure-Python PostgreSQL 数据库适配器。
-    "pydantic-settings==2.5.2",                 # 配置设置
+    "pydantic-settings>=2.6.1",                 # 配置设置（fastapi-mail 要求 >=2.6.1）
     "pydantic-validation-decorator==0.1.4",     # 模型验证
     "pyjwt==2.9.0",                             # OAuth2
     "pymysql==1.1.2",                           # mysql 同步步操作数据库基于 pymysql：aiomysql 是 pymysql 的异步版本，pymysql 是一个纯 Python 实现的 MySQL 客户端。成熟度：aiomysql 相对较为成熟，社区支持较好，文档也比较完善。
@@ -52,12 +51,16 @@ dependencies = [
     "uvicorn==0.30.6",                          # uvicorn web 框架
     "websockets>=15.0.1,<16.0",                 # websocket（prefect>=3.5 需 >=15.0.1；与部署 requirements.txt 一致）
     "tomli>=2.0.1 ; python_full_version < '3.15'",
+    "fastapi-cache2[redis]>=0.1.8",
+    "fastapi-mail==1.5.1",                # 邮件发送（简化 EmailSendService 底层）
+    "tinycss2==1.5.1",
 ]
 
 [dependency-groups]
 dev = [
     "fakeredis>=2.21.0,<3",   # 测试：内存 Redis，配合 TESTING
     "pytest==9.0.2",
+    "pytest-asyncio>=0.24.0",  # 异步测试支持
     "ruff==0.14.13",          # 代码检查/格式化
 ]
 
@@ -138,3 +141,7 @@ quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

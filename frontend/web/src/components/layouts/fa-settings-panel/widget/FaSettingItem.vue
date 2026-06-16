@@ -37,6 +37,8 @@
 <script setup lang="ts">
 import type { ComputedRef } from "vue";
 
+defineOptions({ name: "FaSettingItem" });
+
 interface SettingItemConfig {
   key: string;
   label: string;
@@ -62,7 +64,7 @@ interface Emits {
   (e: "change", value: any): void;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {});
 const emit = defineEmits<Emits>();
 
 // 标准化选项，处理computed和普通数组

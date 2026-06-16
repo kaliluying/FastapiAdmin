@@ -69,7 +69,8 @@
   align-items: center;
   justify-content: center;
   min-height: 0;
-  padding-bottom: 0;
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
 
   /* 盖过 Tailwind overflow-y-auto：仅卡片内滚动，外层不出滚动条 */
   overflow: hidden;
@@ -83,38 +84,37 @@
   max-height: 100%;
 }
 
-/* 悬浮卡片：居中模式尺寸与原先一致（520 宽、720/视口上限），无边框 + 主色高亮阴影 */
+/* 悬浮卡片：玻璃拟态，圆角透明 */
 .login-auth-split--center .auth-right-wrap {
-  width: min(520px, calc(100vw - 2rem)) !important;
-  max-width: min(520px, calc(100vw - 2rem));
+  width: min(480px, calc(100vw - 2rem)) !important;
+  max-width: min(480px, calc(100vw - 2rem));
   height: auto;
-  max-height: calc(100dvh - 6.5rem);
-  padding: 1.75rem 2rem 2rem;
+  max-height: calc(100dvh - 8rem);
+  padding: 1.25rem 1.75rem;
   overflow: hidden auto;
-  background-color: var(--el-bg-color);
-  border: none;
-  border-radius: 16px;
+  background: color-mix(in srgb, var(--el-bg-color) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--el-border-color-lighter) 60%, transparent);
+  border-radius: 20px;
   box-shadow:
-    0 6px 20px rgb(15 23 42 / 9%),
-    0 14px 36px rgb(15 23 42 / 10%),
-    0 0 18px color-mix(in srgb, var(--el-color-primary) 16%, transparent),
-    0 0 32px color-mix(in srgb, var(--el-color-primary) 7%, transparent);
+    0 1px 8px rgb(15 23 42 / 5%),
+    0 0 16px color-mix(in srgb, var(--el-color-primary) 6%, transparent);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
 }
 
 .login-auth-split--center .auth-right-wrap .form {
   height: auto;
   min-height: 0;
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 html.dark .login-auth-split--center .auth-right-wrap {
-  border: none;
+  background: color-mix(in srgb, var(--el-bg-color) 55%, transparent);
+  border-color: rgb(255 255 255 / 8%);
   box-shadow:
-    0 8px 28px rgb(0 0 0 / 42%),
-    0 16px 44px rgb(0 0 0 / 46%),
-    0 0 22px color-mix(in srgb, var(--el-color-primary) 20%, transparent),
-    0 0 36px color-mix(in srgb, var(--el-color-primary) 9%, transparent);
+    0 1px 8px rgb(0 0 0 / 18%),
+    0 0 16px color-mix(in srgb, var(--el-color-primary) 10%, transparent);
 }
 
 /* 居中模式下页脚弱化，减少「分区后台」感 */
@@ -124,6 +124,25 @@ html.dark .login-auth-split--center .auth-right-wrap {
 
 html.dark .login-page-footer--floating-layout {
   border-top-color: rgb(255 255 255 / 8%);
+}
+
+/* 居中模式 footer 单行展示 */
+.login-auth-split--center .login-page-footer--floating-layout {
+  .login-footer-text {
+    white-space: nowrap;
+  }
+
+  .login-footer-row {
+    display: inline;
+  }
+
+  .login-footer-row + .login-footer-row {
+    margin-top: 0;
+  }
+
+  .login-footer-sep-center {
+    display: inline;
+  }
 }
 
 @media only screen and (width <= 1180px) {
@@ -144,8 +163,8 @@ html.dark .login-page-footer--floating-layout {
 
   /* 窄屏横排切竖排：恢复插画；居中模式本身无插画，不受影响 */
   .login-auth-split--center .auth-right-wrap {
-    width: min(520px, calc(100vw - 1.5rem)) !important;
-    max-width: min(520px, calc(100vw - 1.5rem));
+    width: min(420px, calc(100vw - 1.5rem)) !important;
+    max-width: min(420px, calc(100vw - 1.5rem));
     max-height: calc(100dvh - 6rem);
   }
 }
@@ -155,7 +174,7 @@ html.dark .login-page-footer--floating-layout {
   position: relative;
   flex-shrink: 0;
   width: 440px;
-  height: 720px;
+  height: 670px;
   padding-top: 5px;
   padding-bottom: 5px;
   overflow: hidden;
@@ -175,7 +194,7 @@ html.dark .login-page-footer--floating-layout {
 
   .form {
     height: 100%;
-    padding-top: 40px;
+    padding-top: 10px;
     padding-bottom: 40px;
   }
 
@@ -307,6 +326,18 @@ html.dark {
     color: var(--el-text-color-secondary) !important;
   }
 
+  .login-footer-row {
+    white-space: nowrap;
+  }
+
+  .login-footer-row + .login-footer-row {
+    margin-top: 0.25rem;
+  }
+
+  .login-footer-sep-center {
+    display: none;
+  }
+
   .login-page-footer__link {
     color: var(--el-text-color-regular);
     text-decoration: none;
@@ -324,7 +355,6 @@ html.dark {
 
   .login-page-footer__record {
     display: inline-block;
-    margin-left: 0.35rem;
     color: var(--el-text-color-placeholder);
   }
 }

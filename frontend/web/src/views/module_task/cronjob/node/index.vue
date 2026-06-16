@@ -367,7 +367,6 @@ async function deleteNodeRow(id: number | undefined) {
       type: "warning",
     });
     await NodeAPI.deleteNode([id]);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
@@ -427,7 +426,6 @@ async function handleBatchDelete() {
     });
     batchDeleting.value = true;
     await NodeAPI.deleteNode(ids);
-    ElMessage.success("删除成功");
     selectedRows.value = [];
     await refreshRemove();
   } catch {
@@ -780,7 +778,7 @@ const initialFormData: Partial<NodeForm> = {
 async function resetForm() {
   dataFormRef.value?.resetFields();
   dataFormRef.value?.clearValidate();
-  Object.assign(formData, initialFormData);
+  Object.assign(formData.value, initialFormData);
   argsList.value = [];
   kwargsList.value = [];
 }
@@ -795,7 +793,7 @@ async function handleOpenDialog(type: "create" | "update", id?: number) {
   if (id) {
     const response = await NodeAPI.detailNode(id);
     dialogVisible.title = "修改节点";
-    Object.assign(formData, response.data.data);
+    Object.assign(formData.value, response.data.data);
     const data = response.data.data;
     argsList.value = data.args ? data.args.split(",").map((v: string) => v.trim()) : [];
     kwargsList.value = data.kwargs

@@ -107,13 +107,15 @@ defineProps<{
 const open = defineModel<boolean>({ required: true });
 const query = defineModel<GenTablePageQuery>("query", { required: true });
 
-const emit = defineEmits<{
+interface Emits {
   query: [];
   reset: [];
   confirm: [];
   fetch: [];
   "selection-change": [rows: { table_name: string; table_comment: string }[]];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const importQueryRef = ref<FormInstance>();
 const tableRef = ref<TableInstance>();

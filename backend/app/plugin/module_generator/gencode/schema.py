@@ -94,7 +94,7 @@ class GenTableSchema(BaseModel):
         default=None,
         description=(
             "功能子目录/路由段；导入时默认表名；同 module_name 下多表须不同。"
-            "可含斜杠表示嵌套，参考 module_example：demo、demo/demo01、gen_demo02。"
+            "可含斜杠表示嵌套，参考 module_example：demo、demo/subdir、gen_demo。"
         ),
     )
     function_name: str | None = Field(default=None, description="生成功能名")
@@ -223,7 +223,7 @@ class GenTableSchema(BaseModel):
     @classmethod
     def normalize_business_name(cls, v: str | None) -> str | None:
         """
-        业务名允许多段（如 demo/demo01）；统一按 slug 规范。
+        业务名允许多段（如 demo/subdir）；统一按 slug 规范。
 
         参数:
         - v (str | None): 原始业务名。

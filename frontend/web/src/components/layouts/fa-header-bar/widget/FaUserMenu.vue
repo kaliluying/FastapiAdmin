@@ -58,7 +58,7 @@
           <ul class="py-4 mt-3 border-t border-g-300/80">
             <li
               v-if="tenantList.length > 1"
-              class="btn-item flex-col! items-start! mb-4 p-2! bg-(--fa-gray-100) rounded-lg"
+              class="flex select-none cursor-pointer last:mb-0 hover:bg-(--fa-gray-200) flex-col! items-start! mb-4 p-2! rounded-lg bg-(--fa-gray-100)"
             >
               <span class="text-xs text-g-500 mb-2 block w-full">当前租户</span>
               <ElDropdown trigger="click" @command="handleTenantSwitch">
@@ -87,28 +87,46 @@
                 </template>
               </ElDropdown>
             </li>
-            <li class="btn-item" @click="goPage('/fastlink/profile')">
-              <FaSvgIcon icon="ri:user-3-line" />
-              <span>{{ $t("topBar.user.userCenter") }}</span>
+            <li
+              class="flex items-center p-2 mb-3 select-none rounded-md cursor-pointer last:mb-0 hover:bg-(--fa-gray-200)"
+              @click="goPage('/fastlink/profile')"
+            >
+              <FaSvgIcon icon="ri:user-3-line" class="mr-2 text-base" />
+              <span class="text-sm">{{ $t("topBar.user.userCenter") }}</span>
             </li>
-            <li class="btn-item" @click="openParamConfig">
-              <FaSvgIcon icon="ri:settings-3-line" />
-              <span>{{ $t("topBar.user.paramConfig") }}</span>
+            <li
+              class="flex items-center p-2 mb-3 select-none rounded-md cursor-pointer last:mb-0 hover:bg-(--fa-gray-200)"
+              @click="openParamConfig"
+            >
+              <FaSvgIcon icon="ri:settings-3-line" class="mr-2 text-base" />
+              <span class="text-sm">{{ $t("topBar.user.paramConfig") }}</span>
             </li>
-            <li class="btn-item" @click="toGithub()">
-              <FaSvgIcon icon="ri:github-line" />
-              <span>{{ $t("topBar.user.github") }}</span>
+            <li
+              class="flex items-center p-2 mb-3 select-none rounded-md cursor-pointer last:mb-0 hover:bg-(--fa-gray-200)"
+              @click="toGithub()"
+            >
+              <FaSvgIcon icon="ri:github-line" class="mr-2 text-base" />
+              <span class="text-sm">{{ $t("topBar.user.github") }}</span>
             </li>
-            <li class="btn-item" @click="toGitee">
-              <FaSvgIcon icon="ri:git-branch-line" />
-              <span>{{ $t("topBar.user.gitee") }}</span>
+            <li
+              class="flex items-center p-2 mb-3 select-none rounded-md cursor-pointer last:mb-0 hover:bg-(--fa-gray-200)"
+              @click="toGitee"
+            >
+              <FaSvgIcon icon="ri:git-branch-line" class="mr-2 text-base" />
+              <span class="text-sm">{{ $t("topBar.user.gitee") }}</span>
             </li>
-            <li class="btn-item" @click="lockScreen()">
-              <FaSvgIcon icon="ri:lock-line" />
-              <span>{{ $t("topBar.user.lockScreen") }}</span>
+            <li
+              class="flex items-center p-2 mb-3 select-none rounded-md cursor-pointer last:mb-0 hover:bg-(--fa-gray-200)"
+              @click="lockScreen()"
+            >
+              <FaSvgIcon icon="ri:lock-line" class="mr-2 text-base" />
+              <span class="text-sm">{{ $t("topBar.user.lockScreen") }}</span>
             </li>
             <div class="w-full h-px my-2 bg-g-300/80"></div>
-            <li class="btn-item btn-item--logout" @click="handleLogout">
+            <li
+              class="flex p-2 select-none rounded-md cursor-pointer last:mb-0 hover:bg-(--fa-gray-200) justify-center mt-5 mb-0 py-1.5 text-xs border border-g-400 hover:text-(--el-color-danger) hover:border-(--el-color-danger-light-3)"
+              @click="handleLogout"
+            >
               {{ $t("topBar.user.logout") }}
             </li>
           </ul>
@@ -213,37 +231,6 @@ function closeUserMenu(): void {
 </script>
 
 <style scoped>
-@reference '@styles/core/tailwind.css';
-
-@layer components {
-  .btn-item {
-    @apply flex items-center p-2 mb-3 select-none rounded-md cursor-pointer last:mb-0;
-
-    span {
-      @apply text-sm;
-    }
-
-    .fa-svg-icon {
-      @apply mr-2 text-base;
-    }
-
-    &:hover {
-      background-color: var(--fa-gray-200);
-    }
-  }
-
-  /** 退出：沿用菜单项 hover 底纹，并加重边框/文字，避免仅 shadow 几乎无反馈 */
-  .btn-item.btn-item--logout {
-    @apply justify-center mt-5 mb-0 py-1.5 text-xs border border-g-400;
-
-    &:hover {
-      color: var(--el-color-danger);
-      background-color: var(--fa-gray-200);
-      border-color: var(--el-color-danger-light-3);
-    }
-  }
-}
-
 /* ElPopover 基于 Tooltip：触发层默认 inline-block，与顶栏 flex 图标中线对齐 */
 .fa-user-menu .el-tooltip__trigger {
   display: inline-flex !important;

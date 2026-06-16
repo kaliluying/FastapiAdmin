@@ -83,134 +83,76 @@ import { UploadRawFile, UploadRequestOptions, ElMessage, type UploadUserFile } f
 import ParamsAPI from "@/api/module_system/params";
 import { dataURLToFile } from "@utils";
 
-const props = defineProps({
+interface Props {
   /**
    * 请求携带的额外参数
    */
-  data: {
-    type: Object,
-    default: () => {
-      return {};
-    },
-  },
+  data?: Record<string, any>;
   /**
    * 上传文件的参数名
    */
-  name: {
-    type: String,
-    default: "file",
-  },
+  name?: string;
   /**
    * 最大文件大小（单位：M）
    */
-  maxFileSize: {
-    type: Number,
-    default: 10,
-  },
-
+  maxFileSize?: number;
   /**
    * 上传图片格式，默认支持所有图片(image/*)，指定格式示例：'.png,.jpg,.jpeg,.gif,.bmp'
    */
-  accept: {
-    type: String,
-    default: "image/*",
-  },
-
+  accept?: string;
   /**
    * 自定义样式，用于设置组件的宽度和高度等其他样式
    */
-  style: {
-    type: Object,
-    default: () => {
-      return {
-        width: "150px",
-        height: "150px",
-      };
-    },
-  },
-
+  style?: Record<string, any>;
   /**
    * 是否禁用
    */
-  disabled: {
-    type: Boolean,
-    default: false,
-  },
-
+  disabled?: boolean;
   /**
    * 是否显示提示信息
    */
-  showTip: {
-    type: Boolean,
-    default: false,
-  },
-
+  showTip?: boolean;
   /**
    * 提示文本
    */
-  tipText: {
-    type: String,
-    default: "",
-  },
-
+  tipText?: string;
   /**
    * 是否启用图片预览功能
    */
-  enablePreview: {
-    type: Boolean,
-    default: true,
-  },
-
+  enablePreview?: boolean;
   /** 选图后先裁剪再上传（用于站点 Logo / 背景等） */
-  enableCrop: {
-    type: Boolean,
-    default: false,
-  },
+  enableCrop?: boolean;
+  cropBoxWidth?: number;
+  cropBoxHeight?: number;
+  cropCutWidth?: number;
+  cropCutHeight?: number;
+  cropQuality?: number;
+  cropFileType?: "png" | "jpeg" | "webp";
+  cropDialogTitle?: string;
+  cropInnerTitle?: string;
+  cropPreviewTitle?: string;
+}
 
-  cropBoxWidth: {
-    type: Number,
-    default: 520,
-  },
-
-  cropBoxHeight: {
-    type: Number,
-    default: 360,
-  },
-
-  cropCutWidth: {
-    type: Number,
-    default: 400,
-  },
-
-  cropCutHeight: {
-    type: Number,
-    default: 300,
-  },
-
-  cropQuality: {
-    type: Number,
-    default: 0.92,
-  },
-
-  cropFileType: {
-    type: String as () => "png" | "jpeg" | "webp",
-    default: "jpeg",
-  },
-
-  cropDialogTitle: {
-    type: String,
-    default: "裁剪图片",
-  },
-
-  cropInnerTitle: {
-    type: String,
-    default: "调整图片",
-  },
-
-  cropPreviewTitle: {
-    type: String,
-    default: "预览",
-  },
+const props = withDefaults(defineProps<Props>(), {
+  data: () => ({}),
+  name: "file",
+  maxFileSize: 10,
+  accept: "image/*",
+  style: () => ({ width: "150px", height: "150px" }),
+  disabled: false,
+  showTip: false,
+  tipText: "",
+  enablePreview: true,
+  enableCrop: false,
+  cropBoxWidth: 520,
+  cropBoxHeight: 360,
+  cropCutWidth: 400,
+  cropCutHeight: 300,
+  cropQuality: 0.92,
+  cropFileType: "jpeg",
+  cropDialogTitle: "裁剪图片",
+  cropInnerTitle: "调整图片",
+  cropPreviewTitle: "预览",
 });
 
 // 接收字符串类型的modelValue，保持与现有代码的兼容性
@@ -307,12 +249,14 @@ watch(
 /**
  * 定义组件触发的事件
  */
-const emit = defineEmits<{
+interface Emits {
   (e: "success", fileInfo: UploadFilePath): void;
   (e: "error", error: any): void;
   (e: "input", value: string): void;
   (e: "update:modelValue", value: string): void;
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 /**
  * 限制用户上传文件的格式和大小

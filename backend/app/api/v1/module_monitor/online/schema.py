@@ -1,5 +1,5 @@
 from fastapi import Query
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field
 
 from app.common.enums import QueueEnum
 from app.core.validator import DateTimeStr
@@ -9,8 +9,6 @@ class OnlineOutSchema(BaseModel):
     """
     在线用户对应pydantic模型
     """
-
-    model_config = ConfigDict(from_attributes=True)
 
     name: str = Field(..., description="用户名称")
     session_id: str = Field(..., description="会话编号")

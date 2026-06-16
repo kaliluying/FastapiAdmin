@@ -524,10 +524,6 @@ export async function fetchAllPages<T>(options: FetchAllPagesOptions<T>): Promis
  */
 
 import { ElMessage } from "element-plus";
-
-/** 收藏数量上限（工作台「我的收藏」为 2 列 × 最多 6 排，共 12 个） */
-export const QUICK_LINK_MAX = 12;
-
 /**
  * 快速链接数据类型
  */
@@ -627,12 +623,6 @@ class QuickStartManager {
       ElMessage.success(`已更新快速链接：${link.title}`);
       this.saveQuickLinks(links);
       return true;
-    }
-
-    // 检查是否达到收藏上限
-    if (links.length >= QUICK_LINK_MAX) {
-      ElMessage.warning(`收藏已满（最多 ${QUICK_LINK_MAX} 个），请先移除后再添加`);
-      return false;
     }
 
     // 添加新链接

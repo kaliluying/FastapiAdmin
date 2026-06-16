@@ -30,32 +30,33 @@ import { computed } from "vue";
 
 defineOptions({ name: "FaCardList" });
 
-const props = withDefaults(
-  defineProps<{
-    items: any[];
-    total?: number;
-    pageSize?: number;
-    currentPage?: number;
-    loading?: boolean;
-    columns?: number;
-    keyField?: string;
-    emptyText?: string;
-  }>(),
-  {
-    total: 0,
-    pageSize: 12,
-    currentPage: 1,
-    loading: false,
-    columns: 4,
-    keyField: "id",
-    emptyText: "暂无数据",
-  }
-);
+interface Props {
+  items: any[];
+  total?: number;
+  pageSize?: number;
+  currentPage?: number;
+  loading?: boolean;
+  columns?: number;
+  keyField?: string;
+  emptyText?: string;
+}
 
-defineEmits<{
+const props = withDefaults(defineProps<Props>(), {
+  total: 0,
+  pageSize: 12,
+  currentPage: 1,
+  loading: false,
+  columns: 4,
+  keyField: "id",
+  emptyText: "暂无数据",
+});
+
+interface Emits {
   pageChange: [page: number];
   itemClick: [item: any];
-}>();
+}
+
+defineEmits<Emits>();
 
 const gridClass = computed(() => {
   const cols = {

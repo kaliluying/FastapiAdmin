@@ -37,7 +37,14 @@
 import QrcodeVue from "qrcode.vue";
 import type { Level, RenderAs } from "qrcode.vue";
 
-defineEmits<{ back: []; register: [] }>();
+defineOptions({ name: "FaLoginQrPanel" });
+
+interface Emits {
+  back: [];
+  register: [];
+}
+
+defineEmits<Emits>();
 
 /** 集中配置 + H 级纠错 + SVG（矢量清晰、易对齐容器） */
 const qrCodeRenderOptions: {

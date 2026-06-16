@@ -211,7 +211,6 @@ async function deleteWorkflowRow(id: number | undefined) {
       type: "warning",
     });
     await WorkflowDefinitionAPI.deleteWorkflow([id]);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
@@ -230,7 +229,6 @@ async function handleBatchDelete() {
     });
     batchDeleting.value = true;
     await WorkflowDefinitionAPI.deleteWorkflow(ids);
-    ElMessage.success("删除成功");
     selectedRows.value = [];
     await refreshRemove();
   } catch {
@@ -306,8 +304,8 @@ const {
         minWidth: 100,
         align: "center",
         formatter: (row) =>
-          h(ElTag, { type: getStatusType(row.status ?? "") }, () =>
-            getStatusText(row.status ?? "")
+          h(ElTag, { type: getStatusType(String(row.status ?? "")) }, () =>
+            getStatusText(String(row.status ?? ""))
           ),
       },
       {
@@ -379,7 +377,6 @@ async function handlePublish(record: WorkflowTable) {
       return;
     }
     await WorkflowDefinitionAPI.publishWorkflow(record.id, {});
-    ElMessage.success("发布成功");
     await refreshUpdate();
   } catch {
     ElMessage.error("发布失败");

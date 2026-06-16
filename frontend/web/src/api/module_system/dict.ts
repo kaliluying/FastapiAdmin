@@ -51,7 +51,7 @@ const DictAPI = {
 
   batchDictType(body: BatchType) {
     return request<ApiResponse>({
-      url: `${API_PATH}/type/available/setting`,
+      url: `${API_PATH}/type/status/batch`,
       method: "patch",
       data: body,
     });
@@ -107,7 +107,7 @@ const DictAPI = {
 
   batchDictData(body: BatchType) {
     return request<ApiResponse>({
-      url: `${API_PATH}/data/available/setting`,
+      url: `${API_PATH}/data/status/batch`,
       method: "patch",
       data: body,
     });
@@ -135,25 +135,17 @@ export default DictAPI;
 export interface DictPageQuery extends PageQuery {
   dict_name?: string;
   dict_type?: string;
-  status?: string;
-  created_time?: string[];
-  updated_time?: string[];
 }
 
 export interface DictDataPageQuery extends PageQuery {
   dict_label?: string;
   dict_type?: string;
   dict_type_id?: number;
-  status?: string;
-  created_time?: string[];
-  updated_time?: string[];
 }
 
 export interface DictTable extends BaseType {
   dict_name?: string;
   dict_type?: string;
-  status?: string;
-  description?: string;
 }
 
 export interface DictForm extends BaseFormType {
@@ -170,7 +162,6 @@ export interface DictDataTable extends BaseType {
   css_class?: string;
   list_class?: string;
   is_default?: boolean;
-  status?: string;
 }
 
 export interface DictDataForm extends BaseFormType {

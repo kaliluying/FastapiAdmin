@@ -31,24 +31,29 @@ type DatePickerType =
   | "daterange"
   | "monthrange";
 
-const props = withDefaults(
-  defineProps<{
-    modelValue?: any;
-    type?: DatePickerType;
-    format?: string;
-    rangeSeparator?: string;
-    startPlaceholder?: string;
-    endPlaceholder?: string;
-  }>(),
-  {
-    type: "datetimerange",
-    rangeSeparator: "至",
-    startPlaceholder: "开始日期",
-    endPlaceholder: "结束日期",
-  }
-);
+defineOptions({ name: "FaDatePicker" });
 
-const emit = defineEmits(["update:model-value"]);
+interface Props {
+  modelValue?: any;
+  type?: DatePickerType;
+  format?: string;
+  rangeSeparator?: string;
+  startPlaceholder?: string;
+  endPlaceholder?: string;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  type: "datetimerange",
+  rangeSeparator: "至",
+  startPlaceholder: "开始日期",
+  endPlaceholder: "结束日期",
+});
+
+interface Emits {
+  (e: "update:model-value", value: any): void;
+}
+
+const emit = defineEmits<Emits>();
 
 /** 是否为范围选择模式 */
 const isRangeType = computed(() => {

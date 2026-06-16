@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from "vite";
 import vue from "@vitejs/plugin-vue";
+import autoprefixer from "autoprefixer";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "url";
@@ -274,6 +275,7 @@ export default ({ mode }: { mode: string }) => {
       },
       postcss: {
         plugins: [
+          autoprefixer(),
           {
             postcssPlugin: "internal:charset-removal",
             AtRule: {

@@ -6,11 +6,11 @@ from agno.run.team import TeamRunOutput
 from agno.session.team import TeamSession
 from agno.team.team import Team
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.api.v1.module_system.dept.service import DeptService
 from app.common.request import PaginationService
+from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
-from app.core.logger import log
+from app.core.logger import logger
 
 from .crud import ChatSessionCRUD
 from .schema import (
@@ -84,7 +84,7 @@ async def _format_session_data(
     summary = session_dict.get("summary")
     if summary:
         if isinstance(summary, dict):
-            result["summary"] = summary.get("summary") or summary.get("summary")
+            result["summary"] = summary.get("summary")
         else:
             result["summary"] = str(summary)
 
@@ -180,7 +180,7 @@ class ChatService:
                     yield chunk.content
 
         except Exception as e:
-            log.error(f"聊天查询失败: {e}")
+            logger.error(f"聊天查询失败: {e}")
             yield f"抱歉，处理您的请求时出现错误：{str(e)}"
 
     @classmethod
@@ -270,10 +270,10 @@ class ChatService:
             }
 
         except Exception as e:
-            log.error(f"聊天查询失败: {e}")
+            logger.error(f"聊天查询失败: {e}")
             return {
                 "response": f"抱歉，处理您的请求时出现错误：{str(e)}",
-                "session_id": session_id if "session_id" in locals() else None,
+                "session_id": session_id,
                 "function_calls": None,
                 "action": None,
             }

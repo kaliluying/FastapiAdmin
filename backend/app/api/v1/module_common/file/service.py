@@ -5,7 +5,7 @@ from fastapi import UploadFile
 from app.config.setting import settings
 from app.core.base_schema import DownloadFileSchema, UploadResponseSchema
 from app.core.exceptions import CustomException
-from app.core.logger import log
+from app.core.logger import logger
 from app.utils.upload_util import UploadUtil
 
 
@@ -21,7 +21,7 @@ class FileService:
         file: UploadFile,
         upload_type: str = "file",
         target_path: str | None = None,
-    ) -> dict:
+    ) -> UploadResponseSchema:
         """
         上传文件。
 
@@ -49,7 +49,7 @@ class FileService:
             file_name=filename,
             origin_name=file.filename,
             file_url=f"{file_url}",
-        ).model_dump()
+        )
 
     @staticmethod
     def _validate_download_path(file_path: str) -> str:
@@ -71,14 +71,14 @@ class FileService:
         dangerous_patterns = ["../", "..\\", "\0"]
         for pattern in dangerous_patterns:
             if pattern in file_path:
-                log.error(f"检测到路径穿越攻击: {file_path}")
+                logger.error(f"检测到路径穿越攻击: {file_path}")
                 raise CustomException(msg="非法的文件路径")
 
         upload_root = settings.UPLOAD_FILE_PATH.resolve()
         abs_path = os.path.normpath(os.path.abspath(file_path))
 
         if not abs_path.startswith(str(upload_root)):
-            log.error(f"路径不在上传目录内: {file_path}")
+            logger.error(f"路径不在上传目录内: {file_path}")
             raise CustomException(msg="非法的文件路径")
 
         return abs_path

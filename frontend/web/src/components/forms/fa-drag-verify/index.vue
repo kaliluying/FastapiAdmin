@@ -46,7 +46,7 @@ defineOptions({ name: "FaDragVerify" });
 const emit = defineEmits(["handlerMove", "update:value", "passCallback"]);
 
 // 组件属性接口定义
-interface PropsType {
+interface Props {
   /** 是否通过验证 */
   value: boolean;
   /** 组件宽度 */
@@ -80,7 +80,7 @@ interface PropsType {
 }
 
 // 属性默认值设置
-const props = withDefaults(defineProps<PropsType>(), {
+const props = withDefaults(defineProps<Props>(), {
   value: false,
   width: "100%",
   height: 40,

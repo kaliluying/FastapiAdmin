@@ -1,51 +1,57 @@
 /**
  * v-auth 权限指令
  *
- * 适用于后端权限控制模式，基于权限标识控制 DOM 元素的显示和隐藏。
+ * 基于权限标识控制 DOM 元素的显示和隐藏。
+ * 权限检查优先级：is_superuser > ROLE_ROOT > userStore.prems > route.meta.authList
  * 如果用户没有对应权限，元素将从 DOM 中移除。
- *
- * ## 主要功能
- *
- * - 权限验证 - 根据路由 meta 中的权限列表验证用户权限
- * - DOM 控制 - 无权限时自动移除元素，而非隐藏
- * - 响应式更新 - 权限变化时自动更新元素状态
  *
  * ## 使用示例
  *
  * ```vue
- * <!-- 只有拥有 'add' 权限的用户才能看到新增按钮 -->
- * <el-button v-auth="'add'">新增</el-button>
- *
- * <!-- 只有拥有 'edit' 权限的用户才能看到编辑按钮 -->
- * <el-button v-auth="'edit'">编辑</el-button>
- *
- * <!-- 只有拥有 'delete' 权限的用户才能看到删除按钮 -->
- * <el-button v-auth="'delete'">删除</el-button>
+ * <el-button v-auth="'module_system:user:create'">新增</el-button>
+ * <el-button v-auth="'module_system:user:update'">编辑</el-button>
+ * <el-button v-auth="'module_platform:order:create'">创建订单</el-button>
  * ```
  *
- * ## 注意事项
- *
- * - 该指令会直接移除 DOM 元素，而不是使用 v-if 隐藏
- * - 权限列表从当前路由的 meta.authList 中获取
- *
  * @module directives/auth
- * @author FastapiAdmin Team
  */
 
 import { router } from "@/router";
+import { useUserStore } from "@stores";
+import { ROLE_ROOT } from "@/constants";
 import { App, Directive, DirectiveBinding } from "vue";
 
 export type AuthDirective = Directive<HTMLElement, string>;
 
-function checkAuthPermission(el: HTMLElement, binding: DirectiveBinding<string>): void {
-  // 获取当前路由的权限列表
+function hasPermission(auth: string): boolean {
+  if (!auth) return true;
+
+  const userStore = useUserStore();
+
+  // 超管直接放行
+  if ((userStore.basicInfo as Record<string, any>)?.is_superuser) return true;
+
+  // ROLE_ROOT 角色放行
+  const roles = (userStore.basicInfo as Record<string, any>)?.roles as
+    | { code?: string }[]
+    | undefined;
+  if (roles?.some((r) => r.code === ROLE_ROOT)) return true;
+
+  // 通配符
+  if (userStore.prems.includes("*:*:*")) return true;
+
+  // 检查 userStore.prems（来自菜单树汇总的全局权限码）
+  if (userStore.prems.includes(auth)) return true;
+
+  // 兼容：检查 route.meta.authList
   const authList = (router.currentRoute.value.meta.authList as Array<{ authMark: string }>) || [];
+  if (authList.some((item) => item.authMark === auth)) return true;
 
-  // 检查是否有对应的权限标识
-  const hasPermission = authList.some((item) => item.authMark === binding.value);
+  return false;
+}
 
-  // 如果没有权限，移除元素
-  if (!hasPermission) {
+function checkAuthPermission(el: HTMLElement, binding: DirectiveBinding<string>): void {
+  if (!hasPermission(binding.value)) {
     removeElement(el);
   }
 }

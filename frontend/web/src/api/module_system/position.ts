@@ -44,7 +44,7 @@ const PositionAPI = {
 
   batchPosition(body: BatchType) {
     return request<ApiResponse>({
-      url: `${API_PATH}/available/setting`,
+      url: `${API_PATH}/status/batch`,
       method: "patch",
       data: body,
     });
@@ -64,14 +64,11 @@ export default PositionAPI;
 
 export interface PositionPageQuery extends PageQuery {
   name?: string;
-  status?: string;
-  created_id?: number;
-  created_time?: string[];
-  updated_time?: string[];
 }
 
 export interface PositionTable extends BaseType {
   name?: string;
+  code?: string;
   order?: number;
   created_by?: CommonType;
   updated_by?: CommonType;
@@ -80,5 +77,6 @@ export interface PositionTable extends BaseType {
 
 export interface PositionForm extends BaseFormType {
   name?: string;
+  code?: string;
   order?: number;
 }

@@ -11,6 +11,13 @@ const WorkflowNodeTypeAPI = {
     });
   },
 
+  getWorkflowNodeTypeSelect() {
+    return request<ApiResponse<WorkflowNodeTypeOption[]>>({
+      url: `${API_PATH}/select`,
+      method: "get",
+    });
+  },
+
   getWorkflowNodeTypeList(query: WorkflowNodeTypePageQuery) {
     return request<ApiResponse<PageResult<WorkflowNodeTypeTable>>>({
       url: `${API_PATH}/list`,
@@ -69,10 +76,6 @@ export interface WorkflowNodeTypePageQuery extends PageQuery {
   code?: string;
   category?: string;
   is_active?: boolean;
-  created_time?: string[];
-  updated_time?: string[];
-  created_id?: number;
-  updated_id?: number;
 }
 
 export interface WorkflowNodeTypeTable extends BaseType {

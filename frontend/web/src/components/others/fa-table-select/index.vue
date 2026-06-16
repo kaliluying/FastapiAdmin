@@ -198,21 +198,22 @@ export interface ISelectConfig<T = any> {
     [key: string]: any;
   }>;
 }
-const props = withDefaults(
-  defineProps<{
-    selectConfig: ISelectConfig;
-    text?: string;
-  }>(),
-  {
-    text: "",
-  }
-);
+interface Props {
+  selectConfig: ISelectConfig;
+  text?: string;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  text: "",
+});
 
 // 自定义事件
-const emit = defineEmits<{
+interface Emits {
   confirmClick: [selection: any[]];
   clearClick: [];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 // 主键
 const pk = props.selectConfig.pk ?? "id";

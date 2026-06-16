@@ -14,7 +14,6 @@ class PluginModel(ModelMixin):
     code: Mapped[str] = mapped_column(
         String(50), nullable=False, unique=True, comment="插件编码(module_xxx)"
     )
-    description: Mapped[str | None] = mapped_column(Text, nullable=True, comment="插件描述")
     version: Mapped[str] = mapped_column(
         String(20), nullable=False, default="1.0.0", comment="版本号"
     )
@@ -76,5 +75,8 @@ class TenantPluginModel(MappedBase):
     )
     enabled: Mapped[str] = mapped_column(
         String(1), nullable=False, default="1", comment="启用(1:启用 0:禁用)"
+    )
+    purchased: Mapped[str] = mapped_column(
+        String(1), nullable=False, default="0", comment="是否已购买(1:已购买 0:未购买)"
     )
     installed_time: Mapped[DateTime] = mapped_column(DateTime, nullable=False, comment="安装时间")

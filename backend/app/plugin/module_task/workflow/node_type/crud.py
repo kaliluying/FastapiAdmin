@@ -1,9 +1,9 @@
 from collections.abc import Sequence
 from typing import Any
 
-from app.api.v1.module_system.auth.schema import AuthSchema
 from app.common.enums import QueueEnum
 from app.core.base_crud import CRUDBase
+from app.core.base_schema import AuthSchema
 
 from .model import WorkflowNodeTypeModel
 from .schema import WorkflowNodeTypeCreateSchema, WorkflowNodeTypeUpdateSchema
@@ -24,7 +24,6 @@ class WorkflowNodeTypeCRUD(
         返回:
         - None
         """
-        self.auth = auth
         super().__init__(model=WorkflowNodeTypeModel, auth=auth)
 
     async def get_obj_by_id_crud(

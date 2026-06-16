@@ -21,6 +21,8 @@
 
 <script setup lang="ts">
 import { useSettingsStore } from "@stores";
+
+defineOptions({ name: "FaContainerSettings" });
 import { useSettingsConfig } from "../composables/useSettingsConfig";
 import { useSettingsHandlers } from "../composables/useSettingsHandlers";
 import { storeToRefs } from "pinia";

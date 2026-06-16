@@ -44,7 +44,7 @@ const RoleAPI = {
 
   batchRole(body: BatchType) {
     return request<ApiResponse>({
-      url: `${API_PATH}/available/setting`,
+      url: `${API_PATH}/status/batch`,
       method: "patch",
       data: body,
     });
@@ -52,8 +52,8 @@ const RoleAPI = {
 
   setPermission(body: permissionDataType) {
     return request<ApiResponse>({
-      url: `${API_PATH}/permission/setting`,
-      method: "patch",
+      url: `${API_PATH}/permission`,
+      method: "put",
       data: body,
     });
   },
@@ -72,19 +72,13 @@ export default RoleAPI;
 
 export interface TablePageQuery extends PageQuery {
   name?: string;
-  status?: string;
-  created_time?: string[];
-  updated_time?: string[];
 }
 
 export interface RoleTable extends BaseType {
-  id: number;
   name: string;
   order?: number;
   code: string;
   data_scope?: number;
-  status?: string;
-  description?: string;
   menus?: permissionMenuType[];
   depts?: permissionDeptType[];
 }
@@ -93,8 +87,7 @@ export interface RoleForm extends BaseFormType {
   name?: string;
   order?: number;
   code: string;
-  status?: string;
-  description?: string;
+  data_scope?: number;
 }
 
 export interface permissionDataType {

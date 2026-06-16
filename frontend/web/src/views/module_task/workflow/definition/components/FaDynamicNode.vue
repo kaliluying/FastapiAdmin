@@ -50,11 +50,13 @@
 import { ref, computed } from "vue";
 import { Handle, Position } from "@vue-flow/core";
 
-const props = defineProps({
-  id: String,
-  data: Object,
-  nodeStatus: String,
-});
+interface Props {
+  id?: string;
+  data?: Record<string, any>;
+  nodeStatus?: string;
+}
+
+const props = withDefaults(defineProps<Props>(), {});
 
 const showHandles = ref(false);
 

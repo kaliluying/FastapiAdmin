@@ -115,10 +115,12 @@ const isTreeEmpty = computed(() => !props.filteredTreeData || props.filteredTree
 
 const code = defineModel<string>("code", { required: true });
 
-const emit = defineEmits<{
+interface Emits {
   "file-click": [data: TreeNode];
   "copy-code": [];
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const cmRef = ref<CmComponentRef>();
 const injected = inject(GENCODE_CM_KEY, undefined);

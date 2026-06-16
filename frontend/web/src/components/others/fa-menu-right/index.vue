@@ -136,11 +136,13 @@ const props = withDefaults(defineProps<Props>(), {
   animationDuration: 100,
 });
 
-const emit = defineEmits<{
+interface Emits {
   (e: "select", item: MenuItemType): void;
   (e: "show"): void;
   (e: "hide"): void;
-}>();
+}
+
+const emit = defineEmits<Emits>();
 
 const visible = ref(false);
 const position = ref({ x: 0, y: 0 });

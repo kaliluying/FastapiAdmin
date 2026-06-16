@@ -332,12 +332,6 @@ export const staticRoutes: AppRouteRecordRaw[] = [
     meta: { hidden: true, isHideTab: true, title: "menus.login.title" },
     component: () => import("@views/module_system/auth/login/index.vue"),
   },
-  {
-    path: "/tenant-select",
-    name: "TenantSelect",
-    meta: { hidden: true, isHideTab: true, title: "选择租户" },
-    component: () => import("@views/module_system/auth/tenant-select/index.vue"),
-  },
   /** 无 Layout 全屏异常页；守卫与白名单跳转使用（勿再在 RootLayout 下重复挂载同组件） */
   {
     path: "/401",
@@ -384,20 +378,6 @@ export const staticRoutes: AppRouteRecordRaw[] = [
         component: NestedRouterParent,
         meta: DASHBOARD_PARENT_META,
         children: dashboardLayoutChildren,
-      },
-      /** 工单管理 */
-      {
-        path: "ticket",
-        name: "ModuleTicket",
-        component: () => import("@views/module_system/ticket/index.vue"),
-        meta: { title: "工单管理", icon: "ri:feedback-line", keepAlive: true },
-      },
-      /** 插件市场 */
-      {
-        path: "plugin-market",
-        name: "PluginMarket",
-        component: () => import("@/views/module_system/plugin/index.vue"),
-        meta: { title: "插件市场", icon: "ri:store-2-line", keepAlive: false },
       },
       /** 快速链接：统一父级，不在菜单中展示，通过 URL 或 fastEnter 直接访问 */
       {
@@ -468,6 +448,28 @@ export const staticRoutes: AppRouteRecordRaw[] = [
             component: () => import("@views/fastlink/fachat/index.vue"),
           },
         ],
+      },
+      /** 支付页面（订单模块子组件） */
+      {
+        path: "payment/:orderId",
+        name: "Payment",
+        component: () => import("@views/module_platform/order/components/PaymentPage.vue"),
+        meta: {
+          title: "订单支付",
+          hidden: true,
+          keepAlive: false,
+        },
+      },
+      /** 租户工作台概览 — 复用自助服务页面 */
+      {
+        path: "workspace",
+        name: "TenantWorkspace",
+        component: () => import("@views/module_platform/self_service/index.vue"),
+        meta: {
+          title: "工作台",
+          hidden: true,
+          keepAlive: false,
+        },
       },
     ],
   },
