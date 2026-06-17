@@ -184,7 +184,7 @@ function onRefreshFailed() {
 // --- Axios 实例 ---------------------------------------------------------------
 
 export const request: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: import.meta.env.VITE_APP_BASE_API,
   timeout: Number(import.meta.env.VITE_TIMEOUT) || 15000,
   headers: { "Content-Type": "application/json;charset=utf-8" },
   paramsSerializer: (params) => qs.stringify(params, { indices: false }),
