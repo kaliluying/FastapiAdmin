@@ -24,7 +24,6 @@ from app.core.security import (
     decode_access_token
 )
 
-from app.api.v1.module_monitor.online.schema import OnlineOutSchema
 from ..user.crud import UserCRUD
 from ..user.model import UserModel
 from .schema import (
@@ -33,7 +32,8 @@ from .schema import (
     AuthSchema,
     CaptchaOutSchema,
     LogoutPayloadSchema,
-    RefreshTokenPayloadSchema
+    RefreshTokenPayloadSchema,
+    OnlineOutSchema
 )
 
 CaptchaKey = NewType('CaptchaKey', str)
