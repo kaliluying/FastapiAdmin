@@ -9,6 +9,7 @@ import {
   ROUTE_COMPONENT_LAYOUT,
   ROUTE_COMPONENT_NESTED_PARENT,
 } from "./staticRoutes";
+import { filterCustomDisabledRoutes } from "./customRouteFilter";
 import { MenuTypeEnum } from "@/enums/system/menu.enum";
 
 /**
@@ -148,7 +149,7 @@ export class MenuProcessor {
       menuList = await this.processBackendMenu();
     }
 
-    return this.normalizeMenuPaths(menuList);
+    return this.normalizeMenuPaths(filterCustomDisabledRoutes(menuList));
   }
 
   private async processFrontendMenu(): Promise<AppRouteRecord[]> {

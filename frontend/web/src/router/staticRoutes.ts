@@ -155,27 +155,6 @@ export const dashboardLayoutChildren: AppRouteRecordRaw[] = [
       keepAlive: true,
     },
   },
-  {
-    path: "analysis",
-    name: "DashboardAnalysis",
-    component: () => import("@views/dashboard/analysis/index.vue"),
-    meta: {
-      title: "menus.dashboard.analysis",
-      icon: "ri:align-item-bottom-line",
-      keepAlive: false,
-    },
-  },
-  {
-    path: "screen",
-    name: "DashboardScreen",
-    component: () => import("@views/dashboard/screen/index.vue"),
-    meta: {
-      title: "数据大屏",
-      icon: "ri:tv-line",
-      keepAlive: false,
-      hidden: false,
-    },
-  },
 ];
 
 // -----------------------------------------------------------------------------
