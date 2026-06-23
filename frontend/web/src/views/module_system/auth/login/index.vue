@@ -12,7 +12,7 @@
         v-if="panelAlign !== 'center'"
         class="login-auth-split__col login-auth-split__col--illustration"
       >
-        <FaLoginLeftView hide-top-branding />
+        <FaEnterpriseIntro />
       </div>
 
       <div
@@ -120,18 +120,18 @@
           <div class="login-footer-text text-sm">
             <div class="login-footer-row">
               <a
-                :href="configStore.configData?.git_code?.config_value || '#'"
+                :href="footerGitCode"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="login-page-footer__link"
               >
-                {{ configStore.configData?.copyright?.config_value || "" }}
+                {{ footerCopyright }}
               </a>
             </div>
             <span class="login-page-footer__sep login-footer-sep-center">|</span>
             <div class="login-footer-row">
               <a
-                :href="configStore.configData?.help_doc?.config_value || '#'"
+                :href="footerHelpDoc"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="login-page-footer__link"
@@ -140,7 +140,7 @@
               </a>
               <span class="login-page-footer__sep">|</span>
               <a
-                :href="configStore.configData?.privacy?.config_value || '#'"
+                :href="footerPrivacy"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="login-page-footer__link"
@@ -149,7 +149,7 @@
               </a>
               <span class="login-page-footer__sep">|</span>
               <a
-                :href="configStore.configData?.clause?.config_value || '#'"
+                :href="footerClause"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="login-page-footer__link"
@@ -157,15 +157,15 @@
                 条款
               </a>
               <span
-                v-if="configStore.configData?.keep_record?.config_value"
+                v-if="footerKeepRecord"
                 class="login-page-footer__sep"
                 >|</span
               >
               <span
-                v-if="configStore.configData?.keep_record?.config_value"
+                v-if="footerKeepRecord"
                 class="login-page-footer__record"
               >
-                {{ configStore.configData.keep_record.config_value }}
+                {{ footerKeepRecord }}
               </span>
             </div>
           </div>
@@ -185,7 +185,7 @@ import AuthAPI, {
 import type { TenantRegisterForm } from "@/api/module_system/auth";
 import UserAPI, { type ForgetPasswordForm, type RegisterForm } from "@/api/module_system/user";
 import { useConfigStore, useAppStore, useSettingsStore, useUserStore } from "@stores";
-import { Auth, HttpError, startOAuthLogin } from "@utils";
+import { Auth, getConfigValue, HttpError, startOAuthLogin } from "@utils";
 import { ElMessage, ElNotification, type FormRules } from "element-plus";
 import type { Account, AccountKey } from "./types";
 import FaLoginAccountForm from "@/components/views/fa-login/forms/FaLoginAccountForm.vue";
@@ -194,6 +194,7 @@ import FaLoginMobilePanel from "@/components/views/fa-login/panels/FaLoginMobile
 import FaLoginQrPanel from "@/components/views/fa-login/panels/FaLoginQrPanel.vue";
 import FaLoginRegisterPanel from "@/components/views/fa-login/panels/FaLoginRegisterPanel.vue";
 import FaAuthTopBar from "@/components/views/fa-login/widgets/FaAuthTopBar.vue";
+import FaEnterpriseIntro from "@/components/views/fa-login/widgets/FaEnterpriseIntro.vue";
 import { useLoginPanelAlign } from "@/components/views/fa-login/composables/useLoginPanelAlign";
 
 defineOptions({ name: "Login" });
@@ -238,7 +239,25 @@ const panelSubTitle = computed(() => {
   return t("login.subTitle");
 });
 
-const userAgreementHref = computed(() => configStore.configData?.clause?.config_value || "#");
+const footerCopyright = computed(() =>
+  getConfigValue(configStore.configData, ["copyright", "sys_web_copyright"]),
+);
+const footerGitCode = computed(() =>
+  getConfigValue(configStore.configData, ["git_code", "sys_git_code"], "#"),
+);
+const footerHelpDoc = computed(() =>
+  getConfigValue(configStore.configData, ["help_doc", "sys_help_doc"], "#"),
+);
+const footerPrivacy = computed(() =>
+  getConfigValue(configStore.configData, ["privacy", "sys_web_privacy"], "#"),
+);
+const footerClause = computed(() =>
+  getConfigValue(configStore.configData, ["clause", "sys_web_clause"], "#"),
+);
+const footerKeepRecord = computed(() =>
+  getConfigValue(configStore.configData, ["keep_record", "sys_keep_record"]),
+);
+const userAgreementHref = computed(() => footerClause.value);
 
 function setAuthPanel(panel: AuthPanel) {
   authPanel.value = panel;
