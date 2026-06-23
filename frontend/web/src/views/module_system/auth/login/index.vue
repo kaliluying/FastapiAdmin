@@ -588,7 +588,11 @@ let voteTimer: ReturnType<typeof setTimeout> | null = null;
 
 onMounted(async () => {
   setupAccount("super");
-  await configStore.getConfig(true);
+  try {
+    await configStore.getConfig(true);
+  } catch (error) {
+    console.warn("[Login] 获取系统配置失败，继续使用默认渲染", error);
+  }
   await tryConsumeOAuthCallback();
   if (userStore.isLogin) {
     await router.replace(resolveRedirectTarget(route.query));
