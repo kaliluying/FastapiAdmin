@@ -24,7 +24,6 @@ import AppConfig from "@/config";
 import { SystemThemeEnum, MenuThemeEnum, MenuTypeEnum, ContainerWidthEnum } from "@/enums/appEnum";
 import { LayoutMode, ComponentSize, SidebarColor, ThemeMode, LanguageEnum } from "@/enums";
 
-const env = import.meta.env;
 const { pkg } = __APP_INFO__;
 
 /**
@@ -34,7 +33,7 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 项目名称 */
   name: "WeComAgent",
   /** 系统标题 */
-  title: (env.VITE_APP_TITLE as string) || "WeComAgent",
+  title: "WeComAgent",
   /** 系统版本 */
   version: pkg.version as string,
   /** 是否显示设置按钮 */
