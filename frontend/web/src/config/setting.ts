@@ -27,17 +27,14 @@ import { LayoutMode, ComponentSize, SidebarColor, ThemeMode, LanguageEnum } from
 const env = import.meta.env;
 const { pkg } = __APP_INFO__;
 
-// 检查用户的操作系统是否使用深色模式
-const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-
 /**
  * 系统设置默认值配置
  */
 export const SETTING_DEFAULT_CONFIG = {
   /** 项目名称 */
-  name: pkg.name as string,
+  name: "WeComAgent",
   /** 系统标题 */
-  title: (env.VITE_APP_TITLE as string) || pkg.name,
+  title: (env.VITE_APP_TITLE as string) || "WeComAgent",
   /** 系统版本 */
   version: pkg.version as string,
   /** 是否显示设置按钮 */
@@ -59,7 +56,7 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 布局方式 */
   layout: LayoutMode.LEFT,
   /** 主题模式 */
-  theme: prefersDark ? ThemeMode.DARK : ThemeMode.LIGHT,
+  theme: ThemeMode.LIGHT,
   /** 组件大小 */
   size: ComponentSize.DEFAULT,
   /** 语言 */
@@ -67,9 +64,9 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 主题颜色 */
   themeColor: "#4080FF",
   /** 是否显示水印 */
-  showWatermark: false,
+  showWatermark: true,
   /** 水印内容 */
-  watermarkContent: pkg.name,
+  watermarkContent: "WeComAgent",
   /** 侧边栏配色方案 */
   sidebarColorScheme: SidebarColor.CLASSIC_BLUE,
   /** 项目引导可见性 */
@@ -91,11 +88,11 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 双菜单是否显示文本 */
   dualMenuShowText: false,
   /** 系统主题类型 */
-  systemThemeType: SystemThemeEnum.AUTO,
+  systemThemeType: SystemThemeEnum.LIGHT,
   /** 系统主题模式 */
-  systemThemeMode: SystemThemeEnum.AUTO,
+  systemThemeMode: SystemThemeEnum.LIGHT,
   /** 菜单风格 */
-  menuThemeType: MenuThemeEnum.DESIGN,
+  menuThemeType: MenuThemeEnum.DARK,
   /** 系统主题颜色 */
   systemThemeColor: AppConfig.systemMainColor[0],
   /** 是否显示菜单按钮 */
@@ -117,7 +114,7 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 是否显示节日文本 */
   showFestivalText: false,
   /** 是否显示水印（新版本字段） */
-  watermarkVisible: false,
+  watermarkVisible: true,
   /** 是否自动关闭 */
   autoClose: false,
   /** 是否唯一展开 */
