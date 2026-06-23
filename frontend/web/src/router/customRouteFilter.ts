@@ -3,6 +3,9 @@ import type { AppRouteRecord } from "@/types/router";
 export const CUSTOM_DISABLED_ROUTE_PREFIXES = [
   "/dashboard/analysis",
   "/dashboard/screen",
+  "/monitor",
+  "/example",
+  "/ai",
   "/module_monitor",
   "/module_example",
   "/module_ai",

@@ -26,24 +26,36 @@ describe("filterCustomDisabledRoutes", () => {
             name: "DashboardAnalysis",
             meta: { title: "Analysis" },
           },
+          {
+            path: "screen/report",
+            name: "DashboardScreenReport",
+            meta: { title: "Screen Report" },
+          },
         ],
       },
       {
-        path: "module_monitor",
-        name: "ModuleMonitor",
+        path: "/monitor",
+        name: "Monitor",
         meta: { title: "Monitor" },
+      },
+      {
+        path: "/example",
+        name: "Example",
+        meta: { title: "Example" },
+      },
+      {
+        path: "/ai",
+        name: "Ai",
+        meta: { title: "AI" },
       },
     ];
 
+    const originalRoutesSnapshot = structuredClone(routes);
     const filtered = filterCustomDisabledRoutes(routes);
     const dashboard = filtered.find((route) => route.path === "/dashboard");
-    const originalDashboard = routes.find((route) => route.path === "/dashboard");
 
     expect(filtered.map((route) => route.path)).toEqual(["/home", "/dashboard"]);
     expect(dashboard?.children?.map((route) => route.path)).toEqual(["workplace"]);
-    expect(originalDashboard?.children?.map((route) => route.path)).toEqual([
-      "workplace",
-      "analysis",
-    ]);
+    expect(routes).toEqual(originalRoutesSnapshot);
   });
 });
