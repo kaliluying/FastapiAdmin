@@ -27,4 +27,9 @@ describe("getConfigValue", () => {
       "fallback",
     );
   });
+
+  it("returns fallback when config data is absent", () => {
+    expect(getConfigValue(undefined, ["title"], "Admin")).toBe("Admin");
+    expect(getConfigValue(null, ["title"], "Admin")).toBe("Admin");
+  });
 });
