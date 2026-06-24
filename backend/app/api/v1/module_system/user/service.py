@@ -6,7 +6,6 @@ from fastapi import UploadFile
 
 from app.api.v1.module_platform.menu.crud import MenuCRUD
 from app.api.v1.module_platform.menu.schema import MenuOutSchema
-from app.api.v1.module_platform.package.service import PackageService
 from app.api.v1.module_platform.tenant.service import TenantService
 from app.api.v1.module_system.dept.crud import DeptCRUD
 from app.api.v1.module_system.position.crud import PositionCRUD
@@ -179,11 +178,6 @@ class UserService:
             menus = [MenuOutSchema.model_validate(menu) for menu in menu_all]
         else:
             menu_ids = {menu.id for role in self.auth.user.roles or [] for menu in role.menus if menu.status == 0 and getattr(menu, "client", "pc") == "pc"}
-
-            if menu_ids and self.auth.tenant_id:
-                allowed_ids = await PackageService(self.auth).get_tenant_available_menu_ids(self.auth.tenant_id)
-                allowed_set = set(allowed_ids)
-                menu_ids = menu_ids & allowed_set
 
             menus = (
                 [

@@ -27,7 +27,6 @@ const { basicHandlers } = useSettingsHandlers();
 const {
   uniqueOpened,
   showMenuButton,
-  showFastEnter,
   showRefreshButton,
   showCrumbs,
   showWorkTab,
@@ -53,7 +52,6 @@ const {
 const settingValueMap = {
   uniqueOpened,
   showMenuButton,
-  showFastEnter,
   showRefreshButton,
   showCrumbs,
   showWorkTab,

@@ -291,26 +291,16 @@ async def _verify_token(
     return auth
 
 async def _get_cached_tenant_menu_ids(auth: AuthSchema, tenant_id: int) -> list[int]:
-    """获取租户可用菜单 ID，带 60s 进程级缓存
-
-    套餐菜单变更频率极低，缓存可大幅减少 AuthPermission 的 DB 查询次数。
+    """获取租户可用菜单 ID（套餐模块已删除，返回空列表表示无限制）
 
     参数:
         auth: 认证信息
         tenant_id: 租户 ID
 
     返回:
-        可用菜单 ID 列表
+        空列表（表示不进行套餐级别的菜单过滤）
     """
-    cached = _package_menu_cache.get(tenant_id)
-    if cached and time.time() - cached[0] < 60:
-        return cached[1]
-
-    from app.api.v1.module_platform.package.service import PackageService
-
-    result = await PackageService.get_tenant_available_menu_ids(auth, tenant_id)
-    _package_menu_cache[tenant_id] = (time.time(), result)
-    return result
+    return []
 
 
 class AuthPermission:
@@ -372,12 +362,8 @@ class AuthPermission:
         if not role_perms:
             raise CustomException(msg="无权限操作", code=10403, status_code=403)
 
-        # 租户用户：权限必须受套餐菜单约束（带 60s 进程级缓存）
-        if auth.tenant_id:
-            allowed_ids = set(await _get_cached_tenant_menu_ids(auth, auth.tenant_id))
-            user_permissions = {p for p, mid in role_perms.items() if mid in allowed_ids}
-        else:
-            user_permissions = set(role_perms.keys())
+        # 套餐模块已删除，不再进行套餐级别的菜单约束
+        user_permissions = set(role_perms.keys())
 
         # 权限验证 - 满足任一权限即可
         if not any(perm in user_permissions for perm in self.permissions):

@@ -9,6 +9,7 @@ from agno.team.team import Team
 
 from app.api.v1.module_system.dept.service import DeptService
 from app.common.request import PaginationService
+from app.config.setting import settings
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
 from app.core.logger import logger
@@ -135,6 +136,11 @@ class ChatService:
     async def chat_query(self, query: ChatQuerySchema) -> AsyncGenerator[str, None]:
         """流式 AI 对话"""
         try:
+            config_error = self._validate_ai_config()
+            if config_error:
+                yield config_error
+                return
+
             crud = ChatSessionCRUD(self.auth)
 
             session_id = query.session_id
@@ -156,13 +162,32 @@ class ChatService:
                 db=crud.db,
             )
 
+            has_content = False
             async for chunk in agent.arun(input=query.message, stream=True):
                 if chunk and chunk.content:
+                    has_content = True
                     yield chunk.content
+
+            if not has_content:
+                yield "AI 服务没有返回内容，请检查 OPENAI_API_KEY、OPENAI_BASE_URL 和 OPENAI_MODEL 配置。"
 
         except Exception as e:
             logger.error(f"聊天查询失败: {e}")
             yield f"抱歉，处理您的请求时出现错误：{str(e)}"
+
+    @staticmethod
+    def _validate_ai_config() -> str | None:
+        api_key = settings.OPENAI_API_KEY.strip()
+        model = settings.OPENAI_MODEL.strip()
+        base_url = settings.OPENAI_BASE_URL.strip()
+
+        if not api_key or api_key == "your_api_key":
+            return "AI 服务未配置有效 OPENAI_API_KEY，请先在后端环境配置中填写真实 API Key。"
+        if not model:
+            return "AI 服务未配置 OPENAI_MODEL，请先在后端环境配置中填写模型名称。"
+        if not base_url:
+            return "AI 服务未配置 OPENAI_BASE_URL，请先在后端环境配置中填写 OpenAI 兼容接口地址。"
+        return None
 
     async def chat_non_stream(self, message: str, session_id: str | None) -> dict[str, Any]:
         """非流式 AI 对话"""

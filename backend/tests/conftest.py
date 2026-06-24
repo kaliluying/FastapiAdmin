@@ -157,8 +157,6 @@ _mock_redis.dbsize = AsyncMock(side_effect=_redis_dbsize)
 patch("redis.asyncio.Redis.from_url", return_value=_mock_redis).start()
 patch("app.init_app.FastAPILimiter.init", new=AsyncMock()).start()
 patch("app.init_app.FastAPILimiter.close", new=AsyncMock()).start()
-patch("app.core.ap_scheduler.SchedulerUtil.init_scheduler", new=AsyncMock()).start()
-patch("app.core.ap_scheduler.SchedulerUtil.shutdown", new=AsyncMock()).start()
 
 # RateLimiter → no-op（需匹配 FastAPI 依赖注入签名）
 from fastapi_limiter.depends import RateLimiter, WebSocketRateLimiter

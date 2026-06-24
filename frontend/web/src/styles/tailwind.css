@@ -129,22 +129,25 @@
   --fa-gray-900: #323251;
 
   /* Border Colors */
-  --fa-card-border: rgb(0 0 0 / 8%);
-  --default-border: #e2e8ee;
-  --default-border-dashed: #dbdfe9;
+  --fa-card-border: rgb(15 23 42 / 12%);
+  --default-border: #cfd9e6;
+  --default-border-dashed: #c9d4e2;
+  --fa-soft-shadow: 0 2px 6px rgb(15 23 42 / 7%);
+  --fa-panel-shadow: 0 6px 18px rgb(15 23 42 / 7%);
+  --fa-focus-ring: 0 0 0 3px color-mix(in srgb, var(--theme-color) 16%, transparent);
 
   /* Background Colors */
-  --default-bg-color: #fafbfc;
+  --default-bg-color: #eef3f9;
   --default-box-color: #fff;
 
   /* Hover Color */
-  --fa-hover-color: #edeff0;
+  --fa-hover-color: #e7edf6;
 
   /* Active Color */
-  --fa-active-color: #f2f4f5;
+  --fa-active-color: #dfe8f5;
 
   /* Element Component Active Color */
-  --fa-el-active-color: #f2f4f5;
+  --fa-el-active-color: #e6eef8;
 }
 
 /* ==================== Dark Mode Variables ==================== */
@@ -167,6 +170,9 @@
   --fa-card-border: rgb(255 255 255 / 8%);
   --default-border: rgb(255 255 255 / 10%);
   --default-border-dashed: #363843;
+  --fa-soft-shadow: 0 1px 2px rgb(0 0 0 / 22%);
+  --fa-panel-shadow: 0 1px 2px rgb(0 0 0 / 18%);
+  --fa-focus-ring: 0 0 0 3px color-mix(in srgb, var(--theme-color) 24%, transparent);
 
   /* Background Colors */
   --default-bg-color: #070707;

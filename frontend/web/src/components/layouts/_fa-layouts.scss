@@ -30,8 +30,11 @@
       flex: 1;
       flex-direction: column;
       min-height: 0;
-      padding: 20px;
+      padding: 18px;
       overflow: auto;
+      background:
+        linear-gradient(180deg, rgb(255 255 255 / 42%) 0%, rgb(255 255 255 / 0%) 170px),
+        var(--default-bg-color);
 
       :deep(.layout-content) {
         box-sizing: border-box;
@@ -44,10 +47,12 @@
           position: relative;
           box-sizing: border-box;
           min-height: 0;
-          padding: 20px;
+          padding: 18px;
           overflow: hidden auto;
-          background: var(--default-box-color);
-          border-radius: calc(var(--custom-radius) / 2 + 2px) !important;
+          background: transparent;
+          border: 0;
+          border-radius: 0 !important;
+          box-shadow: none;
         }
       }
     }

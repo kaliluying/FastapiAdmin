@@ -16,14 +16,6 @@
     "tenant_id": 1
   },
   {
-    "notice_title": "新功能发布",
-    "notice_content": "<p>本次更新新增了工作流引擎、代码生成器等功能，欢迎体验！</p>",
-    "notice_type": "2",
-    "status": 0,
-    "description": "新功能发布",
-    "tenant_id": 1
-  },
-  {
     "notice_title": "安全更新提醒",
     "notice_content": "<p>请所有用户尽快更新密码，建议使用至少8位包含大小写字母、数字和特殊字符的强密码。</p><p>更新方法：登录后进入「个人中心」->「修改密码」。</p>",
     "notice_type": "1",
@@ -37,14 +29,6 @@
     "notice_type": "1",
     "status": 0,
     "description": "节假日值班通知",
-    "tenant_id": 1
-  },
-  {
-    "notice_title": "v2.0 版本升级公告",
-    "notice_content": "<p>v2.0 大版本即将发布，主要更新：</p><ul><li>全新工作流引擎</li><li>AI助手集成</li><li>代码生成器增强</li><li>性能优化 30%</li></ul><p>升级时间另行通知。</p>",
-    "notice_type": "2",
-    "status": 0,
-    "description": "v2.0 版本升级公告",
     "tenant_id": 1
   }
 ]

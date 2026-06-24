@@ -89,13 +89,6 @@
             </li>
             <li
               class="flex items-center p-2 mb-3 select-none rounded-md cursor-pointer last:mb-0 hover:bg-(--fa-gray-200)"
-              @click="goPage('/fastlink/profile')"
-            >
-              <FaSvgIcon icon="ri:user-3-line" class="mr-2 text-base" />
-              <span class="text-sm">{{ $t("topBar.user.userCenter") }}</span>
-            </li>
-            <li
-              class="flex items-center p-2 mb-3 select-none rounded-md cursor-pointer last:mb-0 hover:bg-(--fa-gray-200)"
               @click="openParamConfig"
             >
               <FaSvgIcon icon="ri:settings-3-line" class="mr-2 text-base" />
@@ -140,14 +133,12 @@
 
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
 import { ElMessageBox } from "element-plus";
 import { useUserStore } from "@stores";
 import { WEB_LINKS, mittBus } from "@utils";
 
 defineOptions({ name: "FaUserMenu" });
 
-const router = useRouter();
 const { t } = useI18n();
 const userStore = useUserStore();
 
@@ -189,10 +180,6 @@ async function handleTenantSwitch(tenantId: number) {
 function openParamConfig(): void {
   closeUserMenu();
   paramDrawerVisible.value = true;
-}
-
-function goPage(path: string): void {
-  router.push(path);
 }
 
 function toGithub(): void {

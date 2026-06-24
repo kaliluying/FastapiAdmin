@@ -17,7 +17,6 @@ def console_start(
     *,
     database_ready: bool | None = None,
     redis_ready: bool | None = None,
-    scheduler_ready: bool | None = None,
     limiter_ready: bool | None = None,
 ) -> None:
     """
@@ -29,7 +28,6 @@ def console_start(
     - reload (bool): 是否开启热重载。
     - database_ready (bool | None): 数据库是否就绪。
     - redis_ready (bool | None): Redis 是否就绪。
-    - scheduler_ready (bool | None): 调度器是否就绪。
     - limiter_ready (bool | None): 限流器是否就绪。
 
     返回:
@@ -64,10 +62,6 @@ def console_start(
     )
     service_info.append(
         f"\nRedis: {'✅ 启动' if redis_ready else '❌ 关闭'}",
-        style="bold italic",
-    )
-    service_info.append(
-        f"\n调度器: {'✅ 启动' if scheduler_ready else '❌ 关闭'}",
         style="bold italic",
     )
     service_info.append(

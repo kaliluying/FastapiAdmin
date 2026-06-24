@@ -3,10 +3,9 @@
     <!-- 电商模块 -->
     <div class="card-group">
       <ElRow :gutter="24">
-        <ElCol :sm="12" :md="12" :lg="6"><TotalOrderVolume /></ElCol>
-        <ElCol :sm="12" :md="12" :lg="6"><TotalProducts /></ElCol>
-        <ElCol :sm="24" :md="12" :lg="6"><ProductSales /></ElCol>
-        <ElCol :sm="24" :md="12" :lg="6"><SalesGrowth /></ElCol>
+        <ElCol :sm="12" :md="12" :lg="8"><TotalProducts /></ElCol>
+        <ElCol :sm="24" :md="12" :lg="8"><ProductSales /></ElCol>
+        <ElCol :sm="24" :md="12" :lg="8"><SalesGrowth /></ElCol>
       </ElRow>
 
       <ElRow :gutter="24">
@@ -34,7 +33,6 @@
 <script setup lang="ts">
 import ActiveUser from "./modules/active-user.vue";
 import SalesOverview from "./modules/sales-overview.vue";
-import TotalOrderVolume from "./modules/total-order-volume.vue";
 import TotalProducts from "./modules/total-products.vue";
 import SalesTrend from "./modules/sales-trend.vue";
 import SalesClassification from "./modules/sales-classification.vue";

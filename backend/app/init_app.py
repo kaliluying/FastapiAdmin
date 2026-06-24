@@ -25,7 +25,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
     from app.api.v1.module_platform.tenant.service import TenantService
     from app.api.v1.module_system.dict.service import DictDataService
     from app.api.v1.module_system.params.service import ParamsService
-    from app.core.ap_scheduler import SchedulerUtil
 
     try:
         await InitializeData().init_db()
@@ -38,8 +37,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
         logger.info("✅ Redis数据字典初始化完成")
         await TenantService.init_cache(redis=app.state.redis)
         logger.info("✅ Redis租户配置初始化完成")
-        await SchedulerUtil.init_scheduler(redis=app.state.redis)
-        logger.info("✅ 定时任务调度器初始化完成")
         await cache_util.init(redis=app.state.redis)
         logger.info("✅ fastapi-admin-cache 初始化完成")
         await FastAPILimiter.init(
@@ -54,7 +51,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
             host=settings.SERVER_HOST, port=settings.SERVER_PORT,
             reload=settings.ENVIRONMENT,
             database_ready=True, redis_ready=True,
-            scheduler_ready=SchedulerUtil.is_running(), limiter_ready=True,
+            limiter_ready=True,
         )
     except Exception as e:
         logger.error("❌ 应用初始化失败: {}", e)
@@ -63,8 +60,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
     yield
 
     try:
-        await SchedulerUtil.shutdown(wait=True)
-        logger.info("✅ 定时任务调度器已关闭")
         await cache_util.clear()
         logger.info("✅ fastapi-admin-cache 已关闭")
         await FastAPILimiter.close()
@@ -94,12 +89,10 @@ def register_exceptions(app: FastAPI) -> None:
 
 def register_routers(app: FastAPI) -> None:
     from app.api.v1.module_common import common_router
-    from app.api.v1.module_monitor import monitor_router
     from app.api.v1.module_platform import platform_router
     from app.api.v1.module_system import system_router
 
     app.include_router(common_router, dependencies=[Depends(RateLimiter(times=200, seconds=10))])
-    app.include_router(monitor_router, dependencies=[Depends(RateLimiter(times=200, seconds=10))])
     app.include_router(platform_router, dependencies=[Depends(RateLimiter(times=200, seconds=10))])
     app.include_router(system_router, dependencies=[Depends(RateLimiter(times=200, seconds=10))])
 

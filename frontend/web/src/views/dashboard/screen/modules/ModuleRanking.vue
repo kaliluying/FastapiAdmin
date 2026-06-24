@@ -24,12 +24,11 @@ const ranks = ref([
   { name: "操作日志", val: 892, pct: 78 },
   { name: "菜单管理", val: 197, pct: 55 },
   { name: "AI 助手", val: 156, pct: 42 },
-  { name: "代码生成", val: 38, pct: 35 },
   { name: "角色管理", val: 45, pct: 28 },
   { name: "字典管理", val: 56, pct: 22 },
   { name: "文件管理", val: 128, pct: 18 },
   { name: "部门管理", val: 12, pct: 12 },
-  { name: "定时任务", val: 24, pct: 8 },
+  { name: "系统配置", val: 24, pct: 8 },
 ]);
 
 const RANK_COLORS = ["#ef4444", "#f59e0b", "#3b82f6", "#00d4ff", "#7c3aed", "#10b981"];

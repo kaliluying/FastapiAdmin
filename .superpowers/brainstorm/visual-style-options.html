@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>全站视觉方向</title>
+  <style>
+    :root {
+      --amber: #f59e0b;
+      --bg: #f4f6fb;
+      --blue: #4f7cff;
+      --blue-2: #dfe8ff;
+      --card: #fff;
+      --green: #15a34a;
+      --line: #d9e1ee;
+      --muted: #64748b;
+      --shadow: 0 12px 30px rgb(15 23 42 / 8%);
+      --text: #111827;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family:
+        Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background: linear-gradient(180deg, #eef3fb 0%, #f6f8fc 100%);
+    }
+
+    .wrap {
+      padding: 24px 28px 28px;
+    }
+
+    .hero {
+      display: flex;
+      gap: 20px;
+      align-items: end;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 28px;
+      line-height: 1.1;
+    }
+
+    .hero p {
+      max-width: 820px;
+      margin: 10px 0 0;
+      color: var(--muted);
+    }
+
+    .tag {
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      box-shadow: var(--shadow);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card {
+      overflow: hidden;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .shot {
+      height: 240px;
+      padding: 18px;
+      background: linear-gradient(135deg, #fff 0%, #f8fbff 100%);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .logo {
+      font-weight: 800;
+      letter-spacing: 0.02em;
+    }
+
+    .pill {
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #2341a6;
+      background: var(--blue-2);
+      border-radius: 999px;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: 116px 1fr;
+      height: 182px;
+      overflow: hidden;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .sidebar {
+      padding: 12px;
+      background: #f7f9fd;
+      border-right: 1px solid var(--line);
+    }
+
+    .nav {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .nav div {
+      height: 10px;
+      background: #d8e1ef;
+      border-radius: 99px;
+    }
+
+    .nav div:nth-child(1) {
+      width: 76%;
+    }
+
+    .nav div:nth-child(2) {
+      width: 88%;
+    }
+
+    .nav div:nth-child(3) {
+      width: 64%;
+    }
+
+    .nav div:nth-child(4) {
+      width: 70%;
+    }
+
+    .main {
+      padding: 12px 14px;
+    }
+
+    .title {
+      width: 42%;
+      height: 14px;
+      margin-bottom: 12px;
+      background: #d8e1ef;
+      border-radius: 99px;
+    }
+
+    .line {
+      height: 8px;
+      margin-bottom: 8px;
+      background: #e8eef7;
+      border-radius: 99px;
+    }
+
+    .line.w1 {
+      width: 88%;
+    }
+
+    .line.w2 {
+      width: 78%;
+    }
+
+    .line.w3 {
+      width: 56%;
+    }
+
+    .panel {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .stat {
+      height: 40px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    .footer {
+      padding: 14px 18px 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    h2 {
+      margin: 0 0 8px;
+      font-size: 18px;
+    }
+
+    .desc {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--muted);
+    }
+
+    .meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 12px;
+      color: #475569;
+    }
+
+    .a .shot {
+      background: linear-gradient(135deg, #f9fbff 0%, #fff 100%);
+    }
+
+    .a .shell {
+      border-radius: 12px;
+    }
+
+    .b .shot {
+      background: linear-gradient(135deg, #fdf7f0 0%, #fffaf6 100%);
+    }
+
+    .b.card {
+      border-radius: 22px;
+    }
+
+    .b .shell {
+      border-radius: 16px;
+    }
+
+    .b .sidebar {
+      background: #fbf5ef;
+    }
+
+    .b .pill {
+      color: #9a3412;
+      background: #ffe6d6;
+    }
+
+    .c .shot {
+      background: linear-gradient(135deg, #f7fafc 0%, #eef2ff 100%);
+    }
+
+    .c.card {
+      border-radius: 14px;
+    }
+
+    .c .shell {
+      border-radius: 10px;
+    }
+
+    .c .sidebar {
+      background: #eef2f8;
+    }
+
+    .c .pill {
+      color: #1e3a8a;
+      background: #dde7ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <div class="tag">全站视觉方向 · 选一个继续</div>
+        <h1>登录页 + 后台统一美化</h1>
+        <p>三种方向都保留当前信息密度，把卡片、表单、菜单、表格、弹窗统一成更接近 21st.dev 的组件气质：干净边框、明确层次、更少视觉噪音。</p>
+      </div>
+      <div class="tag">A = 21st.dev Lite · B = Editorial · C = Dense Console</div>
+    </div>
+
+    <div class="grid">
+      <section class="card a">
+        <div class="shot">
+          <div class="topbar">
+            <div class="logo">A / 21st.dev Lite</div>
+            <div class="pill">推荐</div>
+          </div>
+          <div class="shell">
+            <aside class="sidebar">
+              <div class="title"></div>
+              <div class="nav"><div></div><div></div><div></div><div></div></div>
+            </aside>
+            <main class="main">
+              <div class="title"></div>
+              <div class="line w1"></div><div class="line w2"></div><div class="line w3"></div>
+              <div class="panel"><div class="stat"></div><div class="stat"></div></div>
+            </main>
+          </div>
+        </div>
+        <div class="footer">
+          <h2>白底轻边框，8px 圆角，卡片更克制</h2>
+          <p class="desc">最接近 21st.dev 的组件画廊感觉，适合登录页、列表页、设置页统一升级。现代，但不会太花。</p>
+          <div class="meta"><span>优点：干净、统一、风险低</span><span>适合后台</span></div>
+        </div>
+      </section>
+
+      <section class="card b">
+        <div class="shot">
+          <div class="topbar">
+            <div class="logo">B / Editorial</div>
+            <div class="pill">柔和</div>
+          </div>
+          <div class="shell">
+            <aside class="sidebar">
+              <div class="title"></div>
+              <div class="nav"><div></div><div></div><div></div><div></div></div>
+            </aside>
+            <main class="main">
+              <div class="title"></div>
+              <div class="line w1"></div><div class="line w2"></div><div class="line w3"></div>
+              <div class="panel"><div class="stat"></div><div class="stat"></div></div>
+            </main>
+          </div>
+        </div>
+        <div class="footer">
+          <h2>更柔软的空间感，卡片更像产品官网</h2>
+          <p class="desc">保留后台可读性，但会更有精致产品气质。适合你想让界面更高级、稍微温柔一点的方向。</p>
+          <div class="meta"><span>优点：更漂亮、气质更强</span><span>适合首页/登录</span></div>
+        </div>
+      </section>
+
+      <section class="card c">
+        <div class="shot">
+          <div class="topbar">
+            <div class="logo">C / Dense Console</div>
+            <div class="pill">紧凑</div>
+          </div>
+          <div class="shell">
+            <aside class="sidebar">
+              <div class="title"></div>
+              <div class="nav"><div></div><div></div><div></div><div></div></div>
+            </aside>
+            <main class="main">
+              <div class="title"></div>
+              <div class="line w1"></div><div class="line w2"></div><div class="line w3"></div>
+              <div class="panel"><div class="stat"></div><div class="stat"></div></div>
+            </main>
+          </div>
+        </div>
+        <div class="footer">
+          <h2>更强的信息密度，偏运营控制台</h2>
+          <p class="desc">适合数据、表格、运维类页面，留白更少、轮廓更清楚，适合频繁扫描和操作。</p>
+          <div class="meta"><span>优点：效率高、信息密度高</span><span>适合重表格页</span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>

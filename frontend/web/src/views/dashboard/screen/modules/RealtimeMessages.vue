@@ -26,7 +26,7 @@ const messages = [
     tagText: "交易",
     text: "商户「星辰科技」完成大额订单支付 ¥86,400",
   },
-  { time: "22:15", tag: "system", tagText: "系统", text: "数据备份定时任务执行完成，耗时 12.3s" },
+  { time: "22:15", tag: "system", tagText: "系统", text: "数据备份执行完成，耗时 12.3s" },
   { time: "21:52", tag: "audit", tagText: "审计", text: "运营主管 zhangsan 导出本月交易报表" },
   { time: "21:30", tag: "deploy", tagText: "部署", text: "v3.2.1 版本灰度发布至华东区节点" },
   { time: "21:05", tag: "notice", tagText: "公告", text: "系统公告: 6月1日进行数据库扩容维护" },

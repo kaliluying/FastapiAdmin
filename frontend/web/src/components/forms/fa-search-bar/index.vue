@@ -581,7 +581,43 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
 
 <style lang="scss" scoped>
 .fa-search-bar {
-  padding: 15px 20px 0;
+  position: relative;
+  padding: 20px 20px 8px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 96%) 0%, rgb(248 251 255 / 98%) 100%),
+    var(--default-box-color);
+  border: 1px solid var(--fa-card-border);
+  border-radius: 8px;
+  box-shadow: var(--fa-panel-shadow) !important;
+
+  &::before {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 3px;
+    content: "";
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--theme-color) 82%, white),
+      #10b981
+    );
+  }
+
+  :deep(.el-form-item) {
+    margin-bottom: 14px;
+  }
+
+  :deep(.el-form-item__label) {
+    padding-right: 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--el-text-color-secondary);
+  }
+
+  :deep(.el-input__wrapper),
+  :deep(.el-select__wrapper) {
+    background: #fff !important;
+  }
 
   .action-column {
     flex: 1;
@@ -592,29 +628,48 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
       flex-wrap: wrap;
       align-items: center;
       justify-content: flex-end;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     .form-buttons {
       display: flex;
-      gap: 8px;
+      gap: 10px;
+
+      .reset-button {
+        background: #fff;
+        border-color: var(--fa-card-border);
+      }
+
+      .search-button {
+        min-width: 88px;
+      }
     }
 
     .filter-toggle {
       display: flex;
       align-items: center;
-      margin-left: 10px;
+      height: 32px;
+      padding: 0 10px;
+      margin-left: 12px;
+      font-size: 13px;
       line-height: 32px;
-      color: var(--theme-color);
+      color: var(--el-text-color-secondary);
       cursor: pointer;
-      transition: color 0.2s ease;
+      background: color-mix(in srgb, var(--theme-color) 6%, white);
+      border: 1px solid color-mix(in srgb, var(--theme-color) 14%, var(--fa-card-border));
+      border-radius: 8px;
+      transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
 
       &:hover {
         color: var(--ElColor-primary);
+        background: color-mix(in srgb, var(--theme-color) 10%, white);
+        border-color: color-mix(in srgb, var(--theme-color) 32%, var(--fa-card-border));
       }
 
       span {
-        font-size: 14px;
         user-select: none;
       }
 
@@ -632,7 +687,7 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
 // 响应式优化
 @media (width <= 768px) {
   .fa-search-bar {
-    padding: 16px 16px 0;
+    padding: 16px 16px 8px;
 
     .action-column {
       .action-buttons-wrapper {

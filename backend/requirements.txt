@@ -4,13 +4,11 @@ aiofiles==24.1.0                       # 文件操作
 aiosmtplib>=3.0.2                      # 异步 SMTP 邮件发送（fastapi-mail 要求 >=3.0.2）
 aiosqlite==0.22.1                      # sqlite 异步操作数据库
 alembic==1.18.4                        # 数据库迁移
-apscheduler==3.11.0                    # 定时任务
 asyncmy==0.2.11                        # 异步mysql操作数据库
 asyncpg==0.31.0                        # 异步postgresql操作数据库
 bleach==6.4.0                          # 过滤 HTML 标签
 tinycss2==1.5.1                        # bleach CSS 清洗依赖
 click==8.1.7                           # 命令行参数解析
-croniter>=1.0.12,<5.0.0                # cron 表达式解析
 cryptography==49.0.0                   # mysql8 密码加密
 fastapi==0.115.2                       # fastapi 框架
 fastapi-limiter==0.1.6                 # 接口限流

@@ -14,12 +14,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.module_platform.email.model import EmailConfigModel, EmailTemplateModel
-from app.api.v1.module_platform.invoice.model import InvoiceModel
 from app.api.v1.module_platform.menu.model import MenuModel
-from app.api.v1.module_platform.order.model import OrderModel, PaymentRecordModel, RefundModel
-from app.api.v1.module_platform.package.model import PackageMenuModel, PackageModel
-from app.api.v1.module_platform.plugin.model import PluginModel, TenantPluginModel
 from app.api.v1.module_platform.tenant.model import TenantModel, TenantUserModel
 from app.api.v1.module_system.dept.model import DeptModel
 from app.api.v1.module_system.dict.model import DictDataModel, DictTypeModel
@@ -33,9 +28,6 @@ from app.api.v1.module_system.user.model import UserModel, UserRolesModel
 from app.config.path_conf import SCRIPT_DIR
 from app.core.database import async_db_session, create_tables
 from app.core.logger import logger
-from app.plugin.module_example.demo.model import DemoModel
-from app.plugin.module_task.cronjob.node.model import NodeModel
-from app.plugin.module_task.workflow.nodes.model import WorkflowNodeTypeModel
 
 
 class InitializeData:
@@ -48,9 +40,7 @@ class InitializeData:
     # 按依赖关系排序：先基础表，再关联表
     prepare_init_models: list[type] = [
         # ── 平台管理：基础表 ──
-        PackageModel,
         TenantModel,
-        PluginModel,
         MenuModel,
         # ── 系统管理：基础表 ──
         ParamsModel,
@@ -60,18 +50,9 @@ class InitializeData:
         DictDataModel,
         PositionModel,
         UserModel,
-        # ── 平台管理：依赖用户的表 ──
-        EmailConfigModel,
-        EmailTemplateModel,
-        OrderModel,
-        InvoiceModel,
-        PaymentRecordModel,
-        RefundModel,
         # ── 关联表 ──
         UserRolesModel,
         TenantUserModel,
-        PackageMenuModel,
-        TenantPluginModel,
         # ── 其他系统/业务表 ──
         NoticeModel,
         NoticeReadModel,
@@ -79,10 +60,6 @@ class InitializeData:
         # ── 日志表（追加写入） ──
         LoginLogModel,
         OperationLogModel,
-        # ── 插件表 ──
-        NodeModel,
-        WorkflowNodeTypeModel,
-        DemoModel,
     ]
 
     # 树形模型：JSON 含嵌套 children，需递归创建对象

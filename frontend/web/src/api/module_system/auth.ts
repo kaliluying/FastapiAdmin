@@ -30,13 +30,6 @@ const AuthAPI = {
     });
   },
 
-  getCaptcha() {
-    return request<ApiResponse<CaptchaInfo>>({
-      url: `${API_PATH}/captcha/get`,
-      method: "get",
-    });
-  },
-
   logout(body: LogoutBody) {
     return request<ApiResponse>({
       url: `${API_PATH}/logout`,
@@ -97,8 +90,6 @@ export interface TenantRegisterResult {
 export interface LoginFormData {
   username: string;
   password: string;
-  captcha?: string;
-  captcha_key?: string;
   remember?: boolean;
   login_type?: string;
 }
@@ -114,6 +105,15 @@ export interface JWTOut {
 /** 登录成功返回 */
 export interface LoginResult extends JWTOut {
   tenants?: TenantOption[];
+  user_info?: LoginUserInfo;
+}
+
+export interface LoginUserInfo {
+  id?: number;
+  username?: string;
+  name?: string;
+  avatar?: string;
+  is_superuser?: boolean;
 }
 
 /** 刷新 Token 请求体 */
@@ -138,11 +138,4 @@ export interface SelectTenantResult {
   access_token: string;
   token_type: string;
   expires_in: number;
-}
-
-/** 验证码信息 */
-export interface CaptchaInfo {
-  enable: boolean;
-  key: string;
-  img_base: string;
 }

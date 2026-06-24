@@ -25,7 +25,6 @@ class TenantCreateSchema(BaseModel):
     domain: str | None = Field(default=None, max_length=255, description="域名")
     logo_url: str | None = Field(default=None, max_length=500, description="Logo URL")
     sort: int = Field(default=0, ge=0, description="排序")
-    package_id: int | None = Field(default=None, gt=0, description="关联套餐ID")
     version: str | None = Field(default=None, max_length=20, description="版本号")
     favicon: str | None = Field(default=None, max_length=500, description="favicon地址")
     login_bg: str | None = Field(default=None, max_length=500, description="登录背景地址")
@@ -96,7 +95,6 @@ class TenantUpdateSchema(TenantCreateSchema):
     domain: str | None = Field(default=None, max_length=255, description="域名")
     logo_url: str | None = Field(default=None, max_length=500, description="Logo URL")
     sort: int | None = Field(default=None, ge=0, description="排序")
-    package_id: int | None = Field(default=None, gt=0, description="关联套餐ID")
     version: str | None = Field(default=None, max_length=20, description="版本号")
     favicon: str | None = Field(default=None, max_length=500, description="favicon地址")
     login_bg: str | None = Field(default=None, max_length=500, description="登录背景地址")
@@ -233,15 +231,3 @@ class TenantRenewSchema(BaseModel):
         if self.end_time <= datetime.now():
             raise ValueError("续期时间必须晚于当前时间")
         return self
-
-
-class PackageChangePreviewOut(BaseModel):
-    """套餐变更影响预览响应"""
-
-    new_package_id: int = Field(..., description="新套餐ID")
-    new_package_name: str = Field(default="", description="新套餐名称")
-    affected_roles: list[dict] = Field(default_factory=list, description="受影响的角色列表（名称、用户数）")
-    removed_menus: list[dict] = Field(default_factory=list, description="将被移除的菜单清单（名称、路径）")
-    added_menus: list[dict] = Field(default_factory=list, description="新增的菜单清单（名称、路径）")
-    quota_changes: dict = Field(default_factory=dict, description="配额变化对比")
-    total_affected_users: int = Field(default=0, description="受影响用户数总计")

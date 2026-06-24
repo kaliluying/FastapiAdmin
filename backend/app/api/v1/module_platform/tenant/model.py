@@ -1,14 +1,10 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Integer, SmallInteger, String, Text, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+from sqlalchemy import DateTime, Integer, SmallInteger, String, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from app.common.enums import PermissionFilterStrategy
 from app.core.base_model import MappedBase, ModelMixin
-
-if TYPE_CHECKING:
-    from app.api.v1.module_platform.package.model import PackageModel
 
 
 class TenantModel(ModelMixin):
@@ -33,7 +29,6 @@ class TenantModel(ModelMixin):
     domain: Mapped[str | None] = mapped_column(String(255), nullable=True, default=None, comment="域名")
     logo_url: Mapped[str | None] = mapped_column(String(500), nullable=True, default=None, comment="Logo URL")
     sort: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="排序")
-    package_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("platform_package.id", ondelete="SET NULL", onupdate="CASCADE"), nullable=True, default=None, index=True, comment="关联套餐ID")
     start_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None, comment="开始时间")
     end_time: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, default=None, comment="结束时间")
     version: Mapped[str | None] = mapped_column(String(20), nullable=True, default=None, comment="版本号")
@@ -47,9 +42,6 @@ class TenantModel(ModelMixin):
     git_code: Mapped[str | None] = mapped_column(String(500), nullable=True, default=None, comment="源码地址")
     status: Mapped[int] = mapped_column(Integer, default=0, nullable=False, comment="状态(0:启动 1:停用)", index=True)
     description: Mapped[str | None] = mapped_column(Text, default=None, nullable=True, comment="备注")
-
-    # 关联关系
-    package: Mapped["PackageModel | None"] = relationship("PackageModel", lazy="selectin")
 
     @validates("name")
     def validate_name(self, key: str, name: str) -> str:

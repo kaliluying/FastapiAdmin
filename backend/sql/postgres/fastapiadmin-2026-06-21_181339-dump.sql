@@ -25,7 +25,6 @@ SET row_security = off;
 
 CREATE SCHEMA public;
 
-
 ALTER SCHEMA public OWNER TO pg_database_owner;
 
 --
@@ -34,23 +33,9 @@ ALTER SCHEMA public OWNER TO pg_database_owner;
 
 COMMENT ON SCHEMA public IS 'standard public schema';
 
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
-
---
--- Name: apscheduler_jobs; Type: TABLE; Schema: public; Owner: root
---
-
-CREATE TABLE public.apscheduler_jobs (
-    id character varying(191) NOT NULL,
-    next_run_time double precision,
-    job_state bytea NOT NULL
-);
-
-
-ALTER TABLE public.apscheduler_jobs OWNER TO root;
 
 --
 -- Name: example_demo; Type: TABLE; Schema: public; Owner: root
@@ -81,7 +66,6 @@ CREATE TABLE public.example_demo (
     deleted_id integer
 );
 
-
 ALTER TABLE public.example_demo OWNER TO root;
 
 --
@@ -90,13 +74,11 @@ ALTER TABLE public.example_demo OWNER TO root;
 
 COMMENT ON TABLE public.example_demo IS '示例表';
 
-
 --
 -- Name: COLUMN example_demo.name; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.example_demo.name IS '名称';
-
 
 --
 -- Name: COLUMN example_demo.status; Type: COMMENT; Schema: public; Owner: root
@@ -104,13 +86,11 @@ COMMENT ON COLUMN public.example_demo.name IS '名称';
 
 COMMENT ON COLUMN public.example_demo.status IS '状态(0:启动 1:停用)';
 
-
 --
 -- Name: COLUMN example_demo.description; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.example_demo.description IS '备注';
-
 
 --
 -- Name: COLUMN example_demo.int_val; Type: COMMENT; Schema: public; Owner: root
@@ -118,13 +98,11 @@ COMMENT ON COLUMN public.example_demo.description IS '备注';
 
 COMMENT ON COLUMN public.example_demo.int_val IS '整数';
 
-
 --
 -- Name: COLUMN example_demo.bigint_val; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.example_demo.bigint_val IS '大整数';
-
 
 --
 -- Name: COLUMN example_demo.float_val; Type: COMMENT; Schema: public; Owner: root
@@ -132,13 +110,11 @@ COMMENT ON COLUMN public.example_demo.bigint_val IS '大整数';
 
 COMMENT ON COLUMN public.example_demo.float_val IS '浮点数';
 
-
 --
 -- Name: COLUMN example_demo.bool_val; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.example_demo.bool_val IS '布尔型';
-
 
 --
 -- Name: COLUMN example_demo.date_val; Type: COMMENT; Schema: public; Owner: root
@@ -146,13 +122,11 @@ COMMENT ON COLUMN public.example_demo.bool_val IS '布尔型';
 
 COMMENT ON COLUMN public.example_demo.date_val IS '日期';
 
-
 --
 -- Name: COLUMN example_demo.time_val; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.example_demo.time_val IS '时间';
-
 
 --
 -- Name: COLUMN example_demo.datetime_val; Type: COMMENT; Schema: public; Owner: root
@@ -160,13 +134,11 @@ COMMENT ON COLUMN public.example_demo.time_val IS '时间';
 
 COMMENT ON COLUMN public.example_demo.datetime_val IS '日期时间';
 
-
 --
 -- Name: COLUMN example_demo.text_val; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.example_demo.text_val IS '长文本';
-
 
 --
 -- Name: COLUMN example_demo.json_val; Type: COMMENT; Schema: public; Owner: root
@@ -174,13 +146,11 @@ COMMENT ON COLUMN public.example_demo.text_val IS '长文本';
 
 COMMENT ON COLUMN public.example_demo.json_val IS '元数据(JSON格式)';
 
-
 --
 -- Name: COLUMN example_demo.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.example_demo.id IS '主键ID';
-
 
 --
 -- Name: COLUMN example_demo.uuid; Type: COMMENT; Schema: public; Owner: root
@@ -188,13 +158,11 @@ COMMENT ON COLUMN public.example_demo.id IS '主键ID';
 
 COMMENT ON COLUMN public.example_demo.uuid IS 'UUID全局唯一标识';
 
-
 --
 -- Name: COLUMN example_demo.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.example_demo.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
 
 --
 -- Name: COLUMN example_demo.created_time; Type: COMMENT; Schema: public; Owner: root
@@ -202,13 +170,11 @@ COMMENT ON COLUMN public.example_demo.is_deleted IS '是否已删除(0:未删除
 
 COMMENT ON COLUMN public.example_demo.created_time IS '创建时间';
 
-
 --
 -- Name: COLUMN example_demo.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.example_demo.updated_time IS '更新时间';
-
 
 --
 -- Name: COLUMN example_demo.deleted_time; Type: COMMENT; Schema: public; Owner: root
@@ -216,13 +182,11 @@ COMMENT ON COLUMN public.example_demo.updated_time IS '更新时间';
 
 COMMENT ON COLUMN public.example_demo.deleted_time IS '删除时间';
 
-
 --
 -- Name: COLUMN example_demo.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.example_demo.tenant_id IS '租户ID';
-
 
 --
 -- Name: COLUMN example_demo.created_id; Type: COMMENT; Schema: public; Owner: root
@@ -230,20 +194,17 @@ COMMENT ON COLUMN public.example_demo.tenant_id IS '租户ID';
 
 COMMENT ON COLUMN public.example_demo.created_id IS '创建人ID';
 
-
 --
 -- Name: COLUMN example_demo.updated_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.example_demo.updated_id IS '更新人ID';
 
-
 --
 -- Name: COLUMN example_demo.deleted_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.example_demo.deleted_id IS '删除人ID';
-
 
 --
 -- Name: example_demo_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -257,7 +218,6 @@ CREATE SEQUENCE public.example_demo_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.example_demo_id_seq OWNER TO root;
 
 --
@@ -265,517 +225,6 @@ ALTER SEQUENCE public.example_demo_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.example_demo_id_seq OWNED BY public.example_demo.id;
-
-
---
--- Name: gen_table; Type: TABLE; Schema: public; Owner: root
---
-
-CREATE TABLE public.gen_table (
-    table_name character varying(200) NOT NULL,
-    table_comment character varying(500),
-    class_name character varying(100) NOT NULL,
-    package_name character varying(100),
-    module_name character varying(30),
-    business_name character varying(30),
-    function_name character varying(100),
-    sub_table_name character varying(64) DEFAULT NULL::character varying,
-    sub_table_fk_name character varying(64) DEFAULT NULL::character varying,
-    parent_menu_id integer,
-    status integer NOT NULL,
-    description text,
-    id integer NOT NULL,
-    uuid character varying(64) NOT NULL,
-    is_deleted boolean NOT NULL,
-    created_time timestamp without time zone NOT NULL,
-    updated_time timestamp without time zone NOT NULL,
-    deleted_time timestamp without time zone,
-    tenant_id integer NOT NULL,
-    created_id integer,
-    updated_id integer,
-    deleted_id integer
-);
-
-
-ALTER TABLE public.gen_table OWNER TO root;
-
---
--- Name: TABLE gen_table; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON TABLE public.gen_table IS '代码生成表';
-
-
---
--- Name: COLUMN gen_table.table_name; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.table_name IS '表名称';
-
-
---
--- Name: COLUMN gen_table.table_comment; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.table_comment IS '表描述';
-
-
---
--- Name: COLUMN gen_table.class_name; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.class_name IS '实体类名称';
-
-
---
--- Name: COLUMN gen_table.package_name; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.package_name IS '生成包路径';
-
-
---
--- Name: COLUMN gen_table.module_name; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.module_name IS '生成模块名';
-
-
---
--- Name: COLUMN gen_table.business_name; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.business_name IS '生成业务名';
-
-
---
--- Name: COLUMN gen_table.function_name; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.function_name IS '生成功能名';
-
-
---
--- Name: COLUMN gen_table.sub_table_name; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.sub_table_name IS '关联子表的表名';
-
-
---
--- Name: COLUMN gen_table.sub_table_fk_name; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.sub_table_fk_name IS '子表关联的外键名';
-
-
---
--- Name: COLUMN gen_table.parent_menu_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.parent_menu_id IS '父菜单ID';
-
-
---
--- Name: COLUMN gen_table.status; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.status IS '状态(0:启动 1:停用)';
-
-
---
--- Name: COLUMN gen_table.description; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.description IS '备注';
-
-
---
--- Name: COLUMN gen_table.id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.id IS '主键ID';
-
-
---
--- Name: COLUMN gen_table.uuid; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.uuid IS 'UUID全局唯一标识';
-
-
---
--- Name: COLUMN gen_table.is_deleted; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
-
---
--- Name: COLUMN gen_table.created_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.created_time IS '创建时间';
-
-
---
--- Name: COLUMN gen_table.updated_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.updated_time IS '更新时间';
-
-
---
--- Name: COLUMN gen_table.deleted_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.deleted_time IS '删除时间';
-
-
---
--- Name: COLUMN gen_table.tenant_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.tenant_id IS '租户ID';
-
-
---
--- Name: COLUMN gen_table.created_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.created_id IS '创建人ID';
-
-
---
--- Name: COLUMN gen_table.updated_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.updated_id IS '更新人ID';
-
-
---
--- Name: COLUMN gen_table.deleted_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table.deleted_id IS '删除人ID';
-
-
---
--- Name: gen_table_column; Type: TABLE; Schema: public; Owner: root
---
-
-CREATE TABLE public.gen_table_column (
-    column_name character varying(200) NOT NULL,
-    column_comment character varying(500),
-    column_type character varying(100) NOT NULL,
-    column_length character varying(50),
-    column_default character varying(200),
-    is_pk boolean DEFAULT false NOT NULL,
-    is_increment boolean DEFAULT false NOT NULL,
-    is_nullable boolean DEFAULT true NOT NULL,
-    is_unique boolean DEFAULT false NOT NULL,
-    python_type character varying(100),
-    python_field character varying(200),
-    is_insert boolean DEFAULT true NOT NULL,
-    is_edit boolean DEFAULT true NOT NULL,
-    is_list boolean DEFAULT true NOT NULL,
-    is_query boolean DEFAULT false NOT NULL,
-    query_type character varying(50),
-    html_type character varying(100),
-    dict_type character varying(200),
-    sort integer NOT NULL,
-    table_id integer NOT NULL,
-    status integer NOT NULL,
-    description text,
-    id integer NOT NULL,
-    uuid character varying(64) NOT NULL,
-    is_deleted boolean NOT NULL,
-    created_time timestamp without time zone NOT NULL,
-    updated_time timestamp without time zone NOT NULL,
-    deleted_time timestamp without time zone,
-    tenant_id integer NOT NULL,
-    created_id integer,
-    updated_id integer,
-    deleted_id integer
-);
-
-
-ALTER TABLE public.gen_table_column OWNER TO root;
-
---
--- Name: TABLE gen_table_column; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON TABLE public.gen_table_column IS '代码生成表字段';
-
-
---
--- Name: COLUMN gen_table_column.column_name; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.column_name IS '列名称';
-
-
---
--- Name: COLUMN gen_table_column.column_comment; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.column_comment IS '列描述';
-
-
---
--- Name: COLUMN gen_table_column.column_type; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.column_type IS '列类型';
-
-
---
--- Name: COLUMN gen_table_column.column_length; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.column_length IS '列长度';
-
-
---
--- Name: COLUMN gen_table_column.column_default; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.column_default IS '列默认值';
-
-
---
--- Name: COLUMN gen_table_column.is_pk; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.is_pk IS '是否主键';
-
-
---
--- Name: COLUMN gen_table_column.is_increment; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.is_increment IS '是否自增';
-
-
---
--- Name: COLUMN gen_table_column.is_nullable; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.is_nullable IS '是否允许为空';
-
-
---
--- Name: COLUMN gen_table_column.is_unique; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.is_unique IS '是否唯一';
-
-
---
--- Name: COLUMN gen_table_column.python_type; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.python_type IS 'Python类型';
-
-
---
--- Name: COLUMN gen_table_column.python_field; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.python_field IS 'Python字段名';
-
-
---
--- Name: COLUMN gen_table_column.is_insert; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.is_insert IS '是否为新增字段';
-
-
---
--- Name: COLUMN gen_table_column.is_edit; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.is_edit IS '是否编辑字段';
-
-
---
--- Name: COLUMN gen_table_column.is_list; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.is_list IS '是否列表字段';
-
-
---
--- Name: COLUMN gen_table_column.is_query; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.is_query IS '是否查询字段';
-
-
---
--- Name: COLUMN gen_table_column.query_type; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.query_type IS '查询方式';
-
-
---
--- Name: COLUMN gen_table_column.html_type; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.html_type IS '前端显示类型';
-
-
---
--- Name: COLUMN gen_table_column.dict_type; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.dict_type IS '前端对应字典类型';
-
-
---
--- Name: COLUMN gen_table_column.sort; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.sort IS '排序';
-
-
---
--- Name: COLUMN gen_table_column.table_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.table_id IS '归属表编号';
-
-
---
--- Name: COLUMN gen_table_column.status; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.status IS '状态(0:启动 1:停用)';
-
-
---
--- Name: COLUMN gen_table_column.description; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.description IS '备注';
-
-
---
--- Name: COLUMN gen_table_column.id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.id IS '主键ID';
-
-
---
--- Name: COLUMN gen_table_column.uuid; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.uuid IS 'UUID全局唯一标识';
-
-
---
--- Name: COLUMN gen_table_column.is_deleted; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
-
---
--- Name: COLUMN gen_table_column.created_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.created_time IS '创建时间';
-
-
---
--- Name: COLUMN gen_table_column.updated_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.updated_time IS '更新时间';
-
-
---
--- Name: COLUMN gen_table_column.deleted_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.deleted_time IS '删除时间';
-
-
---
--- Name: COLUMN gen_table_column.tenant_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.tenant_id IS '租户ID';
-
-
---
--- Name: COLUMN gen_table_column.created_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.created_id IS '创建人ID';
-
-
---
--- Name: COLUMN gen_table_column.updated_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.updated_id IS '更新人ID';
-
-
---
--- Name: COLUMN gen_table_column.deleted_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.gen_table_column.deleted_id IS '删除人ID';
-
-
---
--- Name: gen_table_column_id_seq; Type: SEQUENCE; Schema: public; Owner: root
---
-
-CREATE SEQUENCE public.gen_table_column_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.gen_table_column_id_seq OWNER TO root;
-
---
--- Name: gen_table_column_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
---
-
-ALTER SEQUENCE public.gen_table_column_id_seq OWNED BY public.gen_table_column.id;
-
-
---
--- Name: gen_table_id_seq; Type: SEQUENCE; Schema: public; Owner: root
---
-
-CREATE SEQUENCE public.gen_table_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.gen_table_id_seq OWNER TO root;
-
---
--- Name: gen_table_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
---
-
-ALTER SEQUENCE public.gen_table_id_seq OWNED BY public.gen_table.id;
-
 
 --
 -- Name: platform_email_config; Type: TABLE; Schema: public; Owner: root
@@ -801,7 +250,6 @@ CREATE TABLE public.platform_email_config (
     deleted_time timestamp without time zone
 );
 
-
 ALTER TABLE public.platform_email_config OWNER TO root;
 
 --
@@ -810,13 +258,11 @@ ALTER TABLE public.platform_email_config OWNER TO root;
 
 COMMENT ON TABLE public.platform_email_config IS '邮件 SMTP 配置表';
 
-
 --
 -- Name: COLUMN platform_email_config.name; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_config.name IS '配置名称';
-
 
 --
 -- Name: COLUMN platform_email_config.smtp_host; Type: COMMENT; Schema: public; Owner: root
@@ -824,13 +270,11 @@ COMMENT ON COLUMN public.platform_email_config.name IS '配置名称';
 
 COMMENT ON COLUMN public.platform_email_config.smtp_host IS 'SMTP 服务器地址';
 
-
 --
 -- Name: COLUMN platform_email_config.smtp_port; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_config.smtp_port IS 'SMTP 端口（465=SSL, 587=TLS）';
-
 
 --
 -- Name: COLUMN platform_email_config.smtp_user; Type: COMMENT; Schema: public; Owner: root
@@ -838,13 +282,11 @@ COMMENT ON COLUMN public.platform_email_config.smtp_port IS 'SMTP 端口（465=S
 
 COMMENT ON COLUMN public.platform_email_config.smtp_user IS 'SMTP 登录用户名（发件邮箱）';
 
-
 --
 -- Name: COLUMN platform_email_config.smtp_password; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_config.smtp_password IS 'SMTP 授权密码（AES 加密存储）';
-
 
 --
 -- Name: COLUMN platform_email_config.from_name; Type: COMMENT; Schema: public; Owner: root
@@ -852,13 +294,11 @@ COMMENT ON COLUMN public.platform_email_config.smtp_password IS 'SMTP 授权密�
 
 COMMENT ON COLUMN public.platform_email_config.from_name IS '发件人显示名';
 
-
 --
 -- Name: COLUMN platform_email_config.use_tls; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_config.use_tls IS '是否启用 SSL/TLS';
-
 
 --
 -- Name: COLUMN platform_email_config.is_default; Type: COMMENT; Schema: public; Owner: root
@@ -866,13 +306,11 @@ COMMENT ON COLUMN public.platform_email_config.use_tls IS '是否启用 SSL/TLS'
 
 COMMENT ON COLUMN public.platform_email_config.is_default IS '是否为默认配置';
 
-
 --
 -- Name: COLUMN platform_email_config.timeout; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_config.timeout IS '连接超时（秒）';
-
 
 --
 -- Name: COLUMN platform_email_config.status; Type: COMMENT; Schema: public; Owner: root
@@ -880,13 +318,11 @@ COMMENT ON COLUMN public.platform_email_config.timeout IS '连接超时（秒）
 
 COMMENT ON COLUMN public.platform_email_config.status IS '状态(0:启动 1:停用)';
 
-
 --
 -- Name: COLUMN platform_email_config.description; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_config.description IS '备注';
-
 
 --
 -- Name: COLUMN platform_email_config.id; Type: COMMENT; Schema: public; Owner: root
@@ -894,13 +330,11 @@ COMMENT ON COLUMN public.platform_email_config.description IS '备注';
 
 COMMENT ON COLUMN public.platform_email_config.id IS '主键ID';
 
-
 --
 -- Name: COLUMN platform_email_config.uuid; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_config.uuid IS 'UUID全局唯一标识';
-
 
 --
 -- Name: COLUMN platform_email_config.is_deleted; Type: COMMENT; Schema: public; Owner: root
@@ -908,13 +342,11 @@ COMMENT ON COLUMN public.platform_email_config.uuid IS 'UUID全局唯一标识';
 
 COMMENT ON COLUMN public.platform_email_config.is_deleted IS '是否已删除(0:未删除 1:已删除)';
 
-
 --
 -- Name: COLUMN platform_email_config.created_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_config.created_time IS '创建时间';
-
 
 --
 -- Name: COLUMN platform_email_config.updated_time; Type: COMMENT; Schema: public; Owner: root
@@ -922,13 +354,11 @@ COMMENT ON COLUMN public.platform_email_config.created_time IS '创建时间';
 
 COMMENT ON COLUMN public.platform_email_config.updated_time IS '更新时间';
 
-
 --
 -- Name: COLUMN platform_email_config.deleted_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_config.deleted_time IS '删除时间';
-
 
 --
 -- Name: platform_email_config_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -942,7 +372,6 @@ CREATE SEQUENCE public.platform_email_config_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_email_config_id_seq OWNER TO root;
 
 --
@@ -950,7 +379,6 @@ ALTER SEQUENCE public.platform_email_config_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_email_config_id_seq OWNED BY public.platform_email_config.id;
-
 
 --
 -- Name: platform_email_log; Type: TABLE; Schema: public; Owner: root
@@ -980,7 +408,6 @@ CREATE TABLE public.platform_email_log (
     deleted_id integer
 );
 
-
 ALTER TABLE public.platform_email_log OWNER TO root;
 
 --
@@ -989,13 +416,11 @@ ALTER TABLE public.platform_email_log OWNER TO root;
 
 COMMENT ON TABLE public.platform_email_log IS '邮件发送日志表';
 
-
 --
 -- Name: COLUMN platform_email_log.config_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_log.config_id IS '使用的 SMTP 配置 ID';
-
 
 --
 -- Name: COLUMN platform_email_log.template_code; Type: COMMENT; Schema: public; Owner: root
@@ -1003,13 +428,11 @@ COMMENT ON COLUMN public.platform_email_log.config_id IS '使用的 SMTP 配置 
 
 COMMENT ON COLUMN public.platform_email_log.template_code IS '模板编码（冗余存储，模板删除后仍可追溯）';
 
-
 --
 -- Name: COLUMN platform_email_log.to_email; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_log.to_email IS '收件人邮箱';
-
 
 --
 -- Name: COLUMN platform_email_log.to_name; Type: COMMENT; Schema: public; Owner: root
@@ -1017,13 +440,11 @@ COMMENT ON COLUMN public.platform_email_log.to_email IS '收件人邮箱';
 
 COMMENT ON COLUMN public.platform_email_log.to_name IS '收件人姓名';
 
-
 --
 -- Name: COLUMN platform_email_log.subject; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_log.subject IS '邮件主题（渲染后）';
-
 
 --
 -- Name: COLUMN platform_email_log.biz_type; Type: COMMENT; Schema: public; Owner: root
@@ -1031,13 +452,11 @@ COMMENT ON COLUMN public.platform_email_log.subject IS '邮件主题（渲染后
 
 COMMENT ON COLUMN public.platform_email_log.biz_type IS '业务类型（register/reset_password/invite/expiry_warning/ticket_reply/other）';
 
-
 --
 -- Name: COLUMN platform_email_log.error_msg; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_log.error_msg IS '失败原因';
-
 
 --
 -- Name: COLUMN platform_email_log.retry_count; Type: COMMENT; Schema: public; Owner: root
@@ -1045,13 +464,11 @@ COMMENT ON COLUMN public.platform_email_log.error_msg IS '失败原因';
 
 COMMENT ON COLUMN public.platform_email_log.retry_count IS '重试次数';
 
-
 --
 -- Name: COLUMN platform_email_log.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_log.tenant_id IS '关联租户 ID（可为空，如平台注册邮件）';
-
 
 --
 -- Name: COLUMN platform_email_log.sent_time; Type: COMMENT; Schema: public; Owner: root
@@ -1059,13 +476,11 @@ COMMENT ON COLUMN public.platform_email_log.tenant_id IS '关联租户 ID（可�
 
 COMMENT ON COLUMN public.platform_email_log.sent_time IS '实际发送时间';
 
-
 --
 -- Name: COLUMN platform_email_log.status; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_log.status IS '状态(0:启动 1:停用)';
-
 
 --
 -- Name: COLUMN platform_email_log.description; Type: COMMENT; Schema: public; Owner: root
@@ -1073,13 +488,11 @@ COMMENT ON COLUMN public.platform_email_log.status IS '状态(0:启动 1:停用)
 
 COMMENT ON COLUMN public.platform_email_log.description IS '备注';
 
-
 --
 -- Name: COLUMN platform_email_log.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_log.id IS '主键ID';
-
 
 --
 -- Name: COLUMN platform_email_log.uuid; Type: COMMENT; Schema: public; Owner: root
@@ -1087,13 +500,11 @@ COMMENT ON COLUMN public.platform_email_log.id IS '主键ID';
 
 COMMENT ON COLUMN public.platform_email_log.uuid IS 'UUID全局唯一标识';
 
-
 --
 -- Name: COLUMN platform_email_log.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_log.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
 
 --
 -- Name: COLUMN platform_email_log.created_time; Type: COMMENT; Schema: public; Owner: root
@@ -1101,13 +512,11 @@ COMMENT ON COLUMN public.platform_email_log.is_deleted IS '是否已删除(0:未
 
 COMMENT ON COLUMN public.platform_email_log.created_time IS '创建时间';
 
-
 --
 -- Name: COLUMN platform_email_log.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_log.updated_time IS '更新时间';
-
 
 --
 -- Name: COLUMN platform_email_log.deleted_time; Type: COMMENT; Schema: public; Owner: root
@@ -1115,13 +524,11 @@ COMMENT ON COLUMN public.platform_email_log.updated_time IS '更新时间';
 
 COMMENT ON COLUMN public.platform_email_log.deleted_time IS '删除时间';
 
-
 --
 -- Name: COLUMN platform_email_log.created_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_log.created_id IS '创建人ID';
-
 
 --
 -- Name: COLUMN platform_email_log.updated_id; Type: COMMENT; Schema: public; Owner: root
@@ -1129,13 +536,11 @@ COMMENT ON COLUMN public.platform_email_log.created_id IS '创建人ID';
 
 COMMENT ON COLUMN public.platform_email_log.updated_id IS '更新人ID';
 
-
 --
 -- Name: COLUMN platform_email_log.deleted_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_log.deleted_id IS '删除人ID';
-
 
 --
 -- Name: platform_email_log_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -1149,7 +554,6 @@ CREATE SEQUENCE public.platform_email_log_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_email_log_id_seq OWNER TO root;
 
 --
@@ -1157,7 +561,6 @@ ALTER SEQUENCE public.platform_email_log_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_email_log_id_seq OWNED BY public.platform_email_log.id;
-
 
 --
 -- Name: platform_email_template; Type: TABLE; Schema: public; Owner: root
@@ -1180,7 +583,6 @@ CREATE TABLE public.platform_email_template (
     deleted_time timestamp without time zone
 );
 
-
 ALTER TABLE public.platform_email_template OWNER TO root;
 
 --
@@ -1189,13 +591,11 @@ ALTER TABLE public.platform_email_template OWNER TO root;
 
 COMMENT ON TABLE public.platform_email_template IS '邮件模板表';
 
-
 --
 -- Name: COLUMN platform_email_template.name; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_template.name IS '模板名称';
-
 
 --
 -- Name: COLUMN platform_email_template.template_code; Type: COMMENT; Schema: public; Owner: root
@@ -1203,13 +603,11 @@ COMMENT ON COLUMN public.platform_email_template.name IS '模板名称';
 
 COMMENT ON COLUMN public.platform_email_template.template_code IS '模板编码（业务键）';
 
-
 --
 -- Name: COLUMN platform_email_template.subject; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_template.subject IS '邮件主题（可含变量）';
-
 
 --
 -- Name: COLUMN platform_email_template.body_html; Type: COMMENT; Schema: public; Owner: root
@@ -1217,13 +615,11 @@ COMMENT ON COLUMN public.platform_email_template.subject IS '邮件主题（可�
 
 COMMENT ON COLUMN public.platform_email_template.body_html IS '邮件正文 HTML（Jinja2 模板）';
 
-
 --
 -- Name: COLUMN platform_email_template.body_text; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_template.body_text IS '邮件纯文本版本（降级用）';
-
 
 --
 -- Name: COLUMN platform_email_template.variables; Type: COMMENT; Schema: public; Owner: root
@@ -1231,13 +627,11 @@ COMMENT ON COLUMN public.platform_email_template.body_text IS '邮件纯文本�
 
 COMMENT ON COLUMN public.platform_email_template.variables IS '模板变量说明（JSON 格式，如 {"username": "用户名", "link": "链接"}）';
 
-
 --
 -- Name: COLUMN platform_email_template.status; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_template.status IS '状态(0:启动 1:停用)';
-
 
 --
 -- Name: COLUMN platform_email_template.description; Type: COMMENT; Schema: public; Owner: root
@@ -1245,13 +639,11 @@ COMMENT ON COLUMN public.platform_email_template.status IS '状态(0:启动 1:�
 
 COMMENT ON COLUMN public.platform_email_template.description IS '备注';
 
-
 --
 -- Name: COLUMN platform_email_template.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_template.id IS '主键ID';
-
 
 --
 -- Name: COLUMN platform_email_template.uuid; Type: COMMENT; Schema: public; Owner: root
@@ -1259,13 +651,11 @@ COMMENT ON COLUMN public.platform_email_template.id IS '主键ID';
 
 COMMENT ON COLUMN public.platform_email_template.uuid IS 'UUID全局唯一标识';
 
-
 --
 -- Name: COLUMN platform_email_template.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_template.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
 
 --
 -- Name: COLUMN platform_email_template.created_time; Type: COMMENT; Schema: public; Owner: root
@@ -1273,20 +663,17 @@ COMMENT ON COLUMN public.platform_email_template.is_deleted IS '是否已删除(
 
 COMMENT ON COLUMN public.platform_email_template.created_time IS '创建时间';
 
-
 --
 -- Name: COLUMN platform_email_template.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_template.updated_time IS '更新时间';
 
-
 --
 -- Name: COLUMN platform_email_template.deleted_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_email_template.deleted_time IS '删除时间';
-
 
 --
 -- Name: platform_email_template_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -1300,7 +687,6 @@ CREATE SEQUENCE public.platform_email_template_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_email_template_id_seq OWNER TO root;
 
 --
@@ -1308,7 +694,6 @@ ALTER SEQUENCE public.platform_email_template_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_email_template_id_seq OWNED BY public.platform_email_template.id;
-
 
 --
 -- Name: platform_invoice; Type: TABLE; Schema: public; Owner: root
@@ -1341,7 +726,6 @@ CREATE TABLE public.platform_invoice (
     deleted_id integer
 );
 
-
 ALTER TABLE public.platform_invoice OWNER TO root;
 
 --
@@ -1350,13 +734,11 @@ ALTER TABLE public.platform_invoice OWNER TO root;
 
 COMMENT ON TABLE public.platform_invoice IS '发票表';
 
-
 --
 -- Name: COLUMN platform_invoice.invoice_no; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_invoice.invoice_no IS '发票号码';
-
 
 --
 -- Name: COLUMN platform_invoice.order_id; Type: COMMENT; Schema: public; Owner: root
@@ -1364,13 +746,11 @@ COMMENT ON COLUMN public.platform_invoice.invoice_no IS '发票号码';
 
 COMMENT ON COLUMN public.platform_invoice.order_id IS '关联订单';
 
-
 --
 -- Name: COLUMN platform_invoice.invoice_type; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_invoice.invoice_type IS 'vat_normal/vat_special';
-
 
 --
 -- Name: COLUMN platform_invoice.title; Type: COMMENT; Schema: public; Owner: root
@@ -1378,13 +758,11 @@ COMMENT ON COLUMN public.platform_invoice.invoice_type IS 'vat_normal/vat_specia
 
 COMMENT ON COLUMN public.platform_invoice.title IS '发票抬头';
 
-
 --
 -- Name: COLUMN platform_invoice.tax_no; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_invoice.tax_no IS '纳税人识别号';
-
 
 --
 -- Name: COLUMN platform_invoice.bank_info; Type: COMMENT; Schema: public; Owner: root
@@ -1392,13 +770,11 @@ COMMENT ON COLUMN public.platform_invoice.tax_no IS '纳税人识别号';
 
 COMMENT ON COLUMN public.platform_invoice.bank_info IS '开户行及账号';
 
-
 --
 -- Name: COLUMN platform_invoice.address_info; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_invoice.address_info IS '注册地址及电话';
-
 
 --
 -- Name: COLUMN platform_invoice.amount; Type: COMMENT; Schema: public; Owner: root
@@ -1406,13 +782,11 @@ COMMENT ON COLUMN public.platform_invoice.address_info IS '注册地址及电话
 
 COMMENT ON COLUMN public.platform_invoice.amount IS '发票金额(分)';
 
-
 --
 -- Name: COLUMN platform_invoice.tax_amount; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_invoice.tax_amount IS '税额(分)';
-
 
 --
 -- Name: COLUMN platform_invoice.pdf_url; Type: COMMENT; Schema: public; Owner: root
@@ -1420,13 +794,11 @@ COMMENT ON COLUMN public.platform_invoice.tax_amount IS '税额(分)';
 
 COMMENT ON COLUMN public.platform_invoice.pdf_url IS '发票PDF下载地址';
 
-
 --
 -- Name: COLUMN platform_invoice.oss_license_pdf_url; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_invoice.oss_license_pdf_url IS '开源授权函PDF下载地址';
-
 
 --
 -- Name: COLUMN platform_invoice.api_response; Type: COMMENT; Schema: public; Owner: root
@@ -1434,13 +806,11 @@ COMMENT ON COLUMN public.platform_invoice.oss_license_pdf_url IS '开源授权�
 
 COMMENT ON COLUMN public.platform_invoice.api_response IS '第三方API响应';
 
-
 --
 -- Name: COLUMN platform_invoice.status; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_invoice.status IS '状态(0:待开票 1:已开票 2:开票失败 3:已作废)';
-
 
 --
 -- Name: COLUMN platform_invoice.description; Type: COMMENT; Schema: public; Owner: root
@@ -1448,13 +818,11 @@ COMMENT ON COLUMN public.platform_invoice.status IS '状态(0:待开票 1:已开
 
 COMMENT ON COLUMN public.platform_invoice.description IS '备注';
 
-
 --
 -- Name: COLUMN platform_invoice.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_invoice.id IS '主键ID';
-
 
 --
 -- Name: COLUMN platform_invoice.uuid; Type: COMMENT; Schema: public; Owner: root
@@ -1462,13 +830,11 @@ COMMENT ON COLUMN public.platform_invoice.id IS '主键ID';
 
 COMMENT ON COLUMN public.platform_invoice.uuid IS 'UUID全局唯一标识';
 
-
 --
 -- Name: COLUMN platform_invoice.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_invoice.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
 
 --
 -- Name: COLUMN platform_invoice.created_time; Type: COMMENT; Schema: public; Owner: root
@@ -1476,13 +842,11 @@ COMMENT ON COLUMN public.platform_invoice.is_deleted IS '是否已删除(0:未�
 
 COMMENT ON COLUMN public.platform_invoice.created_time IS '创建时间';
 
-
 --
 -- Name: COLUMN platform_invoice.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_invoice.updated_time IS '更新时间';
-
 
 --
 -- Name: COLUMN platform_invoice.deleted_time; Type: COMMENT; Schema: public; Owner: root
@@ -1490,13 +854,11 @@ COMMENT ON COLUMN public.platform_invoice.updated_time IS '更新时间';
 
 COMMENT ON COLUMN public.platform_invoice.deleted_time IS '删除时间';
 
-
 --
 -- Name: COLUMN platform_invoice.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_invoice.tenant_id IS '租户ID';
-
 
 --
 -- Name: COLUMN platform_invoice.created_id; Type: COMMENT; Schema: public; Owner: root
@@ -1504,20 +866,17 @@ COMMENT ON COLUMN public.platform_invoice.tenant_id IS '租户ID';
 
 COMMENT ON COLUMN public.platform_invoice.created_id IS '创建人ID';
 
-
 --
 -- Name: COLUMN platform_invoice.updated_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_invoice.updated_id IS '更新人ID';
 
-
 --
 -- Name: COLUMN platform_invoice.deleted_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_invoice.deleted_id IS '删除人ID';
-
 
 --
 -- Name: platform_invoice_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -1531,7 +890,6 @@ CREATE SEQUENCE public.platform_invoice_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_invoice_id_seq OWNER TO root;
 
 --
@@ -1539,7 +897,6 @@ ALTER SEQUENCE public.platform_invoice_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_invoice_id_seq OWNED BY public.platform_invoice.id;
-
 
 --
 -- Name: platform_menu; Type: TABLE; Schema: public; Owner: root
@@ -1580,7 +937,6 @@ CREATE TABLE public.platform_menu (
     deleted_time timestamp without time zone
 );
 
-
 ALTER TABLE public.platform_menu OWNER TO root;
 
 --
@@ -1589,13 +945,11 @@ ALTER TABLE public.platform_menu OWNER TO root;
 
 COMMENT ON TABLE public.platform_menu IS '平台菜单表';
 
-
 --
 -- Name: COLUMN platform_menu.name; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.name IS '菜单名称';
-
 
 --
 -- Name: COLUMN platform_menu.type; Type: COMMENT; Schema: public; Owner: root
@@ -1603,13 +957,11 @@ COMMENT ON COLUMN public.platform_menu.name IS '菜单名称';
 
 COMMENT ON COLUMN public.platform_menu.type IS '菜单类型(1:目录 2:菜单 3:按钮 4:链接)';
 
-
 --
 -- Name: COLUMN platform_menu."order"; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu."order" IS '显示排序';
-
 
 --
 -- Name: COLUMN platform_menu.permission; Type: COMMENT; Schema: public; Owner: root
@@ -1617,13 +969,11 @@ COMMENT ON COLUMN public.platform_menu."order" IS '显示排序';
 
 COMMENT ON COLUMN public.platform_menu.permission IS '权限标识(如:module_system:user:query)';
 
-
 --
 -- Name: COLUMN platform_menu.icon; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.icon IS '菜单图标';
-
 
 --
 -- Name: COLUMN platform_menu.route_name; Type: COMMENT; Schema: public; Owner: root
@@ -1631,13 +981,11 @@ COMMENT ON COLUMN public.platform_menu.icon IS '菜单图标';
 
 COMMENT ON COLUMN public.platform_menu.route_name IS '路由名称';
 
-
 --
 -- Name: COLUMN platform_menu.route_path; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.route_path IS '路由路径';
-
 
 --
 -- Name: COLUMN platform_menu.component_path; Type: COMMENT; Schema: public; Owner: root
@@ -1645,13 +993,11 @@ COMMENT ON COLUMN public.platform_menu.route_path IS '路由路径';
 
 COMMENT ON COLUMN public.platform_menu.component_path IS '组件路径';
 
-
 --
 -- Name: COLUMN platform_menu.redirect; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.redirect IS '重定向地址';
-
 
 --
 -- Name: COLUMN platform_menu.hidden; Type: COMMENT; Schema: public; Owner: root
@@ -1659,13 +1005,11 @@ COMMENT ON COLUMN public.platform_menu.redirect IS '重定向地址';
 
 COMMENT ON COLUMN public.platform_menu.hidden IS '是否隐藏(True:隐藏 False:显示)';
 
-
 --
 -- Name: COLUMN platform_menu.keep_alive; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.keep_alive IS '是否缓存(True:是 False:否)';
-
 
 --
 -- Name: COLUMN platform_menu.always_show; Type: COMMENT; Schema: public; Owner: root
@@ -1673,13 +1017,11 @@ COMMENT ON COLUMN public.platform_menu.keep_alive IS '是否缓存(True:是 Fals
 
 COMMENT ON COLUMN public.platform_menu.always_show IS '是否始终显示(True:是 False:否)';
 
-
 --
 -- Name: COLUMN platform_menu.title; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.title IS '菜单标题';
-
 
 --
 -- Name: COLUMN platform_menu.params; Type: COMMENT; Schema: public; Owner: root
@@ -1687,13 +1029,11 @@ COMMENT ON COLUMN public.platform_menu.title IS '菜单标题';
 
 COMMENT ON COLUMN public.platform_menu.params IS '路由参数(JSON对象)';
 
-
 --
 -- Name: COLUMN platform_menu.affix; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.affix IS '是否固定标签页(True:是 False:否)';
-
 
 --
 -- Name: COLUMN platform_menu.client; Type: COMMENT; Schema: public; Owner: root
@@ -1701,13 +1041,11 @@ COMMENT ON COLUMN public.platform_menu.affix IS '是否固定标签页(True:是 
 
 COMMENT ON COLUMN public.platform_menu.client IS '终端(pc:管理端桌面 app:移动端)';
 
-
 --
 -- Name: COLUMN platform_menu.link; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.link IS '外链地址(仅type=4)';
-
 
 --
 -- Name: COLUMN platform_menu.is_iframe; Type: COMMENT; Schema: public; Owner: root
@@ -1715,13 +1053,11 @@ COMMENT ON COLUMN public.platform_menu.link IS '外链地址(仅type=4)';
 
 COMMENT ON COLUMN public.platform_menu.is_iframe IS '是否嵌入iframe(True:是 False:否)';
 
-
 --
 -- Name: COLUMN platform_menu.is_hide_tab; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.is_hide_tab IS '是否隐藏标签页(True:是 False:否)';
-
 
 --
 -- Name: COLUMN platform_menu.active_path; Type: COMMENT; Schema: public; Owner: root
@@ -1729,13 +1065,11 @@ COMMENT ON COLUMN public.platform_menu.is_hide_tab IS '是否隐藏标签页(Tru
 
 COMMENT ON COLUMN public.platform_menu.active_path IS '激活菜单路径(用于高亮父级)';
 
-
 --
 -- Name: COLUMN platform_menu.show_badge; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.show_badge IS '是否显示红点角标(True:是 False:否)';
-
 
 --
 -- Name: COLUMN platform_menu.show_text_badge; Type: COMMENT; Schema: public; Owner: root
@@ -1743,13 +1077,11 @@ COMMENT ON COLUMN public.platform_menu.show_badge IS '是否显示红点角标(T
 
 COMMENT ON COLUMN public.platform_menu.show_text_badge IS '文字角标内容';
 
-
 --
 -- Name: COLUMN platform_menu.scope; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.scope IS '菜单可见范围(platform:仅平台 tenant:租户可用)';
-
 
 --
 -- Name: COLUMN platform_menu.status; Type: COMMENT; Schema: public; Owner: root
@@ -1757,13 +1089,11 @@ COMMENT ON COLUMN public.platform_menu.scope IS '菜单可见范围(platform:仅
 
 COMMENT ON COLUMN public.platform_menu.status IS '状态(0:启动 1:停用)';
 
-
 --
 -- Name: COLUMN platform_menu.description; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.description IS '备注';
-
 
 --
 -- Name: COLUMN platform_menu.parent_id; Type: COMMENT; Schema: public; Owner: root
@@ -1771,13 +1101,11 @@ COMMENT ON COLUMN public.platform_menu.description IS '备注';
 
 COMMENT ON COLUMN public.platform_menu.parent_id IS '父菜单ID';
 
-
 --
 -- Name: COLUMN platform_menu.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.id IS '主键ID';
-
 
 --
 -- Name: COLUMN platform_menu.uuid; Type: COMMENT; Schema: public; Owner: root
@@ -1785,13 +1113,11 @@ COMMENT ON COLUMN public.platform_menu.id IS '主键ID';
 
 COMMENT ON COLUMN public.platform_menu.uuid IS 'UUID全局唯一标识';
 
-
 --
 -- Name: COLUMN platform_menu.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
 
 --
 -- Name: COLUMN platform_menu.created_time; Type: COMMENT; Schema: public; Owner: root
@@ -1799,20 +1125,17 @@ COMMENT ON COLUMN public.platform_menu.is_deleted IS '是否已删除(0:未删�
 
 COMMENT ON COLUMN public.platform_menu.created_time IS '创建时间';
 
-
 --
 -- Name: COLUMN platform_menu.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.updated_time IS '更新时间';
 
-
 --
 -- Name: COLUMN platform_menu.deleted_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_menu.deleted_time IS '删除时间';
-
 
 --
 -- Name: platform_menu_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -1826,7 +1149,6 @@ CREATE SEQUENCE public.platform_menu_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_menu_id_seq OWNER TO root;
 
 --
@@ -1834,7 +1156,6 @@ ALTER SEQUENCE public.platform_menu_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_menu_id_seq OWNED BY public.platform_menu.id;
-
 
 --
 -- Name: platform_order; Type: TABLE; Schema: public; Owner: root
@@ -1861,7 +1182,6 @@ CREATE TABLE public.platform_order (
     tenant_id integer NOT NULL
 );
 
-
 ALTER TABLE public.platform_order OWNER TO root;
 
 --
@@ -1870,13 +1190,11 @@ ALTER TABLE public.platform_order OWNER TO root;
 
 COMMENT ON TABLE public.platform_order IS '订单表';
 
-
 --
 -- Name: COLUMN platform_order.order_no; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_order.order_no IS '订单号';
-
 
 --
 -- Name: COLUMN platform_order.package_id; Type: COMMENT; Schema: public; Owner: root
@@ -1884,13 +1202,11 @@ COMMENT ON COLUMN public.platform_order.order_no IS '订单号';
 
 COMMENT ON COLUMN public.platform_order.package_id IS '购买套餐(插件订单为空)';
 
-
 --
 -- Name: COLUMN platform_order.plugin_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_order.plugin_id IS '购买插件(套餐订单为空)';
-
 
 --
 -- Name: COLUMN platform_order.order_type; Type: COMMENT; Schema: public; Owner: root
@@ -1898,13 +1214,11 @@ COMMENT ON COLUMN public.platform_order.plugin_id IS '购买插件(套餐订单�
 
 COMMENT ON COLUMN public.platform_order.order_type IS 'new/renew/upgrade/downgrade/plugin';
 
-
 --
 -- Name: COLUMN platform_order.amount; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_order.amount IS '金额(分)';
-
 
 --
 -- Name: COLUMN platform_order.period_count; Type: COMMENT; Schema: public; Owner: root
@@ -1912,13 +1226,11 @@ COMMENT ON COLUMN public.platform_order.amount IS '金额(分)';
 
 COMMENT ON COLUMN public.platform_order.period_count IS '购买周期数';
 
-
 --
 -- Name: COLUMN platform_order.pay_method; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_order.pay_method IS 'alipay/wxpay';
-
 
 --
 -- Name: COLUMN platform_order.pay_time; Type: COMMENT; Schema: public; Owner: root
@@ -1926,13 +1238,11 @@ COMMENT ON COLUMN public.platform_order.pay_method IS 'alipay/wxpay';
 
 COMMENT ON COLUMN public.platform_order.pay_time IS '支付时间';
 
-
 --
 -- Name: COLUMN platform_order.expire_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_order.expire_time IS '订单过期时间(15分钟)';
-
 
 --
 -- Name: COLUMN platform_order.status; Type: COMMENT; Schema: public; Owner: root
@@ -1940,13 +1250,11 @@ COMMENT ON COLUMN public.platform_order.expire_time IS '订单过期时间(15分
 
 COMMENT ON COLUMN public.platform_order.status IS '状态(0:待支付 1:已支付 2:已取消 3:已退款)';
 
-
 --
 -- Name: COLUMN platform_order.description; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_order.description IS '备注';
-
 
 --
 -- Name: COLUMN platform_order.id; Type: COMMENT; Schema: public; Owner: root
@@ -1954,13 +1262,11 @@ COMMENT ON COLUMN public.platform_order.description IS '备注';
 
 COMMENT ON COLUMN public.platform_order.id IS '主键ID';
 
-
 --
 -- Name: COLUMN platform_order.uuid; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_order.uuid IS 'UUID全局唯一标识';
-
 
 --
 -- Name: COLUMN platform_order.is_deleted; Type: COMMENT; Schema: public; Owner: root
@@ -1968,13 +1274,11 @@ COMMENT ON COLUMN public.platform_order.uuid IS 'UUID全局唯一标识';
 
 COMMENT ON COLUMN public.platform_order.is_deleted IS '是否已删除(0:未删除 1:已删除)';
 
-
 --
 -- Name: COLUMN platform_order.created_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_order.created_time IS '创建时间';
-
 
 --
 -- Name: COLUMN platform_order.updated_time; Type: COMMENT; Schema: public; Owner: root
@@ -1982,20 +1286,17 @@ COMMENT ON COLUMN public.platform_order.created_time IS '创建时间';
 
 COMMENT ON COLUMN public.platform_order.updated_time IS '更新时间';
 
-
 --
 -- Name: COLUMN platform_order.deleted_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_order.deleted_time IS '删除时间';
 
-
 --
 -- Name: COLUMN platform_order.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_order.tenant_id IS '租户ID';
-
 
 --
 -- Name: platform_order_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -2009,7 +1310,6 @@ CREATE SEQUENCE public.platform_order_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_order_id_seq OWNER TO root;
 
 --
@@ -2017,7 +1317,6 @@ ALTER SEQUENCE public.platform_order_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_order_id_seq OWNED BY public.platform_order.id;
-
 
 --
 -- Name: platform_package; Type: TABLE; Schema: public; Owner: root
@@ -2045,7 +1344,6 @@ CREATE TABLE public.platform_package (
     deleted_time timestamp without time zone
 );
 
-
 ALTER TABLE public.platform_package OWNER TO root;
 
 --
@@ -2054,13 +1352,11 @@ ALTER TABLE public.platform_package OWNER TO root;
 
 COMMENT ON TABLE public.platform_package IS '租户套餐表';
 
-
 --
 -- Name: COLUMN platform_package.name; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_package.name IS '套餐名称';
-
 
 --
 -- Name: COLUMN platform_package.code; Type: COMMENT; Schema: public; Owner: root
@@ -2068,13 +1364,11 @@ COMMENT ON COLUMN public.platform_package.name IS '套餐名称';
 
 COMMENT ON COLUMN public.platform_package.code IS '套餐编码';
 
-
 --
 -- Name: COLUMN platform_package.sort; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_package.sort IS '排序';
-
 
 --
 -- Name: COLUMN platform_package.price; Type: COMMENT; Schema: public; Owner: root
@@ -2082,13 +1376,11 @@ COMMENT ON COLUMN public.platform_package.sort IS '排序';
 
 COMMENT ON COLUMN public.platform_package.price IS '价格(分)';
 
-
 --
 -- Name: COLUMN platform_package.period; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_package.period IS '计费周期(month/year)';
-
 
 --
 -- Name: COLUMN platform_package.trial_days; Type: COMMENT; Schema: public; Owner: root
@@ -2096,13 +1388,11 @@ COMMENT ON COLUMN public.platform_package.period IS '计费周期(month/year)';
 
 COMMENT ON COLUMN public.platform_package.trial_days IS '免费试用天数';
 
-
 --
 -- Name: COLUMN platform_package.max_users; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_package.max_users IS '最大用户数';
-
 
 --
 -- Name: COLUMN platform_package.max_roles; Type: COMMENT; Schema: public; Owner: root
@@ -2110,13 +1400,11 @@ COMMENT ON COLUMN public.platform_package.max_users IS '最大用户数';
 
 COMMENT ON COLUMN public.platform_package.max_roles IS '最大角色数';
 
-
 --
 -- Name: COLUMN platform_package.max_depts; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_package.max_depts IS '最大部门数';
-
 
 --
 -- Name: COLUMN platform_package.max_storage_mb; Type: COMMENT; Schema: public; Owner: root
@@ -2124,13 +1412,11 @@ COMMENT ON COLUMN public.platform_package.max_depts IS '最大部门数';
 
 COMMENT ON COLUMN public.platform_package.max_storage_mb IS '最大存储(MB)';
 
-
 --
 -- Name: COLUMN platform_package.rate_limit; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_package.rate_limit IS 'API速率限制(请求/10秒)';
-
 
 --
 -- Name: COLUMN platform_package.status; Type: COMMENT; Schema: public; Owner: root
@@ -2138,13 +1424,11 @@ COMMENT ON COLUMN public.platform_package.rate_limit IS 'API速率限制(请求/
 
 COMMENT ON COLUMN public.platform_package.status IS '状态(0:启动 1:停用)';
 
-
 --
 -- Name: COLUMN platform_package.description; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_package.description IS '备注';
-
 
 --
 -- Name: COLUMN platform_package.id; Type: COMMENT; Schema: public; Owner: root
@@ -2152,13 +1436,11 @@ COMMENT ON COLUMN public.platform_package.description IS '备注';
 
 COMMENT ON COLUMN public.platform_package.id IS '主键ID';
 
-
 --
 -- Name: COLUMN platform_package.uuid; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_package.uuid IS 'UUID全局唯一标识';
-
 
 --
 -- Name: COLUMN platform_package.is_deleted; Type: COMMENT; Schema: public; Owner: root
@@ -2166,13 +1448,11 @@ COMMENT ON COLUMN public.platform_package.uuid IS 'UUID全局唯一标识';
 
 COMMENT ON COLUMN public.platform_package.is_deleted IS '是否已删除(0:未删除 1:已删除)';
 
-
 --
 -- Name: COLUMN platform_package.created_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_package.created_time IS '创建时间';
-
 
 --
 -- Name: COLUMN platform_package.updated_time; Type: COMMENT; Schema: public; Owner: root
@@ -2180,13 +1460,11 @@ COMMENT ON COLUMN public.platform_package.created_time IS '创建时间';
 
 COMMENT ON COLUMN public.platform_package.updated_time IS '更新时间';
 
-
 --
 -- Name: COLUMN platform_package.deleted_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_package.deleted_time IS '删除时间';
-
 
 --
 -- Name: platform_package_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -2200,7 +1478,6 @@ CREATE SEQUENCE public.platform_package_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_package_id_seq OWNER TO root;
 
 --
@@ -2208,7 +1485,6 @@ ALTER SEQUENCE public.platform_package_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_package_id_seq OWNED BY public.platform_package.id;
-
 
 --
 -- Name: platform_package_menu; Type: TABLE; Schema: public; Owner: root
@@ -2220,7 +1496,6 @@ CREATE TABLE public.platform_package_menu (
     menu_id integer NOT NULL
 );
 
-
 ALTER TABLE public.platform_package_menu OWNER TO root;
 
 --
@@ -2229,13 +1504,11 @@ ALTER TABLE public.platform_package_menu OWNER TO root;
 
 COMMENT ON TABLE public.platform_package_menu IS '套餐菜单关联表';
 
-
 --
 -- Name: COLUMN platform_package_menu.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_package_menu.id IS '主键ID';
-
 
 --
 -- Name: COLUMN platform_package_menu.package_id; Type: COMMENT; Schema: public; Owner: root
@@ -2243,13 +1516,11 @@ COMMENT ON COLUMN public.platform_package_menu.id IS '主键ID';
 
 COMMENT ON COLUMN public.platform_package_menu.package_id IS '套餐ID';
 
-
 --
 -- Name: COLUMN platform_package_menu.menu_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_package_menu.menu_id IS '菜单ID';
-
 
 --
 -- Name: platform_package_menu_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -2263,7 +1534,6 @@ CREATE SEQUENCE public.platform_package_menu_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_package_menu_id_seq OWNER TO root;
 
 --
@@ -2271,7 +1541,6 @@ ALTER SEQUENCE public.platform_package_menu_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_package_menu_id_seq OWNED BY public.platform_package_menu.id;
-
 
 --
 -- Name: platform_package_plugin; Type: TABLE; Schema: public; Owner: root
@@ -2283,7 +1552,6 @@ CREATE TABLE public.platform_package_plugin (
     plugin_id integer NOT NULL
 );
 
-
 ALTER TABLE public.platform_package_plugin OWNER TO root;
 
 --
@@ -2292,13 +1560,11 @@ ALTER TABLE public.platform_package_plugin OWNER TO root;
 
 COMMENT ON TABLE public.platform_package_plugin IS '套餐插件关联表';
 
-
 --
 -- Name: COLUMN platform_package_plugin.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_package_plugin.id IS '主键ID';
-
 
 --
 -- Name: COLUMN platform_package_plugin.package_id; Type: COMMENT; Schema: public; Owner: root
@@ -2306,13 +1572,11 @@ COMMENT ON COLUMN public.platform_package_plugin.id IS '主键ID';
 
 COMMENT ON COLUMN public.platform_package_plugin.package_id IS '套餐ID';
 
-
 --
 -- Name: COLUMN platform_package_plugin.plugin_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_package_plugin.plugin_id IS '插件ID';
-
 
 --
 -- Name: platform_package_plugin_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -2326,7 +1590,6 @@ CREATE SEQUENCE public.platform_package_plugin_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_package_plugin_id_seq OWNER TO root;
 
 --
@@ -2334,7 +1597,6 @@ ALTER SEQUENCE public.platform_package_plugin_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_package_plugin_id_seq OWNED BY public.platform_package_plugin.id;
-
 
 --
 -- Name: platform_payment_record; Type: TABLE; Schema: public; Owner: root
@@ -2358,7 +1620,6 @@ CREATE TABLE public.platform_payment_record (
     tenant_id integer NOT NULL
 );
 
-
 ALTER TABLE public.platform_payment_record OWNER TO root;
 
 --
@@ -2367,13 +1628,11 @@ ALTER TABLE public.platform_payment_record OWNER TO root;
 
 COMMENT ON TABLE public.platform_payment_record IS '支付记录表';
 
-
 --
 -- Name: COLUMN platform_payment_record.order_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_payment_record.order_id IS '关联订单';
-
 
 --
 -- Name: COLUMN platform_payment_record.transaction_id; Type: COMMENT; Schema: public; Owner: root
@@ -2381,13 +1640,11 @@ COMMENT ON COLUMN public.platform_payment_record.order_id IS '关联订单';
 
 COMMENT ON COLUMN public.platform_payment_record.transaction_id IS '第三方交易号';
 
-
 --
 -- Name: COLUMN platform_payment_record.pay_method; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_payment_record.pay_method IS '支付方式';
-
 
 --
 -- Name: COLUMN platform_payment_record.amount; Type: COMMENT; Schema: public; Owner: root
@@ -2395,13 +1652,11 @@ COMMENT ON COLUMN public.platform_payment_record.pay_method IS '支付方式';
 
 COMMENT ON COLUMN public.platform_payment_record.amount IS '支付金额(分)';
 
-
 --
 -- Name: COLUMN platform_payment_record.raw_response; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_payment_record.raw_response IS '原始回调JSON';
-
 
 --
 -- Name: COLUMN platform_payment_record.pay_time; Type: COMMENT; Schema: public; Owner: root
@@ -2409,13 +1664,11 @@ COMMENT ON COLUMN public.platform_payment_record.raw_response IS '原始回调JS
 
 COMMENT ON COLUMN public.platform_payment_record.pay_time IS '支付完成时间';
 
-
 --
 -- Name: COLUMN platform_payment_record.status; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_payment_record.status IS '状态(0:处理中 1:成功 2:失败)';
-
 
 --
 -- Name: COLUMN platform_payment_record.description; Type: COMMENT; Schema: public; Owner: root
@@ -2423,13 +1676,11 @@ COMMENT ON COLUMN public.platform_payment_record.status IS '状态(0:处理中 1
 
 COMMENT ON COLUMN public.platform_payment_record.description IS '备注';
 
-
 --
 -- Name: COLUMN platform_payment_record.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_payment_record.id IS '主键ID';
-
 
 --
 -- Name: COLUMN platform_payment_record.uuid; Type: COMMENT; Schema: public; Owner: root
@@ -2437,13 +1688,11 @@ COMMENT ON COLUMN public.platform_payment_record.id IS '主键ID';
 
 COMMENT ON COLUMN public.platform_payment_record.uuid IS 'UUID全局唯一标识';
 
-
 --
 -- Name: COLUMN platform_payment_record.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_payment_record.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
 
 --
 -- Name: COLUMN platform_payment_record.created_time; Type: COMMENT; Schema: public; Owner: root
@@ -2451,13 +1700,11 @@ COMMENT ON COLUMN public.platform_payment_record.is_deleted IS '是否已删除(
 
 COMMENT ON COLUMN public.platform_payment_record.created_time IS '创建时间';
 
-
 --
 -- Name: COLUMN platform_payment_record.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_payment_record.updated_time IS '更新时间';
-
 
 --
 -- Name: COLUMN platform_payment_record.deleted_time; Type: COMMENT; Schema: public; Owner: root
@@ -2465,13 +1712,11 @@ COMMENT ON COLUMN public.platform_payment_record.updated_time IS '更新时间';
 
 COMMENT ON COLUMN public.platform_payment_record.deleted_time IS '删除时间';
 
-
 --
 -- Name: COLUMN platform_payment_record.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_payment_record.tenant_id IS '租户ID';
-
 
 --
 -- Name: platform_payment_record_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -2485,7 +1730,6 @@ CREATE SEQUENCE public.platform_payment_record_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_payment_record_id_seq OWNER TO root;
 
 --
@@ -2493,7 +1737,6 @@ ALTER SEQUENCE public.platform_payment_record_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_payment_record_id_seq OWNED BY public.platform_payment_record.id;
-
 
 --
 -- Name: platform_plugin; Type: TABLE; Schema: public; Owner: root
@@ -2521,7 +1764,6 @@ CREATE TABLE public.platform_plugin (
     deleted_time timestamp without time zone
 );
 
-
 ALTER TABLE public.platform_plugin OWNER TO root;
 
 --
@@ -2530,13 +1772,11 @@ ALTER TABLE public.platform_plugin OWNER TO root;
 
 COMMENT ON TABLE public.platform_plugin IS '插件注册表';
 
-
 --
 -- Name: COLUMN platform_plugin.name; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_plugin.name IS '插件名称';
-
 
 --
 -- Name: COLUMN platform_plugin.code; Type: COMMENT; Schema: public; Owner: root
@@ -2544,13 +1784,11 @@ COMMENT ON COLUMN public.platform_plugin.name IS '插件名称';
 
 COMMENT ON COLUMN public.platform_plugin.code IS '插件编码(module_xxx)';
 
-
 --
 -- Name: COLUMN platform_plugin.version; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_plugin.version IS '版本号';
-
 
 --
 -- Name: COLUMN platform_plugin.author; Type: COMMENT; Schema: public; Owner: root
@@ -2558,13 +1796,11 @@ COMMENT ON COLUMN public.platform_plugin.version IS '版本号';
 
 COMMENT ON COLUMN public.platform_plugin.author IS '作者';
 
-
 --
 -- Name: COLUMN platform_plugin.icon; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_plugin.icon IS '图标URL';
-
 
 --
 -- Name: COLUMN platform_plugin.category; Type: COMMENT; Schema: public; Owner: root
@@ -2572,13 +1808,11 @@ COMMENT ON COLUMN public.platform_plugin.icon IS '图标URL';
 
 COMMENT ON COLUMN public.platform_plugin.category IS '分类(tool/ai/monitor/business)';
 
-
 --
 -- Name: COLUMN platform_plugin.price; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_plugin.price IS '价格(分,0=免费)';
-
 
 --
 -- Name: COLUMN platform_plugin.menu_path; Type: COMMENT; Schema: public; Owner: root
@@ -2586,13 +1820,11 @@ COMMENT ON COLUMN public.platform_plugin.price IS '价格(分,0=免费)';
 
 COMMENT ON COLUMN public.platform_plugin.menu_path IS '菜单路径(安装后显示)';
 
-
 --
 -- Name: COLUMN platform_plugin.permission_prefix; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_plugin.permission_prefix IS '权限前缀';
-
 
 --
 -- Name: COLUMN platform_plugin.dependencies; Type: COMMENT; Schema: public; Owner: root
@@ -2600,13 +1832,11 @@ COMMENT ON COLUMN public.platform_plugin.permission_prefix IS '权限前缀';
 
 COMMENT ON COLUMN public.platform_plugin.dependencies IS '依赖插件编码(JSON数组)';
 
-
 --
 -- Name: COLUMN platform_plugin.sort; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_plugin.sort IS '排序';
-
 
 --
 -- Name: COLUMN platform_plugin.status; Type: COMMENT; Schema: public; Owner: root
@@ -2614,13 +1844,11 @@ COMMENT ON COLUMN public.platform_plugin.sort IS '排序';
 
 COMMENT ON COLUMN public.platform_plugin.status IS '状态(0:启动 1:停用)';
 
-
 --
 -- Name: COLUMN platform_plugin.description; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_plugin.description IS '备注';
-
 
 --
 -- Name: COLUMN platform_plugin.id; Type: COMMENT; Schema: public; Owner: root
@@ -2628,13 +1856,11 @@ COMMENT ON COLUMN public.platform_plugin.description IS '备注';
 
 COMMENT ON COLUMN public.platform_plugin.id IS '主键ID';
 
-
 --
 -- Name: COLUMN platform_plugin.uuid; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_plugin.uuid IS 'UUID全局唯一标识';
-
 
 --
 -- Name: COLUMN platform_plugin.is_deleted; Type: COMMENT; Schema: public; Owner: root
@@ -2642,13 +1868,11 @@ COMMENT ON COLUMN public.platform_plugin.uuid IS 'UUID全局唯一标识';
 
 COMMENT ON COLUMN public.platform_plugin.is_deleted IS '是否已删除(0:未删除 1:已删除)';
 
-
 --
 -- Name: COLUMN platform_plugin.created_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_plugin.created_time IS '创建时间';
-
 
 --
 -- Name: COLUMN platform_plugin.updated_time; Type: COMMENT; Schema: public; Owner: root
@@ -2656,13 +1880,11 @@ COMMENT ON COLUMN public.platform_plugin.created_time IS '创建时间';
 
 COMMENT ON COLUMN public.platform_plugin.updated_time IS '更新时间';
 
-
 --
 -- Name: COLUMN platform_plugin.deleted_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_plugin.deleted_time IS '删除时间';
-
 
 --
 -- Name: platform_plugin_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -2676,7 +1898,6 @@ CREATE SEQUENCE public.platform_plugin_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_plugin_id_seq OWNER TO root;
 
 --
@@ -2684,7 +1905,6 @@ ALTER SEQUENCE public.platform_plugin_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_plugin_id_seq OWNED BY public.platform_plugin.id;
-
 
 --
 -- Name: platform_refund; Type: TABLE; Schema: public; Owner: root
@@ -2710,7 +1930,6 @@ CREATE TABLE public.platform_refund (
     tenant_id integer NOT NULL
 );
 
-
 ALTER TABLE public.platform_refund OWNER TO root;
 
 --
@@ -2719,13 +1938,11 @@ ALTER TABLE public.platform_refund OWNER TO root;
 
 COMMENT ON TABLE public.platform_refund IS '退款表';
 
-
 --
 -- Name: COLUMN platform_refund.order_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_refund.order_id IS '关联订单';
-
 
 --
 -- Name: COLUMN platform_refund.refund_no; Type: COMMENT; Schema: public; Owner: root
@@ -2733,13 +1950,11 @@ COMMENT ON COLUMN public.platform_refund.order_id IS '关联订单';
 
 COMMENT ON COLUMN public.platform_refund.refund_no IS '退款单号';
 
-
 --
 -- Name: COLUMN platform_refund.amount; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_refund.amount IS '退款金额(分)';
-
 
 --
 -- Name: COLUMN platform_refund.reason; Type: COMMENT; Schema: public; Owner: root
@@ -2747,13 +1962,11 @@ COMMENT ON COLUMN public.platform_refund.amount IS '退款金额(分)';
 
 COMMENT ON COLUMN public.platform_refund.reason IS '退款原因';
 
-
 --
 -- Name: COLUMN platform_refund.refund_transaction_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_refund.refund_transaction_id IS '退款交易号';
-
 
 --
 -- Name: COLUMN platform_refund.reviewer_id; Type: COMMENT; Schema: public; Owner: root
@@ -2761,13 +1974,11 @@ COMMENT ON COLUMN public.platform_refund.refund_transaction_id IS '退款交易�
 
 COMMENT ON COLUMN public.platform_refund.reviewer_id IS '审核人';
 
-
 --
 -- Name: COLUMN platform_refund.review_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_refund.review_time IS '审核时间';
-
 
 --
 -- Name: COLUMN platform_refund.reject_reason; Type: COMMENT; Schema: public; Owner: root
@@ -2775,13 +1986,11 @@ COMMENT ON COLUMN public.platform_refund.review_time IS '审核时间';
 
 COMMENT ON COLUMN public.platform_refund.reject_reason IS '驳回原因';
 
-
 --
 -- Name: COLUMN platform_refund.status; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_refund.status IS '状态(1:申请中 2:已退款 3:已驳回 4:已取消)';
-
 
 --
 -- Name: COLUMN platform_refund.description; Type: COMMENT; Schema: public; Owner: root
@@ -2789,13 +1998,11 @@ COMMENT ON COLUMN public.platform_refund.status IS '状态(1:申请中 2:已退�
 
 COMMENT ON COLUMN public.platform_refund.description IS '备注';
 
-
 --
 -- Name: COLUMN platform_refund.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_refund.id IS '主键ID';
-
 
 --
 -- Name: COLUMN platform_refund.uuid; Type: COMMENT; Schema: public; Owner: root
@@ -2803,13 +2010,11 @@ COMMENT ON COLUMN public.platform_refund.id IS '主键ID';
 
 COMMENT ON COLUMN public.platform_refund.uuid IS 'UUID全局唯一标识';
 
-
 --
 -- Name: COLUMN platform_refund.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_refund.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
 
 --
 -- Name: COLUMN platform_refund.created_time; Type: COMMENT; Schema: public; Owner: root
@@ -2817,13 +2022,11 @@ COMMENT ON COLUMN public.platform_refund.is_deleted IS '是否已删除(0:未删
 
 COMMENT ON COLUMN public.platform_refund.created_time IS '创建时间';
 
-
 --
 -- Name: COLUMN platform_refund.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_refund.updated_time IS '更新时间';
-
 
 --
 -- Name: COLUMN platform_refund.deleted_time; Type: COMMENT; Schema: public; Owner: root
@@ -2831,13 +2034,11 @@ COMMENT ON COLUMN public.platform_refund.updated_time IS '更新时间';
 
 COMMENT ON COLUMN public.platform_refund.deleted_time IS '删除时间';
 
-
 --
 -- Name: COLUMN platform_refund.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_refund.tenant_id IS '租户ID';
-
 
 --
 -- Name: platform_refund_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -2851,7 +2052,6 @@ CREATE SEQUENCE public.platform_refund_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_refund_id_seq OWNER TO root;
 
 --
@@ -2859,7 +2059,6 @@ ALTER SEQUENCE public.platform_refund_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_refund_id_seq OWNED BY public.platform_refund.id;
-
 
 --
 -- Name: platform_tenant; Type: TABLE; Schema: public; Owner: root
@@ -2897,7 +2096,6 @@ CREATE TABLE public.platform_tenant (
     deleted_time timestamp without time zone
 );
 
-
 ALTER TABLE public.platform_tenant OWNER TO root;
 
 --
@@ -2906,13 +2104,11 @@ ALTER TABLE public.platform_tenant OWNER TO root;
 
 COMMENT ON TABLE public.platform_tenant IS '租户表';
 
-
 --
 -- Name: COLUMN platform_tenant.name; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.name IS '租户名称';
-
 
 --
 -- Name: COLUMN platform_tenant.code; Type: COMMENT; Schema: public; Owner: root
@@ -2920,13 +2116,11 @@ COMMENT ON COLUMN public.platform_tenant.name IS '租户名称';
 
 COMMENT ON COLUMN public.platform_tenant.code IS '租户编码';
 
-
 --
 -- Name: COLUMN platform_tenant.contact_name; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.contact_name IS '联系人姓名';
-
 
 --
 -- Name: COLUMN platform_tenant.contact_phone; Type: COMMENT; Schema: public; Owner: root
@@ -2934,13 +2128,11 @@ COMMENT ON COLUMN public.platform_tenant.contact_name IS '联系人姓名';
 
 COMMENT ON COLUMN public.platform_tenant.contact_phone IS '联系人电话';
 
-
 --
 -- Name: COLUMN platform_tenant.contact_email; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.contact_email IS '联系人邮箱';
-
 
 --
 -- Name: COLUMN platform_tenant.address; Type: COMMENT; Schema: public; Owner: root
@@ -2948,13 +2140,11 @@ COMMENT ON COLUMN public.platform_tenant.contact_email IS '联系人邮箱';
 
 COMMENT ON COLUMN public.platform_tenant.address IS '地址';
 
-
 --
 -- Name: COLUMN platform_tenant.domain; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.domain IS '域名';
-
 
 --
 -- Name: COLUMN platform_tenant.logo_url; Type: COMMENT; Schema: public; Owner: root
@@ -2962,13 +2152,11 @@ COMMENT ON COLUMN public.platform_tenant.domain IS '域名';
 
 COMMENT ON COLUMN public.platform_tenant.logo_url IS 'Logo URL';
 
-
 --
 -- Name: COLUMN platform_tenant.sort; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.sort IS '排序';
-
 
 --
 -- Name: COLUMN platform_tenant.package_id; Type: COMMENT; Schema: public; Owner: root
@@ -2976,13 +2164,11 @@ COMMENT ON COLUMN public.platform_tenant.sort IS '排序';
 
 COMMENT ON COLUMN public.platform_tenant.package_id IS '关联套餐ID';
 
-
 --
 -- Name: COLUMN platform_tenant.start_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.start_time IS '开始时间';
-
 
 --
 -- Name: COLUMN platform_tenant.end_time; Type: COMMENT; Schema: public; Owner: root
@@ -2990,13 +2176,11 @@ COMMENT ON COLUMN public.platform_tenant.start_time IS '开始时间';
 
 COMMENT ON COLUMN public.platform_tenant.end_time IS '结束时间';
 
-
 --
 -- Name: COLUMN platform_tenant.version; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.version IS '版本号';
-
 
 --
 -- Name: COLUMN platform_tenant.favicon; Type: COMMENT; Schema: public; Owner: root
@@ -3004,13 +2188,11 @@ COMMENT ON COLUMN public.platform_tenant.version IS '版本号';
 
 COMMENT ON COLUMN public.platform_tenant.favicon IS 'favicon地址';
 
-
 --
 -- Name: COLUMN platform_tenant.login_bg; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.login_bg IS '登录背景地址';
-
 
 --
 -- Name: COLUMN platform_tenant.copyright; Type: COMMENT; Schema: public; Owner: root
@@ -3018,13 +2200,11 @@ COMMENT ON COLUMN public.platform_tenant.login_bg IS '登录背景地址';
 
 COMMENT ON COLUMN public.platform_tenant.copyright IS '版权信息';
 
-
 --
 -- Name: COLUMN platform_tenant.keep_record; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.keep_record IS '备案号';
-
 
 --
 -- Name: COLUMN platform_tenant.help_doc; Type: COMMENT; Schema: public; Owner: root
@@ -3032,13 +2212,11 @@ COMMENT ON COLUMN public.platform_tenant.keep_record IS '备案号';
 
 COMMENT ON COLUMN public.platform_tenant.help_doc IS '帮助文档地址';
 
-
 --
 -- Name: COLUMN platform_tenant.privacy; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.privacy IS '隐私政策地址';
-
 
 --
 -- Name: COLUMN platform_tenant.clause; Type: COMMENT; Schema: public; Owner: root
@@ -3046,13 +2224,11 @@ COMMENT ON COLUMN public.platform_tenant.privacy IS '隐私政策地址';
 
 COMMENT ON COLUMN public.platform_tenant.clause IS '服务条款地址';
 
-
 --
 -- Name: COLUMN platform_tenant.git_code; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.git_code IS '源码地址';
-
 
 --
 -- Name: COLUMN platform_tenant.status; Type: COMMENT; Schema: public; Owner: root
@@ -3060,13 +2236,11 @@ COMMENT ON COLUMN public.platform_tenant.git_code IS '源码地址';
 
 COMMENT ON COLUMN public.platform_tenant.status IS '状态(0:启动 1:停用)';
 
-
 --
 -- Name: COLUMN platform_tenant.description; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.description IS '备注';
-
 
 --
 -- Name: COLUMN platform_tenant.id; Type: COMMENT; Schema: public; Owner: root
@@ -3074,13 +2248,11 @@ COMMENT ON COLUMN public.platform_tenant.description IS '备注';
 
 COMMENT ON COLUMN public.platform_tenant.id IS '主键ID';
 
-
 --
 -- Name: COLUMN platform_tenant.uuid; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.uuid IS 'UUID全局唯一标识';
-
 
 --
 -- Name: COLUMN platform_tenant.is_deleted; Type: COMMENT; Schema: public; Owner: root
@@ -3088,13 +2260,11 @@ COMMENT ON COLUMN public.platform_tenant.uuid IS 'UUID全局唯一标识';
 
 COMMENT ON COLUMN public.platform_tenant.is_deleted IS '是否已删除(0:未删除 1:已删除)';
 
-
 --
 -- Name: COLUMN platform_tenant.created_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.created_time IS '创建时间';
-
 
 --
 -- Name: COLUMN platform_tenant.updated_time; Type: COMMENT; Schema: public; Owner: root
@@ -3102,13 +2272,11 @@ COMMENT ON COLUMN public.platform_tenant.created_time IS '创建时间';
 
 COMMENT ON COLUMN public.platform_tenant.updated_time IS '更新时间';
 
-
 --
 -- Name: COLUMN platform_tenant.deleted_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant.deleted_time IS '删除时间';
-
 
 --
 -- Name: platform_tenant_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -3122,7 +2290,6 @@ CREATE SEQUENCE public.platform_tenant_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_tenant_id_seq OWNER TO root;
 
 --
@@ -3130,7 +2297,6 @@ ALTER SEQUENCE public.platform_tenant_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_tenant_id_seq OWNED BY public.platform_tenant.id;
-
 
 --
 -- Name: platform_tenant_plugin; Type: TABLE; Schema: public; Owner: root
@@ -3145,7 +2311,6 @@ CREATE TABLE public.platform_tenant_plugin (
     installed_time timestamp without time zone NOT NULL
 );
 
-
 ALTER TABLE public.platform_tenant_plugin OWNER TO root;
 
 --
@@ -3154,13 +2319,11 @@ ALTER TABLE public.platform_tenant_plugin OWNER TO root;
 
 COMMENT ON TABLE public.platform_tenant_plugin IS '租户插件关联表';
 
-
 --
 -- Name: COLUMN platform_tenant_plugin.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant_plugin.id IS '主键ID';
-
 
 --
 -- Name: COLUMN platform_tenant_plugin.tenant_id; Type: COMMENT; Schema: public; Owner: root
@@ -3168,13 +2331,11 @@ COMMENT ON COLUMN public.platform_tenant_plugin.id IS '主键ID';
 
 COMMENT ON COLUMN public.platform_tenant_plugin.tenant_id IS '租户ID';
 
-
 --
 -- Name: COLUMN platform_tenant_plugin.plugin_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant_plugin.plugin_id IS '插件ID';
-
 
 --
 -- Name: COLUMN platform_tenant_plugin.enabled; Type: COMMENT; Schema: public; Owner: root
@@ -3182,20 +2343,17 @@ COMMENT ON COLUMN public.platform_tenant_plugin.plugin_id IS '插件ID';
 
 COMMENT ON COLUMN public.platform_tenant_plugin.enabled IS '启用(True:启用 False:禁用)';
 
-
 --
 -- Name: COLUMN platform_tenant_plugin.purchased; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant_plugin.purchased IS '是否已购买(True:已购买 False:未购买)';
 
-
 --
 -- Name: COLUMN platform_tenant_plugin.installed_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_tenant_plugin.installed_time IS '安装时间';
-
 
 --
 -- Name: platform_tenant_plugin_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -3209,7 +2367,6 @@ CREATE SEQUENCE public.platform_tenant_plugin_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_tenant_plugin_id_seq OWNER TO root;
 
 --
@@ -3217,7 +2374,6 @@ ALTER SEQUENCE public.platform_tenant_plugin_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_tenant_plugin_id_seq OWNED BY public.platform_tenant_plugin.id;
-
 
 --
 -- Name: platform_user_tenant; Type: TABLE; Schema: public; Owner: root
@@ -3232,7 +2388,6 @@ CREATE TABLE public.platform_user_tenant (
     create_time timestamp without time zone NOT NULL
 );
 
-
 ALTER TABLE public.platform_user_tenant OWNER TO root;
 
 --
@@ -3241,13 +2396,11 @@ ALTER TABLE public.platform_user_tenant OWNER TO root;
 
 COMMENT ON TABLE public.platform_user_tenant IS '用户租户关联表';
 
-
 --
 -- Name: COLUMN platform_user_tenant.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_user_tenant.id IS '主键ID';
-
 
 --
 -- Name: COLUMN platform_user_tenant.user_id; Type: COMMENT; Schema: public; Owner: root
@@ -3255,13 +2408,11 @@ COMMENT ON COLUMN public.platform_user_tenant.id IS '主键ID';
 
 COMMENT ON COLUMN public.platform_user_tenant.user_id IS '用户ID';
 
-
 --
 -- Name: COLUMN platform_user_tenant.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_user_tenant.tenant_id IS '租户ID';
-
 
 --
 -- Name: COLUMN platform_user_tenant.role; Type: COMMENT; Schema: public; Owner: root
@@ -3269,20 +2420,17 @@ COMMENT ON COLUMN public.platform_user_tenant.tenant_id IS '租户ID';
 
 COMMENT ON COLUMN public.platform_user_tenant.role IS '租户内角色(owner:拥有者 admin:管理员 member:成员)';
 
-
 --
 -- Name: COLUMN platform_user_tenant.is_default; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_user_tenant.is_default IS '是否默认租户(0:否 1:是)';
 
-
 --
 -- Name: COLUMN platform_user_tenant.create_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.platform_user_tenant.create_time IS '创建时间';
-
 
 --
 -- Name: platform_user_tenant_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -3296,7 +2444,6 @@ CREATE SEQUENCE public.platform_user_tenant_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.platform_user_tenant_id_seq OWNER TO root;
 
 --
@@ -3304,7 +2451,6 @@ ALTER SEQUENCE public.platform_user_tenant_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.platform_user_tenant_id_seq OWNED BY public.platform_user_tenant.id;
-
 
 --
 -- Name: sys_dept; Type: TABLE; Schema: public; Owner: root
@@ -3332,7 +2478,6 @@ CREATE TABLE public.sys_dept (
     deleted_id integer
 );
 
-
 ALTER TABLE public.sys_dept OWNER TO root;
 
 --
@@ -3341,13 +2486,11 @@ ALTER TABLE public.sys_dept OWNER TO root;
 
 COMMENT ON TABLE public.sys_dept IS '部门表';
 
-
 --
 -- Name: COLUMN sys_dept.name; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dept.name IS '部门名称';
-
 
 --
 -- Name: COLUMN sys_dept.status; Type: COMMENT; Schema: public; Owner: root
@@ -3355,13 +2498,11 @@ COMMENT ON COLUMN public.sys_dept.name IS '部门名称';
 
 COMMENT ON COLUMN public.sys_dept.status IS '状态(0:启动 1:停用)';
 
-
 --
 -- Name: COLUMN sys_dept.description; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dept.description IS '备注';
-
 
 --
 -- Name: COLUMN sys_dept."order"; Type: COMMENT; Schema: public; Owner: root
@@ -3369,13 +2510,11 @@ COMMENT ON COLUMN public.sys_dept.description IS '备注';
 
 COMMENT ON COLUMN public.sys_dept."order" IS '显示排序';
 
-
 --
 -- Name: COLUMN sys_dept.code; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dept.code IS '部门编码';
-
 
 --
 -- Name: COLUMN sys_dept.leader; Type: COMMENT; Schema: public; Owner: root
@@ -3383,13 +2522,11 @@ COMMENT ON COLUMN public.sys_dept.code IS '部门编码';
 
 COMMENT ON COLUMN public.sys_dept.leader IS '部门负责人';
 
-
 --
 -- Name: COLUMN sys_dept.phone; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dept.phone IS '手机';
-
 
 --
 -- Name: COLUMN sys_dept.email; Type: COMMENT; Schema: public; Owner: root
@@ -3397,13 +2534,11 @@ COMMENT ON COLUMN public.sys_dept.phone IS '手机';
 
 COMMENT ON COLUMN public.sys_dept.email IS '邮箱';
 
-
 --
 -- Name: COLUMN sys_dept.parent_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dept.parent_id IS '父级部门ID';
-
 
 --
 -- Name: COLUMN sys_dept.id; Type: COMMENT; Schema: public; Owner: root
@@ -3411,13 +2546,11 @@ COMMENT ON COLUMN public.sys_dept.parent_id IS '父级部门ID';
 
 COMMENT ON COLUMN public.sys_dept.id IS '主键ID';
 
-
 --
 -- Name: COLUMN sys_dept.uuid; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dept.uuid IS 'UUID全局唯一标识';
-
 
 --
 -- Name: COLUMN sys_dept.is_deleted; Type: COMMENT; Schema: public; Owner: root
@@ -3425,13 +2558,11 @@ COMMENT ON COLUMN public.sys_dept.uuid IS 'UUID全局唯一标识';
 
 COMMENT ON COLUMN public.sys_dept.is_deleted IS '是否已删除(0:未删除 1:已删除)';
 
-
 --
 -- Name: COLUMN sys_dept.created_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dept.created_time IS '创建时间';
-
 
 --
 -- Name: COLUMN sys_dept.updated_time; Type: COMMENT; Schema: public; Owner: root
@@ -3439,13 +2570,11 @@ COMMENT ON COLUMN public.sys_dept.created_time IS '创建时间';
 
 COMMENT ON COLUMN public.sys_dept.updated_time IS '更新时间';
 
-
 --
 -- Name: COLUMN sys_dept.deleted_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dept.deleted_time IS '删除时间';
-
 
 --
 -- Name: COLUMN sys_dept.tenant_id; Type: COMMENT; Schema: public; Owner: root
@@ -3453,13 +2582,11 @@ COMMENT ON COLUMN public.sys_dept.deleted_time IS '删除时间';
 
 COMMENT ON COLUMN public.sys_dept.tenant_id IS '租户ID';
 
-
 --
 -- Name: COLUMN sys_dept.created_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dept.created_id IS '创建人ID';
-
 
 --
 -- Name: COLUMN sys_dept.updated_id; Type: COMMENT; Schema: public; Owner: root
@@ -3467,13 +2594,11 @@ COMMENT ON COLUMN public.sys_dept.created_id IS '创建人ID';
 
 COMMENT ON COLUMN public.sys_dept.updated_id IS '更新人ID';
 
-
 --
 -- Name: COLUMN sys_dept.deleted_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dept.deleted_id IS '删除人ID';
-
 
 --
 -- Name: sys_dept_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -3487,7 +2612,6 @@ CREATE SEQUENCE public.sys_dept_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.sys_dept_id_seq OWNER TO root;
 
 --
@@ -3495,7 +2619,6 @@ ALTER SEQUENCE public.sys_dept_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.sys_dept_id_seq OWNED BY public.sys_dept.id;
-
 
 --
 -- Name: sys_dict_data; Type: TABLE; Schema: public; Owner: root
@@ -3521,7 +2644,6 @@ CREATE TABLE public.sys_dict_data (
     tenant_id integer NOT NULL
 );
 
-
 ALTER TABLE public.sys_dict_data OWNER TO root;
 
 --
@@ -3530,13 +2652,11 @@ ALTER TABLE public.sys_dict_data OWNER TO root;
 
 COMMENT ON TABLE public.sys_dict_data IS '字典数据表';
 
-
 --
 -- Name: COLUMN sys_dict_data.status; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_data.status IS '状态(0:启动 1:停用)';
-
 
 --
 -- Name: COLUMN sys_dict_data.description; Type: COMMENT; Schema: public; Owner: root
@@ -3544,13 +2664,11 @@ COMMENT ON COLUMN public.sys_dict_data.status IS '状态(0:启动 1:停用)';
 
 COMMENT ON COLUMN public.sys_dict_data.description IS '备注';
 
-
 --
 -- Name: COLUMN sys_dict_data.dict_sort; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_data.dict_sort IS '字典排序';
-
 
 --
 -- Name: COLUMN sys_dict_data.dict_label; Type: COMMENT; Schema: public; Owner: root
@@ -3558,13 +2676,11 @@ COMMENT ON COLUMN public.sys_dict_data.dict_sort IS '字典排序';
 
 COMMENT ON COLUMN public.sys_dict_data.dict_label IS '字典标签';
 
-
 --
 -- Name: COLUMN sys_dict_data.dict_value; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_data.dict_value IS '字典键值';
-
 
 --
 -- Name: COLUMN sys_dict_data.css_class; Type: COMMENT; Schema: public; Owner: root
@@ -3572,13 +2688,11 @@ COMMENT ON COLUMN public.sys_dict_data.dict_value IS '字典键值';
 
 COMMENT ON COLUMN public.sys_dict_data.css_class IS '样式属性（其他样式扩展）';
 
-
 --
 -- Name: COLUMN sys_dict_data.list_class; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_data.list_class IS '表格回显样式';
-
 
 --
 -- Name: COLUMN sys_dict_data.is_default; Type: COMMENT; Schema: public; Owner: root
@@ -3586,13 +2700,11 @@ COMMENT ON COLUMN public.sys_dict_data.list_class IS '表格回显样式';
 
 COMMENT ON COLUMN public.sys_dict_data.is_default IS '是否默认(True是 False否)';
 
-
 --
 -- Name: COLUMN sys_dict_data.dict_type; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_data.dict_type IS '字典类型';
-
 
 --
 -- Name: COLUMN sys_dict_data.dict_type_id; Type: COMMENT; Schema: public; Owner: root
@@ -3600,13 +2712,11 @@ COMMENT ON COLUMN public.sys_dict_data.dict_type IS '字典类型';
 
 COMMENT ON COLUMN public.sys_dict_data.dict_type_id IS '字典类型ID';
 
-
 --
 -- Name: COLUMN sys_dict_data.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_data.id IS '主键ID';
-
 
 --
 -- Name: COLUMN sys_dict_data.uuid; Type: COMMENT; Schema: public; Owner: root
@@ -3614,13 +2724,11 @@ COMMENT ON COLUMN public.sys_dict_data.id IS '主键ID';
 
 COMMENT ON COLUMN public.sys_dict_data.uuid IS 'UUID全局唯一标识';
 
-
 --
 -- Name: COLUMN sys_dict_data.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_data.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
 
 --
 -- Name: COLUMN sys_dict_data.created_time; Type: COMMENT; Schema: public; Owner: root
@@ -3628,13 +2736,11 @@ COMMENT ON COLUMN public.sys_dict_data.is_deleted IS '是否已删除(0:未删�
 
 COMMENT ON COLUMN public.sys_dict_data.created_time IS '创建时间';
 
-
 --
 -- Name: COLUMN sys_dict_data.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_data.updated_time IS '更新时间';
-
 
 --
 -- Name: COLUMN sys_dict_data.deleted_time; Type: COMMENT; Schema: public; Owner: root
@@ -3642,13 +2748,11 @@ COMMENT ON COLUMN public.sys_dict_data.updated_time IS '更新时间';
 
 COMMENT ON COLUMN public.sys_dict_data.deleted_time IS '删除时间';
 
-
 --
 -- Name: COLUMN sys_dict_data.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_data.tenant_id IS '租户ID';
-
 
 --
 -- Name: sys_dict_data_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -3662,7 +2766,6 @@ CREATE SEQUENCE public.sys_dict_data_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.sys_dict_data_id_seq OWNER TO root;
 
 --
@@ -3670,7 +2773,6 @@ ALTER SEQUENCE public.sys_dict_data_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.sys_dict_data_id_seq OWNED BY public.sys_dict_data.id;
-
 
 --
 -- Name: sys_dict_type; Type: TABLE; Schema: public; Owner: root
@@ -3690,7 +2792,6 @@ CREATE TABLE public.sys_dict_type (
     tenant_id integer NOT NULL
 );
 
-
 ALTER TABLE public.sys_dict_type OWNER TO root;
 
 --
@@ -3699,13 +2800,11 @@ ALTER TABLE public.sys_dict_type OWNER TO root;
 
 COMMENT ON TABLE public.sys_dict_type IS '字典类型表';
 
-
 --
 -- Name: COLUMN sys_dict_type.dict_name; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_type.dict_name IS '字典名称';
-
 
 --
 -- Name: COLUMN sys_dict_type.dict_type; Type: COMMENT; Schema: public; Owner: root
@@ -3713,13 +2812,11 @@ COMMENT ON COLUMN public.sys_dict_type.dict_name IS '字典名称';
 
 COMMENT ON COLUMN public.sys_dict_type.dict_type IS '字典类型';
 
-
 --
 -- Name: COLUMN sys_dict_type.status; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_type.status IS '状态(0:启动 1:停用)';
-
 
 --
 -- Name: COLUMN sys_dict_type.description; Type: COMMENT; Schema: public; Owner: root
@@ -3727,13 +2824,11 @@ COMMENT ON COLUMN public.sys_dict_type.status IS '状态(0:启动 1:停用)';
 
 COMMENT ON COLUMN public.sys_dict_type.description IS '备注';
 
-
 --
 -- Name: COLUMN sys_dict_type.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_type.id IS '主键ID';
-
 
 --
 -- Name: COLUMN sys_dict_type.uuid; Type: COMMENT; Schema: public; Owner: root
@@ -3741,13 +2836,11 @@ COMMENT ON COLUMN public.sys_dict_type.id IS '主键ID';
 
 COMMENT ON COLUMN public.sys_dict_type.uuid IS 'UUID全局唯一标识';
 
-
 --
 -- Name: COLUMN sys_dict_type.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_type.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
 
 --
 -- Name: COLUMN sys_dict_type.created_time; Type: COMMENT; Schema: public; Owner: root
@@ -3755,13 +2848,11 @@ COMMENT ON COLUMN public.sys_dict_type.is_deleted IS '是否已删除(0:未删�
 
 COMMENT ON COLUMN public.sys_dict_type.created_time IS '创建时间';
 
-
 --
 -- Name: COLUMN sys_dict_type.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_type.updated_time IS '更新时间';
-
 
 --
 -- Name: COLUMN sys_dict_type.deleted_time; Type: COMMENT; Schema: public; Owner: root
@@ -3769,13 +2860,11 @@ COMMENT ON COLUMN public.sys_dict_type.updated_time IS '更新时间';
 
 COMMENT ON COLUMN public.sys_dict_type.deleted_time IS '删除时间';
 
-
 --
 -- Name: COLUMN sys_dict_type.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_dict_type.tenant_id IS '租户ID';
-
 
 --
 -- Name: sys_dict_type_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -3789,7 +2878,6 @@ CREATE SEQUENCE public.sys_dict_type_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.sys_dict_type_id_seq OWNER TO root;
 
 --
@@ -3797,7 +2885,6 @@ ALTER SEQUENCE public.sys_dict_type_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.sys_dict_type_id_seq OWNED BY public.sys_dict_type.id;
-
 
 --
 -- Name: sys_login_log; Type: TABLE; Schema: public; Owner: root
@@ -3824,7 +2911,6 @@ CREATE TABLE public.sys_login_log (
     deleted_id integer
 );
 
-
 ALTER TABLE public.sys_login_log OWNER TO root;
 
 --
@@ -3833,13 +2919,11 @@ ALTER TABLE public.sys_login_log OWNER TO root;
 
 COMMENT ON TABLE public.sys_login_log IS '登录日志表';
 
-
 --
 -- Name: COLUMN sys_login_log.status; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_login_log.status IS '登录状态(1成功 2失败)';
-
 
 --
 -- Name: COLUMN sys_login_log.description; Type: COMMENT; Schema: public; Owner: root
@@ -3847,13 +2931,11 @@ COMMENT ON COLUMN public.sys_login_log.status IS '登录状态(1成功 2失败)'
 
 COMMENT ON COLUMN public.sys_login_log.description IS '备注';
 
-
 --
 -- Name: COLUMN sys_login_log.username; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_login_log.username IS '用户名';
-
 
 --
 -- Name: COLUMN sys_login_log.login_location; Type: COMMENT; Schema: public; Owner: root
@@ -3861,13 +2943,11 @@ COMMENT ON COLUMN public.sys_login_log.username IS '用户名';
 
 COMMENT ON COLUMN public.sys_login_log.login_location IS '登录位置';
 
-
 --
 -- Name: COLUMN sys_login_log.login_ip; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_login_log.login_ip IS '登录IP地址';
-
 
 --
 -- Name: COLUMN sys_login_log.request_os; Type: COMMENT; Schema: public; Owner: root
@@ -3875,13 +2955,11 @@ COMMENT ON COLUMN public.sys_login_log.login_ip IS '登录IP地址';
 
 COMMENT ON COLUMN public.sys_login_log.request_os IS '操作系统';
 
-
 --
 -- Name: COLUMN sys_login_log.request_browser; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_login_log.request_browser IS '浏览器';
-
 
 --
 -- Name: COLUMN sys_login_log.msg; Type: COMMENT; Schema: public; Owner: root
@@ -3889,13 +2967,11 @@ COMMENT ON COLUMN public.sys_login_log.request_browser IS '浏览器';
 
 COMMENT ON COLUMN public.sys_login_log.msg IS '提示消息';
 
-
 --
 -- Name: COLUMN sys_login_log.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_login_log.id IS '主键ID';
-
 
 --
 -- Name: COLUMN sys_login_log.uuid; Type: COMMENT; Schema: public; Owner: root
@@ -3903,13 +2979,11 @@ COMMENT ON COLUMN public.sys_login_log.id IS '主键ID';
 
 COMMENT ON COLUMN public.sys_login_log.uuid IS 'UUID全局唯一标识';
 
-
 --
 -- Name: COLUMN sys_login_log.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_login_log.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
 
 --
 -- Name: COLUMN sys_login_log.created_time; Type: COMMENT; Schema: public; Owner: root
@@ -3917,13 +2991,11 @@ COMMENT ON COLUMN public.sys_login_log.is_deleted IS '是否已删除(0:未删�
 
 COMMENT ON COLUMN public.sys_login_log.created_time IS '创建时间';
 
-
 --
 -- Name: COLUMN sys_login_log.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_login_log.updated_time IS '更新时间';
-
 
 --
 -- Name: COLUMN sys_login_log.deleted_time; Type: COMMENT; Schema: public; Owner: root
@@ -3931,13 +3003,11 @@ COMMENT ON COLUMN public.sys_login_log.updated_time IS '更新时间';
 
 COMMENT ON COLUMN public.sys_login_log.deleted_time IS '删除时间';
 
-
 --
 -- Name: COLUMN sys_login_log.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_login_log.tenant_id IS '租户ID';
-
 
 --
 -- Name: COLUMN sys_login_log.created_id; Type: COMMENT; Schema: public; Owner: root
@@ -3945,20 +3015,17 @@ COMMENT ON COLUMN public.sys_login_log.tenant_id IS '租户ID';
 
 COMMENT ON COLUMN public.sys_login_log.created_id IS '创建人ID';
 
-
 --
 -- Name: COLUMN sys_login_log.updated_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_login_log.updated_id IS '更新人ID';
 
-
 --
 -- Name: COLUMN sys_login_log.deleted_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_login_log.deleted_id IS '删除人ID';
-
 
 --
 -- Name: sys_login_log_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -3972,7 +3039,6 @@ CREATE SEQUENCE public.sys_login_log_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.sys_login_log_id_seq OWNER TO root;
 
 --
@@ -3980,7 +3046,6 @@ ALTER SEQUENCE public.sys_login_log_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.sys_login_log_id_seq OWNED BY public.sys_login_log.id;
-
 
 --
 -- Name: sys_notice; Type: TABLE; Schema: public; Owner: root
@@ -4004,7 +3069,6 @@ CREATE TABLE public.sys_notice (
     deleted_id integer
 );
 
-
 ALTER TABLE public.sys_notice OWNER TO root;
 
 --
@@ -4013,13 +3077,11 @@ ALTER TABLE public.sys_notice OWNER TO root;
 
 COMMENT ON TABLE public.sys_notice IS '通知公告表';
 
-
 --
 -- Name: COLUMN sys_notice.notice_title; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_notice.notice_title IS '公告标题';
-
 
 --
 -- Name: COLUMN sys_notice.notice_type; Type: COMMENT; Schema: public; Owner: root
@@ -4027,13 +3089,11 @@ COMMENT ON COLUMN public.sys_notice.notice_title IS '公告标题';
 
 COMMENT ON COLUMN public.sys_notice.notice_type IS '公告类型(1通知 2公告)';
 
-
 --
 -- Name: COLUMN sys_notice.notice_content; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_notice.notice_content IS '公告内容';
-
 
 --
 -- Name: COLUMN sys_notice.status; Type: COMMENT; Schema: public; Owner: root
@@ -4041,13 +3101,11 @@ COMMENT ON COLUMN public.sys_notice.notice_content IS '公告内容';
 
 COMMENT ON COLUMN public.sys_notice.status IS '状态(0:启动 1:停用)';
 
-
 --
 -- Name: COLUMN sys_notice.description; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_notice.description IS '备注';
-
 
 --
 -- Name: COLUMN sys_notice.id; Type: COMMENT; Schema: public; Owner: root
@@ -4055,13 +3113,11 @@ COMMENT ON COLUMN public.sys_notice.description IS '备注';
 
 COMMENT ON COLUMN public.sys_notice.id IS '主键ID';
 
-
 --
 -- Name: COLUMN sys_notice.uuid; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_notice.uuid IS 'UUID全局唯一标识';
-
 
 --
 -- Name: COLUMN sys_notice.is_deleted; Type: COMMENT; Schema: public; Owner: root
@@ -4069,13 +3125,11 @@ COMMENT ON COLUMN public.sys_notice.uuid IS 'UUID全局唯一标识';
 
 COMMENT ON COLUMN public.sys_notice.is_deleted IS '是否已删除(0:未删除 1:已删除)';
 
-
 --
 -- Name: COLUMN sys_notice.created_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_notice.created_time IS '创建时间';
-
 
 --
 -- Name: COLUMN sys_notice.updated_time; Type: COMMENT; Schema: public; Owner: root
@@ -4083,13 +3137,11 @@ COMMENT ON COLUMN public.sys_notice.created_time IS '创建时间';
 
 COMMENT ON COLUMN public.sys_notice.updated_time IS '更新时间';
 
-
 --
 -- Name: COLUMN sys_notice.deleted_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_notice.deleted_time IS '删除时间';
-
 
 --
 -- Name: COLUMN sys_notice.tenant_id; Type: COMMENT; Schema: public; Owner: root
@@ -4097,13 +3149,11 @@ COMMENT ON COLUMN public.sys_notice.deleted_time IS '删除时间';
 
 COMMENT ON COLUMN public.sys_notice.tenant_id IS '租户ID';
 
-
 --
 -- Name: COLUMN sys_notice.created_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_notice.created_id IS '创建人ID';
-
 
 --
 -- Name: COLUMN sys_notice.updated_id; Type: COMMENT; Schema: public; Owner: root
@@ -4111,13 +3161,11 @@ COMMENT ON COLUMN public.sys_notice.created_id IS '创建人ID';
 
 COMMENT ON COLUMN public.sys_notice.updated_id IS '更新人ID';
 
-
 --
 -- Name: COLUMN sys_notice.deleted_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_notice.deleted_id IS '删除人ID';
-
 
 --
 -- Name: sys_notice_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -4131,7 +3179,6 @@ CREATE SEQUENCE public.sys_notice_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.sys_notice_id_seq OWNER TO root;
 
 --
@@ -4139,7 +3186,6 @@ ALTER SEQUENCE public.sys_notice_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.sys_notice_id_seq OWNED BY public.sys_notice.id;
-
 
 --
 -- Name: sys_notice_read; Type: TABLE; Schema: public; Owner: root
@@ -4151,7 +3197,6 @@ CREATE TABLE public.sys_notice_read (
     read_time timestamp without time zone NOT NULL
 );
 
-
 ALTER TABLE public.sys_notice_read OWNER TO root;
 
 --
@@ -4160,13 +3205,11 @@ ALTER TABLE public.sys_notice_read OWNER TO root;
 
 COMMENT ON TABLE public.sys_notice_read IS '通知已读记录表';
 
-
 --
 -- Name: COLUMN sys_notice_read.user_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_notice_read.user_id IS '用户ID';
-
 
 --
 -- Name: COLUMN sys_notice_read.notice_id; Type: COMMENT; Schema: public; Owner: root
@@ -4174,13 +3217,11 @@ COMMENT ON COLUMN public.sys_notice_read.user_id IS '用户ID';
 
 COMMENT ON COLUMN public.sys_notice_read.notice_id IS '通知ID';
 
-
 --
 -- Name: COLUMN sys_notice_read.read_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_notice_read.read_time IS '已读时间';
-
 
 --
 -- Name: sys_operation_log; Type: TABLE; Schema: public; Owner: root
@@ -4207,7 +3248,6 @@ CREATE TABLE public.sys_operation_log (
     deleted_id integer
 );
 
-
 ALTER TABLE public.sys_operation_log OWNER TO root;
 
 --
@@ -4216,13 +3256,11 @@ ALTER TABLE public.sys_operation_log OWNER TO root;
 
 COMMENT ON TABLE public.sys_operation_log IS '操作日志表';
 
-
 --
 -- Name: COLUMN sys_operation_log.status; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_operation_log.status IS '状态(0:启动 1:停用)';
-
 
 --
 -- Name: COLUMN sys_operation_log.description; Type: COMMENT; Schema: public; Owner: root
@@ -4230,13 +3268,11 @@ COMMENT ON COLUMN public.sys_operation_log.status IS '状态(0:启动 1:停用)'
 
 COMMENT ON COLUMN public.sys_operation_log.description IS '备注';
 
-
 --
 -- Name: COLUMN sys_operation_log.request_path; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_operation_log.request_path IS '请求路径';
-
 
 --
 -- Name: COLUMN sys_operation_log.request_method; Type: COMMENT; Schema: public; Owner: root
@@ -4244,13 +3280,11 @@ COMMENT ON COLUMN public.sys_operation_log.request_path IS '请求路径';
 
 COMMENT ON COLUMN public.sys_operation_log.request_method IS '请求方式';
 
-
 --
 -- Name: COLUMN sys_operation_log.request_payload; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_operation_log.request_payload IS '请求体';
-
 
 --
 -- Name: COLUMN sys_operation_log.response_code; Type: COMMENT; Schema: public; Owner: root
@@ -4258,13 +3292,11 @@ COMMENT ON COLUMN public.sys_operation_log.request_payload IS '请求体';
 
 COMMENT ON COLUMN public.sys_operation_log.response_code IS '响应状态码';
 
-
 --
 -- Name: COLUMN sys_operation_log.response_json; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_operation_log.response_json IS '响应体';
-
 
 --
 -- Name: COLUMN sys_operation_log.process_time; Type: COMMENT; Schema: public; Owner: root
@@ -4272,13 +3304,11 @@ COMMENT ON COLUMN public.sys_operation_log.response_json IS '响应体';
 
 COMMENT ON COLUMN public.sys_operation_log.process_time IS '处理时间';
 
-
 --
 -- Name: COLUMN sys_operation_log.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_operation_log.id IS '主键ID';
-
 
 --
 -- Name: COLUMN sys_operation_log.uuid; Type: COMMENT; Schema: public; Owner: root
@@ -4286,13 +3316,11 @@ COMMENT ON COLUMN public.sys_operation_log.id IS '主键ID';
 
 COMMENT ON COLUMN public.sys_operation_log.uuid IS 'UUID全局唯一标识';
 
-
 --
 -- Name: COLUMN sys_operation_log.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_operation_log.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
 
 --
 -- Name: COLUMN sys_operation_log.created_time; Type: COMMENT; Schema: public; Owner: root
@@ -4300,13 +3328,11 @@ COMMENT ON COLUMN public.sys_operation_log.is_deleted IS '是否已删除(0:未�
 
 COMMENT ON COLUMN public.sys_operation_log.created_time IS '创建时间';
 
-
 --
 -- Name: COLUMN sys_operation_log.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_operation_log.updated_time IS '更新时间';
-
 
 --
 -- Name: COLUMN sys_operation_log.deleted_time; Type: COMMENT; Schema: public; Owner: root
@@ -4314,13 +3340,11 @@ COMMENT ON COLUMN public.sys_operation_log.updated_time IS '更新时间';
 
 COMMENT ON COLUMN public.sys_operation_log.deleted_time IS '删除时间';
 
-
 --
 -- Name: COLUMN sys_operation_log.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_operation_log.tenant_id IS '租户ID';
-
 
 --
 -- Name: COLUMN sys_operation_log.created_id; Type: COMMENT; Schema: public; Owner: root
@@ -4328,20 +3352,17 @@ COMMENT ON COLUMN public.sys_operation_log.tenant_id IS '租户ID';
 
 COMMENT ON COLUMN public.sys_operation_log.created_id IS '创建人ID';
 
-
 --
 -- Name: COLUMN sys_operation_log.updated_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_operation_log.updated_id IS '更新人ID';
 
-
 --
 -- Name: COLUMN sys_operation_log.deleted_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_operation_log.deleted_id IS '删除人ID';
-
 
 --
 -- Name: sys_operation_log_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -4355,7 +3376,6 @@ CREATE SEQUENCE public.sys_operation_log_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.sys_operation_log_id_seq OWNER TO root;
 
 --
@@ -4363,7 +3383,6 @@ ALTER SEQUENCE public.sys_operation_log_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.sys_operation_log_id_seq OWNED BY public.sys_operation_log.id;
-
 
 --
 -- Name: sys_param; Type: TABLE; Schema: public; Owner: root
@@ -4388,7 +3407,6 @@ CREATE TABLE public.sys_param (
     deleted_id integer
 );
 
-
 ALTER TABLE public.sys_param OWNER TO root;
 
 --
@@ -4397,13 +3415,11 @@ ALTER TABLE public.sys_param OWNER TO root;
 
 COMMENT ON TABLE public.sys_param IS '系统参数表';
 
-
 --
 -- Name: COLUMN sys_param.config_name; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_param.config_name IS '参数名称';
-
 
 --
 -- Name: COLUMN sys_param.config_key; Type: COMMENT; Schema: public; Owner: root
@@ -4411,13 +3427,11 @@ COMMENT ON COLUMN public.sys_param.config_name IS '参数名称';
 
 COMMENT ON COLUMN public.sys_param.config_key IS '参数键名';
 
-
 --
 -- Name: COLUMN sys_param.config_value; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_param.config_value IS '参数键值';
-
 
 --
 -- Name: COLUMN sys_param.config_type; Type: COMMENT; Schema: public; Owner: root
@@ -4425,13 +3439,11 @@ COMMENT ON COLUMN public.sys_param.config_value IS '参数键值';
 
 COMMENT ON COLUMN public.sys_param.config_type IS '系统内置(True:是 False:否)';
 
-
 --
 -- Name: COLUMN sys_param.status; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_param.status IS '状态(0:启动 1:停用)';
-
 
 --
 -- Name: COLUMN sys_param.description; Type: COMMENT; Schema: public; Owner: root
@@ -4439,13 +3451,11 @@ COMMENT ON COLUMN public.sys_param.status IS '状态(0:启动 1:停用)';
 
 COMMENT ON COLUMN public.sys_param.description IS '备注';
 
-
 --
 -- Name: COLUMN sys_param.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_param.id IS '主键ID';
-
 
 --
 -- Name: COLUMN sys_param.uuid; Type: COMMENT; Schema: public; Owner: root
@@ -4453,13 +3463,11 @@ COMMENT ON COLUMN public.sys_param.id IS '主键ID';
 
 COMMENT ON COLUMN public.sys_param.uuid IS 'UUID全局唯一标识';
 
-
 --
 -- Name: COLUMN sys_param.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_param.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
 
 --
 -- Name: COLUMN sys_param.created_time; Type: COMMENT; Schema: public; Owner: root
@@ -4467,13 +3475,11 @@ COMMENT ON COLUMN public.sys_param.is_deleted IS '是否已删除(0:未删除 1:
 
 COMMENT ON COLUMN public.sys_param.created_time IS '创建时间';
 
-
 --
 -- Name: COLUMN sys_param.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_param.updated_time IS '更新时间';
-
 
 --
 -- Name: COLUMN sys_param.deleted_time; Type: COMMENT; Schema: public; Owner: root
@@ -4481,13 +3487,11 @@ COMMENT ON COLUMN public.sys_param.updated_time IS '更新时间';
 
 COMMENT ON COLUMN public.sys_param.deleted_time IS '删除时间';
 
-
 --
 -- Name: COLUMN sys_param.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_param.tenant_id IS '租户ID';
-
 
 --
 -- Name: COLUMN sys_param.created_id; Type: COMMENT; Schema: public; Owner: root
@@ -4495,20 +3499,17 @@ COMMENT ON COLUMN public.sys_param.tenant_id IS '租户ID';
 
 COMMENT ON COLUMN public.sys_param.created_id IS '创建人ID';
 
-
 --
 -- Name: COLUMN sys_param.updated_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_param.updated_id IS '更新人ID';
 
-
 --
 -- Name: COLUMN sys_param.deleted_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_param.deleted_id IS '删除人ID';
-
 
 --
 -- Name: sys_param_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -4522,7 +3523,6 @@ CREATE SEQUENCE public.sys_param_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.sys_param_id_seq OWNER TO root;
 
 --
@@ -4530,7 +3530,6 @@ ALTER SEQUENCE public.sys_param_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.sys_param_id_seq OWNED BY public.sys_param.id;
-
 
 --
 -- Name: sys_position; Type: TABLE; Schema: public; Owner: root
@@ -4554,7 +3553,6 @@ CREATE TABLE public.sys_position (
     deleted_id integer
 );
 
-
 ALTER TABLE public.sys_position OWNER TO root;
 
 --
@@ -4563,13 +3561,11 @@ ALTER TABLE public.sys_position OWNER TO root;
 
 COMMENT ON TABLE public.sys_position IS '岗位表';
 
-
 --
 -- Name: COLUMN sys_position.name; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_position.name IS '岗位名称';
-
 
 --
 -- Name: COLUMN sys_position.code; Type: COMMENT; Schema: public; Owner: root
@@ -4577,13 +3573,11 @@ COMMENT ON COLUMN public.sys_position.name IS '岗位名称';
 
 COMMENT ON COLUMN public.sys_position.code IS '岗位编码';
 
-
 --
 -- Name: COLUMN sys_position."order"; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_position."order" IS '显示排序';
-
 
 --
 -- Name: COLUMN sys_position.status; Type: COMMENT; Schema: public; Owner: root
@@ -4591,13 +3585,11 @@ COMMENT ON COLUMN public.sys_position."order" IS '显示排序';
 
 COMMENT ON COLUMN public.sys_position.status IS '状态(0:启动 1:停用)';
 
-
 --
 -- Name: COLUMN sys_position.description; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_position.description IS '备注';
-
 
 --
 -- Name: COLUMN sys_position.id; Type: COMMENT; Schema: public; Owner: root
@@ -4605,13 +3597,11 @@ COMMENT ON COLUMN public.sys_position.description IS '备注';
 
 COMMENT ON COLUMN public.sys_position.id IS '主键ID';
 
-
 --
 -- Name: COLUMN sys_position.uuid; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_position.uuid IS 'UUID全局唯一标识';
-
 
 --
 -- Name: COLUMN sys_position.is_deleted; Type: COMMENT; Schema: public; Owner: root
@@ -4619,13 +3609,11 @@ COMMENT ON COLUMN public.sys_position.uuid IS 'UUID全局唯一标识';
 
 COMMENT ON COLUMN public.sys_position.is_deleted IS '是否已删除(0:未删除 1:已删除)';
 
-
 --
 -- Name: COLUMN sys_position.created_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_position.created_time IS '创建时间';
-
 
 --
 -- Name: COLUMN sys_position.updated_time; Type: COMMENT; Schema: public; Owner: root
@@ -4633,13 +3621,11 @@ COMMENT ON COLUMN public.sys_position.created_time IS '创建时间';
 
 COMMENT ON COLUMN public.sys_position.updated_time IS '更新时间';
 
-
 --
 -- Name: COLUMN sys_position.deleted_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_position.deleted_time IS '删除时间';
-
 
 --
 -- Name: COLUMN sys_position.tenant_id; Type: COMMENT; Schema: public; Owner: root
@@ -4647,13 +3633,11 @@ COMMENT ON COLUMN public.sys_position.deleted_time IS '删除时间';
 
 COMMENT ON COLUMN public.sys_position.tenant_id IS '租户ID';
 
-
 --
 -- Name: COLUMN sys_position.created_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_position.created_id IS '创建人ID';
-
 
 --
 -- Name: COLUMN sys_position.updated_id; Type: COMMENT; Schema: public; Owner: root
@@ -4661,13 +3645,11 @@ COMMENT ON COLUMN public.sys_position.created_id IS '创建人ID';
 
 COMMENT ON COLUMN public.sys_position.updated_id IS '更新人ID';
 
-
 --
 -- Name: COLUMN sys_position.deleted_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_position.deleted_id IS '删除人ID';
-
 
 --
 -- Name: sys_position_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -4681,7 +3663,6 @@ CREATE SEQUENCE public.sys_position_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.sys_position_id_seq OWNER TO root;
 
 --
@@ -4689,7 +3670,6 @@ ALTER SEQUENCE public.sys_position_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.sys_position_id_seq OWNED BY public.sys_position.id;
-
 
 --
 -- Name: sys_role; Type: TABLE; Schema: public; Owner: root
@@ -4714,7 +3694,6 @@ CREATE TABLE public.sys_role (
     deleted_id integer
 );
 
-
 ALTER TABLE public.sys_role OWNER TO root;
 
 --
@@ -4723,13 +3702,11 @@ ALTER TABLE public.sys_role OWNER TO root;
 
 COMMENT ON TABLE public.sys_role IS '角色表';
 
-
 --
 -- Name: COLUMN sys_role.name; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_role.name IS '角色名称';
-
 
 --
 -- Name: COLUMN sys_role.code; Type: COMMENT; Schema: public; Owner: root
@@ -4737,13 +3714,11 @@ COMMENT ON COLUMN public.sys_role.name IS '角色名称';
 
 COMMENT ON COLUMN public.sys_role.code IS '角色编码';
 
-
 --
 -- Name: COLUMN sys_role."order"; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_role."order" IS '显示排序';
-
 
 --
 -- Name: COLUMN sys_role.status; Type: COMMENT; Schema: public; Owner: root
@@ -4751,13 +3726,11 @@ COMMENT ON COLUMN public.sys_role."order" IS '显示排序';
 
 COMMENT ON COLUMN public.sys_role.status IS '状态(0:启动 1:停用)';
 
-
 --
 -- Name: COLUMN sys_role.description; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_role.description IS '备注';
-
 
 --
 -- Name: COLUMN sys_role.data_scope; Type: COMMENT; Schema: public; Owner: root
@@ -4765,13 +3738,11 @@ COMMENT ON COLUMN public.sys_role.description IS '备注';
 
 COMMENT ON COLUMN public.sys_role.data_scope IS '数据权限范围(1:仅本人 2:本部门 3:本部门及以下 4:全部 5:自定义)';
 
-
 --
 -- Name: COLUMN sys_role.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_role.id IS '主键ID';
-
 
 --
 -- Name: COLUMN sys_role.uuid; Type: COMMENT; Schema: public; Owner: root
@@ -4779,13 +3750,11 @@ COMMENT ON COLUMN public.sys_role.id IS '主键ID';
 
 COMMENT ON COLUMN public.sys_role.uuid IS 'UUID全局唯一标识';
 
-
 --
 -- Name: COLUMN sys_role.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_role.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
 
 --
 -- Name: COLUMN sys_role.created_time; Type: COMMENT; Schema: public; Owner: root
@@ -4793,13 +3762,11 @@ COMMENT ON COLUMN public.sys_role.is_deleted IS '是否已删除(0:未删除 1:�
 
 COMMENT ON COLUMN public.sys_role.created_time IS '创建时间';
 
-
 --
 -- Name: COLUMN sys_role.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_role.updated_time IS '更新时间';
-
 
 --
 -- Name: COLUMN sys_role.deleted_time; Type: COMMENT; Schema: public; Owner: root
@@ -4807,13 +3774,11 @@ COMMENT ON COLUMN public.sys_role.updated_time IS '更新时间';
 
 COMMENT ON COLUMN public.sys_role.deleted_time IS '删除时间';
 
-
 --
 -- Name: COLUMN sys_role.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_role.tenant_id IS '租户ID';
-
 
 --
 -- Name: COLUMN sys_role.created_id; Type: COMMENT; Schema: public; Owner: root
@@ -4821,20 +3786,17 @@ COMMENT ON COLUMN public.sys_role.tenant_id IS '租户ID';
 
 COMMENT ON COLUMN public.sys_role.created_id IS '创建人ID';
 
-
 --
 -- Name: COLUMN sys_role.updated_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_role.updated_id IS '更新人ID';
 
-
 --
 -- Name: COLUMN sys_role.deleted_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_role.deleted_id IS '删除人ID';
-
 
 --
 -- Name: sys_role_depts; Type: TABLE; Schema: public; Owner: root
@@ -4845,7 +3807,6 @@ CREATE TABLE public.sys_role_depts (
     dept_id integer NOT NULL
 );
 
-
 ALTER TABLE public.sys_role_depts OWNER TO root;
 
 --
@@ -4854,20 +3815,17 @@ ALTER TABLE public.sys_role_depts OWNER TO root;
 
 COMMENT ON TABLE public.sys_role_depts IS '角色部门关联表';
 
-
 --
 -- Name: COLUMN sys_role_depts.role_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_role_depts.role_id IS '角色ID';
 
-
 --
 -- Name: COLUMN sys_role_depts.dept_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_role_depts.dept_id IS '部门ID';
-
 
 --
 -- Name: sys_role_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -4881,7 +3839,6 @@ CREATE SEQUENCE public.sys_role_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.sys_role_id_seq OWNER TO root;
 
 --
@@ -4889,7 +3846,6 @@ ALTER SEQUENCE public.sys_role_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.sys_role_id_seq OWNED BY public.sys_role.id;
-
 
 --
 -- Name: sys_role_menus; Type: TABLE; Schema: public; Owner: root
@@ -4900,7 +3856,6 @@ CREATE TABLE public.sys_role_menus (
     menu_id integer NOT NULL
 );
 
-
 ALTER TABLE public.sys_role_menus OWNER TO root;
 
 --
@@ -4909,20 +3864,17 @@ ALTER TABLE public.sys_role_menus OWNER TO root;
 
 COMMENT ON TABLE public.sys_role_menus IS '角色菜单关联表';
 
-
 --
 -- Name: COLUMN sys_role_menus.role_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_role_menus.role_id IS '角色ID';
 
-
 --
 -- Name: COLUMN sys_role_menus.menu_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_role_menus.menu_id IS '菜单ID';
-
 
 --
 -- Name: sys_ticket; Type: TABLE; Schema: public; Owner: root
@@ -4950,7 +3902,6 @@ CREATE TABLE public.sys_ticket (
     deleted_id integer
 );
 
-
 ALTER TABLE public.sys_ticket OWNER TO root;
 
 --
@@ -4959,13 +3910,11 @@ ALTER TABLE public.sys_ticket OWNER TO root;
 
 COMMENT ON TABLE public.sys_ticket IS '工单表';
 
-
 --
 -- Name: COLUMN sys_ticket.title; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_ticket.title IS '工单标题';
-
 
 --
 -- Name: COLUMN sys_ticket.status; Type: COMMENT; Schema: public; Owner: root
@@ -4973,13 +3922,11 @@ COMMENT ON COLUMN public.sys_ticket.title IS '工单标题';
 
 COMMENT ON COLUMN public.sys_ticket.status IS '状态(0:待处理 1:处理中 2:已完成 3:已关闭)';
 
-
 --
 -- Name: COLUMN sys_ticket.description; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_ticket.description IS '备注';
-
 
 --
 -- Name: COLUMN sys_ticket.ticket_content; Type: COMMENT; Schema: public; Owner: root
@@ -4987,13 +3934,11 @@ COMMENT ON COLUMN public.sys_ticket.description IS '备注';
 
 COMMENT ON COLUMN public.sys_ticket.ticket_content IS '工单内容（富文本）';
 
-
 --
 -- Name: COLUMN sys_ticket.summary; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_ticket.summary IS '工单内容（纯文本摘要）';
-
 
 --
 -- Name: COLUMN sys_ticket.ticket_type; Type: COMMENT; Schema: public; Owner: root
@@ -5001,13 +3946,11 @@ COMMENT ON COLUMN public.sys_ticket.summary IS '工单内容（纯文本摘要�
 
 COMMENT ON COLUMN public.sys_ticket.ticket_type IS '工单类型(suggestion:建议 bug:缺陷 optimize:优化 other:其他)';
 
-
 --
 -- Name: COLUMN sys_ticket.images; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_ticket.images IS '图片URL列表(JSON数组)';
-
 
 --
 -- Name: COLUMN sys_ticket.reply; Type: COMMENT; Schema: public; Owner: root
@@ -5015,13 +3958,11 @@ COMMENT ON COLUMN public.sys_ticket.images IS '图片URL列表(JSON数组)';
 
 COMMENT ON COLUMN public.sys_ticket.reply IS '回复内容';
 
-
 --
 -- Name: COLUMN sys_ticket.assigned_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_ticket.assigned_id IS '处理人ID';
-
 
 --
 -- Name: COLUMN sys_ticket.id; Type: COMMENT; Schema: public; Owner: root
@@ -5029,13 +3970,11 @@ COMMENT ON COLUMN public.sys_ticket.assigned_id IS '处理人ID';
 
 COMMENT ON COLUMN public.sys_ticket.id IS '主键ID';
 
-
 --
 -- Name: COLUMN sys_ticket.uuid; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_ticket.uuid IS 'UUID全局唯一标识';
-
 
 --
 -- Name: COLUMN sys_ticket.is_deleted; Type: COMMENT; Schema: public; Owner: root
@@ -5043,13 +3982,11 @@ COMMENT ON COLUMN public.sys_ticket.uuid IS 'UUID全局唯一标识';
 
 COMMENT ON COLUMN public.sys_ticket.is_deleted IS '是否已删除(0:未删除 1:已删除)';
 
-
 --
 -- Name: COLUMN sys_ticket.created_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_ticket.created_time IS '创建时间';
-
 
 --
 -- Name: COLUMN sys_ticket.updated_time; Type: COMMENT; Schema: public; Owner: root
@@ -5057,13 +3994,11 @@ COMMENT ON COLUMN public.sys_ticket.created_time IS '创建时间';
 
 COMMENT ON COLUMN public.sys_ticket.updated_time IS '更新时间';
 
-
 --
 -- Name: COLUMN sys_ticket.deleted_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_ticket.deleted_time IS '删除时间';
-
 
 --
 -- Name: COLUMN sys_ticket.tenant_id; Type: COMMENT; Schema: public; Owner: root
@@ -5071,13 +4006,11 @@ COMMENT ON COLUMN public.sys_ticket.deleted_time IS '删除时间';
 
 COMMENT ON COLUMN public.sys_ticket.tenant_id IS '租户ID';
 
-
 --
 -- Name: COLUMN sys_ticket.created_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_ticket.created_id IS '创建人ID';
-
 
 --
 -- Name: COLUMN sys_ticket.updated_id; Type: COMMENT; Schema: public; Owner: root
@@ -5085,13 +4018,11 @@ COMMENT ON COLUMN public.sys_ticket.created_id IS '创建人ID';
 
 COMMENT ON COLUMN public.sys_ticket.updated_id IS '更新人ID';
 
-
 --
 -- Name: COLUMN sys_ticket.deleted_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_ticket.deleted_id IS '删除人ID';
-
 
 --
 -- Name: sys_ticket_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -5105,7 +4036,6 @@ CREATE SEQUENCE public.sys_ticket_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.sys_ticket_id_seq OWNER TO root;
 
 --
@@ -5113,7 +4043,6 @@ ALTER SEQUENCE public.sys_ticket_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.sys_ticket_id_seq OWNED BY public.sys_ticket.id;
-
 
 --
 -- Name: sys_user; Type: TABLE; Schema: public; Owner: root
@@ -5148,7 +4077,6 @@ CREATE TABLE public.sys_user (
     deleted_id integer
 );
 
-
 ALTER TABLE public.sys_user OWNER TO root;
 
 --
@@ -5157,13 +4085,11 @@ ALTER TABLE public.sys_user OWNER TO root;
 
 COMMENT ON TABLE public.sys_user IS '用户表';
 
-
 --
 -- Name: COLUMN sys_user.username; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user.username IS '用户名/登录账号';
-
 
 --
 -- Name: COLUMN sys_user.password; Type: COMMENT; Schema: public; Owner: root
@@ -5171,13 +4097,11 @@ COMMENT ON COLUMN public.sys_user.username IS '用户名/登录账号';
 
 COMMENT ON COLUMN public.sys_user.password IS '密码哈希';
 
-
 --
 -- Name: COLUMN sys_user.name; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user.name IS '昵称';
-
 
 --
 -- Name: COLUMN sys_user.mobile; Type: COMMENT; Schema: public; Owner: root
@@ -5185,13 +4109,11 @@ COMMENT ON COLUMN public.sys_user.name IS '昵称';
 
 COMMENT ON COLUMN public.sys_user.mobile IS '手机号';
 
-
 --
 -- Name: COLUMN sys_user.email; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user.email IS '邮箱';
-
 
 --
 -- Name: COLUMN sys_user.gender; Type: COMMENT; Schema: public; Owner: root
@@ -5199,13 +4121,11 @@ COMMENT ON COLUMN public.sys_user.email IS '邮箱';
 
 COMMENT ON COLUMN public.sys_user.gender IS '性别(0:男 1:女 2:未知)';
 
-
 --
 -- Name: COLUMN sys_user.avatar; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user.avatar IS '头像URL地址';
-
 
 --
 -- Name: COLUMN sys_user.is_superuser; Type: COMMENT; Schema: public; Owner: root
@@ -5213,13 +4133,11 @@ COMMENT ON COLUMN public.sys_user.avatar IS '头像URL地址';
 
 COMMENT ON COLUMN public.sys_user.is_superuser IS '是否超管';
 
-
 --
 -- Name: COLUMN sys_user.last_login; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user.last_login IS '最后登录时间';
-
 
 --
 -- Name: COLUMN sys_user.gitee_login; Type: COMMENT; Schema: public; Owner: root
@@ -5227,13 +4145,11 @@ COMMENT ON COLUMN public.sys_user.last_login IS '最后登录时间';
 
 COMMENT ON COLUMN public.sys_user.gitee_login IS 'Gitee登录';
 
-
 --
 -- Name: COLUMN sys_user.github_login; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user.github_login IS 'Github登录';
-
 
 --
 -- Name: COLUMN sys_user.wx_login; Type: COMMENT; Schema: public; Owner: root
@@ -5241,13 +4157,11 @@ COMMENT ON COLUMN public.sys_user.github_login IS 'Github登录';
 
 COMMENT ON COLUMN public.sys_user.wx_login IS '微信登录';
 
-
 --
 -- Name: COLUMN sys_user.qq_login; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user.qq_login IS 'QQ登录';
-
 
 --
 -- Name: COLUMN sys_user.status; Type: COMMENT; Schema: public; Owner: root
@@ -5255,13 +4169,11 @@ COMMENT ON COLUMN public.sys_user.qq_login IS 'QQ登录';
 
 COMMENT ON COLUMN public.sys_user.status IS '状态(0:启动 1:停用)';
 
-
 --
 -- Name: COLUMN sys_user.description; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user.description IS '备注';
-
 
 --
 -- Name: COLUMN sys_user.dept_id; Type: COMMENT; Schema: public; Owner: root
@@ -5269,13 +4181,11 @@ COMMENT ON COLUMN public.sys_user.description IS '备注';
 
 COMMENT ON COLUMN public.sys_user.dept_id IS '部门ID';
 
-
 --
 -- Name: COLUMN sys_user.id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user.id IS '主键ID';
-
 
 --
 -- Name: COLUMN sys_user.uuid; Type: COMMENT; Schema: public; Owner: root
@@ -5283,13 +4193,11 @@ COMMENT ON COLUMN public.sys_user.id IS '主键ID';
 
 COMMENT ON COLUMN public.sys_user.uuid IS 'UUID全局唯一标识';
 
-
 --
 -- Name: COLUMN sys_user.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
 
 --
 -- Name: COLUMN sys_user.created_time; Type: COMMENT; Schema: public; Owner: root
@@ -5297,13 +4205,11 @@ COMMENT ON COLUMN public.sys_user.is_deleted IS '是否已删除(0:未删除 1:�
 
 COMMENT ON COLUMN public.sys_user.created_time IS '创建时间';
 
-
 --
 -- Name: COLUMN sys_user.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user.updated_time IS '更新时间';
-
 
 --
 -- Name: COLUMN sys_user.deleted_time; Type: COMMENT; Schema: public; Owner: root
@@ -5311,13 +4217,11 @@ COMMENT ON COLUMN public.sys_user.updated_time IS '更新时间';
 
 COMMENT ON COLUMN public.sys_user.deleted_time IS '删除时间';
 
-
 --
 -- Name: COLUMN sys_user.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user.tenant_id IS '租户ID';
-
 
 --
 -- Name: COLUMN sys_user.created_id; Type: COMMENT; Schema: public; Owner: root
@@ -5325,20 +4229,17 @@ COMMENT ON COLUMN public.sys_user.tenant_id IS '租户ID';
 
 COMMENT ON COLUMN public.sys_user.created_id IS '创建人ID';
 
-
 --
 -- Name: COLUMN sys_user.updated_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user.updated_id IS '更新人ID';
 
-
 --
 -- Name: COLUMN sys_user.deleted_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user.deleted_id IS '删除人ID';
-
 
 --
 -- Name: sys_user_id_seq; Type: SEQUENCE; Schema: public; Owner: root
@@ -5352,7 +4253,6 @@ CREATE SEQUENCE public.sys_user_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
 ALTER SEQUENCE public.sys_user_id_seq OWNER TO root;
 
 --
@@ -5360,7 +4260,6 @@ ALTER SEQUENCE public.sys_user_id_seq OWNER TO root;
 --
 
 ALTER SEQUENCE public.sys_user_id_seq OWNED BY public.sys_user.id;
-
 
 --
 -- Name: sys_user_positions; Type: TABLE; Schema: public; Owner: root
@@ -5371,7 +4270,6 @@ CREATE TABLE public.sys_user_positions (
     position_id integer NOT NULL
 );
 
-
 ALTER TABLE public.sys_user_positions OWNER TO root;
 
 --
@@ -5380,20 +4278,17 @@ ALTER TABLE public.sys_user_positions OWNER TO root;
 
 COMMENT ON TABLE public.sys_user_positions IS '用户岗位关联表';
 
-
 --
 -- Name: COLUMN sys_user_positions.user_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user_positions.user_id IS '用户ID';
 
-
 --
 -- Name: COLUMN sys_user_positions.position_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user_positions.position_id IS '岗位ID';
-
 
 --
 -- Name: sys_user_roles; Type: TABLE; Schema: public; Owner: root
@@ -5404,7 +4299,6 @@ CREATE TABLE public.sys_user_roles (
     role_id integer NOT NULL
 );
 
-
 ALTER TABLE public.sys_user_roles OWNER TO root;
 
 --
@@ -5413,13 +4307,11 @@ ALTER TABLE public.sys_user_roles OWNER TO root;
 
 COMMENT ON TABLE public.sys_user_roles IS '用户角色关联表';
 
-
 --
 -- Name: COLUMN sys_user_roles.user_id; Type: COMMENT; Schema: public; Owner: root
 --
 
 COMMENT ON COLUMN public.sys_user_roles.user_id IS '用户ID';
-
 
 --
 -- Name: COLUMN sys_user_roles.role_id; Type: COMMENT; Schema: public; Owner: root
@@ -5427,157 +4319,73 @@ COMMENT ON COLUMN public.sys_user_roles.user_id IS '用户ID';
 
 COMMENT ON COLUMN public.sys_user_roles.role_id IS '角色ID';
 
-
---
--- Name: task_job; Type: TABLE; Schema: public; Owner: root
 --
 
-CREATE TABLE public.task_job (
-    job_id character varying(64) NOT NULL,
-    job_name character varying(128),
-    trigger_type character varying(32),
-    next_run_time character varying(64),
-    job_state text,
-    result text,
-    error text,
-    status integer NOT NULL,
-    description text,
-    id integer NOT NULL,
-    uuid character varying(64) NOT NULL,
-    is_deleted boolean NOT NULL,
-    created_time timestamp without time zone NOT NULL,
-    updated_time timestamp without time zone NOT NULL,
-    deleted_time timestamp without time zone,
-    tenant_id integer NOT NULL
-);
-
-
-ALTER TABLE public.task_job OWNER TO root;
-
---
--- Name: TABLE task_job; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON TABLE public.task_job IS '任务执行日志表';
-
-
 --
--- Name: COLUMN task_job.job_id; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.job_id IS '任务ID';
-
-
 --
--- Name: COLUMN task_job.job_name; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.job_name IS '任务名称';
-
-
 --
--- Name: COLUMN task_job.trigger_type; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.trigger_type IS '触发方式: cron/interval/date/manual';
-
-
 --
--- Name: COLUMN task_job.next_run_time; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.next_run_time IS '下次执行时间';
-
-
 --
--- Name: COLUMN task_job.job_state; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.job_state IS '任务状态信息';
-
-
 --
--- Name: COLUMN task_job.result; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.result IS '执行结果';
-
-
 --
--- Name: COLUMN task_job.error; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.error IS '错误信息';
-
-
 --
--- Name: COLUMN task_job.status; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.status IS '执行状态(0:待执行 1:执行中 2:成功 3:失败 4:超时 5:已取消)';
-
-
 --
--- Name: COLUMN task_job.description; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.description IS '备注';
-
-
 --
--- Name: COLUMN task_job.id; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.id IS '主键ID';
-
-
 --
--- Name: COLUMN task_job.uuid; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.uuid IS 'UUID全局唯一标识';
-
-
 --
--- Name: COLUMN task_job.is_deleted; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
-
 --
--- Name: COLUMN task_job.created_time; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.created_time IS '创建时间';
-
-
 --
--- Name: COLUMN task_job.updated_time; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.updated_time IS '更新时间';
-
-
 --
--- Name: COLUMN task_job.deleted_time; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.deleted_time IS '删除时间';
-
-
 --
--- Name: COLUMN task_job.tenant_id; Type: COMMENT; Schema: public; Owner: root
 --
 
-COMMENT ON COLUMN public.task_job.tenant_id IS '租户ID';
-
-
 --
--- Name: task_job_id_seq; Type: SEQUENCE; Schema: public; Owner: root
 --
 
-CREATE SEQUENCE public.task_job_id_seq
+--
+--
+
+--
+--
+
+--
+--
+
+--
+--
+
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -5585,620 +4393,8 @@ CREATE SEQUENCE public.task_job_id_seq
     NO MAXVALUE
     CACHE 1;
 
-
-ALTER SEQUENCE public.task_job_id_seq OWNER TO root;
-
 --
--- Name: task_job_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
 --
-
-ALTER SEQUENCE public.task_job_id_seq OWNED BY public.task_job.id;
-
-
---
--- Name: task_node; Type: TABLE; Schema: public; Owner: root
---
-
-CREATE TABLE public.task_node (
-    name character varying(64) NOT NULL,
-    code character varying(32) NOT NULL,
-    jobstore character varying(64),
-    executor character varying(64),
-    trigger character varying(64),
-    trigger_args text,
-    func text,
-    args text,
-    kwargs text,
-    "coalesce" boolean,
-    max_instances integer,
-    start_date character varying(64),
-    end_date character varying(64),
-    status integer NOT NULL,
-    description text,
-    id integer NOT NULL,
-    uuid character varying(64) NOT NULL,
-    is_deleted boolean NOT NULL,
-    created_time timestamp without time zone NOT NULL,
-    updated_time timestamp without time zone NOT NULL,
-    deleted_time timestamp without time zone,
-    tenant_id integer NOT NULL,
-    created_id integer,
-    updated_id integer,
-    deleted_id integer
-);
-
-
-ALTER TABLE public.task_node OWNER TO root;
-
---
--- Name: TABLE task_node; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON TABLE public.task_node IS '节点类型表';
-
-
---
--- Name: COLUMN task_node.name; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.name IS '节点名称';
-
-
---
--- Name: COLUMN task_node.code; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.code IS '节点编码';
-
-
---
--- Name: COLUMN task_node.jobstore; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.jobstore IS '存储器';
-
-
---
--- Name: COLUMN task_node.executor; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.executor IS '执行器';
-
-
---
--- Name: COLUMN task_node.trigger; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.trigger IS '触发器';
-
-
---
--- Name: COLUMN task_node.trigger_args; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.trigger_args IS '触发器参数';
-
-
---
--- Name: COLUMN task_node.func; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.func IS '代码块';
-
-
---
--- Name: COLUMN task_node.args; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.args IS '位置参数';
-
-
---
--- Name: COLUMN task_node.kwargs; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.kwargs IS '关键字参数';
-
-
---
--- Name: COLUMN task_node."coalesce"; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node."coalesce" IS '是否合并运行';
-
-
---
--- Name: COLUMN task_node.max_instances; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.max_instances IS '最大实例数';
-
-
---
--- Name: COLUMN task_node.start_date; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.start_date IS '开始时间';
-
-
---
--- Name: COLUMN task_node.end_date; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.end_date IS '结束时间';
-
-
---
--- Name: COLUMN task_node.status; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.status IS '状态(0:启动 1:停用)';
-
-
---
--- Name: COLUMN task_node.description; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.description IS '备注';
-
-
---
--- Name: COLUMN task_node.id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.id IS '主键ID';
-
-
---
--- Name: COLUMN task_node.uuid; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.uuid IS 'UUID全局唯一标识';
-
-
---
--- Name: COLUMN task_node.is_deleted; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
-
---
--- Name: COLUMN task_node.created_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.created_time IS '创建时间';
-
-
---
--- Name: COLUMN task_node.updated_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.updated_time IS '更新时间';
-
-
---
--- Name: COLUMN task_node.deleted_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.deleted_time IS '删除时间';
-
-
---
--- Name: COLUMN task_node.tenant_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.tenant_id IS '租户ID';
-
-
---
--- Name: COLUMN task_node.created_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.created_id IS '创建人ID';
-
-
---
--- Name: COLUMN task_node.updated_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.updated_id IS '更新人ID';
-
-
---
--- Name: COLUMN task_node.deleted_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_node.deleted_id IS '删除人ID';
-
-
---
--- Name: task_node_id_seq; Type: SEQUENCE; Schema: public; Owner: root
---
-
-CREATE SEQUENCE public.task_node_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.task_node_id_seq OWNER TO root;
-
---
--- Name: task_node_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
---
-
-ALTER SEQUENCE public.task_node_id_seq OWNED BY public.task_node.id;
-
-
---
--- Name: task_workflow; Type: TABLE; Schema: public; Owner: root
---
-
-CREATE TABLE public.task_workflow (
-    name character varying(128) NOT NULL,
-    code character varying(64) NOT NULL,
-    nodes json,
-    edges json,
-    status integer NOT NULL,
-    description text,
-    id integer NOT NULL,
-    uuid character varying(64) NOT NULL,
-    is_deleted boolean NOT NULL,
-    created_time timestamp without time zone NOT NULL,
-    updated_time timestamp without time zone NOT NULL,
-    deleted_time timestamp without time zone,
-    tenant_id integer NOT NULL,
-    created_id integer,
-    updated_id integer,
-    deleted_id integer
-);
-
-
-ALTER TABLE public.task_workflow OWNER TO root;
-
---
--- Name: TABLE task_workflow; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON TABLE public.task_workflow IS '工作流定义表';
-
-
---
--- Name: COLUMN task_workflow.name; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.name IS '流程名称';
-
-
---
--- Name: COLUMN task_workflow.code; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.code IS '流程编码';
-
-
---
--- Name: COLUMN task_workflow.nodes; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.nodes IS 'VueFlow节点';
-
-
---
--- Name: COLUMN task_workflow.edges; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.edges IS 'VueFlow连接线';
-
-
---
--- Name: COLUMN task_workflow.status; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.status IS '状态(0:草稿 1:已发布 2:已归档)';
-
-
---
--- Name: COLUMN task_workflow.description; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.description IS '备注';
-
-
---
--- Name: COLUMN task_workflow.id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.id IS '主键ID';
-
-
---
--- Name: COLUMN task_workflow.uuid; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.uuid IS 'UUID全局唯一标识';
-
-
---
--- Name: COLUMN task_workflow.is_deleted; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
-
---
--- Name: COLUMN task_workflow.created_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.created_time IS '创建时间';
-
-
---
--- Name: COLUMN task_workflow.updated_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.updated_time IS '更新时间';
-
-
---
--- Name: COLUMN task_workflow.deleted_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.deleted_time IS '删除时间';
-
-
---
--- Name: COLUMN task_workflow.tenant_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.tenant_id IS '租户ID';
-
-
---
--- Name: COLUMN task_workflow.created_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.created_id IS '创建人ID';
-
-
---
--- Name: COLUMN task_workflow.updated_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.updated_id IS '更新人ID';
-
-
---
--- Name: COLUMN task_workflow.deleted_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow.deleted_id IS '删除人ID';
-
-
---
--- Name: task_workflow_id_seq; Type: SEQUENCE; Schema: public; Owner: root
---
-
-CREATE SEQUENCE public.task_workflow_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.task_workflow_id_seq OWNER TO root;
-
---
--- Name: task_workflow_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
---
-
-ALTER SEQUENCE public.task_workflow_id_seq OWNED BY public.task_workflow.id;
-
-
---
--- Name: task_workflow_node_type; Type: TABLE; Schema: public; Owner: root
---
-
-CREATE TABLE public.task_workflow_node_type (
-    name character varying(128) NOT NULL,
-    code character varying(64) NOT NULL,
-    category character varying(32) NOT NULL,
-    func text NOT NULL,
-    args text,
-    kwargs text,
-    sort_order integer NOT NULL,
-    is_active boolean NOT NULL,
-    status integer NOT NULL,
-    description text,
-    id integer NOT NULL,
-    uuid character varying(64) NOT NULL,
-    is_deleted boolean NOT NULL,
-    created_time timestamp without time zone NOT NULL,
-    updated_time timestamp without time zone NOT NULL,
-    deleted_time timestamp without time zone,
-    tenant_id integer NOT NULL,
-    created_id integer,
-    updated_id integer,
-    deleted_id integer
-);
-
-
-ALTER TABLE public.task_workflow_node_type OWNER TO root;
-
---
--- Name: TABLE task_workflow_node_type; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON TABLE public.task_workflow_node_type IS '工作流节点类型（非定时任务节点）';
-
-
---
--- Name: COLUMN task_workflow_node_type.name; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.name IS '显示名称';
-
-
---
--- Name: COLUMN task_workflow_node_type.code; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.code IS '节点编码，对应画布 node.type';
-
-
---
--- Name: COLUMN task_workflow_node_type.category; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.category IS '分类: trigger/action/condition/control';
-
-
---
--- Name: COLUMN task_workflow_node_type.func; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.func IS 'Python 代码块，须定义 handler(*args,**kwargs)';
-
-
---
--- Name: COLUMN task_workflow_node_type.args; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.args IS '默认位置参数，逗号分隔';
-
-
---
--- Name: COLUMN task_workflow_node_type.kwargs; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.kwargs IS '默认关键字参数 JSON';
-
-
---
--- Name: COLUMN task_workflow_node_type.sort_order; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.sort_order IS '排序';
-
-
---
--- Name: COLUMN task_workflow_node_type.is_active; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.is_active IS '是否启用';
-
-
---
--- Name: COLUMN task_workflow_node_type.status; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.status IS '状态(0:启动 1:停用)';
-
-
---
--- Name: COLUMN task_workflow_node_type.description; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.description IS '备注';
-
-
---
--- Name: COLUMN task_workflow_node_type.id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.id IS '主键ID';
-
-
---
--- Name: COLUMN task_workflow_node_type.uuid; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.uuid IS 'UUID全局唯一标识';
-
-
---
--- Name: COLUMN task_workflow_node_type.is_deleted; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.is_deleted IS '是否已删除(0:未删除 1:已删除)';
-
-
---
--- Name: COLUMN task_workflow_node_type.created_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.created_time IS '创建时间';
-
-
---
--- Name: COLUMN task_workflow_node_type.updated_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.updated_time IS '更新时间';
-
-
---
--- Name: COLUMN task_workflow_node_type.deleted_time; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.deleted_time IS '删除时间';
-
-
---
--- Name: COLUMN task_workflow_node_type.tenant_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.tenant_id IS '租户ID';
-
-
---
--- Name: COLUMN task_workflow_node_type.created_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.created_id IS '创建人ID';
-
-
---
--- Name: COLUMN task_workflow_node_type.updated_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.updated_id IS '更新人ID';
-
-
---
--- Name: COLUMN task_workflow_node_type.deleted_id; Type: COMMENT; Schema: public; Owner: root
---
-
-COMMENT ON COLUMN public.task_workflow_node_type.deleted_id IS '删除人ID';
-
-
---
--- Name: task_workflow_node_type_id_seq; Type: SEQUENCE; Schema: public; Owner: root
---
-
-CREATE SEQUENCE public.task_workflow_node_type_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.task_workflow_node_type_id_seq OWNER TO root;
-
---
--- Name: task_workflow_node_type_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: root
---
-
-ALTER SEQUENCE public.task_workflow_node_type_id_seq OWNED BY public.task_workflow_node_type.id;
-
 
 --
 -- Name: example_demo id; Type: DEFAULT; Schema: public; Owner: root
@@ -6206,27 +4402,11 @@ ALTER SEQUENCE public.task_workflow_node_type_id_seq OWNED BY public.task_workfl
 
 ALTER TABLE ONLY public.example_demo ALTER COLUMN id SET DEFAULT nextval('public.example_demo_id_seq'::regclass);
 
-
---
--- Name: gen_table id; Type: DEFAULT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.gen_table ALTER COLUMN id SET DEFAULT nextval('public.gen_table_id_seq'::regclass);
-
-
---
--- Name: gen_table_column id; Type: DEFAULT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.gen_table_column ALTER COLUMN id SET DEFAULT nextval('public.gen_table_column_id_seq'::regclass);
-
-
 --
 -- Name: platform_email_config id; Type: DEFAULT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_email_config ALTER COLUMN id SET DEFAULT nextval('public.platform_email_config_id_seq'::regclass);
-
 
 --
 -- Name: platform_email_log id; Type: DEFAULT; Schema: public; Owner: root
@@ -6234,13 +4414,11 @@ ALTER TABLE ONLY public.platform_email_config ALTER COLUMN id SET DEFAULT nextva
 
 ALTER TABLE ONLY public.platform_email_log ALTER COLUMN id SET DEFAULT nextval('public.platform_email_log_id_seq'::regclass);
 
-
 --
 -- Name: platform_email_template id; Type: DEFAULT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_email_template ALTER COLUMN id SET DEFAULT nextval('public.platform_email_template_id_seq'::regclass);
-
 
 --
 -- Name: platform_invoice id; Type: DEFAULT; Schema: public; Owner: root
@@ -6248,13 +4426,11 @@ ALTER TABLE ONLY public.platform_email_template ALTER COLUMN id SET DEFAULT next
 
 ALTER TABLE ONLY public.platform_invoice ALTER COLUMN id SET DEFAULT nextval('public.platform_invoice_id_seq'::regclass);
 
-
 --
 -- Name: platform_menu id; Type: DEFAULT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_menu ALTER COLUMN id SET DEFAULT nextval('public.platform_menu_id_seq'::regclass);
-
 
 --
 -- Name: platform_order id; Type: DEFAULT; Schema: public; Owner: root
@@ -6262,13 +4438,11 @@ ALTER TABLE ONLY public.platform_menu ALTER COLUMN id SET DEFAULT nextval('publi
 
 ALTER TABLE ONLY public.platform_order ALTER COLUMN id SET DEFAULT nextval('public.platform_order_id_seq'::regclass);
 
-
 --
 -- Name: platform_package id; Type: DEFAULT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_package ALTER COLUMN id SET DEFAULT nextval('public.platform_package_id_seq'::regclass);
-
 
 --
 -- Name: platform_package_menu id; Type: DEFAULT; Schema: public; Owner: root
@@ -6276,13 +4450,11 @@ ALTER TABLE ONLY public.platform_package ALTER COLUMN id SET DEFAULT nextval('pu
 
 ALTER TABLE ONLY public.platform_package_menu ALTER COLUMN id SET DEFAULT nextval('public.platform_package_menu_id_seq'::regclass);
 
-
 --
 -- Name: platform_package_plugin id; Type: DEFAULT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_package_plugin ALTER COLUMN id SET DEFAULT nextval('public.platform_package_plugin_id_seq'::regclass);
-
 
 --
 -- Name: platform_payment_record id; Type: DEFAULT; Schema: public; Owner: root
@@ -6290,13 +4462,11 @@ ALTER TABLE ONLY public.platform_package_plugin ALTER COLUMN id SET DEFAULT next
 
 ALTER TABLE ONLY public.platform_payment_record ALTER COLUMN id SET DEFAULT nextval('public.platform_payment_record_id_seq'::regclass);
 
-
 --
 -- Name: platform_plugin id; Type: DEFAULT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_plugin ALTER COLUMN id SET DEFAULT nextval('public.platform_plugin_id_seq'::regclass);
-
 
 --
 -- Name: platform_refund id; Type: DEFAULT; Schema: public; Owner: root
@@ -6304,13 +4474,11 @@ ALTER TABLE ONLY public.platform_plugin ALTER COLUMN id SET DEFAULT nextval('pub
 
 ALTER TABLE ONLY public.platform_refund ALTER COLUMN id SET DEFAULT nextval('public.platform_refund_id_seq'::regclass);
 
-
 --
 -- Name: platform_tenant id; Type: DEFAULT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_tenant ALTER COLUMN id SET DEFAULT nextval('public.platform_tenant_id_seq'::regclass);
-
 
 --
 -- Name: platform_tenant_plugin id; Type: DEFAULT; Schema: public; Owner: root
@@ -6318,13 +4486,11 @@ ALTER TABLE ONLY public.platform_tenant ALTER COLUMN id SET DEFAULT nextval('pub
 
 ALTER TABLE ONLY public.platform_tenant_plugin ALTER COLUMN id SET DEFAULT nextval('public.platform_tenant_plugin_id_seq'::regclass);
 
-
 --
 -- Name: platform_user_tenant id; Type: DEFAULT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_user_tenant ALTER COLUMN id SET DEFAULT nextval('public.platform_user_tenant_id_seq'::regclass);
-
 
 --
 -- Name: sys_dept id; Type: DEFAULT; Schema: public; Owner: root
@@ -6332,13 +4498,11 @@ ALTER TABLE ONLY public.platform_user_tenant ALTER COLUMN id SET DEFAULT nextval
 
 ALTER TABLE ONLY public.sys_dept ALTER COLUMN id SET DEFAULT nextval('public.sys_dept_id_seq'::regclass);
 
-
 --
 -- Name: sys_dict_data id; Type: DEFAULT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_dict_data ALTER COLUMN id SET DEFAULT nextval('public.sys_dict_data_id_seq'::regclass);
-
 
 --
 -- Name: sys_dict_type id; Type: DEFAULT; Schema: public; Owner: root
@@ -6346,13 +4510,11 @@ ALTER TABLE ONLY public.sys_dict_data ALTER COLUMN id SET DEFAULT nextval('publi
 
 ALTER TABLE ONLY public.sys_dict_type ALTER COLUMN id SET DEFAULT nextval('public.sys_dict_type_id_seq'::regclass);
 
-
 --
 -- Name: sys_login_log id; Type: DEFAULT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_login_log ALTER COLUMN id SET DEFAULT nextval('public.sys_login_log_id_seq'::regclass);
-
 
 --
 -- Name: sys_notice id; Type: DEFAULT; Schema: public; Owner: root
@@ -6360,13 +4522,11 @@ ALTER TABLE ONLY public.sys_login_log ALTER COLUMN id SET DEFAULT nextval('publi
 
 ALTER TABLE ONLY public.sys_notice ALTER COLUMN id SET DEFAULT nextval('public.sys_notice_id_seq'::regclass);
 
-
 --
 -- Name: sys_operation_log id; Type: DEFAULT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_operation_log ALTER COLUMN id SET DEFAULT nextval('public.sys_operation_log_id_seq'::regclass);
-
 
 --
 -- Name: sys_param id; Type: DEFAULT; Schema: public; Owner: root
@@ -6374,13 +4534,11 @@ ALTER TABLE ONLY public.sys_operation_log ALTER COLUMN id SET DEFAULT nextval('p
 
 ALTER TABLE ONLY public.sys_param ALTER COLUMN id SET DEFAULT nextval('public.sys_param_id_seq'::regclass);
 
-
 --
 -- Name: sys_position id; Type: DEFAULT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_position ALTER COLUMN id SET DEFAULT nextval('public.sys_position_id_seq'::regclass);
-
 
 --
 -- Name: sys_role id; Type: DEFAULT; Schema: public; Owner: root
@@ -6388,13 +4546,11 @@ ALTER TABLE ONLY public.sys_position ALTER COLUMN id SET DEFAULT nextval('public
 
 ALTER TABLE ONLY public.sys_role ALTER COLUMN id SET DEFAULT nextval('public.sys_role_id_seq'::regclass);
 
-
 --
 -- Name: sys_ticket id; Type: DEFAULT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_ticket ALTER COLUMN id SET DEFAULT nextval('public.sys_ticket_id_seq'::regclass);
-
 
 --
 -- Name: sys_user id; Type: DEFAULT; Schema: public; Owner: root
@@ -6402,42 +4558,17 @@ ALTER TABLE ONLY public.sys_ticket ALTER COLUMN id SET DEFAULT nextval('public.s
 
 ALTER TABLE ONLY public.sys_user ALTER COLUMN id SET DEFAULT nextval('public.sys_user_id_seq'::regclass);
 
-
 --
--- Name: task_job id; Type: DEFAULT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_job ALTER COLUMN id SET DEFAULT nextval('public.task_job_id_seq'::regclass);
-
-
 --
--- Name: task_node id; Type: DEFAULT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_node ALTER COLUMN id SET DEFAULT nextval('public.task_node_id_seq'::regclass);
-
-
 --
--- Name: task_workflow id; Type: DEFAULT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_workflow ALTER COLUMN id SET DEFAULT nextval('public.task_workflow_id_seq'::regclass);
-
-
 --
--- Name: task_workflow_node_type id; Type: DEFAULT; Schema: public; Owner: root
 --
-
-ALTER TABLE ONLY public.task_workflow_node_type ALTER COLUMN id SET DEFAULT nextval('public.task_workflow_node_type_id_seq'::regclass);
-
-
---
--- Data for Name: apscheduler_jobs; Type: TABLE DATA; Schema: public; Owner: root
---
-
-COPY public.apscheduler_jobs (id, next_run_time, job_state) FROM stdin;
-\.
-
 
 --
 -- Data for Name: example_demo; Type: TABLE DATA; Schema: public; Owner: root
@@ -6452,23 +4583,6 @@ COPY public.example_demo (name, status, description, int_val, bigint_val, float_
 测试占位模块	1	仅用于测试空值处理	\N	\N	\N	t	\N	\N	\N	\N	null	6	49eade3f-ed47-485f-a41a-a41d26fdb463	f	2026-06-21 18:12:31.258867	2026-06-21 18:12:31.258867	\N	1	\N	\N	\N
 \.
 
-
---
--- Data for Name: gen_table; Type: TABLE DATA; Schema: public; Owner: root
---
-
-COPY public.gen_table (table_name, table_comment, class_name, package_name, module_name, business_name, function_name, sub_table_name, sub_table_fk_name, parent_menu_id, status, description, id, uuid, is_deleted, created_time, updated_time, deleted_time, tenant_id, created_id, updated_id, deleted_id) FROM stdin;
-\.
-
-
---
--- Data for Name: gen_table_column; Type: TABLE DATA; Schema: public; Owner: root
---
-
-COPY public.gen_table_column (column_name, column_comment, column_type, column_length, column_default, is_pk, is_increment, is_nullable, is_unique, python_type, python_field, is_insert, is_edit, is_list, is_query, query_type, html_type, dict_type, sort, table_id, status, description, id, uuid, is_deleted, created_time, updated_time, deleted_time, tenant_id, created_id, updated_id, deleted_id) FROM stdin;
-\.
-
-
 --
 -- Data for Name: platform_email_config; Type: TABLE DATA; Schema: public; Owner: root
 --
@@ -6477,14 +4591,12 @@ COPY public.platform_email_config (name, smtp_host, smtp_port, smtp_user, smtp_p
 默认SMTP	smtp.example.com	465	noreply@fastapiadmin.com	PLACEHOLDER_AES_ENCRYPTED	FastapiAdmin	t	t	30	0	平台默认SMTP配置	1	f3940d59-81a7-4b5b-8789-3ec7d786dd29	f	2026-06-21 18:12:31.124899	2026-06-21 18:12:31.124904	\N
 \.
 
-
 --
 -- Data for Name: platform_email_log; Type: TABLE DATA; Schema: public; Owner: root
 --
 
 COPY public.platform_email_log (config_id, template_code, to_email, to_name, subject, biz_type, error_msg, retry_count, tenant_id, sent_time, status, description, id, uuid, is_deleted, created_time, updated_time, deleted_time, created_id, updated_id, deleted_id) FROM stdin;
 \.
-
 
 --
 -- Data for Name: platform_email_template; Type: TABLE DATA; Schema: public; Owner: root
@@ -6505,7 +4617,6 @@ COPY public.platform_email_template (name, template_code, subject, body_html, bo
 密码已修改	password_changed	【FastapiAdmin】密码修改成功	<div style='max-width:600px;margin:0 auto;padding:20px;font-family:Arial,sans-serif;background:#f5f7fa;border-radius:8px;'><div style='background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,0.08);'><h2 style='color:#27ae60;margin-top:0;'>密码修改成功</h2><p style='color:#666;font-size:15px;line-height:1.8;'>{{ username }} 您好：</p><p style='color:#666;font-size:15px;line-height:1.8;'>您的账号密码已于 <strong>{{ change_time }}</strong> 修改成功。</p><div style='background:#f8f9fb;border-left:4px solid #27ae60;padding:16px 20px;margin:16px 0;border-radius:4px;'><p style='color:#444;font-size:14px;line-height:1.8;margin:0;'>操作 IP：{{ change_ip }}<br>操作地点：{{ change_location }}</p></div><p style='color:#e74c3c;font-size:13px;'>如非本人操作，请立即联系客服冻结账号！</p><hr style='border:none;border-top:1px solid #eee;margin:24px 0;'><p style='color:#bbb;font-size:12px;text-align:center;'>此邮件由系统自动发送，请勿回复。</p></div></div>	密码修改成功\n\n{{ username }} 您好：\n\n您的账号密码已于 {{ change_time }} 修改成功。\n操作 IP：{{ change_ip }}\n操作地点：{{ change_location }}\n\n如非本人操作，请立即联系客服冻结账号！	{"username":"用户名","change_time":"修改时间","change_ip":"操作IP","change_location":"操作地点"}	0	用户修改密码成功通知	12	7ff519fe-dc8b-4d28-afe8-2a22c3727baa	f	2026-06-21 18:12:31.129914	2026-06-21 18:12:31.129914	\N
 \.
 
-
 --
 -- Data for Name: platform_invoice; Type: TABLE DATA; Schema: public; Owner: root
 --
@@ -6517,7 +4628,6 @@ INV20260601001	6	vat_normal	创新工坊	\N	\N	\N	29900	4485	\N	\N	\N	0	创新�
 INV20260610001	7	vat_normal	创新工坊	\N	\N	\N	4900	735	\N	\N	\N	0	创新工坊-数据大屏发票（待开具）	4	27124a02-eba4-49a3-8ca2-5d3a489ed103	f	2026-06-21 18:12:31.15477	2026-06-21 18:12:31.15477	\N	4	\N	\N	\N
 \.
 
-
 --
 -- Data for Name: platform_menu; Type: TABLE DATA; Schema: public; Owner: root
 --
@@ -6525,12 +4635,7 @@ INV20260610001	7	vat_normal	创新工坊	\N	\N	\N	4900	735	\N	\N	\N	0	创新工�
 COPY public.platform_menu (name, type, "order", permission, icon, route_name, route_path, component_path, redirect, hidden, keep_alive, always_show, title, params, affix, client, link, is_iframe, is_hide_tab, active_path, show_badge, show_text_badge, scope, status, description, parent_id, id, uuid, is_deleted, created_time, updated_time, deleted_time) FROM stdin;
 平台管理	1	1	\N	ri:building-4-line	Platform	/platform	\N	/platform/menu	f	t	t	平台管理	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	\N	1	ff3893d8-2b4f-4c73-9251-a6f3b7ae8690	f	2026-06-21 18:12:31.007321	2026-06-21 18:12:31.007332	\N
 系统管理	1	2	\N	ri:settings-2-line	System	/system	\N	/system/dept	f	t	f	系统管理	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	\N	2	9da626b8-3e0b-469b-8e32-6ba098ed8f4d	f	2026-06-21 18:12:31.007367	2026-06-21 18:12:31.007368	\N
-监控管理	1	3	\N	ri:computer-line	Monitor	/monitor	\N	/monitor/online	f	t	f	监控管理	null	f	pc	\N	f	f	\N	t	NEW	platform	0	初始化数据	\N	3	6cb60a55-2f24-4aa6-bde1-992d9c750227	f	2026-06-21 18:12:31.007373	2026-06-21 18:12:31.007373	\N
-接口管理	1	4	\N	ri:file-text-line	Swagger	/swagger	\N	/swagger/docs	f	t	f	接口管理	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	\N	4	4eb8466b-0f51-4486-997b-cab905afb981	f	2026-06-21 18:12:31.007376	2026-06-21 18:12:31.007376	\N
-代码管理	1	5	\N	ri:code-s-slash-line	Generator	/generator	\N	/generator/gencode	f	t	f	代码管理	null	f	pc	\N	f	f	\N	t	DEV	platform	0	代码管理	\N	5	44164b46-8ecc-4ccd-8d2c-8f813ed6d21f	f	2026-06-21 18:12:31.007379	2026-06-21 18:12:31.007379	\N
 AI管理	1	7	\N	ri:chat-3-line	AI	/ai	\N	/ai/chat	f	t	f	AI管理	null	f	pc	\N	f	f	\N	t	HOT	platform	0	AI管理	\N	6	c44808bd-02dc-4ad2-bdc6-a9f31876c90f	f	2026-06-21 18:12:31.007382	2026-06-21 18:12:31.007382	\N
-任务管理	1	8	\N	ri:tools-line	Task	/task	\N	/task/cronjob/job	f	t	f	任务管理	null	f	pc	\N	f	f	\N	t	BETA	platform	0	任务管理	\N	7	3c9e883d-d185-44d0-8389-72f4d61e02ae	f	2026-06-21 18:12:31.007385	2026-06-21 18:12:31.007385	\N
-案例管理	1	9	\N	ri:menu-line	Example	/example	\N	/example/demo-center/demo	f	t	f	案例管理	null	f	pc	\N	f	f	\N	t	BETA	tenant	0	案例管理	\N	8	65bb4321-9c62-4ebf-85d5-07c43fe402fd	f	2026-06-21 18:12:31.007388	2026-06-21 18:12:31.007388	\N
 首页	1	90		ri:home-4-line	AppHome	/app/home	\N	/app/home	f	t	t	首页	null	f	app	\N	f	f	\N	f	\N	tenant	0	APP 移动端-首页	\N	9	aaae5c24-49ba-45bb-992f-c39e9b51b9c5	f	2026-06-21 18:12:31.007391	2026-06-21 18:12:31.007391	\N
 同事	1	91		ri:user-heart-line	AppColleague	/app/colleague	\N	/app/colleague	f	t	t	同事	null	f	app	\N	f	f	\N	f	\N	tenant	0	APP 移动端-同事	\N	10	eae9bb55-d5fb-43d1-9bb1-065cbdbfd90b	f	2026-06-21 18:12:31.007394	2026-06-21 18:12:31.007395	\N
 打卡	1	92		ri:time-line	AppAttendance	/app/attendance	\N	/app/attendance	f	t	t	打卡	null	f	app	\N	f	f	\N	f	\N	tenant	0	APP 移动端-打卡	\N	11	ddf38b47-8f44-46b6-9303-375cae0fd10d	f	2026-06-21 18:12:31.007397	2026-06-21 18:12:31.007398	\N
@@ -6554,18 +4659,8 @@ AI管理	1	7	\N	ri:chat-3-line	AI	/ai	\N	/ai/chat	f	t	f	AI管理	null	f	pc	\N	f	
 公告管理	2	8	module_system:notice:query	ri:notification-3-line	Notice	notice	module_system/notice/index	\N	f	t	f	公告管理	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	2	29	30b939aa-7b5c-40ec-97f9-740209d89716	f	2026-06-21 18:12:31.010936	2026-06-21 18:12:31.010936	\N
 工单管理	2	10	module_system:ticket:query	ri:feedback-line	ModuleTicket	ticket	module_system/ticket/index	\N	f	t	f	工单管理	null	f	pc	\N	f	f	\N	t	NEW	tenant	0	初始化数据	2	30	30a122b1-799c-4359-a093-609885cd4bad	f	2026-06-21 18:12:31.010939	2026-06-21 18:12:31.010939	\N
 系统配置	3	99	module_system:config:update	\N	\N	\N	\N	\N	f	t	f	系统配置	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	2	31	9d3968cc-ec25-4ed1-b0cc-f354eac0757d	f	2026-06-21 18:12:31.010942	2026-06-21 18:12:31.010942	\N
-在线用户	2	1	module_monitor:online:query	ri:customer-service-2-line	MonitorOnline	online	module_monitor/online/index	\N	f	t	f	在线用户	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	3	32	3d8889ca-29f8-4536-a2de-6f7dfad6297c	f	2026-06-21 18:12:31.010945	2026-06-21 18:12:31.010945	\N
-服务器监控	2	2	module_monitor:server:query	ri:dashboard-3-line	MonitorServer	server	module_monitor/server/index	\N	f	t	f	服务器监控	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	3	33	c20afd98-d28e-4f21-9fc0-0762ff0fd14b	f	2026-06-21 18:12:31.010948	2026-06-21 18:12:31.010948	\N
-缓存监控	2	3	module_monitor:cache:query	ri:timer-flash-line	MonitorCache	cache	module_monitor/cache/index	\N	f	t	f	缓存监控	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	3	34	a28d2a19-4dda-48d9-9857-e981967f2f04	f	2026-06-21 18:12:31.010951	2026-06-21 18:12:31.010951	\N
-文件管理	2	4	module_monitor:resource:query	ri:folder-5-line	Resource	resource	module_monitor/resource/index	\N	f	t	f	文件管理	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	3	35	ebf78c17-eb5b-4b85-b83d-58697876a276	f	2026-06-21 18:12:31.010954	2026-06-21 18:12:31.010954	\N
-Swagger文档	4	1	module_swagger:docs:query	ri:plug-line	Docs	docs	module_swagger/docs/index	\N	f	t	f	Swagger文档	null	f	pc	/api/v1/docs	t	f	\N	f	\N	platform	0	初始化数据	4	36	4e686928-ca35-4440-8234-84a3ef25fa2a	f	2026-06-21 18:12:31.010957	2026-06-21 18:12:31.010957	\N
-Redoc文档	4	2	module_swagger:redoc:query	ri:file-text-line	Redoc	redoc	module_swagger/redoc/index	\N	f	t	f	Redoc文档	null	f	pc	/api/v1/redoc	t	f	\N	f	\N	platform	0	初始化数据	4	37	c230348e-e6ed-4a84-8b9b-e72d14219075	f	2026-06-21 18:12:31.01096	2026-06-21 18:12:31.01096	\N
-代码生成	2	1	module_generator:gencode:query	ri:code-s-slash-line	GenCode	gencode	module_generator/gencode/index	\N	f	t	f	代码生成	null	f	pc	\N	f	f	\N	f	\N	platform	0	代码生成	5	38	b00a5576-3502-4370-accd-2875f75ed6f8	f	2026-06-21 18:12:31.010963	2026-06-21 18:12:31.010963	\N
 AI智能助手	2	1	module_ai:chat:query	ri:message-2-line	Chat	chat	module_ai/chat/index	\N	f	t	f	AI智能助手	null	f	pc	\N	f	f	\N	f	\N	platform	0	AI智能助手	6	39	767efb39-1301-4aec-a459-1e969d0bcb84	f	2026-06-21 18:12:31.010966	2026-06-21 18:12:31.010966	\N
 会话记忆	2	2	module_ai:chat:query	ri:chat-3-line	Memory	memory	module_ai/memory/index	\N	f	t	f	会话记忆	null	f	pc	\N	f	f	\N	f	\N	platform	0	会话记忆管理	6	40	c7022a0d-8574-4bc4-9be7-01fcec2609dc	f	2026-06-21 18:12:31.010969	2026-06-21 18:12:31.010969	\N
-定时任务	1	1	\N	ri:timer-line	Cronjob	cronjob	\N	/task/cronjob/job	f	t	t	定时任务	null	f	pc	\N	f	f	\N	f	\N	platform	0	APScheduler 调度器与任务节点	7	41	c26e803f-cc05-42e4-9c0d-92863157224d	f	2026-06-21 18:12:31.010972	2026-06-21 18:12:31.010973	\N
-工作流	1	2	\N	ri:tools-line	WorkflowMgr	workflow-mgr	\N	/task/workflow/definition	f	t	t	工作流	null	f	pc	\N	f	f	\N	f	\N	platform	0	流程编排与节点类型	7	42	ef7c77fb-7b80-4d64-99c6-5115ecdbb4cb	f	2026-06-21 18:12:31.010975	2026-06-21 18:12:31.010976	\N
-示例中心	1	1	\N	ri:apps-line	DemoCenter	demo-center	\N	/example/demo-center/demo	f	t	f	示例中心	null	f	pc	\N	f	f	\N	f	\N	tenant	0	示例中心	8	43	96193341-d8eb-494c-b9cb-0bbb595f3215	f	2026-06-21 18:12:31.010978	2026-06-21 18:12:31.010979	\N
 新增	3	1	module_platform:menu:create	\N	\N	\N	\N	\N	f	t	f	新增	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	14	44	f19961c6-4548-4f1b-bb6d-daffb55a48cb	f	2026-06-21 18:12:31.016684	2026-06-21 18:12:31.016688	\N
 编辑	3	2	module_platform:menu:update	\N	\N	\N	\N	\N	f	t	f	编辑	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	14	45	057fa4ce-907b-4613-9fb6-e1bc28bf6c58	f	2026-06-21 18:12:31.016694	2026-06-21 18:12:31.016694	\N
 删除	3	3	module_platform:menu:delete	\N	\N	\N	\N	\N	f	t	f	删除	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	14	46	125e3b67-0690-4917-b08e-b9b62a5f0c32	f	2026-06-21 18:12:31.016698	2026-06-21 18:12:31.016698	\N
@@ -6678,26 +4773,6 @@ AI智能助手	2	1	module_ai:chat:query	ri:message-2-line	Chat	chat	module_ai/ch
 详情	3	5	module_system:ticket:detail	\N	\N	\N	\N	\N	f	t	f	详情	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	30	153	4b5eb154-69da-4405-8c96-7f6ca517b5f8	f	2026-06-21 18:12:31.023416	2026-06-21 18:12:31.023416	\N
 导出	3	6	module_system:ticket:export	\N	\N	\N	\N	\N	f	t	f	导出	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	30	154	a370c233-ae21-45ab-91cf-eb675610373f	f	2026-06-21 18:12:31.023419	2026-06-21 18:12:31.023419	\N
 批量操作	3	7	module_system:ticket:patch	\N	\N	\N	\N	\N	f	t	f	批量操作	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	30	155	adf526d5-1503-4b16-ab47-81ae0b5a0a3c	f	2026-06-21 18:12:31.023422	2026-06-21 18:12:31.023422	\N
-强制下线	3	1	module_monitor:online:delete	\N	\N	\N	\N	\N	f	t	f	强制下线	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	32	156	ce1d96a4-604d-4bb7-a519-dfcae1bf1307	f	2026-06-21 18:12:31.023425	2026-06-21 18:12:31.023425	\N
-清除缓存	3	1	module_monitor:cache:delete	\N	\N	\N	\N	\N	f	t	f	清除缓存	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	34	157	37b01488-74f5-45b3-8328-18e52370ce07	f	2026-06-21 18:12:31.023427	2026-06-21 18:12:31.023428	\N
-详情	3	2	module_monitor:cache:detail	\N	\N	\N	\N	\N	f	t	f	详情	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	34	158	d47d1489-f053-44e0-8d2f-95f532e35fa1	f	2026-06-21 18:12:31.02343	2026-06-21 18:12:31.023431	\N
-上传	3	1	module_monitor:resource:upload	\N	\N	\N	\N	\N	f	t	f	上传	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	35	159	07bd7143-7ab3-422d-bbf1-4f186c67f714	f	2026-06-21 18:12:31.023433	2026-06-21 18:12:31.023434	\N
-下载	3	2	module_monitor:resource:download	\N	\N	\N	\N	\N	f	t	f	下载	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	35	160	95ee6ac9-f4cb-49d5-9350-7716562504ef	f	2026-06-21 18:12:31.023436	2026-06-21 18:12:31.023436	\N
-删除	3	3	module_monitor:resource:delete	\N	\N	\N	\N	\N	f	t	f	删除	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	35	161	6f1ef0f4-fa87-4a60-a23a-b498be2d6631	f	2026-06-21 18:12:31.023439	2026-06-21 18:12:31.023439	\N
-移动	3	4	module_monitor:resource:move	\N	\N	\N	\N	\N	f	t	f	移动	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	35	162	979bb6e4-ff52-4c1a-900d-a3cf24b4030c	f	2026-06-21 18:12:31.023442	2026-06-21 18:12:31.023442	\N
-复制	3	5	module_monitor:resource:copy	\N	\N	\N	\N	\N	f	t	f	复制	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	35	163	72033c8f-e8fe-4e10-b371-6b0e2b34a527	f	2026-06-21 18:12:31.023445	2026-06-21 18:12:31.023445	\N
-重命名	3	6	module_monitor:resource:rename	\N	\N	\N	\N	\N	f	t	f	重命名	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	35	164	977aeb8e-e8e1-49d0-be65-e7743bb9476f	f	2026-06-21 18:12:31.023447	2026-06-21 18:12:31.023448	\N
-新增	3	7	module_monitor:resource:create_dir	\N	\N	\N	\N	\N	f	t	f	新增	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	35	165	d2fa8209-07b7-481c-b0ed-e25851c05cd2	f	2026-06-21 18:12:31.02345	2026-06-21 18:12:31.023451	\N
-导出	3	9	module_monitor:resource:export	\N	\N	\N	\N	\N	f	t	f	导出	null	f	pc	\N	f	f	\N	f	\N	platform	0	初始化数据	35	166	17af51f5-9685-4032-bf57-bb526ea43602	f	2026-06-21 18:12:31.023453	2026-06-21 18:12:31.023453	\N
-查询	3	1	module_generator:gencode:query	\N	\N	\N	\N	\N	f	t	f	查询	null	f	pc	\N	f	f	\N	f	\N	platform	0	查询代码生成业务表列表	38	167	c0ffc4b7-89a6-4696-947d-70e722475bd5	f	2026-06-21 18:12:31.023456	2026-06-21 18:12:31.023456	\N
-新增	3	2	module_generator:gencode:create	\N	\N	\N	\N	\N	f	t	f	新增	null	f	pc	\N	f	f	\N	f	\N	platform	0	创建表结构	38	168	57205d6e-d248-40f8-8915-efe0504cf8d0	f	2026-06-21 18:12:31.023459	2026-06-21 18:12:31.023459	\N
-编辑	3	3	module_generator:gencode:update	\N	\N	\N	\N	\N	f	t	f	编辑	null	f	pc	\N	f	f	\N	f	\N	platform	0	编辑业务表信息	38	169	e609ce97-56c7-46c6-906b-9340f9fa49d1	f	2026-06-21 18:12:31.023462	2026-06-21 18:12:31.023462	\N
-删除	3	4	module_generator:gencode:delete	\N	\N	\N	\N	\N	f	t	f	删除	null	f	pc	\N	f	f	\N	f	\N	platform	0	删除业务表信息	38	170	1a55aeca-5c4b-4c57-a66e-bf7355a69a78	f	2026-06-21 18:12:31.023464	2026-06-21 18:12:31.023465	\N
-导入	3	5	module_generator:gencode:import	\N	\N	\N	\N	\N	f	t	f	导入	null	f	pc	\N	f	f	\N	f	\N	platform	0	导入表结构	38	171	5bad7f49-52bf-466a-9a9e-27b174ab81c0	f	2026-06-21 18:12:31.023467	2026-06-21 18:12:31.023468	\N
-批量生成代码	3	6	module_generator:gencode:operate	\N	\N	\N	\N	\N	f	t	f	批量生成代码	null	f	pc	\N	f	f	\N	f	\N	platform	0	批量生成代码	38	172	13eb7e68-c98b-4f8a-96e6-e81f71ebf28f	f	2026-06-21 18:12:31.02347	2026-06-21 18:12:31.023471	\N
-生成代码到指定路径	3	7	module_generator:gencode:code	\N	\N	\N	\N	\N	f	t	f	生成代码到指定路径	null	f	pc	\N	f	f	\N	f	\N	platform	0	生成代码到指定路径	38	173	9edb70f8-7193-415e-a90e-3f03b41b132a	f	2026-06-21 18:12:31.023473	2026-06-21 18:12:31.023474	\N
-查询	3	8	module_generator:dblist:query	\N	\N	\N	\N	\N	f	t	f	查询	null	f	pc	\N	f	f	\N	f	\N	platform	0	查询数据库表列表	38	174	9c137521-10f9-4c98-bf8c-9483938aa465	f	2026-06-21 18:12:31.023476	2026-06-21 18:12:31.023476	\N
-同步数据库	3	9	module_generator:db:sync	\N	\N	\N	\N	\N	f	t	f	同步数据库	null	f	pc	\N	f	f	\N	f	\N	platform	0	同步数据库	38	175	5d1ba607-bce2-45e5-966f-1694aef93b01	f	2026-06-21 18:12:31.023479	2026-06-21 18:12:31.023479	\N
 AI对话	3	1	module_ai:chat:ws	\N	\N	\N	\N	\N	f	t	f	AI对话	null	f	pc	\N	f	f	\N	f	\N	platform	0	AI对话	39	176	1554c375-e21e-4cd4-98ea-55cc173ab276	f	2026-06-21 18:12:31.023482	2026-06-21 18:12:31.023482	\N
 查询	3	2	module_ai:chat:query	\N	\N	\N	\N	\N	f	t	f	查询	null	f	pc	\N	f	f	\N	f	\N	platform	0	查询会话	39	177	e3eadcd9-168d-4a55-bd80-4cf401150500	f	2026-06-21 18:12:31.023485	2026-06-21 18:12:31.023485	\N
 详情	3	3	module_ai:chat:detail	\N	\N	\N	\N	\N	f	t	f	详情	null	f	pc	\N	f	f	\N	f	\N	platform	0	会话详情	39	178	2e3f5769-ae9e-4384-872c-a4b2c4fdc26c	f	2026-06-21 18:12:31.023488	2026-06-21 18:12:31.023488	\N
@@ -6707,44 +4782,7 @@ AI对话	3	1	module_ai:chat:ws	\N	\N	\N	\N	\N	f	t	f	AI对话	null	f	pc	\N	f	f	\N
 查询	3	1	module_ai:chat:query	\N	\N	\N	\N	\N	f	t	f	查询	null	f	pc	\N	f	f	\N	f	\N	platform	0	查询会话记忆	40	182	f38b3b84-bec4-4da8-baa1-a8cd6874135c	f	2026-06-21 18:12:31.023499	2026-06-21 18:12:31.023499	\N
 详情	3	2	module_ai:chat:detail	\N	\N	\N	\N	\N	f	t	f	详情	null	f	pc	\N	f	f	\N	f	\N	platform	0	会话记忆详情	40	183	aa6e724d-4930-40d8-9bb0-d22b3aad820b	f	2026-06-21 18:12:31.023502	2026-06-21 18:12:31.023502	\N
 删除	3	3	module_ai:chat:delete	\N	\N	\N	\N	\N	f	t	f	删除	null	f	pc	\N	f	f	\N	f	\N	platform	0	删除会话记忆	40	184	01c20dfe-4e3c-4223-bcdd-d85132f76515	f	2026-06-21 18:12:31.023505	2026-06-21 18:12:31.023505	\N
-调度器监控	2	1	module_task:cronjob:job:query	ri:line-chart-line	Job	job	module_task/cronjob/job/index	\N	f	t	f	调度器监控	null	f	pc	\N	f	f	\N	f	\N	platform	0	调度器监控	41	185	d089ba94-34c8-469f-9b81-d138c956c170	f	2026-06-21 18:12:31.023507	2026-06-21 18:12:31.023508	\N
-节点管理	2	2	module_task:cronjob:node:query	ri:mail-send-line	Node	node	module_task/cronjob/node/index	\N	f	t	f	节点管理	null	f	pc	\N	f	f	\N	f	\N	platform	0	节点管理	41	186	8accf4eb-5e89-4dc2-ab1b-7d015dfebb4e	f	2026-06-21 18:12:31.02351	2026-06-21 18:12:31.023511	\N
-流程编排	2	1	module_task:workflow:definition:query	ri:tools-line	Workflow	task/workflow/definition	module_task/workflow/definition/index	\N	f	t	f	流程编排	null	f	pc	\N	f	f	\N	f	\N	platform	0	Vue Flow 画布与发布执行	42	187	5112502c-84fa-4123-9f25-379ae3bb56e1	f	2026-06-21 18:12:31.023513	2026-06-21 18:12:31.023514	\N
-节点类型	2	2	module_task:workflow:node-type:query	ri:layout-grid-line	WorkflowNodeType	task/workflow/node-type	module_task/workflow/node-type/index	\N	f	t	f	节点类型	null	f	pc	\N	f	f	\N	f	\N	platform	0	画布节点类型与 Prefect 执行逻辑	42	188	27c0c761-8746-43ea-a86c-c63e89034914	f	2026-06-21 18:12:31.023516	2026-06-21 18:12:31.023517	\N
-demo示例	2	1	module_example:demo:query	ri:menu-line	Demo	demo	module_example/demo/index	\N	f	t	f	demo示例	null	f	pc	\N	f	f	\N	f	\N	tenant	0	demo示例	43	189	0e79575f-54ce-4c37-9410-d9b4eb4613f2	f	2026-06-21 18:12:31.023519	2026-06-21 18:12:31.023519	\N
-查询调度器	3	1	module_task:cronjob:job:query	\N	\N	\N	\N	\N	f	t	f	查询调度器	null	f	pc	\N	f	f	\N	f	\N	platform	0	查询调度器	185	190	300a3706-8479-411b-9ed2-e64b8139ec3b	f	2026-06-21 18:12:31.037907	2026-06-21 18:12:31.037911	\N
-控制调度器	3	2	module_task:cronjob:job:scheduler	\N	\N	\N	\N	\N	f	t	f	控制调度器	null	f	pc	\N	f	f	\N	f	\N	platform	0	控制调度器	185	191	0c156686-7bf7-4780-820f-6385720cc949	f	2026-06-21 18:12:31.037916	2026-06-21 18:12:31.037917	\N
-操作任务	3	3	module_task:cronjob:job:task	\N	\N	\N	\N	\N	f	t	f	操作任务	null	f	pc	\N	f	f	\N	f	\N	platform	0	操作任务	185	192	a6fb5905-68fc-4052-bef3-48e885a06e2e	f	2026-06-21 18:12:31.03792	2026-06-21 18:12:31.03792	\N
-删除执行日志	3	4	module_task:cronjob:job:delete	\N	\N	\N	\N	\N	f	t	f	删除执行日志	null	f	pc	\N	f	f	\N	f	\N	platform	0	删除执行日志	185	193	440e5c39-c60b-44c1-8939-a2f730302f83	f	2026-06-21 18:12:31.037923	2026-06-21 18:12:31.037923	\N
-详情执行日志	3	5	module_task:cronjob:job:detail	\N	\N	\N	\N	\N	f	t	f	详情执行日志	null	f	pc	\N	f	f	\N	f	\N	platform	0	详情执行日志	185	194	5a1bfb1c-4c74-4300-bca5-436452f2e7b2	f	2026-06-21 18:12:31.037926	2026-06-21 18:12:31.037926	\N
-创建节点	3	1	module_task:cronjob:node:create	\N	\N	\N	\N	\N	f	t	f	创建节点	null	f	pc	\N	f	f	\N	f	\N	platform	0	创建节点	186	195	1337ea6e-4f6c-4ce6-932a-40a1f042742b	f	2026-06-21 18:12:31.037929	2026-06-21 18:12:31.037929	\N
-调试节点	3	2	module_task:cronjob:node:execute	\N	\N	\N	\N	\N	f	t	f	调试节点	null	f	pc	\N	f	f	\N	f	\N	platform	0	调试节点	186	196	45a067b9-b7f1-4c38-b8a8-f98fa15b0912	f	2026-06-21 18:12:31.037932	2026-06-21 18:12:31.037932	\N
-修改节点	3	3	module_task:cronjob:node:update	\N	\N	\N	\N	\N	f	t	f	修改节点	null	f	pc	\N	f	f	\N	f	\N	platform	0	修改节点	186	197	af048ec3-b45e-477f-935e-d6389de70d86	f	2026-06-21 18:12:31.037935	2026-06-21 18:12:31.037935	\N
-删除节点	3	4	module_task:cronjob:node:delete	\N	\N	\N	\N	\N	f	t	f	删除节点	null	f	pc	\N	f	f	\N	f	\N	platform	0	删除节点	186	198	ae5a7b1e-922f-4c4c-ac38-c9c884e243a9	f	2026-06-21 18:12:31.037938	2026-06-21 18:12:31.037938	\N
-详情节点	3	5	module_task:cronjob:node:detail	\N	\N	\N	\N	\N	f	t	f	详情节点	null	f	pc	\N	f	f	\N	f	\N	platform	0	详情节点	186	199	b8fdb120-8070-4de3-90d6-9a9812a6533c	f	2026-06-21 18:12:31.037941	2026-06-21 18:12:31.037942	\N
-查询节点	3	6	module_task:cronjob:node:query	\N	\N	\N	\N	\N	f	t	f	查询节点	null	f	pc	\N	f	f	\N	f	\N	platform	0	查询节点	186	200	422ef761-c361-4555-98e1-c30ea48e767d	f	2026-06-21 18:12:31.037945	2026-06-21 18:12:31.037945	\N
-创建流程	3	1	module_task:workflow:definition:create	\N	\N	\N	\N	\N	f	t	f	创建流程	null	f	pc	\N	f	f	\N	f	\N	platform	0	创建流程	187	201	8270c882-78f4-4332-875d-8ecaa262ce60	f	2026-06-21 18:12:31.037948	2026-06-21 18:12:31.037949	\N
-执行流程	3	2	module_task:workflow:definition:execute	\N	\N	\N	\N	\N	f	t	f	执行流程	null	f	pc	\N	f	f	\N	f	\N	platform	0	执行流程	187	202	abcda894-fcfb-4094-b418-1815420c5a82	f	2026-06-21 18:12:31.037951	2026-06-21 18:12:31.037951	\N
-修改流程	3	3	module_task:workflow:definition:update	\N	\N	\N	\N	\N	f	t	f	修改流程	null	f	pc	\N	f	f	\N	f	\N	platform	0	修改流程	187	203	78ee1aa7-5a41-4bb5-b1e0-bb8496daa62e	f	2026-06-21 18:12:31.037954	2026-06-21 18:12:31.037954	\N
-删除流程	3	4	module_task:workflow:definition:delete	\N	\N	\N	\N	\N	f	t	f	删除流程	null	f	pc	\N	f	f	\N	f	\N	platform	0	删除流程	187	204	60fd27ae-5844-44f6-82df-4568470adb3f	f	2026-06-21 18:12:31.037957	2026-06-21 18:12:31.037957	\N
-详情流程	3	5	module_task:workflow:definition:detail	\N	\N	\N	\N	\N	f	t	f	详情流程	null	f	pc	\N	f	f	\N	f	\N	platform	0	详情流程	187	205	3fa74930-9c25-468d-a031-38eacac855b1	f	2026-06-21 18:12:31.03796	2026-06-21 18:12:31.03796	\N
-查询流程	3	6	module_task:workflow:definition:query	\N	\N	\N	\N	\N	f	t	f	查询流程	null	f	pc	\N	f	f	\N	f	\N	platform	0	查询流程	187	206	1e7afa54-f56f-411b-b928-2fc464f54778	f	2026-06-21 18:12:31.037963	2026-06-21 18:12:31.037963	\N
-创建节点类型	3	1	module_task:workflow:node-type:create	\N	\N	\N	\N	\N	f	t	f	创建节点类型	null	f	pc	\N	f	f	\N	f	\N	platform	0	创建节点类型	188	207	b1dd60db-a2d8-43dd-b53a-4e3be50bffc9	f	2026-06-21 18:12:31.037966	2026-06-21 18:12:31.037966	\N
-修改节点类型	3	2	module_task:workflow:node-type:update	\N	\N	\N	\N	\N	f	t	f	修改节点类型	null	f	pc	\N	f	f	\N	f	\N	platform	0	修改节点类型	188	208	95660a0f-e815-4f8a-95b7-678ad7ae6f09	f	2026-06-21 18:12:31.037969	2026-06-21 18:12:31.037969	\N
-删除节点类型	3	3	module_task:workflow:node-type:delete	\N	\N	\N	\N	\N	f	t	f	删除节点类型	null	f	pc	\N	f	f	\N	f	\N	platform	0	删除节点类型	188	209	bfbaece2-d9c7-448b-b9b4-b890c53cafd4	f	2026-06-21 18:12:31.037971	2026-06-21 18:12:31.037972	\N
-详情节点类型	3	4	module_task:workflow:node-type:detail	\N	\N	\N	\N	\N	f	t	f	详情节点类型	null	f	pc	\N	f	f	\N	f	\N	platform	0	详情节点类型	188	210	a75a3344-9b47-4a3b-a097-106877d2ab80	f	2026-06-21 18:12:31.037974	2026-06-21 18:12:31.037975	\N
-查询节点类型	3	5	module_task:workflow:node-type:query	\N	\N	\N	\N	\N	f	t	f	查询节点类型	null	f	pc	\N	f	f	\N	f	\N	platform	0	查询节点类型	188	211	0808514e-c869-4bb9-9718-34ba0db999ac	f	2026-06-21 18:12:31.037977	2026-06-21 18:12:31.037978	\N
-新增	3	1	module_example:demo:create	\N	\N	\N	\N	\N	f	t	f	新增	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	189	212	9714d0f1-1999-4b9d-a0a6-127f06553903	f	2026-06-21 18:12:31.03798	2026-06-21 18:12:31.037981	\N
-编辑	3	2	module_example:demo:update	\N	\N	\N	\N	\N	f	t	f	编辑	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	189	213	e6de2cdd-a6e0-4c27-84e1-6684f0879ded	f	2026-06-21 18:12:31.037983	2026-06-21 18:12:31.037984	\N
-删除	3	3	module_example:demo:delete	\N	\N	\N	\N	\N	f	t	f	删除	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	189	214	5e95f754-81a6-4e04-b744-ce6c3a5f1d5f	f	2026-06-21 18:12:31.037986	2026-06-21 18:12:31.037986	\N
-状态变更	3	4	module_example:demo:patch	\N	\N	\N	\N	\N	f	t	f	状态变更	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	189	215	3adfea95-1365-4a37-8c5b-a4f359ac11fd	f	2026-06-21 18:12:31.037989	2026-06-21 18:12:31.037989	\N
-导出	3	5	module_example:demo:export	\N	\N	\N	\N	\N	f	t	f	导出	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	189	216	9d8b4024-c39d-4855-9b96-f3fee10bb9b6	f	2026-06-21 18:12:31.037992	2026-06-21 18:12:31.037992	\N
-导入	3	6	module_example:demo:import	\N	\N	\N	\N	\N	f	t	f	导入	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	189	217	7a5d6b79-e32a-43a5-b65b-c54b76f64c9a	f	2026-06-21 18:12:31.037995	2026-06-21 18:12:31.037995	\N
-下载导入模板	3	7	module_example:demo:download	\N	\N	\N	\N	\N	f	t	f	下载导入模板	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	189	218	b67eb639-3436-415b-882b-2b99406084b1	f	2026-06-21 18:12:31.037998	2026-06-21 18:12:31.037998	\N
-详情	3	8	module_example:demo:detail	\N	\N	\N	\N	\N	f	t	f	详情	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	189	219	c0d3a7d2-ff52-4dd9-9bba-2e296cfa4044	f	2026-06-21 18:12:31.038	2026-06-21 18:12:31.038001	\N
-查询	3	9	module_example:demo:query	\N	\N	\N	\N	\N	f	t	f	查询	null	f	pc	\N	f	f	\N	f	\N	tenant	0	初始化数据	189	220	0abc3bcb-1de1-4af9-8749-334a2eb49f6f	f	2026-06-21 18:12:31.038003	2026-06-21 18:12:31.038004	\N
 \.
-
 
 --
 -- Data for Name: platform_order; Type: TABLE DATA; Schema: public; Owner: root
@@ -6755,13 +4793,12 @@ COPY public.platform_order (order_no, package_id, plugin_id, order_type, amount,
 202603150000001	\N	2	plugin	9900	1	wxpay	2026-03-15 14:20:00	2026-03-15 14:35:00	1	星辰科技-AI助手插件购买	2	75eb0bc0-65f8-4ade-82ef-3b0e9b21c9e9	f	2026-06-21 18:12:31.13953	2026-06-21 18:12:31.13953	\N	3
 202604010000001	4	\N	upgrade	269900	12	alipay	2026-04-01 09:00:00	2026-04-01 09:15:00	1	星辰科技-标准版升级为企业版	3	9b7b05b4-ecf6-4523-9bd6-0c02a32db9e1	f	2026-06-21 18:12:31.139534	2026-06-21 18:12:31.139534	\N	3
 202602010000001	3	\N	new	99900	6	wxpay	2026-02-01 11:00:00	2026-02-01 11:15:00	3	创新工坊-专业版半年（已退款）	4	7848cfc9-5e24-4a42-b037-80bfaff4ed8a	f	2026-06-21 18:12:31.139537	2026-06-21 18:12:31.139538	\N	4
-202605150000001	\N	4	plugin	19900	1	\N	\N	2026-05-15 16:45:00	2	创新工坊-工作流引擎（已取消）	5	f86331cd-71c7-4367-9661-72192306440f	f	2026-06-21 18:12:31.139541	2026-06-21 18:12:31.139541	\N	4
 202606010000001	2	\N	new	29900	1	alipay	2026-06-01 08:30:00	2026-06-01 08:45:00	1	创新工坊-标准版月付新购	6	fa30e2fe-d65b-4432-9dc4-352e21ceed19	f	2026-06-21 18:12:31.139544	2026-06-21 18:12:31.139544	\N	4
 202606100000001	\N	5	plugin	4900	1	wxpay	2026-06-10 15:00:00	2026-06-10 15:15:00	1	创新工坊-数据大屏插件购买	7	5f178daf-9190-4fc6-a04c-1c6c97e61159	f	2026-06-21 18:12:31.139547	2026-06-21 18:12:31.139547	\N	4
 202606120000001	2	\N	renew	269100	12	alipay	2026-06-12 10:00:00	2026-06-12 10:15:00	1	星辰科技-企业版年付续费	8	3f4324c9-5253-4128-9ea4-92ef6bddafca	f	2026-06-21 18:12:31.13955	2026-06-21 18:12:31.13955	\N	3
 202606120000002	\N	\N	new	0	0	\N	\N	2026-06-13 00:00:00	0	平台租户-测试待支付订单	9	b8df5394-e8f9-441f-929c-32a1830a449e	f	2026-06-21 18:12:31.139553	2026-06-21 18:12:31.139553	\N	1
-\.
 
+\.
 
 --
 -- Data for Name: platform_package; Type: TABLE DATA; Schema: public; Owner: root
@@ -6773,7 +4810,6 @@ COPY public.platform_package (name, code, sort, price, period, trial_days, max_u
 专业版	pro	3	99900	month	0	200	50	200	102400	120	0	适合中型企业	3	c0feb12a-3903-4a8f-a4ea-a455a11ac072	f	2026-06-21 18:12:30.968901	2026-06-21 18:12:30.968902	\N
 企业版	enterprise	4	299900	year	0	1000	200	1000	1024000	300	0	适合大型企业和组织	4	80fb5577-d2f2-417b-9bfc-894f5a9a3fa4	f	2026-06-21 18:12:30.968905	2026-06-21 18:12:30.968905	\N
 \.
-
 
 --
 -- Data for Name: platform_package_menu; Type: TABLE DATA; Schema: public; Owner: root
@@ -6812,14 +4848,12 @@ COPY public.platform_package_menu (id, package_id, menu_id) FROM stdin;
 30	4	10
 \.
 
-
 --
 -- Data for Name: platform_package_plugin; Type: TABLE DATA; Schema: public; Owner: root
 --
 
 COPY public.platform_package_plugin (id, package_id, plugin_id) FROM stdin;
 \.
-
 
 --
 -- Data for Name: platform_payment_record; Type: TABLE DATA; Schema: public; Owner: root
@@ -6835,19 +4869,15 @@ COPY public.platform_payment_record (order_id, transaction_id, pay_method, amoun
 8	ALIP20260612000001	alipay	269100	\N	2026-06-12 10:00:00	1	星辰科技-企业版续费	7	2ac42316-b606-4dab-aab9-5c6926ddb434	f	2026-06-21 18:12:31.160968	2026-06-21 18:12:31.160969	\N	3
 \.
 
-
 --
 -- Data for Name: platform_plugin; Type: TABLE DATA; Schema: public; Owner: root
 --
 
 COPY public.platform_plugin (name, code, version, author, icon, category, price, menu_path, permission_prefix, dependencies, sort, status, description, id, uuid, is_deleted, created_time, updated_time, deleted_time) FROM stdin;
-代码生成器	code_generator	1.0.0	FastApiAdmin	https://service.fastapiadmin.com/api/v1/static/image/plugin/code.png	tool	0	/tool/generator	tool:generator	\N	1	0	自动生成CRUD代码，支持多种模板	1	cded08a1-8261-465e-a7fd-9bd64b8df008	f	2026-06-21 18:12:30.987908	2026-06-21 18:12:30.987911	\N
 AI助手	ai_assistant	1.0.0	FastApiAdmin	https://service.fastapiadmin.com/api/v1/static/image/plugin/ai.png	ai	9900	/ai/assistant	ai:assistant	\N	2	0	集成AI对话助手，支持智能问答	2	bda44433-46cc-4f2c-ba50-d257934b685c	f	2026-06-21 18:12:30.987916	2026-06-21 18:12:30.987916	\N
-系统监控	system_monitor	1.0.0	FastApiAdmin	https://service.fastapiadmin.com/api/v1/static/image/plugin/monitor.png	monitor	0	/monitor/system	monitor:system	\N	3	0	实时监控系统运行状态，CPU、内存、磁盘等	3	0f07d96e-ea44-4f0d-b8b9-0997ee6d5854	f	2026-06-21 18:12:30.98792	2026-06-21 18:12:30.98792	\N
-工作流引擎	workflow_engine	1.0.0	FastApiAdmin	https://service.fastapiadmin.com/api/v1/static/image/plugin/workflow.png	business	19900	/workflow/design	workflow:design	\N	4	0	可视化工作流设计器，支持审批流程	4	e93e8f89-c706-4ff4-8eb6-92ef9e270772	f	2026-06-21 18:12:30.987923	2026-06-21 18:12:30.987924	\N
 数据大屏	data_dashboard	1.0.0	FastApiAdmin	https://service.fastapiadmin.com/api/v1/static/image/plugin/dashboard.png	business	4900	/dashboard/data	dashboard:data	\N	5	0	可视化数据大屏，支持多种图表	5	1a17b5c7-8460-4976-8a4b-ee567941e590	f	2026-06-21 18:12:30.987927	2026-06-21 18:12:30.987927	\N
-\.
 
+\.
 
 --
 -- Data for Name: platform_refund; Type: TABLE DATA; Schema: public; Owner: root
@@ -6856,7 +4886,6 @@ AI助手	ai_assistant	1.0.0	FastApiAdmin	https://service.fastapiadmin.com/api/v1
 COPY public.platform_refund (order_id, refund_no, amount, reason, refund_transaction_id, reviewer_id, review_time, reject_reason, status, description, id, uuid, is_deleted, created_time, updated_time, deleted_time, tenant_id) FROM stdin;
 4	RF20260220000001	99900	套餐选择错误，申请退款并更换为标准版	WXREFUND20260220001	2	2026-02-20 16:30:00	\N	2	创新工坊-专业版退款（已通过）	1	c5a8b581-b82c-4feb-82e2-2e73f547d753	f	2026-06-21 18:12:31.167713	2026-06-21 18:12:31.167716	\N	4
 \.
-
 
 --
 -- Data for Name: platform_tenant; Type: TABLE DATA; Schema: public; Owner: root
@@ -6868,7 +4897,6 @@ COPY public.platform_tenant (name, code, contact_name, contact_phone, contact_em
 星辰科技有限公司	STAR	张明	13800001001	zhang@star-tech.dev	\N	\N	\N	0	2	\N	\N	\N	\N	\N	2026 星辰科技	\N	\N	\N	\N	\N	0	中型科技企业，使用标准版套餐	3	d3afc62d-3091-42a9-bb71-64d02e4a02b5	f	2026-06-21 18:12:30.980574	2026-06-21 18:12:30.980579	\N
 创新工坊	INNO	李芳	13800002001	li@inno.work	\N	\N	\N	0	1	\N	\N	\N	\N	\N	2026 创新工坊	\N	\N	\N	\N	\N	0	初创团队，使用基础版免费试用	4	7a1ddb29-a8d3-4103-91d1-af80bfb444c7	f	2026-06-21 18:12:30.980584	2026-06-21 18:12:30.980584	\N
 \.
-
 
 --
 -- Data for Name: platform_tenant_plugin; Type: TABLE DATA; Schema: public; Owner: root
@@ -6884,7 +4912,6 @@ COPY public.platform_tenant_plugin (id, tenant_id, plugin_id, enabled, purchased
 7	2	3	t	f	2024-01-01 00:00:00
 8	2	5	t	f	2024-01-01 00:00:00
 \.
-
 
 --
 -- Data for Name: platform_user_tenant; Type: TABLE DATA; Schema: public; Owner: root
@@ -6902,7 +4929,6 @@ COPY public.platform_user_tenant (id, user_id, tenant_id, role, is_default, crea
 9	8	4	owner	1	2026-06-21 18:12:31.177582
 10	9	4	member	1	2026-06-21 18:12:31.177583
 \.
-
 
 --
 -- Data for Name: sys_dept; Type: TABLE DATA; Schema: public; Owner: root
@@ -6923,7 +4949,6 @@ COPY public.sys_dept (name, status, description, "order", code, leader, phone, e
 后端开发组	0	后端技术开发	1	BACKEND	王工	13800138002	backend@example.com	6	12	f41c1a2d-f300-43b4-a76b-674f07aecfee	f	2026-06-21 18:12:31.066493	2026-06-21 18:12:31.066497	\N	1	\N	\N	\N
 前端开发组	0	前端技术开发	2	FRONTEND	陈工	13800138003	frontend@example.com	6	13	73df2b76-36bc-4b7e-89ce-5dd91afb035c	f	2026-06-21 18:12:31.066502	2026-06-21 18:12:31.066502	\N	1	\N	\N	\N
 \.
-
 
 --
 -- Data for Name: sys_dict_data; Type: TABLE DATA; Schema: public; Owner: root
@@ -6966,7 +4991,6 @@ COPY public.sys_dict_data (status, description, dict_sort, dict_label, dict_valu
 0	危险表格回显样式	6	危险(danger)	danger		\N	f	sys_list_class	10	34	f09ac803-ecec-40cb-bba1-dafd1a392d8b	f	2026-06-21 18:12:31.089943	2026-06-21 18:12:31.089943	\N	1
 \.
 
-
 --
 -- Data for Name: sys_dict_type; Type: TABLE DATA; Schema: public; Owner: root
 --
@@ -6983,7 +5007,6 @@ COPY public.sys_dict_type (dict_name, dict_type, status, description, id, uuid, 
 任务触发器	sys_job_trigger	0	任务触发器列表	9	85a1c85f-8d0f-4a0a-a81e-5a63e401b1fc	f	2026-06-21 18:12:31.079142	2026-06-21 18:12:31.079142	\N	1
 表格回显样式	sys_list_class	0	表格回显样式列表	10	67c9bf20-504e-4908-b02c-90d461d12621	f	2026-06-21 18:12:31.079145	2026-06-21 18:12:31.079145	\N	1
 \.
-
 
 --
 -- Data for Name: sys_login_log; Type: TABLE DATA; Schema: public; Owner: root
@@ -7004,7 +5027,6 @@ COPY public.sys_login_log (status, description, username, login_location, login_
 2	\N	test_user	美国洛杉矶	198.51.100.1	Unknown	Unknown	用户不存在	12	39a1825d-0fe1-463b-b31e-157226f69ab3	f	2026-06-21 18:12:31.219763	2026-06-21 18:12:31.219763	\N	1	\N	\N	\N
 \.
 
-
 --
 -- Data for Name: sys_notice; Type: TABLE DATA; Schema: public; Owner: root
 --
@@ -7012,12 +5034,9 @@ COPY public.sys_login_log (status, description, username, login_location, login_
 COPY public.sys_notice (notice_title, notice_type, notice_content, status, description, id, uuid, is_deleted, created_time, updated_time, deleted_time, tenant_id, created_id, updated_id, deleted_id) FROM stdin;
 系统上线公告	2	<p>欢迎使用 FastApiAdmin 系统！</p><p>这是一个功能强大的权限管理系统，支持多租户、角色权限控制等功能。</p>	0	系统上线公告	1	3636ecdb-10ec-4c4e-a354-0f1b426483bb	f	2026-06-21 18:12:31.198024	2026-06-21 18:12:31.198029	\N	1	\N	\N	\N
 系统维护通知	1	<p>系统将于本周六凌晨2:00-4:00进行例行维护，请提前保存工作。</p>	0	系统维护通知	2	07a08a92-499b-44a8-ab44-d547e9f0879a	f	2026-06-21 18:12:31.198037	2026-06-21 18:12:31.198037	\N	1	\N	\N	\N
-新功能发布	2	<p>本次更新新增了工作流引擎、代码生成器等功能，欢迎体验！</p>	0	新功能发布	3	d5632105-3082-4031-85be-d4b266720bbc	f	2026-06-21 18:12:31.198041	2026-06-21 18:12:31.198041	\N	1	\N	\N	\N
 安全更新提醒	1	<p>请所有用户尽快更新密码，建议使用至少8位包含大小写字母、数字和特殊字符的强密码。</p><p>更新方法：登录后进入「个人中心」->「修改密码」。</p>	0	安全更新提醒	4	8cc439e6-2fcf-4d9e-b9b9-20120828e48c	f	2026-06-21 18:12:31.198044	2026-06-21 18:12:31.198044	\N	1	\N	\N	\N
 节假日值班安排	1	<p>春节假期（2月10日-2月17日）期间系统值班安排如下：</p><p>联系电话：138-0000-0000</p><p>紧急问题请直接联系值班人员。</p>	0	节假日值班通知	5	73581409-62b1-4987-9909-4c3e09502ba5	f	2026-06-21 18:12:31.198047	2026-06-21 18:12:31.198047	\N	1	\N	\N	\N
-v2.0 版本升级公告	2	<p>v2.0 大版本即将发布，主要更新：</p><ul><li>全新工作流引擎</li><li>AI助手集成</li><li>代码生成器增强</li><li>性能优化 30%</li></ul><p>升级时间另行通知。</p>	0	v2.0 版本升级公告	6	148966e0-a69f-4afa-b79e-1f0c142ead51	f	2026-06-21 18:12:31.19805	2026-06-21 18:12:31.19805	\N	1	\N	\N	\N
 \.
-
 
 --
 -- Data for Name: sys_notice_read; Type: TABLE DATA; Schema: public; Owner: root
@@ -7036,7 +5055,6 @@ COPY public.sys_notice_read (user_id, notice_id, read_time) FROM stdin;
 8	2	2025-06-10 16:00:00
 \.
 
-
 --
 -- Data for Name: sys_operation_log; Type: TABLE DATA; Schema: public; Owner: root
 --
@@ -7050,15 +5068,11 @@ COPY public.sys_operation_log (status, description, request_path, request_method
 0	删除角色	/api/v1/system/role/delete	DELETE	{"ids": [5]}	200	{"code": 200, "msg": "删除成功"}	15ms	6	08693d09-d39a-40c4-ab4c-ae64903b1a0d	f	2026-06-21 18:12:31.229544	2026-06-21 18:12:31.229544	\N	1	\N	\N	\N
 0	查询菜单列表	/api/v1/platform/menu/list	GET	\N	200	{"code": 200, "data": {"items": [...]}}	35ms	7	a42229e1-7fbd-4586-886b-53d5718dc02f	f	2026-06-21 18:12:31.229547	2026-06-21 18:12:31.229547	\N	3	\N	\N	\N
 0	查询字典数据	/api/v1/system/dict/data/list	GET	\N	200	{"code": 200, "data": {"items": [...]}}	22ms	8	e64a26cc-0fb9-45f2-8292-aa3d80510b6b	f	2026-06-21 18:12:31.22955	2026-06-21 18:12:31.22955	\N	3	\N	\N	\N
-0	创建工作流	/api/v1/workflow/definition/create	POST	{"name": "审批流程", "code": "approval_v1"}	200	{"code": 200, "msg": "创建成功"}	28ms	9	dc35638d-6dd0-446f-9b29-ded9251a6913	f	2026-06-21 18:12:31.229553	2026-06-21 18:12:31.229553	\N	4	\N	\N	\N
 0	创建通知	/api/v1/system/notice/create	POST	{"notice_title": "测试通知", "notice_type": "1"}	200	{"code": 200, "msg": "创建成功"}	11ms	10	cc259886-6df1-41d0-89fe-2cb5fafdecbd	f	2026-06-21 18:12:31.229555	2026-06-21 18:12:31.229556	\N	1	\N	\N	\N
 0	导出用户数据	/api/v1/system/user/export	POST	{"status": 0}	200	{"file": "用户列表_20250601.xlsx"}	156ms	11	444d8c52-2abe-431a-8b2c-b7b837516198	f	2026-06-21 18:12:31.229558	2026-06-21 18:12:31.229559	\N	1	\N	\N	\N
 0	批量导入用户	/api/v1/system/user/import	POST	"file": "users.xlsx" (multipart/form-data)	200	{"code": 200, "msg": "成功导入 25 条数据"}	320ms	12	1c380b4d-92cf-4d77-9506-8a3e727464b2	f	2026-06-21 18:12:31.229561	2026-06-21 18:12:31.229561	\N	1	\N	\N	\N
-0	执行定时任务节点	/api/v1/cronjob/node/execute/1	POST	{"trigger": "now"}	200	{"code": 200, "msg": "调试节点成功"}	1024ms	13	11d96967-dc41-42e1-a894-00be95cf7337	f	2026-06-21 18:12:31.229564	2026-06-21 18:12:31.229564	\N	1	\N	\N	\N
-0	执行工作流	/api/v1/workflow/definition/execute	POST	{"workflow_id": 1, "variables": {}}	200	{"code": 200, "data": {"status": "completed"}}	3200ms	14	4ae5c9ae-1467-4e64-a0ec-248e44bc9486	f	2026-06-21 18:12:31.229567	2026-06-21 18:12:31.229567	\N	4	\N	\N	\N
-0	批量删除执行日志	/api/v1/cronjob/job/log/delete	DELETE	{"ids": [1, 2, 3]}	200	{"code": 200, "msg": "删除成功"}	19ms	15	5285e6cd-e062-4e54-af86-84e1593c21cf	f	2026-06-21 18:12:31.22957	2026-06-21 18:12:31.22957	\N	1	\N	\N	\N
-\.
 
+\.
 
 --
 -- Data for Name: sys_param; Type: TABLE DATA; Schema: public; Owner: root
@@ -7081,9 +5095,8 @@ Refresh Token过期时间(天)	refresh_token_expire_days	7	t	0	Refresh Token过�
 登录日志保留天数	login_log_retention_days	30	t	0	登录日志保留天数	14	f12747fb-406e-4aad-84fd-f0ba18d2cb26	f	2026-06-21 18:12:31.046658	2026-06-21 18:12:31.046659	\N	1	\N	\N	\N
 文件上传大小限制(MB)	file_upload_max_size	50	t	0	单个文件上传最大大小	15	2da642a3-813e-42af-bbcc-6b88926fa536	f	2026-06-21 18:12:31.046661	2026-06-21 18:12:31.046662	\N	1	\N	\N	\N
 是否启用IP归属地查询	ip_location_enable	false	t	0	登录时是否查询IP归属地	16	0f621411-0a91-4b73-a450-990c922286c1	f	2026-06-21 18:12:31.046665	2026-06-21 18:12:31.046665	\N	1	\N	\N	\N
-调度器状态	scheduler_status	stopped	t	0	\N	17	db58af45-013a-4b0b-b765-4c7aff949a73	f	2026-06-21 18:12:34.011911	2026-06-21 18:12:34.011914	\N	1	\N	\N	\N
-\.
 
+\.
 
 --
 -- Data for Name: sys_position; Type: TABLE DATA; Schema: public; Owner: root
@@ -7097,7 +5110,6 @@ COPY public.sys_position (name, code, "order", status, description, id, uuid, is
 运营专员	OPERATOR	5	0	运营岗位	5	97645a0a-7cde-45b1-8be7-932367ceafb3	f	2026-06-21 18:12:31.100663	2026-06-21 18:12:31.100663	\N	1	\N	\N	\N
 HR专员	HR_STAFF	6	0	人事专员	6	5ba9b102-0031-4554-b5fc-708dbe060e06	f	2026-06-21 18:12:31.100666	2026-06-21 18:12:31.100666	\N	1	\N	\N	\N
 \.
-
 
 --
 -- Data for Name: sys_role; Type: TABLE DATA; Schema: public; Owner: root
@@ -7113,7 +5125,6 @@ COPY public.sys_role (name, code, "order", status, description, data_scope, id, 
 创新员工	INNO_STAFF	2	0	创新工坊普通员工	2	7	e967ee5f-3058-4a1e-b5e1-70640eb837d8	f	2026-06-21 18:12:31.07293	2026-06-21 18:12:31.07293	\N	4	\N	\N	\N
 \.
 
-
 --
 -- Data for Name: sys_role_depts; Type: TABLE DATA; Schema: public; Owner: root
 --
@@ -7121,14 +5132,12 @@ COPY public.sys_role (name, code, "order", status, description, data_scope, id, 
 COPY public.sys_role_depts (role_id, dept_id) FROM stdin;
 \.
 
-
 --
 -- Data for Name: sys_role_menus; Type: TABLE DATA; Schema: public; Owner: root
 --
 
 COPY public.sys_role_menus (role_id, menu_id) FROM stdin;
 \.
-
 
 --
 -- Data for Name: sys_ticket; Type: TABLE DATA; Schema: public; Owner: root
@@ -7140,11 +5149,10 @@ COPY public.sys_ticket (title, status, description, ticket_content, summary, tic
 希望增加批量删除功能	0	功能优化建议	<p>用户管理页面希望支持批量选择删除，提高管理效率。</p>	用户管理页面希望支持批量选择删除	optimize	\N	\N	\N	3	3e83b81f-f30f-4475-9857-39e390748e79	f	2026-06-21 18:12:31.209636	2026-06-21 18:12:31.209636	\N	1	\N	\N	\N
 手机端适配问题反馈	1	移动端兼容性问题	<p>在iPhone Safari浏览器上，菜单栏折叠后无法展开，需要刷新页面才能恢复。</p>	iPhone Safari菜单折叠后无法展开	bug	["https://example.com/screenshot1.png"]	\N	4	4	1fba9443-0897-40c7-938e-f3b4daec930c	f	2026-06-21 18:12:31.209639	2026-06-21 18:12:31.209639	\N	1	\N	\N	\N
 增加数据权限粒度	2	数据权限增强	<p>当前数据权限只能控制到部门级别，希望能支持自定义数据范围，如只查看本人创建的数据、指定项目范围等。</p>	数据权限需要支持自定义范围	optimize	\N	已纳入Q3规划，感谢反馈。	2	5	92b09ed2-9747-4ea7-aa53-6603b7a6ee05	f	2026-06-21 18:12:31.209642	2026-06-21 18:12:31.209642	\N	1	\N	\N	\N
-工作流审批节点无法修改	0	星辰科技反馈工作流问题	<p>已发布的工作流无法修改审批节点配置，需要先取消发布才能修改，操作繁琐。</p>	已发布工作流无法直接修改节点	bug	\N	\N	\N	6	98ab6624-2736-4089-ae88-e190a999bf00	f	2026-06-21 18:12:31.209645	2026-06-21 18:12:31.209645	\N	3	\N	\N	\N
 希望增加钉钉集成	3	创新工坊第三方集成需求	<p>团队使用钉钉进行日常协作，希望能将通知和待办事项同步到钉钉工作台。</p>	希望支持钉钉消息集成	suggestion	\N	我们会评估第三方集成的优先级。	\N	7	27e3e16b-236f-47a8-b4b3-7a12f0cf992e	f	2026-06-21 18:12:31.209648	2026-06-21 18:12:31.209648	\N	4	\N	\N	\N
 其他-文档链接失效	0	文档链接问题	<p>帮助文档中的API接口说明链接跳转404，影响开发对接。</p>	帮助文档API链接404	other	\N	\N	3	8	3a0cebba-e55f-464e-b694-7cc5ee802137	f	2026-06-21 18:12:31.20965	2026-06-21 18:12:31.209651	\N	1	\N	\N	\N
-\.
 
+\.
 
 --
 -- Data for Name: sys_user; Type: TABLE DATA; Schema: public; Owner: root
@@ -7162,14 +5170,12 @@ li_admin	$pbkdf2-sha256$600000$E8jfd18sWu7N9DWsx/nYKg==$9DNKCv+dm1QDvYXwpQlZH6e7
 zhao_eng	$pbkdf2-sha256$600000$E8jfd18sWu7N9DWsx/nYKg==$9DNKCv+dm1QDvYXwpQlZH6e7trYp1WCPdsvSyzXwuo0=	赵强	13800002002	zhao@inno.work	2	\N	f	\N	\N	\N	\N	\N	0	创新工坊技术合伙人	\N	9	03ef8fb6-d675-4270-b34f-63b53489c517	f	2026-06-21 18:12:31.111993	2026-06-21 18:12:31.111993	\N	4	\N	\N	\N
 \.
 
-
 --
 -- Data for Name: sys_user_positions; Type: TABLE DATA; Schema: public; Owner: root
 --
 
 COPY public.sys_user_positions (user_id, position_id) FROM stdin;
 \.
-
 
 --
 -- Data for Name: sys_user_roles; Type: TABLE DATA; Schema: public; Owner: root
@@ -7187,73 +5193,11 @@ COPY public.sys_user_roles (user_id, role_id) FROM stdin;
 9	7
 \.
 
-
---
--- Data for Name: task_job; Type: TABLE DATA; Schema: public; Owner: root
---
-
-COPY public.task_job (job_id, job_name, trigger_type, next_run_time, job_state, result, error, status, description, id, uuid, is_deleted, created_time, updated_time, deleted_time, tenant_id) FROM stdin;
-system_tenant_expiry_check	租户到期检查	interval	2026-06-21 19:12:31.401289+08:00	{\n  "version": 1,\n  "id": "system_tenant_expiry_check",\n  "func": "app.api.v1.module_platform.tenant.service:TenantService.check_tenant_expiry",\n  "trigger": "interval[1:00:00]",\n  "executor": "default",\n  "args": [],\n  "kwargs": {},\n  "name": "租户到期检查",\n  "misfire_grace_time": 1,\n  "coalesce": true,\n  "max_instances": 5,\n  "next_run_time": "2026-06-21 19:12:31.401289+08:00"\n}	\N	\N	0	\N	1	838d8e40-7fc8-4cfc-a8da-cdfe83c55aa7	f	2026-06-21 18:12:31.406262	2026-06-21 18:12:31.406265	\N	1
-system_grace_reminder	宽限期续费提醒	cron	2026-06-22 09:00:00+08:00	{\n  "version": 1,\n  "id": "system_grace_reminder",\n  "func": "app.api.v1.module_platform.tenant.service:TenantService.send_grace_reminders",\n  "trigger": "cron[hour='9', minute='0']",\n  "executor": "default",\n  "args": [],\n  "kwargs": {},\n  "name": "宽限期续费提醒",\n  "misfire_grace_time": 1,\n  "coalesce": true,\n  "max_instances": 5,\n  "next_run_time": "2026-06-22 09:00:00+08:00"\n}	\N	\N	0	\N	2	888cc4e0-6a9b-4fd1-8a9e-55e92bbaa840	f	2026-06-21 18:12:31.422446	2026-06-21 18:12:31.42245	\N	1
-system_clean_expired	过期租户归档清理	cron	2026-07-01 02:00:00+08:00	{\n  "version": 1,\n  "id": "system_clean_expired",\n  "func": "app.api.v1.module_platform.tenant.service:TenantService.clean_expired_tenants",\n  "trigger": "cron[day='1', hour='2', minute='0']",\n  "executor": "default",\n  "args": [],\n  "kwargs": {},\n  "name": "过期租户归档清理",\n  "misfire_grace_time": 1,\n  "coalesce": true,\n  "max_instances": 5,\n  "next_run_time": "2026-07-01 02:00:00+08:00"\n}	\N	\N	0	\N	3	e1dace15-030e-4a37-8c05-69db251194a0	f	2026-06-21 18:12:31.428059	2026-06-21 18:12:31.42806	\N	1
-system_cancel_expired_orders	超时订单取消	interval	2026-06-21 18:17:31.432632+08:00	{\n  "version": 1,\n  "id": "system_cancel_expired_orders",\n  "func": "app.api.v1.module_platform.order.service:OrderService.cancel_expired_orders",\n  "trigger": "interval[0:05:00]",\n  "executor": "default",\n  "args": [],\n  "kwargs": {},\n  "name": "超时订单取消",\n  "misfire_grace_time": 1,\n  "coalesce": true,\n  "max_instances": 5,\n  "next_run_time": "2026-06-21 18:17:31.432632+08:00"\n}	\N	\N	0	\N	4	3de25fe8-92ef-429f-9bab-f868173f4cb2	f	2026-06-21 18:12:31.434109	2026-06-21 18:12:31.43411	\N	1
-system_cleanup_operation_log	操作日志清理	cron	2026-06-28 03:00:00+08:00	{\n  "version": 1,\n  "id": "system_cleanup_operation_log",\n  "func": "app.api.v1.module_system.log.service:OperationLogService.cleanup_operation_log",\n  "trigger": "cron[day_of_week='sun', hour='3', minute='0']",\n  "executor": "default",\n  "args": [],\n  "kwargs": {},\n  "name": "操作日志清理",\n  "misfire_grace_time": 1,\n  "coalesce": true,\n  "max_instances": 5,\n  "next_run_time": "2026-06-28 03:00:00+08:00"\n}	\N	\N	0	\N	5	b1060d82-e5b8-40e0-b32c-2152b9831fd7	f	2026-06-21 18:12:31.437878	2026-06-21 18:12:31.437879	\N	1
-\.
-
-
---
--- Data for Name: task_node; Type: TABLE DATA; Schema: public; Owner: root
---
-
-COPY public.task_node (name, code, jobstore, executor, trigger, trigger_args, func, args, kwargs, "coalesce", max_instances, start_date, end_date, status, description, id, uuid, is_deleted, created_time, updated_time, deleted_time, tenant_id, created_id, updated_id, deleted_id) FROM stdin;
-演示任务	demo_job	default	default	\N	\N	import logging\n\ndef handler(*args, **kwargs):\n    """演示任务：打印参数并返回执行摘要"""\n    logger = logging.getLogger(__name__)\n    logger.info(f"演示任务执行中，参数: args={args}, kwargs={kwargs}")\n    return {\n        "status": "success",\n        "message": "演示任务执行成功",\n        "args_received": len(args),\n        "kwargs_keys": list(kwargs.keys())\n    }\n	\N	\N	f	1	\N	\N	0	最简演示任务，用于验证调度器基本功能	1	ef150683-e66e-4ad5-b6e6-2d6207345a6c	f	2026-06-21 18:12:31.239151	2026-06-21 18:12:31.239155	\N	1	\N	\N	\N
-数据库清理任务	db_cleanup	sqlalchemy	default	\N	\N	import logging\nfrom datetime import datetime, timedelta\n\ndef handler(*args, **kwargs):\n    """清理过期数据：删除N天前的日志和临时数据"""\n    logger = logging.getLogger(__name__)\n    days = kwargs.get("days", 90)\n    cutoff = datetime.now() - timedelta(days=days)\n    logger.info(f"清理 {cutoff.strftime('%Y-%m-%d')} 之前的过期数据...")\n    return {\n        "status": "success",\n        "cutoff_date": cutoff.strftime("%Y-%m-%d %H:%M:%S"),\n        "deleted_count": 0\n    }\n	\N	{"days": 30}	t	1	\N	\N	0	清理过期操作日志和临时数据，建议每天凌晨3点执行	2	f1645b41-a100-40ae-a9a4-e70ea82bb4b9	f	2026-06-21 18:12:31.239159	2026-06-21 18:12:31.23916	\N	1	\N	\N	\N
-健康检查任务	health_check	default	default	\N	\N	import logging\nimport psutil\n\ndef handler(*args, **kwargs):\n    """系统健康检查：采集 CPU、内存、磁盘使用率"""\n    logger = logging.getLogger(__name__)\n    cpu = psutil.cpu_percent(interval=1)\n    mem = psutil.virtual_memory()\n    disk = psutil.disk_usage("/")\n    status = "healthy" if cpu < 80 and mem.percent < 90 and disk.percent < 90 else "warning"\n    logger.info(f"健康检查: CPU={cpu}% MEM={mem.percent}% DISK={disk.percent}%")\n    return {\n        "status": status,\n        "cpu_percent": cpu,\n        "memory_percent": mem.percent,\n        "disk_percent": disk.percent,\n        "memory_total_gb": round(mem.total / (1024**3), 1),\n        "disk_total_gb": round(disk.total / (1024**3), 1)\n    }\n	\N	\N	t	1	\N	\N	0	系统资源健康检查，建议每5分钟执行一次	3	018980c1-4365-461d-9710-846dee15ca62	f	2026-06-21 18:12:31.239163	2026-06-21 18:12:31.239164	\N	1	\N	\N	\N
-邮件批量发送	email_batch	sqlalchemy	default	\N	\N	import logging\n\ndef handler(*args, **kwargs):\n    """批量发送待发送邮件"""\n    logger = logging.getLogger(__name__)\n    batch_size = kwargs.get("batch_size", 50)\n    logger.info(f"开始批量发送邮件，每批 {batch_size} 封...")\n    return {\n        "status": "success",\n        "sent_count": 0,\n        "failed_count": 0,\n        "batch_size": batch_size\n    }\n	\N	{"batch_size": 50}	f	2	\N	\N	0	批量发送待发送邮件，建议每分钟执行一次	4	ac14c414-4b8a-4147-a9a6-6eedd54db09e	f	2026-06-21 18:12:31.239166	2026-06-21 18:12:31.239167	\N	1	\N	\N	\N
-\.
-
-
---
--- Data for Name: task_workflow; Type: TABLE DATA; Schema: public; Owner: root
---
-
-COPY public.task_workflow (name, code, nodes, edges, status, description, id, uuid, is_deleted, created_time, updated_time, deleted_time, tenant_id, created_id, updated_id, deleted_id) FROM stdin;
-\.
-
-
---
--- Data for Name: task_workflow_node_type; Type: TABLE DATA; Schema: public; Owner: root
---
-
-COPY public.task_workflow_node_type (name, code, category, func, args, kwargs, sort_order, is_active, status, description, id, uuid, is_deleted, created_time, updated_time, deleted_time, tenant_id, created_id, updated_id, deleted_id) FROM stdin;
-HTTP请求	http_request	action	import json\nimport urllib.request\n\ndef handler(*args, **kwargs):\n    """发送 HTTP 请求并返回响应"""\n    url = kwargs.get("url", "")\n    method = kwargs.get("method", "GET")\n    headers = kwargs.get("headers", {})\n    body = kwargs.get("body")\n    if not url:\n        raise ValueError("缺少 url 参数")\n    req = urllib.request.Request(url, method=method, headers=headers)\n    if body and isinstance(body, dict):\n        req.data = json.dumps(body).encode()\n    with urllib.request.urlopen(req) as resp:\n        return {"status_code": resp.status, "body": resp.read().decode()}\n	\N	{"url": "", "method": "GET"}	1	t	0	发送 HTTP 请求，支持 GET/POST 等方法	1	2fd5124d-fd0f-43fb-83d6-baea01f44fba	f	2026-06-21 18:12:31.246264	2026-06-21 18:12:31.246266	\N	1	\N	\N	\N
-发送通知	send_notification	action	import logging\n\ndef handler(*args, **kwargs):\n    """发送通知消息"""\n    logger = logging.getLogger(__name__)\n    channel = kwargs.get("channel", "system")\n    title = kwargs.get("title", "工作流通知")\n    content = kwargs.get("content", "")\n    recipients = kwargs.get("recipients", [])\n    logger.info(f"[{channel}] 发送通知: {title} -> {len(recipients)}人")\n    return {\n        "channel": channel,\n        "title": title,\n        "recipient_count": len(recipients),\n        "status": "sent"\n    }\n	\N	{"channel": "system", "title": "工作流通知", "recipients": []}	2	t	0	发送系统通知、邮件或短信	2	2c7baf02-b855-443b-9529-5a6ef9790059	f	2026-06-21 18:12:31.24627	2026-06-21 18:12:31.24627	\N	1	\N	\N	\N
-条件判断	condition	condition	import json\n\ndef handler(*args, **kwargs):\n    """条件分支：根据 upstream 结果决定走向"""\n    upstream = kwargs.get("upstream", {})\n    variables = kwargs.get("variables", {})\n    field = kwargs.get("field", "status")\n    expected = kwargs.get("expected", "success")\n    operator = kwargs.get("operator", "eq")\n    last = list(upstream.values())[-1] if upstream else {}\n    actual = last.get(field) if isinstance(last, dict) else last\n    operations = {\n        "eq": lambda a, e: a == e,\n        "ne": lambda a, e: a != e,\n        "gt": lambda a, e: a > e,\n        "lt": lambda a, e: a < e,\n        "contains": lambda a, e: str(e) in str(a)\n    }\n    op = operations.get(operator, operations["eq"])\n    result = op(actual, expected)\n    return {"passed": result, "actual": actual, "expected": expected}\n	\N	{"field": "status", "expected": "success", "operator": "eq"}	3	t	0	根据上游节点输出判断分支走向	3	e6d33519-9e26-47d5-b17b-01924fd80c54	f	2026-06-21 18:12:31.246273	2026-06-21 18:12:31.246274	\N	1	\N	\N	\N
-数据转换	data_transform	action	import json\nfrom datetime import datetime\n\ndef handler(*args, **kwargs):\n    """转换上游数据格式"""\n    upstream = kwargs.get("upstream", {})\n    mapping = kwargs.get("mapping", {})\n    result = {}\n    for upstream_key, target_key in mapping.items():\n        for source, value in upstream.items():\n            if isinstance(value, dict) and upstream_key in value:\n                result[target_key] = value[upstream_key]\n    result["transformed_at"] = datetime.now().isoformat()\n    return result\n	\N	{"mapping": {}}	4	t	0	转换上游节点的数据格式	4	ed9dd777-59ec-4b40-911a-3cc84bdefe56	f	2026-06-21 18:12:31.246276	2026-06-21 18:12:31.246277	\N	1	\N	\N	\N
-聚合汇总	aggregate	action	import json\n\ndef handler(*args, **kwargs):\n    """聚合上游多个节点的输出"""\n    upstream = kwargs.get("upstream", {})\n    variables = kwargs.get("variables", {})\n    results = {\n        "node_count": len(upstream),\n        "nodes": list(upstream.keys()),\n        "values": list(upstream.values()),\n        "variables": variables\n    }\n    return results\n	\N	\N	5	t	0	将多个上游节点的输出聚合到一个结果中	5	9edb01bf-27c7-4339-af25-085d5d1592f3	f	2026-06-21 18:12:31.246279	2026-06-21 18:12:31.24628	\N	1	\N	\N	\N
-\.
-
-
 --
 -- Name: example_demo_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
 SELECT pg_catalog.setval('public.example_demo_id_seq', 6, true);
-
-
---
--- Name: gen_table_column_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
---
-
-SELECT pg_catalog.setval('public.gen_table_column_id_seq', 1, false);
-
-
---
--- Name: gen_table_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
---
-
-SELECT pg_catalog.setval('public.gen_table_id_seq', 1, false);
-
 
 --
 -- Name: platform_email_config_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
@@ -7261,13 +5205,11 @@ SELECT pg_catalog.setval('public.gen_table_id_seq', 1, false);
 
 SELECT pg_catalog.setval('public.platform_email_config_id_seq', 1, true);
 
-
 --
 -- Name: platform_email_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
 SELECT pg_catalog.setval('public.platform_email_log_id_seq', 1, false);
-
 
 --
 -- Name: platform_email_template_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
@@ -7275,13 +5217,11 @@ SELECT pg_catalog.setval('public.platform_email_log_id_seq', 1, false);
 
 SELECT pg_catalog.setval('public.platform_email_template_id_seq', 12, true);
 
-
 --
 -- Name: platform_invoice_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
 SELECT pg_catalog.setval('public.platform_invoice_id_seq', 4, true);
-
 
 --
 -- Name: platform_menu_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
@@ -7289,13 +5229,11 @@ SELECT pg_catalog.setval('public.platform_invoice_id_seq', 4, true);
 
 SELECT pg_catalog.setval('public.platform_menu_id_seq', 220, true);
 
-
 --
 -- Name: platform_order_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
 SELECT pg_catalog.setval('public.platform_order_id_seq', 9, true);
-
 
 --
 -- Name: platform_package_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
@@ -7303,13 +5241,11 @@ SELECT pg_catalog.setval('public.platform_order_id_seq', 9, true);
 
 SELECT pg_catalog.setval('public.platform_package_id_seq', 4, true);
 
-
 --
 -- Name: platform_package_menu_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
 SELECT pg_catalog.setval('public.platform_package_menu_id_seq', 30, true);
-
 
 --
 -- Name: platform_package_plugin_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
@@ -7317,13 +5253,11 @@ SELECT pg_catalog.setval('public.platform_package_menu_id_seq', 30, true);
 
 SELECT pg_catalog.setval('public.platform_package_plugin_id_seq', 1, false);
 
-
 --
 -- Name: platform_payment_record_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
 SELECT pg_catalog.setval('public.platform_payment_record_id_seq', 7, true);
-
 
 --
 -- Name: platform_plugin_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
@@ -7331,13 +5265,11 @@ SELECT pg_catalog.setval('public.platform_payment_record_id_seq', 7, true);
 
 SELECT pg_catalog.setval('public.platform_plugin_id_seq', 5, true);
 
-
 --
 -- Name: platform_refund_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
 SELECT pg_catalog.setval('public.platform_refund_id_seq', 1, true);
-
 
 --
 -- Name: platform_tenant_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
@@ -7345,13 +5277,11 @@ SELECT pg_catalog.setval('public.platform_refund_id_seq', 1, true);
 
 SELECT pg_catalog.setval('public.platform_tenant_id_seq', 4, true);
 
-
 --
 -- Name: platform_tenant_plugin_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
 SELECT pg_catalog.setval('public.platform_tenant_plugin_id_seq', 8, true);
-
 
 --
 -- Name: platform_user_tenant_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
@@ -7359,13 +5289,11 @@ SELECT pg_catalog.setval('public.platform_tenant_plugin_id_seq', 8, true);
 
 SELECT pg_catalog.setval('public.platform_user_tenant_id_seq', 10, true);
 
-
 --
 -- Name: sys_dept_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
 SELECT pg_catalog.setval('public.sys_dept_id_seq', 13, true);
-
 
 --
 -- Name: sys_dict_data_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
@@ -7373,13 +5301,11 @@ SELECT pg_catalog.setval('public.sys_dept_id_seq', 13, true);
 
 SELECT pg_catalog.setval('public.sys_dict_data_id_seq', 34, true);
 
-
 --
 -- Name: sys_dict_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
 SELECT pg_catalog.setval('public.sys_dict_type_id_seq', 10, true);
-
 
 --
 -- Name: sys_login_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
@@ -7387,13 +5313,11 @@ SELECT pg_catalog.setval('public.sys_dict_type_id_seq', 10, true);
 
 SELECT pg_catalog.setval('public.sys_login_log_id_seq', 12, true);
 
-
 --
 -- Name: sys_notice_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
 SELECT pg_catalog.setval('public.sys_notice_id_seq', 6, true);
-
 
 --
 -- Name: sys_operation_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
@@ -7401,13 +5325,11 @@ SELECT pg_catalog.setval('public.sys_notice_id_seq', 6, true);
 
 SELECT pg_catalog.setval('public.sys_operation_log_id_seq', 15, true);
 
-
 --
 -- Name: sys_param_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
 SELECT pg_catalog.setval('public.sys_param_id_seq', 17, true);
-
 
 --
 -- Name: sys_position_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
@@ -7415,13 +5337,11 @@ SELECT pg_catalog.setval('public.sys_param_id_seq', 17, true);
 
 SELECT pg_catalog.setval('public.sys_position_id_seq', 6, true);
 
-
 --
 -- Name: sys_role_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
 SELECT pg_catalog.setval('public.sys_role_id_seq', 7, true);
-
 
 --
 -- Name: sys_ticket_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
@@ -7429,49 +5349,23 @@ SELECT pg_catalog.setval('public.sys_role_id_seq', 7, true);
 
 SELECT pg_catalog.setval('public.sys_ticket_id_seq', 8, true);
 
-
 --
 -- Name: sys_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
 SELECT pg_catalog.setval('public.sys_user_id_seq', 9, true);
 
-
 --
--- Name: task_job_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.task_job_id_seq', 5, true);
-
-
 --
--- Name: task_node_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.task_node_id_seq', 4, true);
-
-
 --
--- Name: task_workflow_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
 
-SELECT pg_catalog.setval('public.task_workflow_id_seq', 1, false);
-
-
 --
--- Name: task_workflow_node_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: root
 --
-
-SELECT pg_catalog.setval('public.task_workflow_node_type_id_seq', 5, true);
-
-
---
--- Name: apscheduler_jobs apscheduler_jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.apscheduler_jobs
-    ADD CONSTRAINT apscheduler_jobs_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: example_demo example_demo_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7480,30 +5374,12 @@ ALTER TABLE ONLY public.apscheduler_jobs
 ALTER TABLE ONLY public.example_demo
     ADD CONSTRAINT example_demo_pkey PRIMARY KEY (id);
 
-
---
--- Name: gen_table_column gen_table_column_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.gen_table_column
-    ADD CONSTRAINT gen_table_column_pkey PRIMARY KEY (id);
-
-
---
--- Name: gen_table gen_table_pkey; Type: CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.gen_table
-    ADD CONSTRAINT gen_table_pkey PRIMARY KEY (id);
-
-
 --
 -- Name: platform_email_config platform_email_config_name_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_email_config
     ADD CONSTRAINT platform_email_config_name_key UNIQUE (name);
-
 
 --
 -- Name: platform_email_config platform_email_config_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7512,14 +5388,12 @@ ALTER TABLE ONLY public.platform_email_config
 ALTER TABLE ONLY public.platform_email_config
     ADD CONSTRAINT platform_email_config_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: platform_email_log platform_email_log_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_email_log
     ADD CONSTRAINT platform_email_log_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: platform_email_template platform_email_template_name_key; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7528,14 +5402,12 @@ ALTER TABLE ONLY public.platform_email_log
 ALTER TABLE ONLY public.platform_email_template
     ADD CONSTRAINT platform_email_template_name_key UNIQUE (name);
 
-
 --
 -- Name: platform_email_template platform_email_template_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_email_template
     ADD CONSTRAINT platform_email_template_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: platform_email_template platform_email_template_template_code_key; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7544,14 +5416,12 @@ ALTER TABLE ONLY public.platform_email_template
 ALTER TABLE ONLY public.platform_email_template
     ADD CONSTRAINT platform_email_template_template_code_key UNIQUE (template_code);
 
-
 --
 -- Name: platform_invoice platform_invoice_invoice_no_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_invoice
     ADD CONSTRAINT platform_invoice_invoice_no_key UNIQUE (invoice_no);
-
 
 --
 -- Name: platform_invoice platform_invoice_order_id_key; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7560,14 +5430,12 @@ ALTER TABLE ONLY public.platform_invoice
 ALTER TABLE ONLY public.platform_invoice
     ADD CONSTRAINT platform_invoice_order_id_key UNIQUE (order_id);
 
-
 --
 -- Name: platform_invoice platform_invoice_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_invoice
     ADD CONSTRAINT platform_invoice_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: platform_menu platform_menu_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7576,14 +5444,12 @@ ALTER TABLE ONLY public.platform_invoice
 ALTER TABLE ONLY public.platform_menu
     ADD CONSTRAINT platform_menu_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: platform_order platform_order_order_no_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_order
     ADD CONSTRAINT platform_order_order_no_key UNIQUE (order_no);
-
 
 --
 -- Name: platform_order platform_order_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7592,14 +5458,12 @@ ALTER TABLE ONLY public.platform_order
 ALTER TABLE ONLY public.platform_order
     ADD CONSTRAINT platform_order_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: platform_package platform_package_code_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_package
     ADD CONSTRAINT platform_package_code_key UNIQUE (code);
-
 
 --
 -- Name: platform_package_menu platform_package_menu_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7608,14 +5472,12 @@ ALTER TABLE ONLY public.platform_package
 ALTER TABLE ONLY public.platform_package_menu
     ADD CONSTRAINT platform_package_menu_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: platform_package platform_package_name_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_package
     ADD CONSTRAINT platform_package_name_key UNIQUE (name);
-
 
 --
 -- Name: platform_package platform_package_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7624,14 +5486,12 @@ ALTER TABLE ONLY public.platform_package
 ALTER TABLE ONLY public.platform_package
     ADD CONSTRAINT platform_package_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: platform_package_plugin platform_package_plugin_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_package_plugin
     ADD CONSTRAINT platform_package_plugin_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: platform_payment_record platform_payment_record_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7640,14 +5500,12 @@ ALTER TABLE ONLY public.platform_package_plugin
 ALTER TABLE ONLY public.platform_payment_record
     ADD CONSTRAINT platform_payment_record_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: platform_payment_record platform_payment_record_transaction_id_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_payment_record
     ADD CONSTRAINT platform_payment_record_transaction_id_key UNIQUE (transaction_id);
-
 
 --
 -- Name: platform_plugin platform_plugin_code_key; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7656,14 +5514,12 @@ ALTER TABLE ONLY public.platform_payment_record
 ALTER TABLE ONLY public.platform_plugin
     ADD CONSTRAINT platform_plugin_code_key UNIQUE (code);
 
-
 --
 -- Name: platform_plugin platform_plugin_name_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_plugin
     ADD CONSTRAINT platform_plugin_name_key UNIQUE (name);
-
 
 --
 -- Name: platform_plugin platform_plugin_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7672,14 +5528,12 @@ ALTER TABLE ONLY public.platform_plugin
 ALTER TABLE ONLY public.platform_plugin
     ADD CONSTRAINT platform_plugin_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: platform_refund platform_refund_order_id_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_refund
     ADD CONSTRAINT platform_refund_order_id_key UNIQUE (order_id);
-
 
 --
 -- Name: platform_refund platform_refund_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7688,14 +5542,12 @@ ALTER TABLE ONLY public.platform_refund
 ALTER TABLE ONLY public.platform_refund
     ADD CONSTRAINT platform_refund_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: platform_refund platform_refund_refund_no_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_refund
     ADD CONSTRAINT platform_refund_refund_no_key UNIQUE (refund_no);
-
 
 --
 -- Name: platform_tenant platform_tenant_code_key; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7704,14 +5556,12 @@ ALTER TABLE ONLY public.platform_refund
 ALTER TABLE ONLY public.platform_tenant
     ADD CONSTRAINT platform_tenant_code_key UNIQUE (code);
 
-
 --
 -- Name: platform_tenant platform_tenant_name_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_tenant
     ADD CONSTRAINT platform_tenant_name_key UNIQUE (name);
-
 
 --
 -- Name: platform_tenant platform_tenant_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7720,14 +5570,12 @@ ALTER TABLE ONLY public.platform_tenant
 ALTER TABLE ONLY public.platform_tenant
     ADD CONSTRAINT platform_tenant_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: platform_tenant_plugin platform_tenant_plugin_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_tenant_plugin
     ADD CONSTRAINT platform_tenant_plugin_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: platform_user_tenant platform_user_tenant_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7736,14 +5584,12 @@ ALTER TABLE ONLY public.platform_tenant_plugin
 ALTER TABLE ONLY public.platform_user_tenant
     ADD CONSTRAINT platform_user_tenant_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: sys_dept sys_dept_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_dept
     ADD CONSTRAINT sys_dept_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: sys_dept sys_dept_tenant_id_code_key; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7752,14 +5598,12 @@ ALTER TABLE ONLY public.sys_dept
 ALTER TABLE ONLY public.sys_dept
     ADD CONSTRAINT sys_dept_tenant_id_code_key UNIQUE (tenant_id, code);
 
-
 --
 -- Name: sys_dict_data sys_dict_data_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_dict_data
     ADD CONSTRAINT sys_dict_data_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: sys_dict_type sys_dict_type_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7768,14 +5612,12 @@ ALTER TABLE ONLY public.sys_dict_data
 ALTER TABLE ONLY public.sys_dict_type
     ADD CONSTRAINT sys_dict_type_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: sys_dict_type sys_dict_type_tenant_id_dict_type_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_dict_type
     ADD CONSTRAINT sys_dict_type_tenant_id_dict_type_key UNIQUE (tenant_id, dict_type);
-
 
 --
 -- Name: sys_login_log sys_login_log_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7784,14 +5626,12 @@ ALTER TABLE ONLY public.sys_dict_type
 ALTER TABLE ONLY public.sys_login_log
     ADD CONSTRAINT sys_login_log_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: sys_notice sys_notice_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_notice
     ADD CONSTRAINT sys_notice_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: sys_operation_log sys_operation_log_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7800,14 +5640,12 @@ ALTER TABLE ONLY public.sys_notice
 ALTER TABLE ONLY public.sys_operation_log
     ADD CONSTRAINT sys_operation_log_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: sys_param sys_param_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_param
     ADD CONSTRAINT sys_param_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: sys_position sys_position_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7816,14 +5654,12 @@ ALTER TABLE ONLY public.sys_param
 ALTER TABLE ONLY public.sys_position
     ADD CONSTRAINT sys_position_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: sys_role_depts sys_role_depts_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_role_depts
     ADD CONSTRAINT sys_role_depts_pkey PRIMARY KEY (role_id, dept_id);
-
 
 --
 -- Name: sys_role_menus sys_role_menus_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7832,14 +5668,12 @@ ALTER TABLE ONLY public.sys_role_depts
 ALTER TABLE ONLY public.sys_role_menus
     ADD CONSTRAINT sys_role_menus_pkey PRIMARY KEY (role_id, menu_id);
 
-
 --
 -- Name: sys_role sys_role_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_role
     ADD CONSTRAINT sys_role_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: sys_role sys_role_tenant_id_code_key; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7848,14 +5682,12 @@ ALTER TABLE ONLY public.sys_role
 ALTER TABLE ONLY public.sys_role
     ADD CONSTRAINT sys_role_tenant_id_code_key UNIQUE (tenant_id, code);
 
-
 --
 -- Name: sys_ticket sys_ticket_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_ticket
     ADD CONSTRAINT sys_ticket_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: sys_user sys_user_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7864,14 +5696,12 @@ ALTER TABLE ONLY public.sys_ticket
 ALTER TABLE ONLY public.sys_user
     ADD CONSTRAINT sys_user_pkey PRIMARY KEY (id);
 
-
 --
 -- Name: sys_user_positions sys_user_positions_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_user_positions
     ADD CONSTRAINT sys_user_positions_pkey PRIMARY KEY (user_id, position_id);
-
 
 --
 -- Name: sys_user_roles sys_user_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7880,7 +5710,6 @@ ALTER TABLE ONLY public.sys_user_positions
 ALTER TABLE ONLY public.sys_user_roles
     ADD CONSTRAINT sys_user_roles_pkey PRIMARY KEY (user_id, role_id);
 
-
 --
 -- Name: sys_user sys_user_tenant_id_username_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
@@ -7888,54 +5717,23 @@ ALTER TABLE ONLY public.sys_user_roles
 ALTER TABLE ONLY public.sys_user
     ADD CONSTRAINT sys_user_tenant_id_username_key UNIQUE (tenant_id, username);
 
-
 --
--- Name: task_job task_job_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_job
-    ADD CONSTRAINT task_job_pkey PRIMARY KEY (id);
-
-
 --
--- Name: task_node task_node_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_node
-    ADD CONSTRAINT task_node_pkey PRIMARY KEY (id);
-
-
 --
--- Name: task_node task_node_tenant_id_code_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_node
-    ADD CONSTRAINT task_node_tenant_id_code_key UNIQUE (tenant_id, code);
-
-
 --
--- Name: task_workflow_node_type task_workflow_node_type_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_workflow_node_type
-    ADD CONSTRAINT task_workflow_node_type_pkey PRIMARY KEY (id);
-
-
 --
--- Name: task_workflow_node_type task_workflow_node_type_tenant_id_code_key; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_workflow_node_type
-    ADD CONSTRAINT task_workflow_node_type_tenant_id_code_key UNIQUE (tenant_id, code);
-
-
 --
--- Name: task_workflow task_workflow_pkey; Type: CONSTRAINT; Schema: public; Owner: root
 --
-
-ALTER TABLE ONLY public.task_workflow
-    ADD CONSTRAINT task_workflow_pkey PRIMARY KEY (id);
-
 
 --
 -- Name: sys_dict_data uq_dict_data_value; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7944,14 +5742,12 @@ ALTER TABLE ONLY public.task_workflow
 ALTER TABLE ONLY public.sys_dict_data
     ADD CONSTRAINT uq_dict_data_value UNIQUE (tenant_id, dict_type_id, dict_value);
 
-
 --
 -- Name: platform_package_menu uq_package_menu; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_package_menu
     ADD CONSTRAINT uq_package_menu UNIQUE (package_id, menu_id);
-
 
 --
 -- Name: platform_package_plugin uq_package_plugin; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7960,14 +5756,8 @@ ALTER TABLE ONLY public.platform_package_menu
 ALTER TABLE ONLY public.platform_package_plugin
     ADD CONSTRAINT uq_package_plugin UNIQUE (package_id, plugin_id);
 
-
 --
--- Name: task_workflow uq_task_workflow_code; Type: CONSTRAINT; Schema: public; Owner: root
 --
-
-ALTER TABLE ONLY public.task_workflow
-    ADD CONSTRAINT uq_task_workflow_code UNIQUE (tenant_id, code);
-
 
 --
 -- Name: platform_tenant_plugin uq_tenant_plugin; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7976,14 +5766,12 @@ ALTER TABLE ONLY public.task_workflow
 ALTER TABLE ONLY public.platform_tenant_plugin
     ADD CONSTRAINT uq_tenant_plugin UNIQUE (tenant_id, plugin_id);
 
-
 --
 -- Name: sys_notice_read uq_user_notice_read; Type: CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_notice_read
     ADD CONSTRAINT uq_user_notice_read PRIMARY KEY (user_id, notice_id);
-
 
 --
 -- Name: platform_user_tenant uq_user_tenant; Type: CONSTRAINT; Schema: public; Owner: root
@@ -7992,20 +5780,11 @@ ALTER TABLE ONLY public.sys_notice_read
 ALTER TABLE ONLY public.platform_user_tenant
     ADD CONSTRAINT uq_user_tenant UNIQUE (user_id, tenant_id);
 
-
---
--- Name: ix_apscheduler_jobs_next_run_time; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_apscheduler_jobs_next_run_time ON public.apscheduler_jobs USING btree (next_run_time);
-
-
 --
 -- Name: ix_example_demo_created_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_example_demo_created_id ON public.example_demo USING btree (created_id);
-
 
 --
 -- Name: ix_example_demo_created_time; Type: INDEX; Schema: public; Owner: root
@@ -8013,13 +5792,11 @@ CREATE INDEX ix_example_demo_created_id ON public.example_demo USING btree (crea
 
 CREATE INDEX ix_example_demo_created_time ON public.example_demo USING btree (created_time);
 
-
 --
 -- Name: ix_example_demo_deleted_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_example_demo_deleted_id ON public.example_demo USING btree (deleted_id);
-
 
 --
 -- Name: ix_example_demo_deleted_time; Type: INDEX; Schema: public; Owner: root
@@ -8027,13 +5804,11 @@ CREATE INDEX ix_example_demo_deleted_id ON public.example_demo USING btree (dele
 
 CREATE INDEX ix_example_demo_deleted_time ON public.example_demo USING btree (deleted_time);
 
-
 --
 -- Name: ix_example_demo_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_example_demo_id ON public.example_demo USING btree (id);
-
 
 --
 -- Name: ix_example_demo_is_deleted; Type: INDEX; Schema: public; Owner: root
@@ -8041,13 +5816,11 @@ CREATE INDEX ix_example_demo_id ON public.example_demo USING btree (id);
 
 CREATE INDEX ix_example_demo_is_deleted ON public.example_demo USING btree (is_deleted);
 
-
 --
 -- Name: ix_example_demo_status; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_example_demo_status ON public.example_demo USING btree (status);
-
 
 --
 -- Name: ix_example_demo_tenant_id; Type: INDEX; Schema: public; Owner: root
@@ -8055,13 +5828,11 @@ CREATE INDEX ix_example_demo_status ON public.example_demo USING btree (status);
 
 CREATE INDEX ix_example_demo_tenant_id ON public.example_demo USING btree (tenant_id);
 
-
 --
 -- Name: ix_example_demo_updated_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_example_demo_updated_id ON public.example_demo USING btree (updated_id);
-
 
 --
 -- Name: ix_example_demo_updated_time; Type: INDEX; Schema: public; Owner: root
@@ -8069,174 +5840,11 @@ CREATE INDEX ix_example_demo_updated_id ON public.example_demo USING btree (upda
 
 CREATE INDEX ix_example_demo_updated_time ON public.example_demo USING btree (updated_time);
 
-
 --
 -- Name: ix_example_demo_uuid; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE UNIQUE INDEX ix_example_demo_uuid ON public.example_demo USING btree (uuid);
-
-
---
--- Name: ix_gen_table_column_created_id; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_column_created_id ON public.gen_table_column USING btree (created_id);
-
-
---
--- Name: ix_gen_table_column_created_time; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_column_created_time ON public.gen_table_column USING btree (created_time);
-
-
---
--- Name: ix_gen_table_column_deleted_id; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_column_deleted_id ON public.gen_table_column USING btree (deleted_id);
-
-
---
--- Name: ix_gen_table_column_deleted_time; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_column_deleted_time ON public.gen_table_column USING btree (deleted_time);
-
-
---
--- Name: ix_gen_table_column_id; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_column_id ON public.gen_table_column USING btree (id);
-
-
---
--- Name: ix_gen_table_column_is_deleted; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_column_is_deleted ON public.gen_table_column USING btree (is_deleted);
-
-
---
--- Name: ix_gen_table_column_status; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_column_status ON public.gen_table_column USING btree (status);
-
-
---
--- Name: ix_gen_table_column_table_id; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_column_table_id ON public.gen_table_column USING btree (table_id);
-
-
---
--- Name: ix_gen_table_column_tenant_id; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_column_tenant_id ON public.gen_table_column USING btree (tenant_id);
-
-
---
--- Name: ix_gen_table_column_updated_id; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_column_updated_id ON public.gen_table_column USING btree (updated_id);
-
-
---
--- Name: ix_gen_table_column_updated_time; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_column_updated_time ON public.gen_table_column USING btree (updated_time);
-
-
---
--- Name: ix_gen_table_column_uuid; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE UNIQUE INDEX ix_gen_table_column_uuid ON public.gen_table_column USING btree (uuid);
-
-
---
--- Name: ix_gen_table_created_id; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_created_id ON public.gen_table USING btree (created_id);
-
-
---
--- Name: ix_gen_table_created_time; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_created_time ON public.gen_table USING btree (created_time);
-
-
---
--- Name: ix_gen_table_deleted_id; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_deleted_id ON public.gen_table USING btree (deleted_id);
-
-
---
--- Name: ix_gen_table_deleted_time; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_deleted_time ON public.gen_table USING btree (deleted_time);
-
-
---
--- Name: ix_gen_table_id; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_id ON public.gen_table USING btree (id);
-
-
---
--- Name: ix_gen_table_is_deleted; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_is_deleted ON public.gen_table USING btree (is_deleted);
-
-
---
--- Name: ix_gen_table_status; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_status ON public.gen_table USING btree (status);
-
-
---
--- Name: ix_gen_table_tenant_id; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_tenant_id ON public.gen_table USING btree (tenant_id);
-
-
---
--- Name: ix_gen_table_updated_id; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_updated_id ON public.gen_table USING btree (updated_id);
-
-
---
--- Name: ix_gen_table_updated_time; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE INDEX ix_gen_table_updated_time ON public.gen_table USING btree (updated_time);
-
-
---
--- Name: ix_gen_table_uuid; Type: INDEX; Schema: public; Owner: root
---
-
-CREATE UNIQUE INDEX ix_gen_table_uuid ON public.gen_table USING btree (uuid);
-
 
 --
 -- Name: ix_platform_email_config_created_time; Type: INDEX; Schema: public; Owner: root
@@ -8244,13 +5852,11 @@ CREATE UNIQUE INDEX ix_gen_table_uuid ON public.gen_table USING btree (uuid);
 
 CREATE INDEX ix_platform_email_config_created_time ON public.platform_email_config USING btree (created_time);
 
-
 --
 -- Name: ix_platform_email_config_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_email_config_deleted_time ON public.platform_email_config USING btree (deleted_time);
-
 
 --
 -- Name: ix_platform_email_config_id; Type: INDEX; Schema: public; Owner: root
@@ -8258,13 +5864,11 @@ CREATE INDEX ix_platform_email_config_deleted_time ON public.platform_email_conf
 
 CREATE INDEX ix_platform_email_config_id ON public.platform_email_config USING btree (id);
 
-
 --
 -- Name: ix_platform_email_config_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_email_config_is_deleted ON public.platform_email_config USING btree (is_deleted);
-
 
 --
 -- Name: ix_platform_email_config_status; Type: INDEX; Schema: public; Owner: root
@@ -8272,13 +5876,11 @@ CREATE INDEX ix_platform_email_config_is_deleted ON public.platform_email_config
 
 CREATE INDEX ix_platform_email_config_status ON public.platform_email_config USING btree (status);
 
-
 --
 -- Name: ix_platform_email_config_updated_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_email_config_updated_time ON public.platform_email_config USING btree (updated_time);
-
 
 --
 -- Name: ix_platform_email_config_uuid; Type: INDEX; Schema: public; Owner: root
@@ -8286,13 +5888,11 @@ CREATE INDEX ix_platform_email_config_updated_time ON public.platform_email_conf
 
 CREATE UNIQUE INDEX ix_platform_email_config_uuid ON public.platform_email_config USING btree (uuid);
 
-
 --
 -- Name: ix_platform_email_log_config_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_email_log_config_id ON public.platform_email_log USING btree (config_id);
-
 
 --
 -- Name: ix_platform_email_log_created_id; Type: INDEX; Schema: public; Owner: root
@@ -8300,13 +5900,11 @@ CREATE INDEX ix_platform_email_log_config_id ON public.platform_email_log USING 
 
 CREATE INDEX ix_platform_email_log_created_id ON public.platform_email_log USING btree (created_id);
 
-
 --
 -- Name: ix_platform_email_log_created_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_email_log_created_time ON public.platform_email_log USING btree (created_time);
-
 
 --
 -- Name: ix_platform_email_log_deleted_id; Type: INDEX; Schema: public; Owner: root
@@ -8314,13 +5912,11 @@ CREATE INDEX ix_platform_email_log_created_time ON public.platform_email_log USI
 
 CREATE INDEX ix_platform_email_log_deleted_id ON public.platform_email_log USING btree (deleted_id);
 
-
 --
 -- Name: ix_platform_email_log_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_email_log_deleted_time ON public.platform_email_log USING btree (deleted_time);
-
 
 --
 -- Name: ix_platform_email_log_id; Type: INDEX; Schema: public; Owner: root
@@ -8328,13 +5924,11 @@ CREATE INDEX ix_platform_email_log_deleted_time ON public.platform_email_log USI
 
 CREATE INDEX ix_platform_email_log_id ON public.platform_email_log USING btree (id);
 
-
 --
 -- Name: ix_platform_email_log_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_email_log_is_deleted ON public.platform_email_log USING btree (is_deleted);
-
 
 --
 -- Name: ix_platform_email_log_status; Type: INDEX; Schema: public; Owner: root
@@ -8342,13 +5936,11 @@ CREATE INDEX ix_platform_email_log_is_deleted ON public.platform_email_log USING
 
 CREATE INDEX ix_platform_email_log_status ON public.platform_email_log USING btree (status);
 
-
 --
 -- Name: ix_platform_email_log_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_email_log_tenant_id ON public.platform_email_log USING btree (tenant_id);
-
 
 --
 -- Name: ix_platform_email_log_to_email; Type: INDEX; Schema: public; Owner: root
@@ -8356,13 +5948,11 @@ CREATE INDEX ix_platform_email_log_tenant_id ON public.platform_email_log USING 
 
 CREATE INDEX ix_platform_email_log_to_email ON public.platform_email_log USING btree (to_email);
 
-
 --
 -- Name: ix_platform_email_log_updated_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_email_log_updated_id ON public.platform_email_log USING btree (updated_id);
-
 
 --
 -- Name: ix_platform_email_log_updated_time; Type: INDEX; Schema: public; Owner: root
@@ -8370,13 +5960,11 @@ CREATE INDEX ix_platform_email_log_updated_id ON public.platform_email_log USING
 
 CREATE INDEX ix_platform_email_log_updated_time ON public.platform_email_log USING btree (updated_time);
 
-
 --
 -- Name: ix_platform_email_log_uuid; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE UNIQUE INDEX ix_platform_email_log_uuid ON public.platform_email_log USING btree (uuid);
-
 
 --
 -- Name: ix_platform_email_template_created_time; Type: INDEX; Schema: public; Owner: root
@@ -8384,13 +5972,11 @@ CREATE UNIQUE INDEX ix_platform_email_log_uuid ON public.platform_email_log USIN
 
 CREATE INDEX ix_platform_email_template_created_time ON public.platform_email_template USING btree (created_time);
 
-
 --
 -- Name: ix_platform_email_template_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_email_template_deleted_time ON public.platform_email_template USING btree (deleted_time);
-
 
 --
 -- Name: ix_platform_email_template_id; Type: INDEX; Schema: public; Owner: root
@@ -8398,13 +5984,11 @@ CREATE INDEX ix_platform_email_template_deleted_time ON public.platform_email_te
 
 CREATE INDEX ix_platform_email_template_id ON public.platform_email_template USING btree (id);
 
-
 --
 -- Name: ix_platform_email_template_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_email_template_is_deleted ON public.platform_email_template USING btree (is_deleted);
-
 
 --
 -- Name: ix_platform_email_template_status; Type: INDEX; Schema: public; Owner: root
@@ -8412,13 +5996,11 @@ CREATE INDEX ix_platform_email_template_is_deleted ON public.platform_email_temp
 
 CREATE INDEX ix_platform_email_template_status ON public.platform_email_template USING btree (status);
 
-
 --
 -- Name: ix_platform_email_template_updated_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_email_template_updated_time ON public.platform_email_template USING btree (updated_time);
-
 
 --
 -- Name: ix_platform_email_template_uuid; Type: INDEX; Schema: public; Owner: root
@@ -8426,13 +6008,11 @@ CREATE INDEX ix_platform_email_template_updated_time ON public.platform_email_te
 
 CREATE UNIQUE INDEX ix_platform_email_template_uuid ON public.platform_email_template USING btree (uuid);
 
-
 --
 -- Name: ix_platform_invoice_created_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_invoice_created_id ON public.platform_invoice USING btree (created_id);
-
 
 --
 -- Name: ix_platform_invoice_created_time; Type: INDEX; Schema: public; Owner: root
@@ -8440,13 +6020,11 @@ CREATE INDEX ix_platform_invoice_created_id ON public.platform_invoice USING btr
 
 CREATE INDEX ix_platform_invoice_created_time ON public.platform_invoice USING btree (created_time);
 
-
 --
 -- Name: ix_platform_invoice_deleted_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_invoice_deleted_id ON public.platform_invoice USING btree (deleted_id);
-
 
 --
 -- Name: ix_platform_invoice_deleted_time; Type: INDEX; Schema: public; Owner: root
@@ -8454,13 +6032,11 @@ CREATE INDEX ix_platform_invoice_deleted_id ON public.platform_invoice USING btr
 
 CREATE INDEX ix_platform_invoice_deleted_time ON public.platform_invoice USING btree (deleted_time);
 
-
 --
 -- Name: ix_platform_invoice_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_invoice_id ON public.platform_invoice USING btree (id);
-
 
 --
 -- Name: ix_platform_invoice_is_deleted; Type: INDEX; Schema: public; Owner: root
@@ -8468,13 +6044,11 @@ CREATE INDEX ix_platform_invoice_id ON public.platform_invoice USING btree (id);
 
 CREATE INDEX ix_platform_invoice_is_deleted ON public.platform_invoice USING btree (is_deleted);
 
-
 --
 -- Name: ix_platform_invoice_status; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_invoice_status ON public.platform_invoice USING btree (status);
-
 
 --
 -- Name: ix_platform_invoice_tenant_id; Type: INDEX; Schema: public; Owner: root
@@ -8482,13 +6056,11 @@ CREATE INDEX ix_platform_invoice_status ON public.platform_invoice USING btree (
 
 CREATE INDEX ix_platform_invoice_tenant_id ON public.platform_invoice USING btree (tenant_id);
 
-
 --
 -- Name: ix_platform_invoice_updated_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_invoice_updated_id ON public.platform_invoice USING btree (updated_id);
-
 
 --
 -- Name: ix_platform_invoice_updated_time; Type: INDEX; Schema: public; Owner: root
@@ -8496,13 +6068,11 @@ CREATE INDEX ix_platform_invoice_updated_id ON public.platform_invoice USING btr
 
 CREATE INDEX ix_platform_invoice_updated_time ON public.platform_invoice USING btree (updated_time);
 
-
 --
 -- Name: ix_platform_invoice_uuid; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE UNIQUE INDEX ix_platform_invoice_uuid ON public.platform_invoice USING btree (uuid);
-
 
 --
 -- Name: ix_platform_menu_created_time; Type: INDEX; Schema: public; Owner: root
@@ -8510,13 +6080,11 @@ CREATE UNIQUE INDEX ix_platform_invoice_uuid ON public.platform_invoice USING bt
 
 CREATE INDEX ix_platform_menu_created_time ON public.platform_menu USING btree (created_time);
 
-
 --
 -- Name: ix_platform_menu_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_menu_deleted_time ON public.platform_menu USING btree (deleted_time);
-
 
 --
 -- Name: ix_platform_menu_id; Type: INDEX; Schema: public; Owner: root
@@ -8524,13 +6092,11 @@ CREATE INDEX ix_platform_menu_deleted_time ON public.platform_menu USING btree (
 
 CREATE INDEX ix_platform_menu_id ON public.platform_menu USING btree (id);
 
-
 --
 -- Name: ix_platform_menu_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_menu_is_deleted ON public.platform_menu USING btree (is_deleted);
-
 
 --
 -- Name: ix_platform_menu_parent_id; Type: INDEX; Schema: public; Owner: root
@@ -8538,13 +6104,11 @@ CREATE INDEX ix_platform_menu_is_deleted ON public.platform_menu USING btree (is
 
 CREATE INDEX ix_platform_menu_parent_id ON public.platform_menu USING btree (parent_id);
 
-
 --
 -- Name: ix_platform_menu_status; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_menu_status ON public.platform_menu USING btree (status);
-
 
 --
 -- Name: ix_platform_menu_updated_time; Type: INDEX; Schema: public; Owner: root
@@ -8552,13 +6116,11 @@ CREATE INDEX ix_platform_menu_status ON public.platform_menu USING btree (status
 
 CREATE INDEX ix_platform_menu_updated_time ON public.platform_menu USING btree (updated_time);
 
-
 --
 -- Name: ix_platform_menu_uuid; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE UNIQUE INDEX ix_platform_menu_uuid ON public.platform_menu USING btree (uuid);
-
 
 --
 -- Name: ix_platform_order_created_time; Type: INDEX; Schema: public; Owner: root
@@ -8566,13 +6128,11 @@ CREATE UNIQUE INDEX ix_platform_menu_uuid ON public.platform_menu USING btree (u
 
 CREATE INDEX ix_platform_order_created_time ON public.platform_order USING btree (created_time);
 
-
 --
 -- Name: ix_platform_order_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_order_deleted_time ON public.platform_order USING btree (deleted_time);
-
 
 --
 -- Name: ix_platform_order_id; Type: INDEX; Schema: public; Owner: root
@@ -8580,13 +6140,11 @@ CREATE INDEX ix_platform_order_deleted_time ON public.platform_order USING btree
 
 CREATE INDEX ix_platform_order_id ON public.platform_order USING btree (id);
 
-
 --
 -- Name: ix_platform_order_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_order_is_deleted ON public.platform_order USING btree (is_deleted);
-
 
 --
 -- Name: ix_platform_order_status; Type: INDEX; Schema: public; Owner: root
@@ -8594,13 +6152,11 @@ CREATE INDEX ix_platform_order_is_deleted ON public.platform_order USING btree (
 
 CREATE INDEX ix_platform_order_status ON public.platform_order USING btree (status);
 
-
 --
 -- Name: ix_platform_order_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_order_tenant_id ON public.platform_order USING btree (tenant_id);
-
 
 --
 -- Name: ix_platform_order_updated_time; Type: INDEX; Schema: public; Owner: root
@@ -8608,13 +6164,11 @@ CREATE INDEX ix_platform_order_tenant_id ON public.platform_order USING btree (t
 
 CREATE INDEX ix_platform_order_updated_time ON public.platform_order USING btree (updated_time);
 
-
 --
 -- Name: ix_platform_order_uuid; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE UNIQUE INDEX ix_platform_order_uuid ON public.platform_order USING btree (uuid);
-
 
 --
 -- Name: ix_platform_package_created_time; Type: INDEX; Schema: public; Owner: root
@@ -8622,13 +6176,11 @@ CREATE UNIQUE INDEX ix_platform_order_uuid ON public.platform_order USING btree 
 
 CREATE INDEX ix_platform_package_created_time ON public.platform_package USING btree (created_time);
 
-
 --
 -- Name: ix_platform_package_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_package_deleted_time ON public.platform_package USING btree (deleted_time);
-
 
 --
 -- Name: ix_platform_package_id; Type: INDEX; Schema: public; Owner: root
@@ -8636,13 +6188,11 @@ CREATE INDEX ix_platform_package_deleted_time ON public.platform_package USING b
 
 CREATE INDEX ix_platform_package_id ON public.platform_package USING btree (id);
 
-
 --
 -- Name: ix_platform_package_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_package_is_deleted ON public.platform_package USING btree (is_deleted);
-
 
 --
 -- Name: ix_platform_package_menu_menu_id; Type: INDEX; Schema: public; Owner: root
@@ -8650,13 +6200,11 @@ CREATE INDEX ix_platform_package_is_deleted ON public.platform_package USING btr
 
 CREATE INDEX ix_platform_package_menu_menu_id ON public.platform_package_menu USING btree (menu_id);
 
-
 --
 -- Name: ix_platform_package_menu_package_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_package_menu_package_id ON public.platform_package_menu USING btree (package_id);
-
 
 --
 -- Name: ix_platform_package_plugin_package_id; Type: INDEX; Schema: public; Owner: root
@@ -8664,13 +6212,11 @@ CREATE INDEX ix_platform_package_menu_package_id ON public.platform_package_menu
 
 CREATE INDEX ix_platform_package_plugin_package_id ON public.platform_package_plugin USING btree (package_id);
 
-
 --
 -- Name: ix_platform_package_plugin_plugin_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_package_plugin_plugin_id ON public.platform_package_plugin USING btree (plugin_id);
-
 
 --
 -- Name: ix_platform_package_status; Type: INDEX; Schema: public; Owner: root
@@ -8678,13 +6224,11 @@ CREATE INDEX ix_platform_package_plugin_plugin_id ON public.platform_package_plu
 
 CREATE INDEX ix_platform_package_status ON public.platform_package USING btree (status);
 
-
 --
 -- Name: ix_platform_package_updated_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_package_updated_time ON public.platform_package USING btree (updated_time);
-
 
 --
 -- Name: ix_platform_package_uuid; Type: INDEX; Schema: public; Owner: root
@@ -8692,13 +6236,11 @@ CREATE INDEX ix_platform_package_updated_time ON public.platform_package USING b
 
 CREATE UNIQUE INDEX ix_platform_package_uuid ON public.platform_package USING btree (uuid);
 
-
 --
 -- Name: ix_platform_payment_record_created_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_payment_record_created_time ON public.platform_payment_record USING btree (created_time);
-
 
 --
 -- Name: ix_platform_payment_record_deleted_time; Type: INDEX; Schema: public; Owner: root
@@ -8706,13 +6248,11 @@ CREATE INDEX ix_platform_payment_record_created_time ON public.platform_payment_
 
 CREATE INDEX ix_platform_payment_record_deleted_time ON public.platform_payment_record USING btree (deleted_time);
 
-
 --
 -- Name: ix_platform_payment_record_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_payment_record_id ON public.platform_payment_record USING btree (id);
-
 
 --
 -- Name: ix_platform_payment_record_is_deleted; Type: INDEX; Schema: public; Owner: root
@@ -8720,13 +6260,11 @@ CREATE INDEX ix_platform_payment_record_id ON public.platform_payment_record USI
 
 CREATE INDEX ix_platform_payment_record_is_deleted ON public.platform_payment_record USING btree (is_deleted);
 
-
 --
 -- Name: ix_platform_payment_record_status; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_payment_record_status ON public.platform_payment_record USING btree (status);
-
 
 --
 -- Name: ix_platform_payment_record_tenant_id; Type: INDEX; Schema: public; Owner: root
@@ -8734,13 +6272,11 @@ CREATE INDEX ix_platform_payment_record_status ON public.platform_payment_record
 
 CREATE INDEX ix_platform_payment_record_tenant_id ON public.platform_payment_record USING btree (tenant_id);
 
-
 --
 -- Name: ix_platform_payment_record_updated_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_payment_record_updated_time ON public.platform_payment_record USING btree (updated_time);
-
 
 --
 -- Name: ix_platform_payment_record_uuid; Type: INDEX; Schema: public; Owner: root
@@ -8748,13 +6284,11 @@ CREATE INDEX ix_platform_payment_record_updated_time ON public.platform_payment_
 
 CREATE UNIQUE INDEX ix_platform_payment_record_uuid ON public.platform_payment_record USING btree (uuid);
 
-
 --
 -- Name: ix_platform_plugin_created_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_plugin_created_time ON public.platform_plugin USING btree (created_time);
-
 
 --
 -- Name: ix_platform_plugin_deleted_time; Type: INDEX; Schema: public; Owner: root
@@ -8762,13 +6296,11 @@ CREATE INDEX ix_platform_plugin_created_time ON public.platform_plugin USING btr
 
 CREATE INDEX ix_platform_plugin_deleted_time ON public.platform_plugin USING btree (deleted_time);
 
-
 --
 -- Name: ix_platform_plugin_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_plugin_id ON public.platform_plugin USING btree (id);
-
 
 --
 -- Name: ix_platform_plugin_is_deleted; Type: INDEX; Schema: public; Owner: root
@@ -8776,13 +6308,11 @@ CREATE INDEX ix_platform_plugin_id ON public.platform_plugin USING btree (id);
 
 CREATE INDEX ix_platform_plugin_is_deleted ON public.platform_plugin USING btree (is_deleted);
 
-
 --
 -- Name: ix_platform_plugin_status; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_plugin_status ON public.platform_plugin USING btree (status);
-
 
 --
 -- Name: ix_platform_plugin_updated_time; Type: INDEX; Schema: public; Owner: root
@@ -8790,13 +6320,11 @@ CREATE INDEX ix_platform_plugin_status ON public.platform_plugin USING btree (st
 
 CREATE INDEX ix_platform_plugin_updated_time ON public.platform_plugin USING btree (updated_time);
 
-
 --
 -- Name: ix_platform_plugin_uuid; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE UNIQUE INDEX ix_platform_plugin_uuid ON public.platform_plugin USING btree (uuid);
-
 
 --
 -- Name: ix_platform_refund_created_time; Type: INDEX; Schema: public; Owner: root
@@ -8804,13 +6332,11 @@ CREATE UNIQUE INDEX ix_platform_plugin_uuid ON public.platform_plugin USING btre
 
 CREATE INDEX ix_platform_refund_created_time ON public.platform_refund USING btree (created_time);
 
-
 --
 -- Name: ix_platform_refund_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_refund_deleted_time ON public.platform_refund USING btree (deleted_time);
-
 
 --
 -- Name: ix_platform_refund_id; Type: INDEX; Schema: public; Owner: root
@@ -8818,13 +6344,11 @@ CREATE INDEX ix_platform_refund_deleted_time ON public.platform_refund USING btr
 
 CREATE INDEX ix_platform_refund_id ON public.platform_refund USING btree (id);
 
-
 --
 -- Name: ix_platform_refund_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_refund_is_deleted ON public.platform_refund USING btree (is_deleted);
-
 
 --
 -- Name: ix_platform_refund_status; Type: INDEX; Schema: public; Owner: root
@@ -8832,13 +6356,11 @@ CREATE INDEX ix_platform_refund_is_deleted ON public.platform_refund USING btree
 
 CREATE INDEX ix_platform_refund_status ON public.platform_refund USING btree (status);
 
-
 --
 -- Name: ix_platform_refund_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_refund_tenant_id ON public.platform_refund USING btree (tenant_id);
-
 
 --
 -- Name: ix_platform_refund_updated_time; Type: INDEX; Schema: public; Owner: root
@@ -8846,13 +6368,11 @@ CREATE INDEX ix_platform_refund_tenant_id ON public.platform_refund USING btree 
 
 CREATE INDEX ix_platform_refund_updated_time ON public.platform_refund USING btree (updated_time);
 
-
 --
 -- Name: ix_platform_refund_uuid; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE UNIQUE INDEX ix_platform_refund_uuid ON public.platform_refund USING btree (uuid);
-
 
 --
 -- Name: ix_platform_tenant_created_time; Type: INDEX; Schema: public; Owner: root
@@ -8860,13 +6380,11 @@ CREATE UNIQUE INDEX ix_platform_refund_uuid ON public.platform_refund USING btre
 
 CREATE INDEX ix_platform_tenant_created_time ON public.platform_tenant USING btree (created_time);
 
-
 --
 -- Name: ix_platform_tenant_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_tenant_deleted_time ON public.platform_tenant USING btree (deleted_time);
-
 
 --
 -- Name: ix_platform_tenant_id; Type: INDEX; Schema: public; Owner: root
@@ -8874,13 +6392,11 @@ CREATE INDEX ix_platform_tenant_deleted_time ON public.platform_tenant USING btr
 
 CREATE INDEX ix_platform_tenant_id ON public.platform_tenant USING btree (id);
 
-
 --
 -- Name: ix_platform_tenant_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_tenant_is_deleted ON public.platform_tenant USING btree (is_deleted);
-
 
 --
 -- Name: ix_platform_tenant_package_id; Type: INDEX; Schema: public; Owner: root
@@ -8888,13 +6404,11 @@ CREATE INDEX ix_platform_tenant_is_deleted ON public.platform_tenant USING btree
 
 CREATE INDEX ix_platform_tenant_package_id ON public.platform_tenant USING btree (package_id);
 
-
 --
 -- Name: ix_platform_tenant_plugin_plugin_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_tenant_plugin_plugin_id ON public.platform_tenant_plugin USING btree (plugin_id);
-
 
 --
 -- Name: ix_platform_tenant_plugin_tenant_id; Type: INDEX; Schema: public; Owner: root
@@ -8902,13 +6416,11 @@ CREATE INDEX ix_platform_tenant_plugin_plugin_id ON public.platform_tenant_plugi
 
 CREATE INDEX ix_platform_tenant_plugin_tenant_id ON public.platform_tenant_plugin USING btree (tenant_id);
 
-
 --
 -- Name: ix_platform_tenant_status; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_tenant_status ON public.platform_tenant USING btree (status);
-
 
 --
 -- Name: ix_platform_tenant_updated_time; Type: INDEX; Schema: public; Owner: root
@@ -8916,13 +6428,11 @@ CREATE INDEX ix_platform_tenant_status ON public.platform_tenant USING btree (st
 
 CREATE INDEX ix_platform_tenant_updated_time ON public.platform_tenant USING btree (updated_time);
 
-
 --
 -- Name: ix_platform_tenant_uuid; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE UNIQUE INDEX ix_platform_tenant_uuid ON public.platform_tenant USING btree (uuid);
-
 
 --
 -- Name: ix_platform_user_tenant_tenant_id; Type: INDEX; Schema: public; Owner: root
@@ -8930,13 +6440,11 @@ CREATE UNIQUE INDEX ix_platform_tenant_uuid ON public.platform_tenant USING btre
 
 CREATE INDEX ix_platform_user_tenant_tenant_id ON public.platform_user_tenant USING btree (tenant_id);
 
-
 --
 -- Name: ix_platform_user_tenant_user_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_platform_user_tenant_user_id ON public.platform_user_tenant USING btree (user_id);
-
 
 --
 -- Name: ix_sys_dept_created_id; Type: INDEX; Schema: public; Owner: root
@@ -8944,13 +6452,11 @@ CREATE INDEX ix_platform_user_tenant_user_id ON public.platform_user_tenant USIN
 
 CREATE INDEX ix_sys_dept_created_id ON public.sys_dept USING btree (created_id);
 
-
 --
 -- Name: ix_sys_dept_created_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_dept_created_time ON public.sys_dept USING btree (created_time);
-
 
 --
 -- Name: ix_sys_dept_deleted_id; Type: INDEX; Schema: public; Owner: root
@@ -8958,13 +6464,11 @@ CREATE INDEX ix_sys_dept_created_time ON public.sys_dept USING btree (created_ti
 
 CREATE INDEX ix_sys_dept_deleted_id ON public.sys_dept USING btree (deleted_id);
 
-
 --
 -- Name: ix_sys_dept_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_dept_deleted_time ON public.sys_dept USING btree (deleted_time);
-
 
 --
 -- Name: ix_sys_dept_id; Type: INDEX; Schema: public; Owner: root
@@ -8972,13 +6476,11 @@ CREATE INDEX ix_sys_dept_deleted_time ON public.sys_dept USING btree (deleted_ti
 
 CREATE INDEX ix_sys_dept_id ON public.sys_dept USING btree (id);
 
-
 --
 -- Name: ix_sys_dept_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_dept_is_deleted ON public.sys_dept USING btree (is_deleted);
-
 
 --
 -- Name: ix_sys_dept_parent_id; Type: INDEX; Schema: public; Owner: root
@@ -8986,13 +6488,11 @@ CREATE INDEX ix_sys_dept_is_deleted ON public.sys_dept USING btree (is_deleted);
 
 CREATE INDEX ix_sys_dept_parent_id ON public.sys_dept USING btree (parent_id);
 
-
 --
 -- Name: ix_sys_dept_status; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_dept_status ON public.sys_dept USING btree (status);
-
 
 --
 -- Name: ix_sys_dept_tenant_id; Type: INDEX; Schema: public; Owner: root
@@ -9000,13 +6500,11 @@ CREATE INDEX ix_sys_dept_status ON public.sys_dept USING btree (status);
 
 CREATE INDEX ix_sys_dept_tenant_id ON public.sys_dept USING btree (tenant_id);
 
-
 --
 -- Name: ix_sys_dept_updated_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_dept_updated_id ON public.sys_dept USING btree (updated_id);
-
 
 --
 -- Name: ix_sys_dept_updated_time; Type: INDEX; Schema: public; Owner: root
@@ -9014,13 +6512,11 @@ CREATE INDEX ix_sys_dept_updated_id ON public.sys_dept USING btree (updated_id);
 
 CREATE INDEX ix_sys_dept_updated_time ON public.sys_dept USING btree (updated_time);
 
-
 --
 -- Name: ix_sys_dept_uuid; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE UNIQUE INDEX ix_sys_dept_uuid ON public.sys_dept USING btree (uuid);
-
 
 --
 -- Name: ix_sys_dict_data_created_time; Type: INDEX; Schema: public; Owner: root
@@ -9028,13 +6524,11 @@ CREATE UNIQUE INDEX ix_sys_dept_uuid ON public.sys_dept USING btree (uuid);
 
 CREATE INDEX ix_sys_dict_data_created_time ON public.sys_dict_data USING btree (created_time);
 
-
 --
 -- Name: ix_sys_dict_data_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_dict_data_deleted_time ON public.sys_dict_data USING btree (deleted_time);
-
 
 --
 -- Name: ix_sys_dict_data_id; Type: INDEX; Schema: public; Owner: root
@@ -9042,13 +6536,11 @@ CREATE INDEX ix_sys_dict_data_deleted_time ON public.sys_dict_data USING btree (
 
 CREATE INDEX ix_sys_dict_data_id ON public.sys_dict_data USING btree (id);
 
-
 --
 -- Name: ix_sys_dict_data_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_dict_data_is_deleted ON public.sys_dict_data USING btree (is_deleted);
-
 
 --
 -- Name: ix_sys_dict_data_status; Type: INDEX; Schema: public; Owner: root
@@ -9056,13 +6548,11 @@ CREATE INDEX ix_sys_dict_data_is_deleted ON public.sys_dict_data USING btree (is
 
 CREATE INDEX ix_sys_dict_data_status ON public.sys_dict_data USING btree (status);
 
-
 --
 -- Name: ix_sys_dict_data_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_dict_data_tenant_id ON public.sys_dict_data USING btree (tenant_id);
-
 
 --
 -- Name: ix_sys_dict_data_updated_time; Type: INDEX; Schema: public; Owner: root
@@ -9070,13 +6560,11 @@ CREATE INDEX ix_sys_dict_data_tenant_id ON public.sys_dict_data USING btree (ten
 
 CREATE INDEX ix_sys_dict_data_updated_time ON public.sys_dict_data USING btree (updated_time);
 
-
 --
 -- Name: ix_sys_dict_data_uuid; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE UNIQUE INDEX ix_sys_dict_data_uuid ON public.sys_dict_data USING btree (uuid);
-
 
 --
 -- Name: ix_sys_dict_type_created_time; Type: INDEX; Schema: public; Owner: root
@@ -9084,13 +6572,11 @@ CREATE UNIQUE INDEX ix_sys_dict_data_uuid ON public.sys_dict_data USING btree (u
 
 CREATE INDEX ix_sys_dict_type_created_time ON public.sys_dict_type USING btree (created_time);
 
-
 --
 -- Name: ix_sys_dict_type_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_dict_type_deleted_time ON public.sys_dict_type USING btree (deleted_time);
-
 
 --
 -- Name: ix_sys_dict_type_id; Type: INDEX; Schema: public; Owner: root
@@ -9098,13 +6584,11 @@ CREATE INDEX ix_sys_dict_type_deleted_time ON public.sys_dict_type USING btree (
 
 CREATE INDEX ix_sys_dict_type_id ON public.sys_dict_type USING btree (id);
 
-
 --
 -- Name: ix_sys_dict_type_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_dict_type_is_deleted ON public.sys_dict_type USING btree (is_deleted);
-
 
 --
 -- Name: ix_sys_dict_type_status; Type: INDEX; Schema: public; Owner: root
@@ -9112,13 +6596,11 @@ CREATE INDEX ix_sys_dict_type_is_deleted ON public.sys_dict_type USING btree (is
 
 CREATE INDEX ix_sys_dict_type_status ON public.sys_dict_type USING btree (status);
 
-
 --
 -- Name: ix_sys_dict_type_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_dict_type_tenant_id ON public.sys_dict_type USING btree (tenant_id);
-
 
 --
 -- Name: ix_sys_dict_type_updated_time; Type: INDEX; Schema: public; Owner: root
@@ -9126,13 +6608,11 @@ CREATE INDEX ix_sys_dict_type_tenant_id ON public.sys_dict_type USING btree (ten
 
 CREATE INDEX ix_sys_dict_type_updated_time ON public.sys_dict_type USING btree (updated_time);
 
-
 --
 -- Name: ix_sys_dict_type_uuid; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE UNIQUE INDEX ix_sys_dict_type_uuid ON public.sys_dict_type USING btree (uuid);
-
 
 --
 -- Name: ix_sys_login_log_created_id; Type: INDEX; Schema: public; Owner: root
@@ -9140,13 +6620,11 @@ CREATE UNIQUE INDEX ix_sys_dict_type_uuid ON public.sys_dict_type USING btree (u
 
 CREATE INDEX ix_sys_login_log_created_id ON public.sys_login_log USING btree (created_id);
 
-
 --
 -- Name: ix_sys_login_log_created_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_login_log_created_time ON public.sys_login_log USING btree (created_time);
-
 
 --
 -- Name: ix_sys_login_log_deleted_id; Type: INDEX; Schema: public; Owner: root
@@ -9154,13 +6632,11 @@ CREATE INDEX ix_sys_login_log_created_time ON public.sys_login_log USING btree (
 
 CREATE INDEX ix_sys_login_log_deleted_id ON public.sys_login_log USING btree (deleted_id);
 
-
 --
 -- Name: ix_sys_login_log_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_login_log_deleted_time ON public.sys_login_log USING btree (deleted_time);
-
 
 --
 -- Name: ix_sys_login_log_id; Type: INDEX; Schema: public; Owner: root
@@ -9168,13 +6644,11 @@ CREATE INDEX ix_sys_login_log_deleted_time ON public.sys_login_log USING btree (
 
 CREATE INDEX ix_sys_login_log_id ON public.sys_login_log USING btree (id);
 
-
 --
 -- Name: ix_sys_login_log_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_login_log_is_deleted ON public.sys_login_log USING btree (is_deleted);
-
 
 --
 -- Name: ix_sys_login_log_status; Type: INDEX; Schema: public; Owner: root
@@ -9182,13 +6656,11 @@ CREATE INDEX ix_sys_login_log_is_deleted ON public.sys_login_log USING btree (is
 
 CREATE INDEX ix_sys_login_log_status ON public.sys_login_log USING btree (status);
 
-
 --
 -- Name: ix_sys_login_log_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_login_log_tenant_id ON public.sys_login_log USING btree (tenant_id);
-
 
 --
 -- Name: ix_sys_login_log_updated_id; Type: INDEX; Schema: public; Owner: root
@@ -9196,13 +6668,11 @@ CREATE INDEX ix_sys_login_log_tenant_id ON public.sys_login_log USING btree (ten
 
 CREATE INDEX ix_sys_login_log_updated_id ON public.sys_login_log USING btree (updated_id);
 
-
 --
 -- Name: ix_sys_login_log_updated_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_login_log_updated_time ON public.sys_login_log USING btree (updated_time);
-
 
 --
 -- Name: ix_sys_login_log_uuid; Type: INDEX; Schema: public; Owner: root
@@ -9210,13 +6680,11 @@ CREATE INDEX ix_sys_login_log_updated_time ON public.sys_login_log USING btree (
 
 CREATE UNIQUE INDEX ix_sys_login_log_uuid ON public.sys_login_log USING btree (uuid);
 
-
 --
 -- Name: ix_sys_notice_created_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_notice_created_id ON public.sys_notice USING btree (created_id);
-
 
 --
 -- Name: ix_sys_notice_created_time; Type: INDEX; Schema: public; Owner: root
@@ -9224,13 +6692,11 @@ CREATE INDEX ix_sys_notice_created_id ON public.sys_notice USING btree (created_
 
 CREATE INDEX ix_sys_notice_created_time ON public.sys_notice USING btree (created_time);
 
-
 --
 -- Name: ix_sys_notice_deleted_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_notice_deleted_id ON public.sys_notice USING btree (deleted_id);
-
 
 --
 -- Name: ix_sys_notice_deleted_time; Type: INDEX; Schema: public; Owner: root
@@ -9238,13 +6704,11 @@ CREATE INDEX ix_sys_notice_deleted_id ON public.sys_notice USING btree (deleted_
 
 CREATE INDEX ix_sys_notice_deleted_time ON public.sys_notice USING btree (deleted_time);
 
-
 --
 -- Name: ix_sys_notice_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_notice_id ON public.sys_notice USING btree (id);
-
 
 --
 -- Name: ix_sys_notice_is_deleted; Type: INDEX; Schema: public; Owner: root
@@ -9252,13 +6716,11 @@ CREATE INDEX ix_sys_notice_id ON public.sys_notice USING btree (id);
 
 CREATE INDEX ix_sys_notice_is_deleted ON public.sys_notice USING btree (is_deleted);
 
-
 --
 -- Name: ix_sys_notice_status; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_notice_status ON public.sys_notice USING btree (status);
-
 
 --
 -- Name: ix_sys_notice_tenant_id; Type: INDEX; Schema: public; Owner: root
@@ -9266,13 +6728,11 @@ CREATE INDEX ix_sys_notice_status ON public.sys_notice USING btree (status);
 
 CREATE INDEX ix_sys_notice_tenant_id ON public.sys_notice USING btree (tenant_id);
 
-
 --
 -- Name: ix_sys_notice_updated_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_notice_updated_id ON public.sys_notice USING btree (updated_id);
-
 
 --
 -- Name: ix_sys_notice_updated_time; Type: INDEX; Schema: public; Owner: root
@@ -9280,13 +6740,11 @@ CREATE INDEX ix_sys_notice_updated_id ON public.sys_notice USING btree (updated_
 
 CREATE INDEX ix_sys_notice_updated_time ON public.sys_notice USING btree (updated_time);
 
-
 --
 -- Name: ix_sys_notice_uuid; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE UNIQUE INDEX ix_sys_notice_uuid ON public.sys_notice USING btree (uuid);
-
 
 --
 -- Name: ix_sys_operation_log_created_id; Type: INDEX; Schema: public; Owner: root
@@ -9294,13 +6752,11 @@ CREATE UNIQUE INDEX ix_sys_notice_uuid ON public.sys_notice USING btree (uuid);
 
 CREATE INDEX ix_sys_operation_log_created_id ON public.sys_operation_log USING btree (created_id);
 
-
 --
 -- Name: ix_sys_operation_log_created_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_operation_log_created_time ON public.sys_operation_log USING btree (created_time);
-
 
 --
 -- Name: ix_sys_operation_log_deleted_id; Type: INDEX; Schema: public; Owner: root
@@ -9308,13 +6764,11 @@ CREATE INDEX ix_sys_operation_log_created_time ON public.sys_operation_log USING
 
 CREATE INDEX ix_sys_operation_log_deleted_id ON public.sys_operation_log USING btree (deleted_id);
 
-
 --
 -- Name: ix_sys_operation_log_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_operation_log_deleted_time ON public.sys_operation_log USING btree (deleted_time);
-
 
 --
 -- Name: ix_sys_operation_log_id; Type: INDEX; Schema: public; Owner: root
@@ -9322,13 +6776,11 @@ CREATE INDEX ix_sys_operation_log_deleted_time ON public.sys_operation_log USING
 
 CREATE INDEX ix_sys_operation_log_id ON public.sys_operation_log USING btree (id);
 
-
 --
 -- Name: ix_sys_operation_log_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_operation_log_is_deleted ON public.sys_operation_log USING btree (is_deleted);
-
 
 --
 -- Name: ix_sys_operation_log_status; Type: INDEX; Schema: public; Owner: root
@@ -9336,13 +6788,11 @@ CREATE INDEX ix_sys_operation_log_is_deleted ON public.sys_operation_log USING b
 
 CREATE INDEX ix_sys_operation_log_status ON public.sys_operation_log USING btree (status);
 
-
 --
 -- Name: ix_sys_operation_log_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_operation_log_tenant_id ON public.sys_operation_log USING btree (tenant_id);
-
 
 --
 -- Name: ix_sys_operation_log_updated_id; Type: INDEX; Schema: public; Owner: root
@@ -9350,13 +6800,11 @@ CREATE INDEX ix_sys_operation_log_tenant_id ON public.sys_operation_log USING bt
 
 CREATE INDEX ix_sys_operation_log_updated_id ON public.sys_operation_log USING btree (updated_id);
 
-
 --
 -- Name: ix_sys_operation_log_updated_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_operation_log_updated_time ON public.sys_operation_log USING btree (updated_time);
-
 
 --
 -- Name: ix_sys_operation_log_uuid; Type: INDEX; Schema: public; Owner: root
@@ -9364,13 +6812,11 @@ CREATE INDEX ix_sys_operation_log_updated_time ON public.sys_operation_log USING
 
 CREATE UNIQUE INDEX ix_sys_operation_log_uuid ON public.sys_operation_log USING btree (uuid);
 
-
 --
 -- Name: ix_sys_param_config_type; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_param_config_type ON public.sys_param USING btree (config_type);
-
 
 --
 -- Name: ix_sys_param_created_id; Type: INDEX; Schema: public; Owner: root
@@ -9378,13 +6824,11 @@ CREATE INDEX ix_sys_param_config_type ON public.sys_param USING btree (config_ty
 
 CREATE INDEX ix_sys_param_created_id ON public.sys_param USING btree (created_id);
 
-
 --
 -- Name: ix_sys_param_created_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_param_created_time ON public.sys_param USING btree (created_time);
-
 
 --
 -- Name: ix_sys_param_deleted_id; Type: INDEX; Schema: public; Owner: root
@@ -9392,13 +6836,11 @@ CREATE INDEX ix_sys_param_created_time ON public.sys_param USING btree (created_
 
 CREATE INDEX ix_sys_param_deleted_id ON public.sys_param USING btree (deleted_id);
 
-
 --
 -- Name: ix_sys_param_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_param_deleted_time ON public.sys_param USING btree (deleted_time);
-
 
 --
 -- Name: ix_sys_param_id; Type: INDEX; Schema: public; Owner: root
@@ -9406,13 +6848,11 @@ CREATE INDEX ix_sys_param_deleted_time ON public.sys_param USING btree (deleted_
 
 CREATE INDEX ix_sys_param_id ON public.sys_param USING btree (id);
 
-
 --
 -- Name: ix_sys_param_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_param_is_deleted ON public.sys_param USING btree (is_deleted);
-
 
 --
 -- Name: ix_sys_param_status; Type: INDEX; Schema: public; Owner: root
@@ -9420,13 +6860,11 @@ CREATE INDEX ix_sys_param_is_deleted ON public.sys_param USING btree (is_deleted
 
 CREATE INDEX ix_sys_param_status ON public.sys_param USING btree (status);
 
-
 --
 -- Name: ix_sys_param_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_param_tenant_id ON public.sys_param USING btree (tenant_id);
-
 
 --
 -- Name: ix_sys_param_updated_id; Type: INDEX; Schema: public; Owner: root
@@ -9434,13 +6872,11 @@ CREATE INDEX ix_sys_param_tenant_id ON public.sys_param USING btree (tenant_id);
 
 CREATE INDEX ix_sys_param_updated_id ON public.sys_param USING btree (updated_id);
 
-
 --
 -- Name: ix_sys_param_updated_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_param_updated_time ON public.sys_param USING btree (updated_time);
-
 
 --
 -- Name: ix_sys_param_uuid; Type: INDEX; Schema: public; Owner: root
@@ -9448,13 +6884,11 @@ CREATE INDEX ix_sys_param_updated_time ON public.sys_param USING btree (updated_
 
 CREATE UNIQUE INDEX ix_sys_param_uuid ON public.sys_param USING btree (uuid);
 
-
 --
 -- Name: ix_sys_position_created_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_position_created_id ON public.sys_position USING btree (created_id);
-
 
 --
 -- Name: ix_sys_position_created_time; Type: INDEX; Schema: public; Owner: root
@@ -9462,13 +6896,11 @@ CREATE INDEX ix_sys_position_created_id ON public.sys_position USING btree (crea
 
 CREATE INDEX ix_sys_position_created_time ON public.sys_position USING btree (created_time);
 
-
 --
 -- Name: ix_sys_position_deleted_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_position_deleted_id ON public.sys_position USING btree (deleted_id);
-
 
 --
 -- Name: ix_sys_position_deleted_time; Type: INDEX; Schema: public; Owner: root
@@ -9476,13 +6908,11 @@ CREATE INDEX ix_sys_position_deleted_id ON public.sys_position USING btree (dele
 
 CREATE INDEX ix_sys_position_deleted_time ON public.sys_position USING btree (deleted_time);
 
-
 --
 -- Name: ix_sys_position_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_position_id ON public.sys_position USING btree (id);
-
 
 --
 -- Name: ix_sys_position_is_deleted; Type: INDEX; Schema: public; Owner: root
@@ -9490,13 +6920,11 @@ CREATE INDEX ix_sys_position_id ON public.sys_position USING btree (id);
 
 CREATE INDEX ix_sys_position_is_deleted ON public.sys_position USING btree (is_deleted);
 
-
 --
 -- Name: ix_sys_position_status; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_position_status ON public.sys_position USING btree (status);
-
 
 --
 -- Name: ix_sys_position_tenant_id; Type: INDEX; Schema: public; Owner: root
@@ -9504,13 +6932,11 @@ CREATE INDEX ix_sys_position_status ON public.sys_position USING btree (status);
 
 CREATE INDEX ix_sys_position_tenant_id ON public.sys_position USING btree (tenant_id);
 
-
 --
 -- Name: ix_sys_position_updated_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_position_updated_id ON public.sys_position USING btree (updated_id);
-
 
 --
 -- Name: ix_sys_position_updated_time; Type: INDEX; Schema: public; Owner: root
@@ -9518,13 +6944,11 @@ CREATE INDEX ix_sys_position_updated_id ON public.sys_position USING btree (upda
 
 CREATE INDEX ix_sys_position_updated_time ON public.sys_position USING btree (updated_time);
 
-
 --
 -- Name: ix_sys_position_uuid; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE UNIQUE INDEX ix_sys_position_uuid ON public.sys_position USING btree (uuid);
-
 
 --
 -- Name: ix_sys_role_created_id; Type: INDEX; Schema: public; Owner: root
@@ -9532,13 +6956,11 @@ CREATE UNIQUE INDEX ix_sys_position_uuid ON public.sys_position USING btree (uui
 
 CREATE INDEX ix_sys_role_created_id ON public.sys_role USING btree (created_id);
 
-
 --
 -- Name: ix_sys_role_created_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_role_created_time ON public.sys_role USING btree (created_time);
-
 
 --
 -- Name: ix_sys_role_deleted_id; Type: INDEX; Schema: public; Owner: root
@@ -9546,13 +6968,11 @@ CREATE INDEX ix_sys_role_created_time ON public.sys_role USING btree (created_ti
 
 CREATE INDEX ix_sys_role_deleted_id ON public.sys_role USING btree (deleted_id);
 
-
 --
 -- Name: ix_sys_role_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_role_deleted_time ON public.sys_role USING btree (deleted_time);
-
 
 --
 -- Name: ix_sys_role_id; Type: INDEX; Schema: public; Owner: root
@@ -9560,13 +6980,11 @@ CREATE INDEX ix_sys_role_deleted_time ON public.sys_role USING btree (deleted_ti
 
 CREATE INDEX ix_sys_role_id ON public.sys_role USING btree (id);
 
-
 --
 -- Name: ix_sys_role_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_role_is_deleted ON public.sys_role USING btree (is_deleted);
-
 
 --
 -- Name: ix_sys_role_status; Type: INDEX; Schema: public; Owner: root
@@ -9574,13 +6992,11 @@ CREATE INDEX ix_sys_role_is_deleted ON public.sys_role USING btree (is_deleted);
 
 CREATE INDEX ix_sys_role_status ON public.sys_role USING btree (status);
 
-
 --
 -- Name: ix_sys_role_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_role_tenant_id ON public.sys_role USING btree (tenant_id);
-
 
 --
 -- Name: ix_sys_role_updated_id; Type: INDEX; Schema: public; Owner: root
@@ -9588,13 +7004,11 @@ CREATE INDEX ix_sys_role_tenant_id ON public.sys_role USING btree (tenant_id);
 
 CREATE INDEX ix_sys_role_updated_id ON public.sys_role USING btree (updated_id);
 
-
 --
 -- Name: ix_sys_role_updated_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_role_updated_time ON public.sys_role USING btree (updated_time);
-
 
 --
 -- Name: ix_sys_role_uuid; Type: INDEX; Schema: public; Owner: root
@@ -9602,13 +7016,11 @@ CREATE INDEX ix_sys_role_updated_time ON public.sys_role USING btree (updated_ti
 
 CREATE UNIQUE INDEX ix_sys_role_uuid ON public.sys_role USING btree (uuid);
 
-
 --
 -- Name: ix_sys_ticket_assigned_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_ticket_assigned_id ON public.sys_ticket USING btree (assigned_id);
-
 
 --
 -- Name: ix_sys_ticket_created_id; Type: INDEX; Schema: public; Owner: root
@@ -9616,13 +7028,11 @@ CREATE INDEX ix_sys_ticket_assigned_id ON public.sys_ticket USING btree (assigne
 
 CREATE INDEX ix_sys_ticket_created_id ON public.sys_ticket USING btree (created_id);
 
-
 --
 -- Name: ix_sys_ticket_created_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_ticket_created_time ON public.sys_ticket USING btree (created_time);
-
 
 --
 -- Name: ix_sys_ticket_deleted_id; Type: INDEX; Schema: public; Owner: root
@@ -9630,13 +7040,11 @@ CREATE INDEX ix_sys_ticket_created_time ON public.sys_ticket USING btree (create
 
 CREATE INDEX ix_sys_ticket_deleted_id ON public.sys_ticket USING btree (deleted_id);
 
-
 --
 -- Name: ix_sys_ticket_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_ticket_deleted_time ON public.sys_ticket USING btree (deleted_time);
-
 
 --
 -- Name: ix_sys_ticket_id; Type: INDEX; Schema: public; Owner: root
@@ -9644,13 +7052,11 @@ CREATE INDEX ix_sys_ticket_deleted_time ON public.sys_ticket USING btree (delete
 
 CREATE INDEX ix_sys_ticket_id ON public.sys_ticket USING btree (id);
 
-
 --
 -- Name: ix_sys_ticket_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_ticket_is_deleted ON public.sys_ticket USING btree (is_deleted);
-
 
 --
 -- Name: ix_sys_ticket_status; Type: INDEX; Schema: public; Owner: root
@@ -9658,13 +7064,11 @@ CREATE INDEX ix_sys_ticket_is_deleted ON public.sys_ticket USING btree (is_delet
 
 CREATE INDEX ix_sys_ticket_status ON public.sys_ticket USING btree (status);
 
-
 --
 -- Name: ix_sys_ticket_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_ticket_tenant_id ON public.sys_ticket USING btree (tenant_id);
-
 
 --
 -- Name: ix_sys_ticket_updated_id; Type: INDEX; Schema: public; Owner: root
@@ -9672,13 +7076,11 @@ CREATE INDEX ix_sys_ticket_tenant_id ON public.sys_ticket USING btree (tenant_id
 
 CREATE INDEX ix_sys_ticket_updated_id ON public.sys_ticket USING btree (updated_id);
 
-
 --
 -- Name: ix_sys_ticket_updated_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_ticket_updated_time ON public.sys_ticket USING btree (updated_time);
-
 
 --
 -- Name: ix_sys_ticket_uuid; Type: INDEX; Schema: public; Owner: root
@@ -9686,13 +7088,11 @@ CREATE INDEX ix_sys_ticket_updated_time ON public.sys_ticket USING btree (update
 
 CREATE UNIQUE INDEX ix_sys_ticket_uuid ON public.sys_ticket USING btree (uuid);
 
-
 --
 -- Name: ix_sys_user_created_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_user_created_id ON public.sys_user USING btree (created_id);
-
 
 --
 -- Name: ix_sys_user_created_time; Type: INDEX; Schema: public; Owner: root
@@ -9700,13 +7100,11 @@ CREATE INDEX ix_sys_user_created_id ON public.sys_user USING btree (created_id);
 
 CREATE INDEX ix_sys_user_created_time ON public.sys_user USING btree (created_time);
 
-
 --
 -- Name: ix_sys_user_deleted_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_user_deleted_id ON public.sys_user USING btree (deleted_id);
-
 
 --
 -- Name: ix_sys_user_deleted_time; Type: INDEX; Schema: public; Owner: root
@@ -9714,13 +7112,11 @@ CREATE INDEX ix_sys_user_deleted_id ON public.sys_user USING btree (deleted_id);
 
 CREATE INDEX ix_sys_user_deleted_time ON public.sys_user USING btree (deleted_time);
 
-
 --
 -- Name: ix_sys_user_dept_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_user_dept_id ON public.sys_user USING btree (dept_id);
-
 
 --
 -- Name: ix_sys_user_id; Type: INDEX; Schema: public; Owner: root
@@ -9728,13 +7124,11 @@ CREATE INDEX ix_sys_user_dept_id ON public.sys_user USING btree (dept_id);
 
 CREATE INDEX ix_sys_user_id ON public.sys_user USING btree (id);
 
-
 --
 -- Name: ix_sys_user_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_user_is_deleted ON public.sys_user USING btree (is_deleted);
-
 
 --
 -- Name: ix_sys_user_status; Type: INDEX; Schema: public; Owner: root
@@ -9742,13 +7136,11 @@ CREATE INDEX ix_sys_user_is_deleted ON public.sys_user USING btree (is_deleted);
 
 CREATE INDEX ix_sys_user_status ON public.sys_user USING btree (status);
 
-
 --
 -- Name: ix_sys_user_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_user_tenant_id ON public.sys_user USING btree (tenant_id);
-
 
 --
 -- Name: ix_sys_user_updated_id; Type: INDEX; Schema: public; Owner: root
@@ -9756,13 +7148,11 @@ CREATE INDEX ix_sys_user_tenant_id ON public.sys_user USING btree (tenant_id);
 
 CREATE INDEX ix_sys_user_updated_id ON public.sys_user USING btree (updated_id);
 
-
 --
 -- Name: ix_sys_user_updated_time; Type: INDEX; Schema: public; Owner: root
 --
 
 CREATE INDEX ix_sys_user_updated_time ON public.sys_user USING btree (updated_time);
-
 
 --
 -- Name: ix_sys_user_uuid; Type: INDEX; Schema: public; Owner: root
@@ -9770,300 +7160,131 @@ CREATE INDEX ix_sys_user_updated_time ON public.sys_user USING btree (updated_ti
 
 CREATE UNIQUE INDEX ix_sys_user_uuid ON public.sys_user USING btree (uuid);
 
-
 --
--- Name: ix_task_job_created_time; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_job_created_time ON public.task_job USING btree (created_time);
 
-
 --
--- Name: ix_task_job_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_job_deleted_time ON public.task_job USING btree (deleted_time);
-
 
 --
--- Name: ix_task_job_id; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE INDEX ix_task_job_id ON public.task_job USING btree (id);
-
-
 --
--- Name: ix_task_job_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE INDEX ix_task_job_is_deleted ON public.task_job USING btree (is_deleted);
-
-
 --
--- Name: ix_task_job_job_id; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_job_job_id ON public.task_job USING btree (job_id);
 
-
 --
--- Name: ix_task_job_status; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_job_status ON public.task_job USING btree (status);
 
-
 --
--- Name: ix_task_job_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_job_tenant_id ON public.task_job USING btree (tenant_id);
-
 
 --
--- Name: ix_task_job_updated_time; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE INDEX ix_task_job_updated_time ON public.task_job USING btree (updated_time);
-
-
 --
--- Name: ix_task_job_uuid; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE UNIQUE INDEX ix_task_job_uuid ON public.task_job USING btree (uuid);
 
-
 --
--- Name: ix_task_node_created_id; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_node_created_id ON public.task_node USING btree (created_id);
-
 
 --
--- Name: ix_task_node_created_time; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE INDEX ix_task_node_created_time ON public.task_node USING btree (created_time);
-
-
 --
--- Name: ix_task_node_deleted_id; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE INDEX ix_task_node_deleted_id ON public.task_node USING btree (deleted_id);
-
-
 --
--- Name: ix_task_node_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_node_deleted_time ON public.task_node USING btree (deleted_time);
 
-
 --
--- Name: ix_task_node_id; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_node_id ON public.task_node USING btree (id);
 
-
 --
--- Name: ix_task_node_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_node_is_deleted ON public.task_node USING btree (is_deleted);
-
 
 --
--- Name: ix_task_node_status; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE INDEX ix_task_node_status ON public.task_node USING btree (status);
-
-
 --
--- Name: ix_task_node_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE INDEX ix_task_node_tenant_id ON public.task_node USING btree (tenant_id);
-
-
 --
--- Name: ix_task_node_updated_id; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_node_updated_id ON public.task_node USING btree (updated_id);
 
-
 --
--- Name: ix_task_node_updated_time; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_node_updated_time ON public.task_node USING btree (updated_time);
-
 
 --
--- Name: ix_task_node_uuid; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE UNIQUE INDEX ix_task_node_uuid ON public.task_node USING btree (uuid);
-
-
 --
--- Name: ix_task_workflow_created_id; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_workflow_created_id ON public.task_workflow USING btree (created_id);
 
-
 --
--- Name: ix_task_workflow_created_time; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_workflow_created_time ON public.task_workflow USING btree (created_time);
 
-
 --
--- Name: ix_task_workflow_deleted_id; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_workflow_deleted_id ON public.task_workflow USING btree (deleted_id);
-
 
 --
--- Name: ix_task_workflow_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE INDEX ix_task_workflow_deleted_time ON public.task_workflow USING btree (deleted_time);
-
-
 --
--- Name: ix_task_workflow_id; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE INDEX ix_task_workflow_id ON public.task_workflow USING btree (id);
-
-
 --
--- Name: ix_task_workflow_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_workflow_is_deleted ON public.task_workflow USING btree (is_deleted);
 
-
 --
--- Name: ix_task_workflow_node_type_created_id; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_workflow_node_type_created_id ON public.task_workflow_node_type USING btree (created_id);
 
-
 --
--- Name: ix_task_workflow_node_type_created_time; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_workflow_node_type_created_time ON public.task_workflow_node_type USING btree (created_time);
-
 
 --
--- Name: ix_task_workflow_node_type_deleted_id; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE INDEX ix_task_workflow_node_type_deleted_id ON public.task_workflow_node_type USING btree (deleted_id);
-
-
 --
--- Name: ix_task_workflow_node_type_deleted_time; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_workflow_node_type_deleted_time ON public.task_workflow_node_type USING btree (deleted_time);
 
-
 --
--- Name: ix_task_workflow_node_type_id; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_workflow_node_type_id ON public.task_workflow_node_type USING btree (id);
-
 
 --
--- Name: ix_task_workflow_node_type_is_deleted; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE INDEX ix_task_workflow_node_type_is_deleted ON public.task_workflow_node_type USING btree (is_deleted);
-
-
 --
--- Name: ix_task_workflow_node_type_status; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE INDEX ix_task_workflow_node_type_status ON public.task_workflow_node_type USING btree (status);
-
-
 --
--- Name: ix_task_workflow_node_type_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_workflow_node_type_tenant_id ON public.task_workflow_node_type USING btree (tenant_id);
 
-
 --
--- Name: ix_task_workflow_node_type_updated_id; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_workflow_node_type_updated_id ON public.task_workflow_node_type USING btree (updated_id);
-
 
 --
--- Name: ix_task_workflow_node_type_updated_time; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE INDEX ix_task_workflow_node_type_updated_time ON public.task_workflow_node_type USING btree (updated_time);
-
-
 --
--- Name: ix_task_workflow_node_type_uuid; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE UNIQUE INDEX ix_task_workflow_node_type_uuid ON public.task_workflow_node_type USING btree (uuid);
 
-
 --
--- Name: ix_task_workflow_status; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_workflow_status ON public.task_workflow USING btree (status);
 
-
 --
--- Name: ix_task_workflow_tenant_id; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_workflow_tenant_id ON public.task_workflow USING btree (tenant_id);
-
 
 --
--- Name: ix_task_workflow_updated_id; Type: INDEX; Schema: public; Owner: root
 --
 
-CREATE INDEX ix_task_workflow_updated_id ON public.task_workflow USING btree (updated_id);
-
-
 --
--- Name: ix_task_workflow_updated_time; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE INDEX ix_task_workflow_updated_time ON public.task_workflow USING btree (updated_time);
 
-
 --
--- Name: ix_task_workflow_uuid; Type: INDEX; Schema: public; Owner: root
 --
-
-CREATE UNIQUE INDEX ix_task_workflow_uuid ON public.task_workflow USING btree (uuid);
-
 
 --
 -- Name: example_demo example_demo_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10072,14 +7293,12 @@ CREATE UNIQUE INDEX ix_task_workflow_uuid ON public.task_workflow USING btree (u
 ALTER TABLE ONLY public.example_demo
     ADD CONSTRAINT example_demo_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: example_demo example_demo_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.example_demo
     ADD CONSTRAINT example_demo_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: example_demo example_demo_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10088,86 +7307,12 @@ ALTER TABLE ONLY public.example_demo
 ALTER TABLE ONLY public.example_demo
     ADD CONSTRAINT example_demo_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-
 --
 -- Name: example_demo example_demo_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.example_demo
     ADD CONSTRAINT example_demo_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: gen_table_column gen_table_column_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.gen_table_column
-    ADD CONSTRAINT gen_table_column_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: gen_table_column gen_table_column_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.gen_table_column
-    ADD CONSTRAINT gen_table_column_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: gen_table_column gen_table_column_table_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.gen_table_column
-    ADD CONSTRAINT gen_table_column_table_id_fkey FOREIGN KEY (table_id) REFERENCES public.gen_table(id) ON DELETE CASCADE;
-
-
---
--- Name: gen_table_column gen_table_column_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.gen_table_column
-    ADD CONSTRAINT gen_table_column_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
--- Name: gen_table_column gen_table_column_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.gen_table_column
-    ADD CONSTRAINT gen_table_column_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: gen_table gen_table_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.gen_table
-    ADD CONSTRAINT gen_table_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: gen_table gen_table_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.gen_table
-    ADD CONSTRAINT gen_table_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
---
--- Name: gen_table gen_table_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.gen_table
-    ADD CONSTRAINT gen_table_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
---
--- Name: gen_table gen_table_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
---
-
-ALTER TABLE ONLY public.gen_table
-    ADD CONSTRAINT gen_table_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: platform_email_log platform_email_log_config_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10176,14 +7321,12 @@ ALTER TABLE ONLY public.gen_table
 ALTER TABLE ONLY public.platform_email_log
     ADD CONSTRAINT platform_email_log_config_id_fkey FOREIGN KEY (config_id) REFERENCES public.platform_email_config(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: platform_email_log platform_email_log_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_email_log
     ADD CONSTRAINT platform_email_log_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: platform_email_log platform_email_log_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10192,14 +7335,12 @@ ALTER TABLE ONLY public.platform_email_log
 ALTER TABLE ONLY public.platform_email_log
     ADD CONSTRAINT platform_email_log_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: platform_email_log platform_email_log_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_email_log
     ADD CONSTRAINT platform_email_log_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: platform_email_log platform_email_log_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10208,14 +7349,12 @@ ALTER TABLE ONLY public.platform_email_log
 ALTER TABLE ONLY public.platform_email_log
     ADD CONSTRAINT platform_email_log_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: platform_invoice platform_invoice_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_invoice
     ADD CONSTRAINT platform_invoice_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: platform_invoice platform_invoice_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10224,14 +7363,12 @@ ALTER TABLE ONLY public.platform_invoice
 ALTER TABLE ONLY public.platform_invoice
     ADD CONSTRAINT platform_invoice_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: platform_invoice platform_invoice_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_invoice
     ADD CONSTRAINT platform_invoice_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.platform_order(id);
-
 
 --
 -- Name: platform_invoice platform_invoice_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10240,14 +7377,12 @@ ALTER TABLE ONLY public.platform_invoice
 ALTER TABLE ONLY public.platform_invoice
     ADD CONSTRAINT platform_invoice_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-
 --
 -- Name: platform_invoice platform_invoice_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_invoice
     ADD CONSTRAINT platform_invoice_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: platform_menu platform_menu_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10256,14 +7391,12 @@ ALTER TABLE ONLY public.platform_invoice
 ALTER TABLE ONLY public.platform_menu
     ADD CONSTRAINT platform_menu_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.platform_menu(id) ON DELETE SET NULL;
 
-
 --
 -- Name: platform_order platform_order_package_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_order
     ADD CONSTRAINT platform_order_package_id_fkey FOREIGN KEY (package_id) REFERENCES public.platform_package(id);
-
 
 --
 -- Name: platform_order platform_order_plugin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10272,14 +7405,12 @@ ALTER TABLE ONLY public.platform_order
 ALTER TABLE ONLY public.platform_order
     ADD CONSTRAINT platform_order_plugin_id_fkey FOREIGN KEY (plugin_id) REFERENCES public.platform_plugin(id);
 
-
 --
 -- Name: platform_order platform_order_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_order
     ADD CONSTRAINT platform_order_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
 
 --
 -- Name: platform_package_menu platform_package_menu_menu_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10288,14 +7419,12 @@ ALTER TABLE ONLY public.platform_order
 ALTER TABLE ONLY public.platform_package_menu
     ADD CONSTRAINT platform_package_menu_menu_id_fkey FOREIGN KEY (menu_id) REFERENCES public.platform_menu(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-
 --
 -- Name: platform_package_menu platform_package_menu_package_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_package_menu
     ADD CONSTRAINT platform_package_menu_package_id_fkey FOREIGN KEY (package_id) REFERENCES public.platform_package(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 
 --
 -- Name: platform_package_plugin platform_package_plugin_package_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10304,14 +7433,12 @@ ALTER TABLE ONLY public.platform_package_menu
 ALTER TABLE ONLY public.platform_package_plugin
     ADD CONSTRAINT platform_package_plugin_package_id_fkey FOREIGN KEY (package_id) REFERENCES public.platform_package(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-
 --
 -- Name: platform_package_plugin platform_package_plugin_plugin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_package_plugin
     ADD CONSTRAINT platform_package_plugin_plugin_id_fkey FOREIGN KEY (plugin_id) REFERENCES public.platform_plugin(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 
 --
 -- Name: platform_payment_record platform_payment_record_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10320,14 +7447,12 @@ ALTER TABLE ONLY public.platform_package_plugin
 ALTER TABLE ONLY public.platform_payment_record
     ADD CONSTRAINT platform_payment_record_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.platform_order(id);
 
-
 --
 -- Name: platform_payment_record platform_payment_record_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_payment_record
     ADD CONSTRAINT platform_payment_record_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
 
 --
 -- Name: platform_refund platform_refund_order_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10336,14 +7461,12 @@ ALTER TABLE ONLY public.platform_payment_record
 ALTER TABLE ONLY public.platform_refund
     ADD CONSTRAINT platform_refund_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.platform_order(id);
 
-
 --
 -- Name: platform_refund platform_refund_reviewer_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_refund
     ADD CONSTRAINT platform_refund_reviewer_id_fkey FOREIGN KEY (reviewer_id) REFERENCES public.sys_user(id);
-
 
 --
 -- Name: platform_refund platform_refund_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10352,14 +7475,12 @@ ALTER TABLE ONLY public.platform_refund
 ALTER TABLE ONLY public.platform_refund
     ADD CONSTRAINT platform_refund_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-
 --
 -- Name: platform_tenant platform_tenant_package_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_tenant
     ADD CONSTRAINT platform_tenant_package_id_fkey FOREIGN KEY (package_id) REFERENCES public.platform_package(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: platform_tenant_plugin platform_tenant_plugin_plugin_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10368,14 +7489,12 @@ ALTER TABLE ONLY public.platform_tenant
 ALTER TABLE ONLY public.platform_tenant_plugin
     ADD CONSTRAINT platform_tenant_plugin_plugin_id_fkey FOREIGN KEY (plugin_id) REFERENCES public.platform_plugin(id) ON DELETE CASCADE;
 
-
 --
 -- Name: platform_tenant_plugin platform_tenant_plugin_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_tenant_plugin
     ADD CONSTRAINT platform_tenant_plugin_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON DELETE CASCADE;
-
 
 --
 -- Name: platform_user_tenant platform_user_tenant_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10384,14 +7503,12 @@ ALTER TABLE ONLY public.platform_tenant_plugin
 ALTER TABLE ONLY public.platform_user_tenant
     ADD CONSTRAINT platform_user_tenant_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-
 --
 -- Name: platform_user_tenant platform_user_tenant_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.platform_user_tenant
     ADD CONSTRAINT platform_user_tenant_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 
 --
 -- Name: sys_dept sys_dept_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10400,14 +7517,12 @@ ALTER TABLE ONLY public.platform_user_tenant
 ALTER TABLE ONLY public.sys_dept
     ADD CONSTRAINT sys_dept_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: sys_dept sys_dept_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_dept
     ADD CONSTRAINT sys_dept_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_dept sys_dept_parent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10416,14 +7531,12 @@ ALTER TABLE ONLY public.sys_dept
 ALTER TABLE ONLY public.sys_dept
     ADD CONSTRAINT sys_dept_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.sys_dept(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: sys_dept sys_dept_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_dept
     ADD CONSTRAINT sys_dept_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
 
 --
 -- Name: sys_dept sys_dept_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10432,14 +7545,12 @@ ALTER TABLE ONLY public.sys_dept
 ALTER TABLE ONLY public.sys_dept
     ADD CONSTRAINT sys_dept_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: sys_dict_data sys_dict_data_dict_type_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_dict_data
     ADD CONSTRAINT sys_dict_data_dict_type_id_fkey FOREIGN KEY (dict_type_id) REFERENCES public.sys_dict_type(id) ON DELETE CASCADE;
-
 
 --
 -- Name: sys_dict_data sys_dict_data_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10448,14 +7559,12 @@ ALTER TABLE ONLY public.sys_dict_data
 ALTER TABLE ONLY public.sys_dict_data
     ADD CONSTRAINT sys_dict_data_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-
 --
 -- Name: sys_dict_type sys_dict_type_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_dict_type
     ADD CONSTRAINT sys_dict_type_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
 
 --
 -- Name: sys_login_log sys_login_log_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10464,14 +7573,12 @@ ALTER TABLE ONLY public.sys_dict_type
 ALTER TABLE ONLY public.sys_login_log
     ADD CONSTRAINT sys_login_log_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: sys_login_log sys_login_log_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_login_log
     ADD CONSTRAINT sys_login_log_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_login_log sys_login_log_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10480,14 +7587,12 @@ ALTER TABLE ONLY public.sys_login_log
 ALTER TABLE ONLY public.sys_login_log
     ADD CONSTRAINT sys_login_log_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-
 --
 -- Name: sys_login_log sys_login_log_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_login_log
     ADD CONSTRAINT sys_login_log_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_notice sys_notice_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10496,14 +7601,12 @@ ALTER TABLE ONLY public.sys_login_log
 ALTER TABLE ONLY public.sys_notice
     ADD CONSTRAINT sys_notice_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: sys_notice sys_notice_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_notice
     ADD CONSTRAINT sys_notice_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_notice_read sys_notice_read_notice_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10512,14 +7615,12 @@ ALTER TABLE ONLY public.sys_notice
 ALTER TABLE ONLY public.sys_notice_read
     ADD CONSTRAINT sys_notice_read_notice_id_fkey FOREIGN KEY (notice_id) REFERENCES public.sys_notice(id) ON DELETE CASCADE;
 
-
 --
 -- Name: sys_notice_read sys_notice_read_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_notice_read
     ADD CONSTRAINT sys_notice_read_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.sys_user(id) ON DELETE CASCADE;
-
 
 --
 -- Name: sys_notice sys_notice_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10528,14 +7629,12 @@ ALTER TABLE ONLY public.sys_notice_read
 ALTER TABLE ONLY public.sys_notice
     ADD CONSTRAINT sys_notice_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-
 --
 -- Name: sys_notice sys_notice_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_notice
     ADD CONSTRAINT sys_notice_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_operation_log sys_operation_log_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10544,14 +7643,12 @@ ALTER TABLE ONLY public.sys_notice
 ALTER TABLE ONLY public.sys_operation_log
     ADD CONSTRAINT sys_operation_log_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: sys_operation_log sys_operation_log_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_operation_log
     ADD CONSTRAINT sys_operation_log_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_operation_log sys_operation_log_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10560,14 +7657,12 @@ ALTER TABLE ONLY public.sys_operation_log
 ALTER TABLE ONLY public.sys_operation_log
     ADD CONSTRAINT sys_operation_log_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-
 --
 -- Name: sys_operation_log sys_operation_log_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_operation_log
     ADD CONSTRAINT sys_operation_log_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_param sys_param_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10576,14 +7671,12 @@ ALTER TABLE ONLY public.sys_operation_log
 ALTER TABLE ONLY public.sys_param
     ADD CONSTRAINT sys_param_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: sys_param sys_param_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_param
     ADD CONSTRAINT sys_param_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_param sys_param_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10592,14 +7685,12 @@ ALTER TABLE ONLY public.sys_param
 ALTER TABLE ONLY public.sys_param
     ADD CONSTRAINT sys_param_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-
 --
 -- Name: sys_param sys_param_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_param
     ADD CONSTRAINT sys_param_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_position sys_position_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10608,14 +7699,12 @@ ALTER TABLE ONLY public.sys_param
 ALTER TABLE ONLY public.sys_position
     ADD CONSTRAINT sys_position_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: sys_position sys_position_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_position
     ADD CONSTRAINT sys_position_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_position sys_position_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10624,14 +7713,12 @@ ALTER TABLE ONLY public.sys_position
 ALTER TABLE ONLY public.sys_position
     ADD CONSTRAINT sys_position_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-
 --
 -- Name: sys_position sys_position_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_position
     ADD CONSTRAINT sys_position_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_role sys_role_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10640,14 +7727,12 @@ ALTER TABLE ONLY public.sys_position
 ALTER TABLE ONLY public.sys_role
     ADD CONSTRAINT sys_role_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: sys_role sys_role_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_role
     ADD CONSTRAINT sys_role_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_role_depts sys_role_depts_dept_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10656,14 +7741,12 @@ ALTER TABLE ONLY public.sys_role
 ALTER TABLE ONLY public.sys_role_depts
     ADD CONSTRAINT sys_role_depts_dept_id_fkey FOREIGN KEY (dept_id) REFERENCES public.sys_dept(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-
 --
 -- Name: sys_role_depts sys_role_depts_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_role_depts
     ADD CONSTRAINT sys_role_depts_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.sys_role(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 
 --
 -- Name: sys_role_menus sys_role_menus_menu_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10672,14 +7755,12 @@ ALTER TABLE ONLY public.sys_role_depts
 ALTER TABLE ONLY public.sys_role_menus
     ADD CONSTRAINT sys_role_menus_menu_id_fkey FOREIGN KEY (menu_id) REFERENCES public.platform_menu(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-
 --
 -- Name: sys_role_menus sys_role_menus_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_role_menus
     ADD CONSTRAINT sys_role_menus_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.sys_role(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 
 --
 -- Name: sys_role sys_role_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10688,14 +7769,12 @@ ALTER TABLE ONLY public.sys_role_menus
 ALTER TABLE ONLY public.sys_role
     ADD CONSTRAINT sys_role_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-
 --
 -- Name: sys_role sys_role_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_role
     ADD CONSTRAINT sys_role_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_ticket sys_ticket_assigned_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10704,14 +7783,12 @@ ALTER TABLE ONLY public.sys_role
 ALTER TABLE ONLY public.sys_ticket
     ADD CONSTRAINT sys_ticket_assigned_id_fkey FOREIGN KEY (assigned_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: sys_ticket sys_ticket_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_ticket
     ADD CONSTRAINT sys_ticket_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_ticket sys_ticket_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10720,14 +7797,12 @@ ALTER TABLE ONLY public.sys_ticket
 ALTER TABLE ONLY public.sys_ticket
     ADD CONSTRAINT sys_ticket_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: sys_ticket sys_ticket_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_ticket
     ADD CONSTRAINT sys_ticket_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
 
 --
 -- Name: sys_ticket sys_ticket_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10736,14 +7811,12 @@ ALTER TABLE ONLY public.sys_ticket
 ALTER TABLE ONLY public.sys_ticket
     ADD CONSTRAINT sys_ticket_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: sys_user sys_user_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_user
     ADD CONSTRAINT sys_user_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_user sys_user_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10752,14 +7825,12 @@ ALTER TABLE ONLY public.sys_user
 ALTER TABLE ONLY public.sys_user
     ADD CONSTRAINT sys_user_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
 -- Name: sys_user sys_user_dept_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_user
     ADD CONSTRAINT sys_user_dept_id_fkey FOREIGN KEY (dept_id) REFERENCES public.sys_dept(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- Name: sys_user_positions sys_user_positions_position_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10768,14 +7839,12 @@ ALTER TABLE ONLY public.sys_user
 ALTER TABLE ONLY public.sys_user_positions
     ADD CONSTRAINT sys_user_positions_position_id_fkey FOREIGN KEY (position_id) REFERENCES public.sys_position(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-
 --
 -- Name: sys_user_positions sys_user_positions_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_user_positions
     ADD CONSTRAINT sys_user_positions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 
 --
 -- Name: sys_user_roles sys_user_roles_role_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10784,14 +7853,12 @@ ALTER TABLE ONLY public.sys_user_positions
 ALTER TABLE ONLY public.sys_user_roles
     ADD CONSTRAINT sys_user_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.sys_role(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
-
 --
 -- Name: sys_user_roles sys_user_roles_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
 ALTER TABLE ONLY public.sys_user_roles
     ADD CONSTRAINT sys_user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
 
 --
 -- Name: sys_user sys_user_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
@@ -10800,7 +7867,6 @@ ALTER TABLE ONLY public.sys_user_roles
 ALTER TABLE ONLY public.sys_user
     ADD CONSTRAINT sys_user_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-
 --
 -- Name: sys_user sys_user_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
@@ -10808,110 +7874,44 @@ ALTER TABLE ONLY public.sys_user
 ALTER TABLE ONLY public.sys_user
     ADD CONSTRAINT sys_user_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-
 --
--- Name: task_job task_job_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_job
-    ADD CONSTRAINT task_job_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
 --
--- Name: task_node task_node_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_node
-    ADD CONSTRAINT task_node_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
 --
--- Name: task_node task_node_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_node
-    ADD CONSTRAINT task_node_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
 --
--- Name: task_node task_node_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_node
-    ADD CONSTRAINT task_node_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
 --
--- Name: task_node task_node_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_node
-    ADD CONSTRAINT task_node_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
 --
--- Name: task_workflow task_workflow_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_workflow
-    ADD CONSTRAINT task_workflow_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
 --
--- Name: task_workflow task_workflow_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_workflow
-    ADD CONSTRAINT task_workflow_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
 --
--- Name: task_workflow_node_type task_workflow_node_type_created_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_workflow_node_type
-    ADD CONSTRAINT task_workflow_node_type_created_id_fkey FOREIGN KEY (created_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
 --
--- Name: task_workflow_node_type task_workflow_node_type_deleted_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_workflow_node_type
-    ADD CONSTRAINT task_workflow_node_type_deleted_id_fkey FOREIGN KEY (deleted_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
 --
--- Name: task_workflow_node_type task_workflow_node_type_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_workflow_node_type
-    ADD CONSTRAINT task_workflow_node_type_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
 --
--- Name: task_workflow_node_type task_workflow_node_type_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_workflow_node_type
-    ADD CONSTRAINT task_workflow_node_type_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
-
 --
--- Name: task_workflow task_workflow_tenant_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
 
-ALTER TABLE ONLY public.task_workflow
-    ADD CONSTRAINT task_workflow_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES public.platform_tenant(id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-
 --
--- Name: task_workflow task_workflow_updated_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: root
 --
-
-ALTER TABLE ONLY public.task_workflow
-    ADD CONSTRAINT task_workflow_updated_id_fkey FOREIGN KEY (updated_id) REFERENCES public.sys_user(id) ON UPDATE CASCADE ON DELETE SET NULL;
-
 
 --
 -- PostgreSQL database dump complete

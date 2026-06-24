@@ -41,7 +41,6 @@ export const useSettingsStore = defineStore(
 
     // 显示
     const showMenuButton = ref(SETTING_DEFAULT_CONFIG.showMenuButton);
-    const showFastEnter = ref(SETTING_DEFAULT_CONFIG.showFastEnter);
     const showRefreshButton = ref(SETTING_DEFAULT_CONFIG.showRefreshButton);
     const showCrumbs = ref(SETTING_DEFAULT_CONFIG.showCrumbs);
     const showWorkTab = ref(SETTING_DEFAULT_CONFIG.showWorkTab);
@@ -246,10 +245,6 @@ export const useSettingsStore = defineStore(
       showMenuButton.value = !showMenuButton.value;
     };
 
-    const setFastEnter = () => {
-      showFastEnter.value = !showFastEnter.value;
-    };
-
     const setAutoClose = () => {
       autoClose.value = !autoClose.value;
     };
@@ -308,8 +303,10 @@ export const useSettingsStore = defineStore(
     };
 
     const setCustomRadius = (radius: string) => {
-      customRadius.value = radius;
-      document.documentElement.style.setProperty("--custom-radius", `${radius}rem`);
+      const value = Number(radius);
+      const normalizedRadius = Number.isFinite(value) && value > 0.5 ? "0.5" : radius;
+      customRadius.value = normalizedRadius;
+      document.documentElement.style.setProperty("--custom-radius", `${normalizedRadius}rem`);
     };
 
     const setholidayFireworksLoaded = (isLoad: boolean) => {
@@ -420,7 +417,6 @@ export const useSettingsStore = defineStore(
       menuThemeType,
       systemThemeColor,
       showMenuButton,
-      showFastEnter,
       showRefreshButton,
       showCrumbs,
       showWorkTab,
@@ -478,7 +474,6 @@ export const useSettingsStore = defineStore(
       setContainerWidth,
       setUniqueOpened,
       setButton,
-      setFastEnter,
       setAutoClose,
       setShowRefreshButton,
       setCrumbs,

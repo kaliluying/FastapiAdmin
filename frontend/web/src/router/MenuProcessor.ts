@@ -10,6 +10,7 @@ import {
   ROUTE_COMPONENT_NESTED_PARENT,
 } from "./staticRoutes";
 import { filterCustomDisabledRoutes } from "./customRouteFilter";
+import { isSuperAdministrator } from "./superAdmin";
 import { MenuTypeEnum } from "@/enums/system/menu.enum";
 
 /**
@@ -139,6 +140,8 @@ function backendMenusToAppRoutes(menus: MenuTable[]): AppRouteRecord[] {
 export class MenuProcessor {
   async getMenuList(): Promise<AppRouteRecord[]> {
     const { isFrontendMode, isMixedMenuMode } = useAppMode();
+    const userStore = useUserStore();
+    const isSuperAdmin = isSuperAdministrator(userStore.info);
 
     let menuList: AppRouteRecord[];
     if (isMixedMenuMode.value) {
@@ -149,14 +152,18 @@ export class MenuProcessor {
       menuList = await this.processBackendMenu();
     }
 
-    return this.normalizeMenuPaths(filterCustomDisabledRoutes(menuList));
+    return this.normalizeMenuPaths(
+      filterCustomDisabledRoutes(menuList, {
+        includeDisabledRoutes: isSuperAdmin,
+      })
+    );
   }
 
   private async processFrontendMenu(): Promise<AppRouteRecord[]> {
     const userStore = useUserStore();
     let menuList = [...builtinFrontendRoutes];
 
-    if (userStore.info?.is_superuser) {
+    if (isSuperAdministrator(userStore.info)) {
       return this.filterEmptyMenus(menuList);
     }
 

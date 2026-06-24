@@ -3,11 +3,7 @@ import type { AppRouteRecord } from "@/types/router";
 export const CUSTOM_DISABLED_ROUTE_PREFIXES = [
   "/dashboard/analysis",
   "/dashboard/screen",
-  "/monitor",
-  "/example",
   "/ai",
-  "/module_monitor",
-  "/module_example",
   "/module_ai",
   "/module_application/ai",
 ] as const;
@@ -16,7 +12,17 @@ const DISABLED_ROUTE_PREFIXES = new Set(
   CUSTOM_DISABLED_ROUTE_PREFIXES.map((path) => normalizeRoutePath(path))
 );
 
-export function filterCustomDisabledRoutes(routes: AppRouteRecord[]): AppRouteRecord[] {
+export interface CustomRouteFilterOptions {
+  includeDisabledRoutes?: boolean;
+}
+
+export function filterCustomDisabledRoutes(
+  routes: AppRouteRecord[],
+  options: CustomRouteFilterOptions = {}
+): AppRouteRecord[] {
+  if (options.includeDisabledRoutes) {
+    return routes;
+  }
   return filterRoutes(routes);
 }
 

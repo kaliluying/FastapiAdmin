@@ -61,7 +61,7 @@ async def websocket_chat_controller(
                         logger.info(f"收到聊天查询: {query}- 会话ID: {query.session_id}")
 
                         # 处理AI回复（使用 agno 记忆存储）
-                        chat_result = ChatService.chat_query(query=query, auth=auth)
+                        chat_result = ChatService(auth).chat_query(query=query)
                         async for chunk in chat_result:
                             if chunk:
                                 try:

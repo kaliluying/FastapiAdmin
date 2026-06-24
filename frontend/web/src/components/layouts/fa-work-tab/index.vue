@@ -733,7 +733,7 @@ watch(
 }
 
 .worktab-tags-bar {
-  background: var(--el-fill-color-blank);
+  background: color-mix(in srgb, var(--default-box-color) 96%, transparent);
 
   /* 外壳已统一提供 border-b，避免不同模式出现双线/高度不一致 */
   border: none;
@@ -824,7 +824,7 @@ watch(
 
 .worktab-tags-bar .worktab-bar-btn:hover {
   color: var(--el-color-primary);
-  background-color: color-mix(in srgb, var(--el-color-primary) 10%, var(--el-fill-color-blank));
+  background-color: var(--fa-active-color);
 }
 
 .worktab-tags-bar .worktab-bar-btn:active {
@@ -1095,5 +1095,28 @@ html:not(.dark) .worktab-tags-shell--google {
     padding-right: 0.9375rem;
     padding-left: 0.9375rem;
   }
+}
+
+.worktab-tab.worktab-tab--card {
+  background: var(--default-box-color) !important;
+  border: 1px solid var(--fa-card-border) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--fa-soft-shadow) !important;
+}
+
+.worktab-tab.worktab-tab--card:hover {
+  border-color: color-mix(in srgb, var(--theme-color) 24%, var(--fa-card-border)) !important;
+  transform: translateY(-1px);
+}
+
+.worktab-tab.worktab-tab--card.activ-tab,
+html:not(.dark) .worktab-tab.worktab-tab--card.activ-tab {
+  background: color-mix(in srgb, var(--theme-color) 9%, var(--default-box-color)) !important;
+  border-color: color-mix(in srgb, var(--theme-color) 28%, transparent) !important;
+  box-shadow: var(--fa-soft-shadow) !important;
+}
+
+.worktab-tags-shell--google .google-tab.activ-tab {
+  background-color: color-mix(in srgb, var(--theme-color) 9%, var(--default-box-color)) !important;
 }
 </style>

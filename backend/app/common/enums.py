@@ -49,11 +49,6 @@ class RedisInitKeyConfig(Enum):
     SYSTEM_CONFIG = {"key": "system_config", "remark": "系统配置"}
     TENANT_CONFIG = {"key": "tenant_config", "remark": "租户配置"}
     SYSTEM_DICT = {"key": "system_dict", "remark": "数据字典"}
-    APSCHEDULER_LOCK_KEY = {
-        "key": "scheduler_job_lock",
-        "remark": "定时任务初始化锁",
-    }
-
     @property
     def key(self) -> str:
         """
@@ -125,25 +120,6 @@ class PermissionFilterStrategy(str, Enum):
     DEPT_RELATION = "dept_relation"  # 部门关联（用于 DeptModel、RoleModel，按所属部门过滤）
     OWN = "own"  # 仅本人数据
     USER_BINDING = "user_binding"  # 用户绑定角色（用于 RoleModel，仅显示当前用户绑定的角色）
-
-
-@unique
-class OrderTypeEnum(str, Enum):
-    """订单类型"""
-
-    NEW = "new"
-    RENEW = "renew"
-    UPGRADE = "upgrade"
-    DOWNGRADE = "downgrade"
-    PLUGIN = "plugin"
-
-
-@unique
-class InvoiceTypeEnum(str, Enum):
-    """发票类型"""
-
-    VAT_NORMAL = "vat_normal"
-    VAT_SPECIAL = "vat_special"
 
 
 @unique

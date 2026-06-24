@@ -152,10 +152,13 @@ export function initializeTheme() {
     setElementThemeColor(settingStore.systemThemeColor!);
 
     // 设置圆角
-    document.documentElement.style.setProperty(
-      "--custom-radius",
-      `${settingStore.customRadius}rem`
-    );
+    const radius = Number(settingStore.customRadius);
+    const normalizedRadius =
+      Number.isFinite(radius) && radius > 0.5 ? "0.5" : settingStore.customRadius;
+    if (normalizedRadius !== settingStore.customRadius) {
+      settingStore.customRadius = normalizedRadius;
+    }
+    document.documentElement.style.setProperty("--custom-radius", `${normalizedRadius}rem`);
   };
 
   // 应用主题

@@ -63,7 +63,7 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 主题颜色 */
   themeColor: "#4080FF",
   /** 是否显示水印 */
-  showWatermark: true,
+  showWatermark: false,
   /** 水印内容 */
   watermarkContent: "WeComAgent",
   /** 侧边栏配色方案 */
@@ -91,13 +91,11 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 系统主题模式 */
   systemThemeMode: SystemThemeEnum.LIGHT,
   /** 菜单风格 */
-  menuThemeType: MenuThemeEnum.DARK,
+  menuThemeType: MenuThemeEnum.DESIGN,
   /** 系统主题颜色 */
   systemThemeColor: AppConfig.systemMainColor[0],
   /** 是否显示菜单按钮 */
   showMenuButton: true,
-  /** 是否显示快速入口 */
-  showFastEnter: true,
   /** 是否显示刷新按钮 */
   showRefreshButton: true,
   /** 是否显示面包屑 */
@@ -109,11 +107,11 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 是否显示进度条 */
   showNprogress: true,
   /** 是否显示设置引导 */
-  showSettingGuide: true,
+  showSettingGuide: false,
   /** 是否显示节日文本 */
   showFestivalText: false,
   /** 是否显示水印（新版本字段） */
-  watermarkVisible: true,
+  watermarkVisible: false,
   /** 是否自动关闭 */
   autoClose: false,
   /** 是否唯一展开 */
@@ -131,7 +129,7 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 标签页样式 */
   tabStyle: "tab-google",
   /** 自定义圆角 */
-  customRadius: "0.75",
+  customRadius: "0.5",
   /** 容器宽度 */
   containerWidth: ContainerWidthEnum.FULL,
   /** 节日日期 */

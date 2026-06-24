@@ -360,11 +360,30 @@ onUnmounted(() => {
     justify-center 
     cursor-pointer 
     rounded-md 
-    bg-g-300/55
-    dark:bg-g-300/40
-    text-g-700  
-    hover:bg-g-300 
+    bg-box
+    dark:bg-g-200/70
+    text-g-700
+    border
+    border-(--fa-card-border)
+    hover:bg-hover-color
     md:ml-0 
     md:mr-2.5;
+
+  box-shadow: var(--fa-soft-shadow);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.button:hover {
+  border-color: color-mix(in srgb, var(--theme-color) 22%, var(--fa-card-border));
+  transform: translateY(-1px);
+}
+
+.button.active {
+  border-color: color-mix(in srgb, var(--theme-color) 32%, transparent);
+  box-shadow: var(--fa-soft-shadow);
 }
 </style>

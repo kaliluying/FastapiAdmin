@@ -36,13 +36,6 @@ describe("brand and setting defaults", () => {
         },
       },
     }));
-    vi.doMock("./modules/fastEnter", () => ({
-      default: Object.freeze({
-        minWidth: 1200,
-        applications: [],
-        quickLinks: [],
-      }),
-    }));
     vi.doMock("./modules/headerBar", () => ({
       headerBarConfig: {},
       default: {},
@@ -67,8 +60,8 @@ describe("brand and setting defaults", () => {
     expect(SETTING_DEFAULT_CONFIG.sidebarColorScheme).toBe(SidebarColor.CLASSIC_BLUE);
     expect(SETTING_DEFAULT_CONFIG.menuType).toBe(MenuTypeEnum.LEFT);
     expect(SETTING_DEFAULT_CONFIG.menuThemeType).toBe(MenuThemeEnum.DARK);
-    expect(SETTING_DEFAULT_CONFIG.showWatermark).toBe(true);
-    expect(SETTING_DEFAULT_CONFIG.watermarkVisible).toBe(true);
+    expect(SETTING_DEFAULT_CONFIG.showWatermark).toBe(false);
+    expect(SETTING_DEFAULT_CONFIG.watermarkVisible).toBe(false);
     expect(SETTING_DEFAULT_CONFIG.aiEnabled).toBe(false);
   });
 });

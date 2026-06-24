@@ -60,18 +60,6 @@
     "description": "数据权限增强"
   },
   {
-    "title": "工作流审批节点无法修改",
-    "ticket_content": "<p>已发布的工作流无法修改审批节点配置，需要先取消发布才能修改，操作繁琐。</p>",
-    "summary": "已发布工作流无法直接修改节点",
-    "ticket_type": "bug",
-    "images": null,
-    "reply": null,
-    "assigned_id": null,
-    "status": 0,
-    "tenant_id": 3,
-    "description": "星辰科技反馈工作流问题"
-  },
-  {
     "title": "希望增加钉钉集成",
     "ticket_content": "<p>团队使用钉钉进行日常协作，希望能将通知和待办事项同步到钉钉工作台。</p>",
     "summary": "希望支持钉钉消息集成",

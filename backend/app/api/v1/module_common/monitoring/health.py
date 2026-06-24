@@ -159,7 +159,7 @@ async def readiness_check(request: Request):
 
     # 判断总体状态
     def is_ok(d: DependencyStatus) -> bool:
-        return d.status in ("up", "disabled")
+        return d.status == 1
 
     all_ok = all(is_ok(d) for d in dependencies.values())
 

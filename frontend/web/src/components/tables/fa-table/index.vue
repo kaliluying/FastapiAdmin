@@ -506,7 +506,7 @@ defineExpose({
   .fa-table__main {
     flex: 1;
     min-height: 0;
-    padding-top: 10px;
+    padding-top: 8px;
 
     /* VueDraggable 透传高度，确保 ElTable height: 100% 能正确解析 */
     > * {
@@ -544,7 +544,7 @@ defineExpose({
   .pagination {
     display: flex;
     flex-shrink: 0;
-    padding-top: 13px;
+    padding-top: 12px;
 
     :deep(.el-select) {
       width: 102px !important;
@@ -569,7 +569,8 @@ defineExpose({
         .btn-prev,
         .btn-next {
           background-color: transparent;
-          border: 1px solid var(--fa-gray-300);
+          border: 1px solid var(--fa-card-border);
+          border-radius: 8px;
           transition: border-color 0.15s;
 
           &:hover:not(.is-disabled) {
@@ -582,7 +583,8 @@ defineExpose({
           box-sizing: border-box;
           font-weight: 400 !important;
           background-color: transparent;
-          border: 1px solid var(--fa-gray-300);
+          border: 1px solid var(--fa-card-border);
+          border-radius: 8px;
           transition: border-color 0.15s;
 
           &.is-active {

@@ -4,7 +4,7 @@
  *
  * 注意：const enum（ThemeMode/DeviceEnum/LayoutMode/ResultEnum 等）
  * 在 TypeScript isolatedModules 模式下会被内联为常量，无法在运行时访问。
- * MenuTypeEnum 为常规 enum，下列代码生成枚举也为常规 enum。
+ * MenuTypeEnum 为常规 enum。
  */
 
 import { describe, it, expect } from "vitest";
@@ -20,15 +20,3 @@ describe("MenuTypeEnum — 菜单类型", () => {
   });
 });
 
-// ══════════════════ 代码生成枚举 ══════════════════
-describe("代码生成枚举 — 完整性", () => {
-  it("FormRuleType should be importable", async () => {
-    const mod = await import("@/enums/codegen/form.enum");
-    expect(mod).toBeDefined();
-  });
-
-  it("QueryRuleType should be importable", async () => {
-    const mod = await import("@/enums/codegen/query.enum");
-    expect(mod).toBeDefined();
-  });
-});

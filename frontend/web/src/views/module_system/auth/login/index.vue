@@ -43,41 +43,17 @@
                     </div>
 
                     <template v-if="authPanel === 'login'">
-                      <template v-if="loginFlowMode === 'account'">
-                        <FaLoginAccountForm
-                          ref="accountFormRef"
-                          v-model:is-passing="isPassing"
-                          v-model:is-click-pass="isClickPass"
-                          v-model:login-form="loginForm"
-                          :rules="rules"
-                          :captcha-state="captchaState"
-                          :code-loading="codeLoading"
-                          :demo-account-key="demoAccountKey"
-                          :accounts="accounts"
-                          :form-key="formKey"
-                          :is-dark="isDark"
-                          :drag-verify-text-color="dragVerifyTextColor"
-                          :loading="loading"
-                          @submit="handleSubmit"
-                          @setup-account="setupAccount"
-                          @get-captcha="getCaptcha"
-                          @open-mobile="openMobileLogin"
-                          @open-qr="openQrLogin"
-                          @forget="setAuthPanel('forget')"
-                          @register="setAuthPanel('register')"
-                          @oauth="handleOAuthLogin"
-                        />
-                      </template>
-
-                      <FaLoginMobilePanel
-                        v-else-if="loginFlowMode === 'mobile'"
-                        @back="backToAccountLogin"
-                        @register="setAuthPanel('register')"
-                      />
-
-                      <FaLoginQrPanel
-                        v-else-if="loginFlowMode === 'qr'"
-                        @back="backToAccountLogin"
+                      <FaLoginAccountForm
+                        ref="accountFormRef"
+                        v-model:login-form="loginForm"
+                        :rules="rules"
+                        :demo-account-key="demoAccountKey"
+                        :accounts="accounts"
+                        :form-key="formKey"
+                        :loading="loading"
+                        @submit="handleSubmit"
+                        @setup-account="setupAccount"
+                        @forget="setAuthPanel('forget')"
                         @register="setAuthPanel('register')"
                       />
                     </template>
@@ -177,21 +153,15 @@
 
 <script setup lang="ts">
 import type { LocationQuery, RouteLocationRaw } from "vue-router";
-import AuthAPI, {
-  type CaptchaInfo,
-  type LoginFormData,
-  type OAuthProvider,
-} from "@/api/module_system/auth";
+import AuthAPI, { type LoginFormData } from "@/api/module_system/auth";
 import type { TenantRegisterForm } from "@/api/module_system/auth";
 import UserAPI, { type ForgetPasswordForm, type RegisterForm } from "@/api/module_system/user";
 import { useConfigStore, useAppStore, useSettingsStore, useUserStore } from "@stores";
-import { Auth, getConfigValue, HttpError, startOAuthLogin } from "@utils";
+import { getConfigValue, HttpError } from "@utils";
 import { ElMessage, ElNotification, type FormRules } from "element-plus";
 import type { Account, AccountKey } from "./types";
 import FaLoginAccountForm from "@/components/views/fa-login/forms/FaLoginAccountForm.vue";
 import FaLoginForgetPanel from "@/components/views/fa-login/panels/FaLoginForgetPanel.vue";
-import FaLoginMobilePanel from "@/components/views/fa-login/panels/FaLoginMobilePanel.vue";
-import FaLoginQrPanel from "@/components/views/fa-login/panels/FaLoginQrPanel.vue";
 import FaLoginRegisterPanel from "@/components/views/fa-login/panels/FaLoginRegisterPanel.vue";
 import FaAuthTopBar from "@/components/views/fa-login/widgets/FaAuthTopBar.vue";
 import FaEnterpriseIntro from "@/components/views/fa-login/widgets/FaEnterpriseIntro.vue";
@@ -201,41 +171,24 @@ defineOptions({ name: "Login" });
 
 type AuthPanel = "login" | "register" | "forget";
 
-/** 登录区内：账号密码 ↔ 手机号 ↔ 扫码（扫码 / 手机号为演示交互） */
-type LoginFlowMode = "account" | "mobile" | "qr";
-
 const configStore = useConfigStore();
 const settingStore = useSettingsStore();
 const appStore = useAppStore();
-const { isDark } = storeToRefs(settingStore);
 const { t, locale } = useI18n();
 
 const { panelAlign } = useLoginPanelAlign();
 
 const authPanel = ref<AuthPanel>("login");
-const loginFlowMode = ref<LoginFlowMode>("account");
 
 const panelTitle = computed(() => {
   if (authPanel.value === "register") return t("login.reg");
   if (authPanel.value === "forget") return t("login.resetPassword");
-  if (
-    authPanel.value === "login" &&
-    (loginFlowMode.value === "mobile" || loginFlowMode.value === "qr")
-  ) {
-    return t("login.qrLoginTitle");
-  }
   return t("login.title");
 });
 
 const panelSubTitle = computed(() => {
   if (authPanel.value === "register") return t("register.subTitle");
   if (authPanel.value === "forget") return t("forgetPassword.subTitle");
-  if (authPanel.value === "login" && loginFlowMode.value === "mobile") {
-    return t("login.mobileLoginSubTitle");
-  }
-  if (authPanel.value === "login" && loginFlowMode.value === "qr") {
-    return t("login.qrLoginSubTitle");
-  }
   return t("login.subTitle");
 });
 
@@ -261,9 +214,6 @@ const userAgreementHref = computed(() => footerClause.value);
 
 function setAuthPanel(panel: AuthPanel) {
   authPanel.value = panel;
-  if (panel !== "login") {
-    loginFlowMode.value = "account";
-  }
   nextTick(() => {
     accountFormRef.value?.clearValidate?.();
     registerPanelRef.value?.clearValidate?.();
@@ -271,88 +221,10 @@ function setAuthPanel(panel: AuthPanel) {
   });
 }
 
-function openMobileLogin() {
-  loginFlowMode.value = "mobile";
-}
-
-function openQrLogin() {
-  loginFlowMode.value = "qr";
-}
-
-function backToAccountLogin() {
-  loginFlowMode.value = "account";
-  nextTick(() => {
-    getCaptcha();
-    loginForm.captcha = "";
-    accountFormRef.value?.resetDragVerify?.();
-    isPassing.value = false;
-    isClickPass.value = false;
-  });
-}
-
-function handleOAuthLogin(provider: OAuthProvider) {
-  startOAuthLogin(provider);
-}
-
-async function tryConsumeOAuthCallback() {
-  const q = route.query;
-  const oauthError = q.oauth_error as string | undefined;
-  const access = q.access_token as string | undefined;
-  const refresh = q.refresh_token as string | undefined;
-
-  if (!oauthError && !(access && refresh)) return;
-
-  const rest: Record<string, unknown> = { ...q };
-  delete rest.oauth_error;
-  delete rest.access_token;
-  delete rest.refresh_token;
-  delete rest.token_type;
-
-  if (oauthError) {
-    ElMessage.error(decodeURIComponent(oauthError));
-    await router.replace({ path: route.path, query: rest as LocationQuery });
-    return;
-  }
-
-  if (access && refresh) {
-    try {
-      Auth.setTokens(access, refresh, true);
-      userStore.setToken(access, refresh);
-      userStore.setLoginStatus(true);
-      ElNotification({
-        title: t("login.oauthNoticeTitle"),
-        message: t("login.oauthLoginSuccess"),
-        type: "success",
-      });
-      await router.replace(resolveRedirectTarget(rest as LocationQuery));
-      if (settingStore.showGuide) {
-        appStore.showGuide(true);
-      }
-    } catch (error) {
-      console.error("[Login] OAuth callback:", error);
-      ElMessage.error(t("login.oauthLoginFailed"));
-      await router.replace({ path: route.path, query: rest as LocationQuery });
-    }
-  }
-}
-
-const dragVerifyTextColor = computed(() =>
-  isDark.value ? "rgba(255, 255, 255, 0.45)" : "var(--fa-gray-700)"
-);
 const formKey = ref(0);
 
 watch(locale, () => {
   formKey.value++;
-});
-
-watch(authPanel, (panel) => {
-  if (panel !== "login") return;
-  if (loginFlowMode.value !== "account") return;
-  getCaptcha();
-  loginForm.captcha = "";
-  accountFormRef.value?.resetDragVerify?.();
-  isPassing.value = false;
-  isClickPass.value = false;
 });
 
 const accounts = computed<Account[]>(() => [
@@ -383,8 +255,6 @@ const demoAccountKey = ref<AccountKey>("super");
 const userStore = useUserStore();
 const router = useRouter();
 const route = useRoute();
-const isPassing = ref(false);
-const isClickPass = ref(false);
 
 const accountFormRef = ref<InstanceType<typeof FaLoginAccountForm> | null>(null);
 const registerPanelRef = ref<InstanceType<typeof FaLoginRegisterPanel> | null>(null);
@@ -393,7 +263,6 @@ const forgetPanelRef = ref<InstanceType<typeof FaLoginForgetPanel> | null>(null)
 const loading = ref(false);
 const registerLoading = ref(false);
 const forgetLoading = ref(false);
-const codeLoading = ref(false);
 
 const registerAgreementRead = ref(false);
 
@@ -482,20 +351,12 @@ const forgetRules = computed<FormRules<ForgetPasswordForm>>(() => ({
 const loginForm = reactive<LoginFormData>({
   username: "",
   password: "",
-  captcha: "",
-  captcha_key: "",
   remember: true,
-  login_type: "PC端",
-});
-
-const captchaState = reactive<CaptchaInfo>({
-  enable: false,
-  key: "",
-  img_base: "",
+  login_type: "PC",
 });
 
 const rules = computed<FormRules>(() => {
-  const base: FormRules = {
+  return {
     username: [
       {
         required: true,
@@ -516,16 +377,6 @@ const rules = computed<FormRules>(() => {
       },
     ],
   };
-  if (captchaState.enable) {
-    base.captcha = [
-      {
-        required: true,
-        trigger: "blur",
-        message: t("login.message.captchaCode.required"),
-      },
-    ];
-  }
-  return base;
 });
 
 function setupAccount(key: AccountKey) {
@@ -533,23 +384,6 @@ function setupAccount(key: AccountKey) {
   demoAccountKey.value = key;
   loginForm.username = selected?.username ?? "";
   loginForm.password = selected?.password ?? "";
-}
-
-async function getCaptcha() {
-  try {
-    codeLoading.value = true;
-    const response = await AuthAPI.getCaptcha();
-    const data = response.data.data;
-    loginForm.captcha_key = data.key;
-    captchaState.img_base = data.img_base;
-    captchaState.enable = data.enable;
-  } catch {
-    captchaState.enable = false;
-    loginForm.captcha = "";
-    loginForm.captcha_key = "";
-  } finally {
-    codeLoading.value = false;
-  }
 }
 
 function resolveRedirectTarget(query: LocationQuery): RouteLocationRaw {
@@ -593,19 +427,13 @@ onMounted(async () => {
   } catch (error) {
     console.warn("[Login] 获取系统配置失败，继续使用默认渲染", error);
   }
-  await tryConsumeOAuthCallback();
   if (userStore.isLogin) {
     await router.replace(resolveRedirectTarget(route.query));
     return;
   }
-  getCaptcha();
-  voteTimer = setTimeout(showVoteNotification, 500);
-});
-
-onActivated(() => {
-  if (authPanel.value !== "login" || loginFlowMode.value !== "account") return;
-  getCaptcha();
-  loginForm.captcha = "";
+  voteTimer = setTimeout(() => {
+    void showVoteNotification;
+  }, 500);
 });
 
 onBeforeUnmount(() => {
@@ -614,26 +442,12 @@ onBeforeUnmount(() => {
   notificationInstance = null;
 });
 
-watch(
-  () => route.fullPath,
-  () => {
-    if (authPanel.value !== "login" || loginFlowMode.value !== "account") return;
-    getCaptcha();
-    loginForm.captcha = "";
-  }
-);
-
 const handleSubmit = async () => {
   if (!accountFormRef.value) return;
 
   try {
     const valid = await accountFormRef.value.validate?.();
     if (!valid) return;
-
-    if (!isPassing.value) {
-      isClickPass.value = true;
-      return;
-    }
 
     loading.value = true;
 
@@ -644,7 +458,6 @@ const handleSubmit = async () => {
       appStore.showGuide(true);
     }
   } catch (error) {
-    await getCaptcha();
     if (!(error instanceof HttpError)) {
       console.error("[Login] Unexpected error:", error);
       ElNotification({
@@ -655,7 +468,6 @@ const handleSubmit = async () => {
     }
   } finally {
     loading.value = false;
-    accountFormRef.value?.resetDragVerify?.();
   }
 };
 

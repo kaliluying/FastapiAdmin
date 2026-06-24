@@ -131,12 +131,13 @@
 // 盒子默认边框
 .page-content {
   border: 1px solid var(--fa-card-border) !important;
+  box-shadow: var(--fa-panel-shadow);
 }
 
-@mixin fa-card-base($border-color, $shadow: none, $radius-diff: 4px) {
+@mixin fa-card-base($border-color, $shadow: var(--fa-panel-shadow), $radius: 8px) {
   background: var(--default-box-color);
   border: 1px solid #{$border-color} !important;
-  border-radius: calc(var(--custom-radius) + #{$radius-diff}) !important;
+  border-radius: #{$radius} !important;
   box-shadow: #{$shadow} !important;
 
   --el-card-border-color: var(--default-border) !important;
@@ -144,13 +145,14 @@
 
 // 全局统一 ElCard 卡片圆角，与 dashboard 首页一致
 .el-card {
-  --el-card-border-radius: calc(var(--custom-radius) + 2px);
+  --el-card-border-radius: 8px;
 }
 
 .fa-card,
 .fa-card-sm,
 .fa-card-xs {
   border: 1px solid var(--fa-card-border);
+  box-shadow: var(--fa-panel-shadow);
 }
 
 // 盒子边框
@@ -161,15 +163,15 @@
   }
 
   .fa-card {
-    @include fa-card-base(var(--fa-card-border), none, 4px);
+    @include fa-card-base(var(--fa-card-border));
   }
 
   .fa-card-sm {
-    @include fa-card-base(var(--fa-card-border), none, 0);
+    @include fa-card-base(var(--fa-card-border));
   }
 
   .fa-card-xs {
-    @include fa-card-base(var(--fa-card-border), none, -4px);
+    @include fa-card-base(var(--fa-card-border), none);
   }
 }
 
@@ -177,8 +179,8 @@
 [data-box-mode="shadow-mode"] {
   .page-content,
   .fa-table-card {
-    border: 1px solid var(--fa-gray-200) !important;
-    box-shadow: 0 0 4px 0 rgb(0 0 0 / 4%) !important;
+    border: 1px solid var(--fa-card-border) !important;
+    box-shadow: var(--fa-panel-shadow) !important;
   }
 
   .layout-sidebar {
@@ -186,27 +188,15 @@
   }
 
   .fa-card {
-    @include fa-card-base(
-      var(--fa-gray-200),
-      (0 1px 3px 0 rgba(0, 0, 0, 0.03), 0 1px 2px -1px rgba(0, 0, 0, 0.08)),
-      4px
-    );
+    @include fa-card-base(var(--fa-card-border), var(--fa-panel-shadow));
   }
 
   .fa-card-sm {
-    @include fa-card-base(
-      var(--fa-gray-200),
-      (0 1px 3px 0 rgba(0, 0, 0, 0.03), 0 1px 2px -1px rgba(0, 0, 0, 0.08)),
-      2px
-    );
+    @include fa-card-base(var(--fa-card-border), var(--fa-panel-shadow));
   }
 
   .fa-card-xs {
-    @include fa-card-base(
-      var(--fa-gray-200),
-      (0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 1px -1px rgba(0, 0, 0, 0.08)),
-      -4px
-    );
+    @include fa-card-base(var(--fa-card-border), var(--fa-soft-shadow));
   }
 }
 
@@ -235,13 +225,15 @@
   min-width: 0;
   min-height: 0;
   margin-top: 12px;
-  border-radius: calc(var(--custom-radius) / 2 + 2px) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--fa-panel-shadow);
 
   .el-card__body {
     display: flex;
     flex: 1 1 0;
     flex-direction: column;
     min-height: 0;
+    padding: 18px !important;
     overflow: hidden;
 
     /** 工具栏区不参与压缩，表格区 FaTable 使用 flex:1 占满剩余高度 */

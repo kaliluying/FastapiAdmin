@@ -51,11 +51,6 @@
           @click="reload"
         />
 
-        <!-- 快速入口 -->
-        <FaFastEnter v-if="shouldShowFastEnter && width >= headerBarFastEnterMinWidth">
-          <FaIconButton icon="ri:function-line" class="ml-3" />
-        </FaFastEnter>
-
         <!-- 面包屑 -->
         <FaBreadcrumb
           v-if="(shouldShowBreadcrumb && isLeftMenu) || (shouldShowBreadcrumb && isDualMenu)"
@@ -147,7 +142,7 @@
 
         <!-- 设置按钮 -->
         <div v-if="shouldShowSettings">
-          <ElPopover :visible="showSettingGuide" placement="bottom-start" :width="190" :offset="0">
+          <ElPopover :visible="false" placement="bottom-start" :width="190" :offset="0">
             <template #reference>
               <div class="flex items-center justify-center">
                 <FaIconButton icon="ri:settings-line" class="setting-btn" @click="openSetting" />
@@ -228,7 +223,6 @@ const headerSystemName = computed(() => {
 const {
   shouldShowMenuButton,
   shouldShowRefreshButton,
-  shouldShowFastEnter,
   shouldShowBreadcrumb,
   shouldShowGlobalSearch,
   shouldShowFullscreen,
@@ -238,7 +232,6 @@ const {
   shouldShowSettings,
   shouldShowThemeToggle,
   shouldShowSizeSelect,
-  fastEnterMinWidth: headerBarFastEnterMinWidth,
 } = useHeaderBar();
 
 const { menuOpen, systemThemeColor, showSettingGuide, menuType, isDark, tabStyle, showAppLogo } =
@@ -260,6 +253,7 @@ const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
 
 onMounted(() => {
   initLanguage();
+  settingStore.hideSettingGuide();
   document.addEventListener("click", bodyCloseNotice);
 });
 
@@ -372,6 +366,20 @@ const openChat = (): void => {
 </script>
 
 <style lang="scss" scoped>
+.w-full {
+  background: color-mix(in srgb, var(--default-box-color) 96%, transparent);
+  border-bottom: 1px solid var(--fa-card-border);
+  box-shadow: var(--fa-panel-shadow);
+}
+
+html.dark .w-full {
+  background: color-mix(in srgb, var(--default-box-color) 94%, transparent);
+}
+
+.relative.box-border {
+  backdrop-filter: blur(10px);
+}
+
 /* Custom animations */
 @keyframes rotate180 {
   0% {
@@ -467,6 +475,34 @@ const openChat = (): void => {
 /* Hover animation classes */
 .refresh-btn:hover :deep(.fa-svg-icon) {
   animation: rotate180 0.5s;
+}
+
+#app-header-toolbar :deep(.fa-icon-button),
+#app-header-toolbar :deep(.el-button) {
+  border-radius: 8px;
+}
+
+#app-header-toolbar :deep(.fa-icon-button:hover) {
+  background: var(--fa-active-color);
+}
+
+.language-btn,
+.setting-btn,
+.full-screen-btn,
+.exit-full-screen-btn,
+.notice-button,
+.chat-button {
+  border: 1px solid transparent;
+}
+
+#app-header-toolbar .flex.items-center.justify-between {
+  background: color-mix(in srgb, var(--default-box-color) 96%, transparent);
+  border: 1px solid var(--fa-card-border);
+  border-radius: 8px;
+}
+
+#app-header-toolbar .flex.items-center.justify-between:hover {
+  border-color: color-mix(in srgb, var(--theme-color) 28%, var(--fa-card-border));
 }
 
 .language-btn:hover :deep(.fa-svg-icon) {

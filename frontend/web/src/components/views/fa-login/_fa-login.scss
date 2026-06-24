@@ -90,16 +90,12 @@
   max-width: min(480px, calc(100vw - 2rem));
   height: auto;
   max-height: calc(100dvh - 8rem);
-  padding: 1.25rem 1.75rem;
+  padding: 1.5rem;
   overflow: hidden auto;
-  background: color-mix(in srgb, var(--el-bg-color) 72%, transparent);
-  border: 1px solid color-mix(in srgb, var(--el-border-color-lighter) 60%, transparent);
-  border-radius: 20px;
-  box-shadow:
-    0 1px 8px rgb(15 23 42 / 5%),
-    0 0 16px color-mix(in srgb, var(--el-color-primary) 6%, transparent);
-  -webkit-backdrop-filter: blur(20px);
-  backdrop-filter: blur(20px);
+  background: var(--default-box-color);
+  border: 1px solid var(--fa-card-border);
+  border-radius: 8px;
+  box-shadow: var(--fa-panel-shadow);
 }
 
 .login-auth-split--center .auth-right-wrap .form {
@@ -110,11 +106,11 @@
 }
 
 html.dark .login-auth-split--center .auth-right-wrap {
-  background: color-mix(in srgb, var(--el-bg-color) 55%, transparent);
-  border-color: rgb(255 255 255 / 8%);
+  background: color-mix(in srgb, var(--el-bg-color) 82%, transparent);
+  border-color: rgb(255 255 255 / 10%);
   box-shadow:
-    0 1px 8px rgb(0 0 0 / 18%),
-    0 0 16px color-mix(in srgb, var(--el-color-primary) 10%, transparent);
+    0 1px 2px rgb(0 0 0 / 22%),
+    0 12px 32px rgb(0 0 0 / 28%);
 }
 
 /* 居中模式下页脚弱化，减少「分区后台」感 */
@@ -151,6 +147,7 @@ html.dark .login-page-footer--floating-layout {
   }
 
   .login-auth-split__col--illustration {
+    display: none;
     flex: 0 0 auto !important;
     width: 100%;
   }
@@ -159,6 +156,16 @@ html.dark .login-page-footer--floating-layout {
     flex: 1 1 auto !important;
     width: 100%;
     min-height: 0;
+  }
+
+  .login-page-panel__main {
+    padding-top: 1.25rem !important;
+  }
+
+  .login-panel-align-row {
+    min-height: 0 !important;
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
   /* 窄屏横排切竖排：恢复插画；居中模式本身无插画，不受影响 */
@@ -174,10 +181,14 @@ html.dark .login-page-footer--floating-layout {
   position: relative;
   flex-shrink: 0;
   width: 440px;
-  height: 670px;
-  padding-top: 5px;
-  padding-bottom: 5px;
-  overflow: hidden;
+  height: auto;
+  max-height: calc(100dvh - 9rem);
+  padding: 1.5rem;
+  overflow: hidden auto;
+  background: var(--el-bg-color);
+  border: 1px solid var(--fa-card-border);
+  border-radius: 8px;
+  box-shadow: var(--fa-panel-shadow);
   animation: slideInRight 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 
   @media (width <= 640px) {
@@ -193,15 +204,17 @@ html.dark .login-page-footer--floating-layout {
   }
 
   .form {
-    height: 100%;
-    padding-top: 10px;
-    padding-bottom: 40px;
+    height: auto;
+    min-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
   .title {
-    font-size: 2.25rem;
-    font-weight: 600;
-    line-height: 2.5rem;
+    margin: 0;
+    font-size: 1.875rem;
+    font-weight: 650;
+    line-height: 2.25rem;
     color: var(--fa-gray-900);
 
     @media (width <= 768px) {
@@ -215,15 +228,21 @@ html.dark .login-page-footer--floating-layout {
   }
 
   .sub-title {
-    margin-top: 10px;
+    margin-top: 0.5rem;
     font-size: 0.875rem;
     line-height: 1.25rem;
     color: var(--fa-gray-600);
   }
 
   .custom-height {
-    height: 40px !important;
+    height: 42px !important;
   }
+}
+
+html.dark .auth-right-wrap {
+  background: var(--el-bg-color);
+  border-color: rgb(255 255 255 / 9%);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 22%);
 }
 
 @keyframes slideInRight {
@@ -250,16 +269,54 @@ html.dark .login-page-panel {
   }
 }
 
+.form-intro {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
 .login-page-form {
-  margin-top: 1rem;
+  margin-top: 1.15rem;
 }
 
 .login-page-form .el-form-item {
-  margin-bottom: 1.1rem;
+  margin-bottom: 0.95rem;
 }
 
 .el-select__wrapper {
   min-height: 42px !important;
+}
+
+.login-page-form :deep(.el-input__wrapper),
+.login-page-form :deep(.el-select__wrapper) {
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 8px;
+  box-shadow: none !important;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.login-page-form :deep(.el-input__wrapper:hover),
+.login-page-form :deep(.el-select__wrapper:hover) {
+  border-color: var(--el-border-color);
+}
+
+.login-page-form :deep(.el-input__wrapper.is-focus),
+.login-page-form :deep(.el-select__wrapper.is-focused) {
+  border-color: var(--el-color-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--el-color-primary) 16%, transparent) !important;
+}
+
+.login-submit-btn {
+  border-radius: 8px !important;
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 8%),
+    0 8px 18px color-mix(in srgb, var(--el-color-primary) 14%, transparent);
+}
+
+.login-submit-btn:hover {
+  transform: translateY(-1px);
 }
 
 .login-secondary-actions .login-secondary-btn {
@@ -269,8 +326,9 @@ html.dark .login-page-panel {
 
 html.dark {
   .login-page-form .el-input__wrapper {
-    background-color: rgb(255 255 255 / 6%) !important;
-    box-shadow: 0 0 0 1px rgb(255 255 255 / 10%) inset !important;
+    background-color: rgb(255 255 255 / 5%) !important;
+    border-color: rgb(255 255 255 / 10%);
+    box-shadow: none !important;
   }
 
   .login-page-form .el-input__inner {
@@ -282,8 +340,9 @@ html.dark {
   }
 
   .login-page-form .el-select .el-select__wrapper {
-    background-color: rgb(255 255 255 / 6%) !important;
-    box-shadow: 0 0 0 1px rgb(255 255 255 / 10%) inset !important;
+    background-color: rgb(255 255 255 / 5%) !important;
+    border-color: rgb(255 255 255 / 10%);
+    box-shadow: none !important;
   }
 
   .login-page-form .el-select__placeholder {

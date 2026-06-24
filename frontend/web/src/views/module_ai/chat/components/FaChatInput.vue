@@ -15,7 +15,7 @@
             type="textarea"
             :placeholder="placeholder"
             :disabled="disabled || sending"
-            :autosize="{ minRows: 1, maxRows: 6 }"
+            :autosize="{ minRows: 3, maxRows: 8 }"
             resize="none"
             class="message-input"
             @keydown.enter.exact.prevent="handleSend"
@@ -199,11 +199,12 @@ defineExpose({
     .input-container {
       display: flex;
       flex-direction: column;
-      gap: 12px;
-      padding: 20px;
+      gap: 10px;
+      min-height: 124px;
+      padding: 14px 16px;
       background: var(--el-bg-color-overlay);
       border: 1px solid var(--el-border-color-light);
-      border-radius: 16px;
+      border-radius: 12px;
       box-shadow: var(--el-box-shadow-light);
       transition:
         border-color 0.2s ease,
@@ -226,7 +227,8 @@ defineExpose({
         min-width: 0;
 
         :deep(.el-textarea__inner) {
-          padding: 0;
+          min-height: 72px !important;
+          padding: 2px 4px;
           line-height: 1.6;
           color: var(--el-text-color-primary);
           resize: none;

@@ -61,7 +61,7 @@ export const globalComponentsConfig: GlobalComponentConfig[] = [
     name: "水印效果",
     key: "watermark",
     component: defineAsyncComponent(() => import("@/components/others/fa-watermark/index.vue")),
-    enabled: true,
+    enabled: false,
   },
 ];
 

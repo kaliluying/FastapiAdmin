@@ -1,5 +1,5 @@
 /**
- * 通用文件下载（axios + blob），非 Vue 插件。
+ * Generic file download helper.
  */
 import axios from "axios";
 import { ElLoading, ElMessage } from "element-plus";
@@ -11,7 +11,6 @@ let downloadLoadingInstance: any;
 
 interface DownloadUtil {
   name(name: string, isDelete?: boolean): void;
-  resource(resource: string): void;
   zip(url: string, name: string): void;
   saveAs(text: Blob | string, name: string, opts?: any): void;
   printErrMsg(data: Blob): Promise<void>;
@@ -37,35 +36,15 @@ const download: DownloadUtil = {
         await download.printErrMsg(res.data);
       }
     } catch (error) {
-      console.error("[Download] 文件下载失败:", error);
-      ElMessage.error("下载文件失败，请稍后重试");
-    }
-  },
-
-  async resource(resource: string) {
-    const url = baseURL + "/monitor/resource/download?path=" + encodeURIComponent(resource);
-    try {
-      const res = await axios.get<Blob>(url, {
-        responseType: "blob",
-        headers: { Authorization: `Bearer ${Auth.getAccessToken()}` },
-      });
-      const isBlob = blobValidate(res.data);
-      if (isBlob) {
-        const blob = new Blob([res.data]);
-        download.saveAs(blob, decodeURIComponent(res.headers["download-filename"]));
-      } else {
-        await download.printErrMsg(res.data);
-      }
-    } catch (error) {
-      console.error("[Download] 资源下载失败:", error);
-      ElMessage.error("资源下载失败，请稍后重试");
+      console.error("[Download] File download failed:", error);
+      ElMessage.error("Download failed, please try again later");
     }
   },
 
   async zip(url: string, name: string) {
     const fullUrl = baseURL + url;
     downloadLoadingInstance = ElLoading.service({
-      text: "正在下载数据，请稍候",
+      text: "Downloading data, please wait",
       background: "rgba(0, 0, 0, 0.7)",
     });
     try {
@@ -82,7 +61,7 @@ const download: DownloadUtil = {
       }
     } catch (r: any) {
       console.error(r);
-      ElMessage.error("下载文件出现错误，请联系管理员！");
+      ElMessage.error("Download failed, please contact the administrator");
     } finally {
       downloadLoadingInstance.close();
     }

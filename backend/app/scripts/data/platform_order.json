@@ -56,20 +56,6 @@
     "description": "创新工坊-专业版半年（已退款）"
   },
   {
-    "order_no": "202605150000001",
-    "package_id": null,
-    "plugin_id": 4,
-    "order_type": "plugin",
-    "amount": 19900,
-    "period_count": 1,
-    "pay_method": null,
-    "pay_time": null,
-    "expire_time": "2026-05-15 16:45:00",
-    "status": 2,
-    "tenant_id": 4,
-    "description": "创新工坊-工作流引擎（已取消）"
-  },
-  {
     "order_no": "202606010000001",
     "package_id": 2,
     "plugin_id": null,

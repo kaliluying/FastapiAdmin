@@ -7,17 +7,12 @@
       shadow: 'never',
     }"
   >
-    <ElWatermark
-      :font="{ color: fontColor }"
-      :content="showWatermark ? watermarkContent : ''"
-      :z-index="9999"
-      class="wh-full"
-    >
+    <div class="wh-full">
       <RouterView></RouterView>
 
       <!-- AI 助手 -->
       <AiAssistant v-if="enableAiAssistant" />
-    </ElWatermark>
+    </div>
   </ElConfigProvider>
 </template>
 
@@ -25,13 +20,11 @@
 import { computed, onBeforeMount, onMounted, onUnmounted } from "vue";
 import { useAppStore, useUserStore } from "./store";
 import { useSettingsStore } from "./store/modules/setting.store";
-import { defaultSettings } from "./config/setting";
 import { ComponentSize } from "./enums/settings/layout.enum";
 import AiAssistant from "./components/others/fa-ai-assistant/index.vue";
-import { hexToRgba, toggleTransition } from "./utils/ui";
+import { toggleTransition } from "./utils/ui";
 import { initializeTheme } from "./hooks/core/useTheme";
 import { useAppBootstrap } from "@/hooks/core/useAppBootstrap";
-import { ThemeMode } from "./enums";
 import en from "element-plus/es/locale/lang/en";
 import zhCn from "element-plus/es/locale/lang/zh-cn";
 import { router } from "@/router";
@@ -41,8 +34,6 @@ const settingsStore = useSettingsStore();
 const userStore = useUserStore();
 
 const size = computed(() => appStore.size as ComponentSize);
-const showWatermark = computed(() => settingsStore.showWatermark);
-const watermarkContent = defaultSettings.watermarkContent;
 
 // 根据语言设置返回对应的语言包
 const locale = computed(() => {
@@ -57,15 +48,6 @@ const enableAiAssistant = computed(() => {
 });
 
 // 水印文字默认使用当前主题色（半透明），随主题色设置变化
-const fontColor = computed(() => {
-  const hex = settingsStore.themeColor || defaultSettings.themeColor;
-  const alpha = settingsStore.theme === ThemeMode.DARK ? 0.22 : 0.16;
-  try {
-    return hexToRgba(hex, alpha).rgba;
-  } catch {
-    return hexToRgba(defaultSettings.themeColor, alpha).rgba;
-  }
-});
 
 /**
  * 应用根组件生命周期：

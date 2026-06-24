@@ -80,16 +80,6 @@
     "description": "查询字典数据"
   },
   {
-    "request_path": "/api/v1/workflow/definition/create",
-    "request_method": "POST",
-    "request_payload": "{\"name\": \"审批流程\", \"code\": \"approval_v1\"}",
-    "response_code": 200,
-    "response_json": "{\"code\": 200, \"msg\": \"创建成功\"}",
-    "process_time": "28ms",
-    "tenant_id": 4,
-    "description": "创建工作流"
-  },
-  {
     "request_path": "/api/v1/system/notice/create",
     "request_method": "POST",
     "request_payload": "{\"notice_title\": \"测试通知\", \"notice_type\": \"1\"}",
@@ -118,35 +108,5 @@
     "process_time": "320ms",
     "tenant_id": 1,
     "description": "批量导入用户"
-  },
-  {
-    "request_path": "/api/v1/cronjob/node/execute/1",
-    "request_method": "POST",
-    "request_payload": "{\"trigger\": \"now\"}",
-    "response_code": 200,
-    "response_json": "{\"code\": 200, \"msg\": \"调试节点成功\"}",
-    "process_time": "1024ms",
-    "tenant_id": 1,
-    "description": "执行定时任务节点"
-  },
-  {
-    "request_path": "/api/v1/workflow/definition/execute",
-    "request_method": "POST",
-    "request_payload": "{\"workflow_id\": 1, \"variables\": {}}",
-    "response_code": 200,
-    "response_json": "{\"code\": 200, \"data\": {\"status\": \"completed\"}}",
-    "process_time": "3200ms",
-    "tenant_id": 4,
-    "description": "执行工作流"
-  },
-  {
-    "request_path": "/api/v1/cronjob/job/log/delete",
-    "request_method": "DELETE",
-    "request_payload": "{\"ids\": [1, 2, 3]}",
-    "response_code": 200,
-    "response_json": "{\"code\": 200, \"msg\": \"删除成功\"}",
-    "process_time": "19ms",
-    "tenant_id": 1,
-    "description": "批量删除执行日志"
   }
 ]

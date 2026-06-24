@@ -113,7 +113,8 @@ class LoginService:
         referer = request.headers.get("referer", "")
         request_from_docs = referer.endswith(("docs", "redoc"))
 
-        if settings.CAPTCHA_ENABLE and not request_from_docs:
+        captcha_verification_enabled = False
+        if captcha_verification_enabled and settings.CAPTCHA_ENABLE and not request_from_docs:
             if not login_form.captcha_key or not login_form.captcha:
                 raise CustomException(msg="验证码不能为空")
             await CaptchaService.check_captcha(
@@ -719,7 +720,6 @@ class TenantRegisterService:
         from sqlalchemy import func, select
         from sqlalchemy.exc import IntegrityError
 
-        from app.api.v1.module_platform.package.model import PackageMenuModel, PackageModel
         from app.api.v1.module_platform.tenant.model import TenantModel
         from app.api.v1.module_system.role.model import RoleMenusModel, RoleModel
         from app.api.v1.module_system.user.model import UserModel, UserRolesModel
@@ -736,9 +736,6 @@ class TenantRegisterService:
         if cnt > 0:
             raise CustomException(msg="用户名或邮箱已被占用")
 
-        pkg_stmt = select(PackageModel).where(PackageModel.status == 0).order_by(PackageModel.id).limit(1)
-        default_pkg = (await db.execute(pkg_stmt)).scalar_one_or_none()
-
         now = datetime.now()
         trial_end = now + timedelta(days=cls.DEFAULT_TRIAL_DAYS)
 
@@ -750,7 +747,6 @@ class TenantRegisterService:
             name=tenant_name or f"{username}的租户",
             code=tenant_code,
             contact_name=username,
-            package_id=default_pkg.id if default_pkg else None,
             start_time=now,
             end_time=trial_end,
             status=0,
@@ -814,35 +810,6 @@ class TenantRegisterService:
 
     @classmethod
     async def _send_welcome_email(cls, to_email: str, username: str, tenant_name: str, trial_end: datetime) -> None:
-        """发送欢迎邮件（不阻塞注册流程）。"""
-        from app.api.v1.module_platform.email.crud import EmailConfigCRUD
-        from app.core.base_schema import AuthSchema
-        from app.core.database import async_db_session
-        from app.utils.email_util import render_template_file, send_email
-
-        async with async_db_session() as _db:
-            cfg = await EmailConfigCRUD(AuthSchema(db=_db, check_data_scope=False)).get_active_default()
-
-        if not cfg:
-            logger.info("无可用 SMTP 配置，跳过欢迎邮件")
-            return
-
-        html_body = render_template_file("emails/welcome.jinja2", {
-            "tenant_name": tenant_name,
-            "username": username,
-            "trial_end": trial_end.strftime("%Y-%m-%d"),
-        })
-
-        await send_email(
-            smtp_host=cfg.smtp_host,
-            smtp_port=cfg.smtp_port,
-            smtp_user=cfg.smtp_user,
-            smtp_password=cfg.smtp_password,
-            use_tls=cfg.use_tls,
-            from_name=cfg.from_name,
-            to_email=to_email,
-            to_name=username,
-            subject=f"欢迎加入 {tenant_name}！",
-            body_html=html_body,
-        )
-        logger.info(f"欢迎邮件已发送至 {to_email}")
+        """发送欢迎邮件（邮件模块已删除，跳过）。"""
+        logger.info(f"邮件模块已删除，跳过发送欢迎邮件至 {to_email}")
+        return

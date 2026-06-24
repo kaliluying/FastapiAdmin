@@ -92,7 +92,7 @@
   {
     "config_name": "是否启用验证码",
     "config_key": "captcha_enable",
-    "config_value": "true",
+    "config_value": "false",
     "config_type": true,
     "status": 0,
     "description": "登录时是否启用验证码",

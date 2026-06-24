@@ -239,7 +239,12 @@ export const useUserStore = defineStore(
         const data = response.data.data;
         const menus: MenuTable[] = data?.menus || [];
         delete data?.menus;
-        info.value = { ...info.value, ...data } as Partial<UserInfo>;
+        const previousIsSuperuser = info.value.is_superuser;
+        info.value = {
+          ...info.value,
+          ...data,
+          is_superuser: data?.is_superuser ?? previousIsSuperuser,
+        } as Partial<UserInfo>;
         setRoute(menus);
       } catch (error) {
         console.error("获取用户信息失败:", error);
@@ -318,6 +323,9 @@ export const useUserStore = defineStore(
       (await getRouterUtils()).resetRouteInitState();
       Auth.setTokens(accessToken, refreshToken, rememberMe.value);
       setToken(accessToken, refreshToken);
+      if (data?.user_info) {
+        info.value = { ...info.value, ...data.user_info } as Partial<UserInfo>;
+      }
 
       // 检查登录响应中的租户列表
       const tenants = data?.tenants || [];

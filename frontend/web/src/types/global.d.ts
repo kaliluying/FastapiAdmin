@@ -218,8 +218,6 @@ declare global {
   interface LoginParams {
     username: string;
     password: string;
-    captcha_key?: string;
-    captcha?: string;
     remember?: boolean;
     login_type?: string;
   }

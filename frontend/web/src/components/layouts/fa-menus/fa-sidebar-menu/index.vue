@@ -367,7 +367,9 @@ watch(menuOpen, (isMenuOpen: boolean) => {
   height: 100vh;
   user-select: none;
   scrollbar-width: none;
+  background: var(--default-box-color);
   border-right: 1px solid var(--fa-card-border);
+  box-shadow: var(--fa-panel-shadow);
 
   &.no-border {
     border-right: none !important;
@@ -379,7 +381,7 @@ watch(menuOpen, (isMenuOpen: boolean) => {
 
   :deep(.el-scrollbar__thumb) {
     right: -2px;
-    background-color: #ccc;
+    background-color: color-mix(in srgb, var(--fa-gray-500) 38%, transparent);
     border-radius: 2px;
   }
 
@@ -409,7 +411,7 @@ watch(menuOpen, (isMenuOpen: boolean) => {
           overflow: hidden;
           text-align: center;
           cursor: pointer;
-          border-radius: 5px;
+          border-radius: 8px;
 
           .art-svg-icon {
             display: block;
@@ -429,7 +431,7 @@ watch(menuOpen, (isMenuOpen: boolean) => {
           }
 
           &.is-active {
-            background: var(--el-color-primary-light-9);
+            background: color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color));
 
             .art-svg-icon,
             span {
@@ -478,7 +480,7 @@ watch(menuOpen, (isMenuOpen: boolean) => {
       cursor: pointer;
       background-color: var(--default-box-color);
       border: 1px solid var(--fa-card-border);
-      border-radius: 0 15px 15px 0;
+      border-radius: 0 8px 8px 0;
       opacity: 0;
       transform: translateY(-50%);
       transition: opacity 0.2s;
@@ -619,10 +621,10 @@ watch(menuOpen, (isMenuOpen: boolean) => {
 @use "@styles/core/mixin.scss" as *;
 
 /* 菜单样式变量 */
-$menu-height: 42px;
+$menu-height: 40px;
 $menu-icon-size: 20px;
 $menu-font-size: 14px;
-$hover-bg-color: var(--fa-gray-200);
+$hover-bg-color: color-mix(in srgb, var(--fa-gray-200) 82%, var(--default-box-color));
 $popup-menu-height: 40px;
 $popup-menu-padding: 8px;
 $popup-menu-margin: 5px;
@@ -632,7 +634,8 @@ $popup-menu-radius: 6px;
 @mixin menu-item-base {
   width: calc(100% - 16px);
   margin-left: 8px;
-  border-radius: 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
 
   .menu-icon {
     margin-left: -7px;
@@ -652,6 +655,8 @@ $popup-menu-radius: 6px;
   .el-menu-item.is-active {
     color: $color !important;
     background-color: $bg-color;
+    border-color: color-mix(in srgb, var(--theme-color) 20%, transparent);
+    box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
 
     .menu-icon {
       .art-svg-icon {
@@ -733,6 +738,7 @@ $popup-menu-radius: 6px;
   .menu-icon {
     margin-right: 8px;
     font-size: $menu-icon-size;
+    color: var(--fa-gray-600);
   }
 
   /* 菜单高度 */
@@ -741,6 +747,10 @@ $popup-menu-radius: 6px;
     height: $menu-height !important;
     margin-bottom: 4px;
     line-height: $menu-height !important;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease;
 
     span {
       font-size: $menu-font-size !important;
@@ -772,7 +782,10 @@ $popup-menu-radius: 6px;
   /* ---------------------- Design theme menu ---------------------- */
   .el-menu-design {
     @include theme-menu-base;
-    @include menu-active(var(--theme-color), var(--el-color-primary-light-9));
+    @include menu-active(
+      var(--theme-color),
+      color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color))
+    );
     @include menu-hover($hover-bg-color);
 
     .el-sub-menu__icon-arrow {
@@ -783,8 +796,11 @@ $popup-menu-radius: 6px;
   /* ---------------------- Dark theme menu ---------------------- */
   .el-menu-dark {
     @include theme-menu-base;
-    @include menu-active(#fff, #27282d, #fff);
-    @include menu-hover(#0f1015);
+    @include menu-active(
+      var(--theme-color),
+      color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color))
+    );
+    @include menu-hover($hover-bg-color);
 
     .el-sub-menu__icon-arrow {
       color: var(--fa-gray-400);
@@ -801,20 +817,12 @@ $popup-menu-radius: 6px;
     }
 
     .el-menu-item.is-active {
-      background-color: var(--el-color-primary-light-9);
+      background-color: color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color));
+      border: 1px solid color-mix(in srgb, var(--theme-color) 20%, transparent);
+      border-radius: 8px;
 
       .art-svg-icon {
         color: var(--theme-color) !important;
-      }
-
-      &::before {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        content: "";
-        background: var(--theme-color);
       }
     }
 

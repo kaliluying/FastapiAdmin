@@ -102,17 +102,7 @@ class Permission:
             if hasattr(role, "menus") and role.menus:
                 menu_ids.update(menu.id for menu in role.menus if menu.status == 0)
 
-        # 租户用户：菜单列表也受套餐约束（请求级缓存避免重复 DB 查询）
-        if self.auth.tenant_id and menu_ids:
-            cache_attr = "_cached_package_menu_ids"
-            cached = getattr(self.auth, cache_attr, None)
-            if cached is None:
-                from app.api.v1.module_platform.package.service import PackageService
-                allowed_ids = set(await PackageService.get_tenant_available_menu_ids(self.auth, self.auth.tenant_id))
-                object.__setattr__(self.auth, cache_attr, allowed_ids)
-            else:
-                allowed_ids = cached
-            menu_ids = menu_ids & allowed_ids
+        # 套餐模块已删除，不再进行套餐级别的菜单约束
 
         if menu_ids:
             id_attr = getattr(self.model, "id", None)

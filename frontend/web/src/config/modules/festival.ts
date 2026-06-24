@@ -54,8 +54,8 @@ export const festivalConfigList: FestivalConfig[] = [
    */
   {
     name: "系统公告",
-    date: "2026-01-01",
-    endDate: "2026-12-31",
+    date: "2099-01-01",
+    endDate: "2099-12-31",
     image: "",
     skipFireworks: true,
     isResidentBanner: true,

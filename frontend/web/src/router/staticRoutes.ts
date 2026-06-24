@@ -11,7 +11,6 @@ import type { AppRouteRecord, RouteMeta } from "@/types/router";
 import { defineComponent, h, onMounted, ref } from "vue";
 import type { RouteRecordRaw } from "vue-router";
 import { RouterView, useRoute } from "vue-router";
-import { t } from "@wangeditor-next/editor";
 
 /** 首页 / 仪表盘父级 meta（侧栏、静态子路由共用） */
 export const HOME_MENU_META: RouteMeta = {
@@ -357,98 +356,6 @@ export const staticRoutes: AppRouteRecordRaw[] = [
         component: NestedRouterParent,
         meta: DASHBOARD_PARENT_META,
         children: dashboardLayoutChildren,
-      },
-      /** 快速链接：统一父级，不在菜单中展示，通过 URL 或 fastEnter 直接访问 */
-      {
-        path: "fastlink",
-        name: "Fastlink",
-        component: NestedRouterParent,
-        meta: { hidden: true },
-        children: [
-          {
-            path: "profile",
-            name: "FastlinkProfile",
-            meta: { title: t("menus.system.userCenter"), icon: "ri:user-line", hidden: true },
-            component: () => import("@views/fastlink/current/profile.vue"),
-          },
-          {
-            path: "changelog",
-            name: "FastlinkChangeLog",
-            meta: {
-              title: t("menus.changelog.title"),
-              icon: "ri:draft-line",
-              hidden: true,
-              keepAlive: true,
-            },
-            component: () => import("@views/fastlink/changelog/index.vue"),
-          },
-          {
-            path: "pricing",
-            name: "FastlinkPricing",
-            meta: {
-              title: t("menus.dashboard.pricing"),
-              icon: "ri:money-cny-box-line",
-              hidden: true,
-              keepAlive: true,
-            },
-            component: () => import("@views/fastlink/pricing/index.vue"),
-          },
-          {
-            path: "article/list",
-            name: "FastlinkArticleList",
-            meta: {
-              title: t("menus.article.articleList"),
-              icon: "ri:article-line",
-              hidden: true,
-              keepAlive: true,
-            },
-            component: () => import("@views/fastlink/article/index.vue"),
-          },
-          {
-            path: "tutorial",
-            name: "FastlinkTutorial",
-            meta: {
-              title: t("menus.dashboard.tutorial"),
-              icon: "ri:book-2-line",
-              hidden: true,
-              keepAlive: true,
-            },
-            component: () => import("@views/fastlink/tutorial/index.vue"),
-          },
-          {
-            path: "fachat",
-            name: "FastlinkFachat",
-            meta: {
-              title: t("menus.fachat.title"),
-              icon: "ri:message-3-line",
-              hidden: true,
-              keepAlive: true,
-            },
-            component: () => import("@views/fastlink/fachat/index.vue"),
-          },
-        ],
-      },
-      /** 支付页面（订单模块子组件） */
-      {
-        path: "payment/:orderId",
-        name: "Payment",
-        component: () => import("@views/module_platform/order/components/PaymentPage.vue"),
-        meta: {
-          title: "订单支付",
-          hidden: true,
-          keepAlive: false,
-        },
-      },
-      /** 租户工作台概览 — 复用自助服务页面 */
-      {
-        path: "workspace",
-        name: "TenantWorkspace",
-        component: () => import("@views/module_platform/self_service/index.vue"),
-        meta: {
-          title: "工作台",
-          hidden: true,
-          keepAlive: false,
-        },
       },
     ],
   },

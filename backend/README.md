@@ -12,7 +12,6 @@
 | SQLAlchemy | 2.0.36 | ORM 框架 |
 | Alembic | 1.15.1 | 数据库迁移工具 |
 | Pydantic | 2.x | 数据验证与序列化 |
-| APScheduler | 3.11.0 | 定时任务调度 |
 | Redis | 5.2.1 | 缓存与会话存储 |
 | Uvicorn | 0.30.6 | ASGI 服务器 |
 | Python | 3.12+ | 运行环境 |
@@ -32,7 +31,6 @@ backend/
 │   ├── common/              # 公共组件（常量、枚举、响应封装）
 │   ├── config/              # 项目配置文件
 │   ├── core/                # 核心模块（数据库、中间件、安全）
-│   ├── module_task/         # 定时任务模块
 │   ├── plugin/              # 插件模块（二开目录）
 │   ├── scripts/             # 初始化脚本和数据
 │   └── utils/               # 工具类（验证码、文件上传等）
