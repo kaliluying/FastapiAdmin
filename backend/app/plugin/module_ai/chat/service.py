@@ -1,4 +1,6 @@
 
+import asyncio
+import json
 from collections.abc import AsyncGenerator
 from datetime import datetime
 from typing import Any
@@ -6,15 +8,19 @@ from typing import Any
 from agno.run.team import TeamRunOutput
 from agno.session.team import TeamSession
 from agno.team.team import Team
+from redis.asyncio import Redis
 
 from app.api.v1.module_system.dept.service import DeptService
+from app.common.enums import RedisInitKeyConfig
 from app.common.request import PaginationService
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
 from app.core.logger import logger
+from app.core.redis_crud import RedisCURD
 
 from .crud import ChatSessionCRUD
 from .schema import (
+    AiModelConfigSchema,
     ChatQuerySchema,
     ChatSessionCreateSchema,
     ChatSessionQueryParam,
@@ -132,7 +138,12 @@ class ChatService:
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth
 
-    async def chat_query(self, query: ChatQuerySchema) -> AsyncGenerator[str, None]:
+    async def chat_query(
+        self,
+        query: ChatQuerySchema,
+        stop_event: asyncio.Event | None = None,
+        model_config: dict[str, Any] | None = None,
+    ) -> AsyncGenerator[str, None]:
         """流式 AI 对话"""
         try:
             crud = ChatSessionCRUD(self.auth)
@@ -154,14 +165,43 @@ class ChatService:
                 dept_id=dept_id,
                 session_id=session_id,
                 db=crud.db,
+                model_config=model_config,
             )
 
-            async for chunk in agent.arun(input=query.message, stream=True):
-                if chunk and chunk.content:
-                    yield chunk.content
+            message = (query.message or "").strip()
+            if not message:
+                yield "请输入消息内容"
+                return
+
+            logger.info("开始流式生成: session_id={} message={!r}", session_id, message[:80])
+            chunk_count = 0
+            try:
+                stream = agent.arun(input=message, stream=True)
+                logger.info("agent.arun 返回对象类型: {}", type(stream).__name__)
+                if hasattr(stream, "__aiter__"):
+                    async for chunk in stream:
+                        if stop_event is not None and stop_event.is_set():
+                            logger.info("用户主动停止生成: session_id={}", session_id)
+                            return
+                        if chunk and getattr(chunk, "content", None):
+                            chunk_count += 1
+                            yield chunk.content
+                        else:
+                            logger.debug("空 chunk 跳过: {}", type(chunk).__name__ if chunk else None)
+                else:
+                    # 兼容非流式直接返回结果的场景
+                    logger.warning("agent.arun 未返回异步迭代器，尝试按单次结果处理")
+                    if stream and getattr(stream, "content", None):
+                        chunk_count += 1
+                        yield stream.content
+            except asyncio.CancelledError:
+                logger.info("生成任务被取消: session_id={}", session_id)
+                return
+
+            logger.info("流式生成结束: session_id={} chunk_count={}", session_id, chunk_count)
 
         except Exception as e:
-            logger.error(f"聊天查询失败: {e}")
+            logger.error(f"聊天查询失败: {e}", exc_info=True)
             yield f"抱歉，处理您的请求时出现错误：{str(e)}"
 
     async def chat_non_stream(self, message: str, session_id: str | None) -> dict[str, Any]:
@@ -194,8 +234,6 @@ class ChatService:
 
             if response and response.content:
                 response_text = response.content
-                import json
-
                 try:
                     if response_text.strip().startswith("{") and response_text.strip().endswith("}"):
                         action = json.loads(response_text)
@@ -309,3 +347,170 @@ class ChatService:
 
     async def delete(self, session_ids: list[str]) -> None:
         await ChatSessionCRUD(self.auth).delete_crud(session_ids=session_ids)
+
+
+# ================================================= #
+# ******************* AI 模型配置 ****************** #
+# ================================================= #
+
+
+def _ai_model_items_key(user_id: int) -> str:
+    return f"{RedisInitKeyConfig.AI_MODEL_CONFIG.key}:items:{user_id}"
+
+
+def _ai_model_active_key(user_id: int) -> str:
+    return f"{RedisInitKeyConfig.AI_MODEL_CONFIG.key}:active:{user_id}"
+
+
+async def get_user_model_config(redis: Redis, user_id: int) -> dict[str, Any] | None:
+    """读取当前激活的 AI 模型配置；不存在或未激活返回 None。"""
+    active_id = await RedisCURD(redis).get(_ai_model_active_key(user_id))
+    if not active_id:
+        return None
+    items = await list_user_model_configs(redis, user_id)
+    for item in items:
+        if item.get("id") == active_id:
+            return item
+    return None
+
+
+async def list_user_model_configs(redis: Redis, user_id: int) -> list[dict[str, Any]]:
+    """列出用户的所有模型配置项。"""
+    raw = await RedisCURD(redis).get(_ai_model_items_key(user_id))
+    if not raw:
+        return []
+    try:
+        data = json.loads(raw)
+        if isinstance(data, list):
+            return data
+        return []
+    except (json.JSONDecodeError, TypeError):
+        logger.warning("AI 模型配置列表 JSON 解析失败: user_id={}", user_id)
+        return []
+
+
+async def get_active_model_id(redis: Redis, user_id: int) -> str | None:
+    """读取当前激活的模型配置 ID；为空表示使用系统默认。"""
+    return await RedisCURD(redis).get(_ai_model_active_key(user_id))
+
+
+async def create_user_model_config(
+    redis: Redis,
+    user_id: int,
+    config: AiModelConfigSchema,
+) -> dict[str, Any]:
+    """新增一个模型配置项。"""
+    import uuid
+    from datetime import datetime
+
+    items = await list_user_model_configs(redis, user_id)
+    item = {
+        **config.model_dump(),
+        "id": uuid.uuid4().hex,
+        "created_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    items.append(item)
+    await RedisCURD(redis).set(
+        _ai_model_items_key(user_id),
+        json.dumps(items, ensure_ascii=False),
+    )
+
+    # 若用户尚未激活任何配置，自动激活新增的
+    if not await get_active_model_id(redis, user_id):
+        await RedisCURD(redis).set(_ai_model_active_key(user_id), item["id"])
+
+    logger.info("已新增 AI 模型配置: user_id={} name={} id={}", user_id, config.name, item["id"])
+    return item
+
+
+async def update_user_model_config(
+    redis: Redis,
+    user_id: int,
+    config_id: str,
+    config: AiModelConfigSchema,
+) -> dict[str, Any] | None:
+    """更新指定 ID 的模型配置项；不存在返回 None。"""
+    items = await list_user_model_configs(redis, user_id)
+    target = next((it for it in items if it.get("id") == config_id), None)
+    if not target:
+        return None
+    target.update(config.model_dump())
+    await RedisCURD(redis).set(
+        _ai_model_items_key(user_id),
+        json.dumps(items, ensure_ascii=False),
+    )
+    logger.info("已更新 AI 模型配置: user_id={} id={}", user_id, config_id)
+    return target
+
+
+async def delete_user_model_config(redis: Redis, user_id: int, config_id: str) -> bool:
+    """删除指定 ID 的模型配置项；若该 ID 是当前激活则清空激活。"""
+    items = await list_user_model_configs(redis, user_id)
+    new_items = [it for it in items if it.get("id") != config_id]
+    if len(new_items) == len(items):
+        return False
+    await RedisCURD(redis).set(
+        _ai_model_items_key(user_id),
+        json.dumps(new_items, ensure_ascii=False),
+    )
+    active_id = await get_active_model_id(redis, user_id)
+    if active_id == config_id:
+        await RedisCURD(redis).delete(_ai_model_active_key(user_id))
+    logger.info("已删除 AI 模型配置: user_id={} id={}", user_id, config_id)
+    return True
+
+
+async def set_active_model_config(redis: Redis, user_id: int, config_id: str) -> bool:
+    """设置当前激活的模型配置项；id 为空字符串或 "__default__" 表示使用系统默认。"""
+    if config_id in ("", "__default__"):
+        await RedisCURD(redis).delete(_ai_model_active_key(user_id))
+        logger.info("已切换到系统默认模型: user_id={}", user_id)
+        return True
+    items = await list_user_model_configs(redis, user_id)
+    if not any(it.get("id") == config_id for it in items):
+        return False
+    await RedisCURD(redis).set(_ai_model_active_key(user_id), config_id)
+    logger.info("已切换 AI 模型: user_id={} id={}", user_id, config_id)
+    return True
+
+
+class AiModelConfigService:
+    """AI 模型配置业务服务（多配置 + 激活切换）"""
+
+    def __init__(self, auth: AuthSchema, redis: Redis) -> None:
+        self.auth = auth
+        self.redis = redis
+
+    @property
+    def _user_id(self) -> int:
+        if not self.auth or not self.auth.user:
+            raise CustomException(msg="未登录", code=10401, status_code=401)
+        return self.auth.user.id
+
+    async def list(self) -> dict[str, Any]:
+        """获取配置列表 + 当前激活 ID。"""
+        items = await list_user_model_configs(self.redis, self._user_id)
+        active_id = await get_active_model_id(self.redis, self._user_id)
+        return {"items": items, "active_id": active_id}
+
+    async def get_active(self) -> dict[str, Any] | None:
+        return await get_user_model_config(self.redis, self._user_id)
+
+    async def create(self, config: AiModelConfigSchema) -> dict[str, Any]:
+        return await create_user_model_config(self.redis, self._user_id, config)
+
+    async def update(self, config_id: str, config: AiModelConfigSchema) -> dict[str, Any] | None:
+        result = await update_user_model_config(self.redis, self._user_id, config_id, config)
+        if result is None:
+            raise CustomException(msg="模型配置不存在", code=10404, status_code=404)
+        return result
+
+    async def delete(self, config_id: str) -> None:
+        ok = await delete_user_model_config(self.redis, self._user_id, config_id)
+        if not ok:
+            raise CustomException(msg="模型配置不存在", code=10404, status_code=404)
+
+    async def set_active(self, config_id: str) -> None:
+        ok = await set_active_model_config(self.redis, self._user_id, config_id)
+        if not ok:
+            raise CustomException(msg="模型配置不存在", code=10404, status_code=404)

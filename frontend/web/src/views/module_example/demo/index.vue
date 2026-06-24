@@ -695,7 +695,7 @@ async function runBatchStatus(status: number) {
       "批量设置"
     );
     await DemoAPI.batchDemo({ ids, status });
-    ElMessage.success("操作成功");
+    // 成功 / 失败提示由 axios 拦截器统一处理
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshData();
   } catch {
@@ -706,16 +706,15 @@ async function runBatchStatus(status: number) {
 async function handleCrudImportUpload(formData: FormData) {
   try {
     const res = await DemoAPI.importDemo(formData);
-    if (res.data.code !== ResultEnum.SUCCESS) {
-      ElMessage.error(res.data.msg || "导入失败");
-      return;
+    if (res.data.code === ResultEnum.SUCCESS) {
+      ElMessage.success(res.data.msg || "导入成功");
+      importVisible.value = false;
+      await refreshData();
     }
-    ElMessage.success(res.data.msg || "导入成功");
-    importVisible.value = false;
-    await refreshData();
+    // 非 SUCCESS 分支提示由 axios 拦截器统一处理
   } catch (error) {
     console.error("[Import]", error);
-    ElMessage.error("导入失败");
+    /* 接口错误已由拦截器提示 */
   }
 }
 </script>

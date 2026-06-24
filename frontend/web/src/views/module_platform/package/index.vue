@@ -619,14 +619,13 @@ async function deletePkgRow(id: number) {
 
 async function togglePkgStatus(row: PackageTable) {
   const newStatus = row.status === 0 ? 1 : 0;
-  const label = newStatus === 0 ? "启用" : "禁用";
   try {
     await confirmToggleStatus(newStatus);
     await PackageAPI.batchPackageStatus({ ids: [row.id!], status: Number(newStatus) });
-    ElMessage.success(`${label}成功`);
+    // 成功提示由 axios 拦截器统一处理
     await refreshData();
   } catch {
-    // 用户取消
+    // 用户取消 / 接口错误（已由拦截器提示）
   }
 }
 
@@ -686,7 +685,6 @@ async function handleSaveMenus() {
   menuSaveLoading.value = true;
   try {
     await PackageAPI.setPackageMenus(currentMenuPkgId.value, checkedIds);
-    ElMessage.success("菜单权限保存成功");
     menuDialogVisible.value = false;
   } catch {
     // 错误由全局拦截处理

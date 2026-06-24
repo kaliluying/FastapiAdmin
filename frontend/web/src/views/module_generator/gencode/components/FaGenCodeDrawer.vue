@@ -48,16 +48,7 @@
     </div>
 
     <template #footer>
-      <ElButton :icon="Close" @click="emit('close')">关闭</ElButton>
-      <ElButton
-        v-if="activeStep < 2"
-        type="info"
-        :icon="Finished"
-        :loading="loading"
-        @click="emit('save')"
-      >
-        保存
-      </ElButton>
+      <ElButton type="danger" :icon="Close" @click="emit('close')">关闭</ElButton>
       <ElButton v-if="activeStep !== 0" type="success" :icon="Back" @click="emit('prev-step')">
         上一步
       </ElButton>
@@ -95,7 +86,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { FormRules } from "element-plus";
-import { Close, Right, FolderOpened, Back, Download, Finished } from "@element-plus/icons-vue";
+import { Close, Right, FolderOpened, Back, Download } from "@element-plus/icons-vue";
 import type { EditorConfiguration } from "codemirror";
 import type { GenTableSchema } from "@/api/module_generator/gencode";
 import type { DictTable } from "@/api/module_system/dict";
@@ -138,7 +129,6 @@ interface Emits {
   close: [];
   "prev-step": [];
   "next-step": [];
-  save: [];
   "gen-download": [];
   "gen-write": [];
   "clear-master-sub": [];

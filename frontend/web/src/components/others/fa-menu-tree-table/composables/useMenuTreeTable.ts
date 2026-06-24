@@ -26,11 +26,9 @@ interface MenuTreeTableProps {
  * 负责：搜索过滤、级联勾选、父子联动、展开/收起、初始化选中、对外方法
  */
 export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
-  const props = {
-    menuTree: rawProps.menuTree,
-    checkedIds: rawProps.checkedIds ?? [],
-    loading: rawProps.loading,
-  };
+  // 直接使用父组件传入的 props（vue 3 中子组件 props 本身就是 reactive proxy）
+  // 不要再 reactive() 一次，否则会丢失响应式（只能拿到首次快照）
+  const props = rawProps;
   // ---- 状态 ----
   const filterText = ref("");
   const isExpanded = ref(true);
@@ -336,22 +334,23 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
   function refresh() {
     filterText.value = "";
     const tree = props.menuTree;
-    parentChildLinked.value = checkParentChildLinked(props.checkedIds, tree);
+    const ids = props.checkedIds ?? [];
+    parentChildLinked.value = checkParentChildLinked(ids, tree);
     tableData.value = filterTableData(tree);
-    nextTick(() => initSelection(props.checkedIds));
+    nextTick(() => initSelection(ids));
   }
 
   // ---- 数据变化监听 ----
   watch(
     () => [props.menuTree, props.checkedIds] as const,
     () => refresh(),
-    { immediate: false }
+    { immediate: true, deep: true }
   );
 
   watch(filterText, () => {
     const tree = filteredMenuTree.value;
     tableData.value = filterTableData(tree);
-    nextTick(() => initSelection(props.checkedIds));
+    nextTick(() => initSelection(props.checkedIds ?? []));
     if (filterText.value) setAllRowsExpanded(true);
   });
 

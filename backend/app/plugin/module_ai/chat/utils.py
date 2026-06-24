@@ -16,8 +16,17 @@ class AgnoFactory:
     AGENT_EXPECTED_OUTPUT = "中文回答"
     AGENT_TEMPERATURE = 0.7
     NUM_HISTORY_RUNS = 3
+    REQUEST_TIMEOUT = 60.0  # LLM 请求总超时（秒），流式响应需放长
+    CONNECT_TIMEOUT = 10.0  # TCP 连接超时（秒）
 
-    def create_agent(self, user_id: str, dept_id: str, session_id: str, db: Any | None = None) -> Team:
+    def create_agent(
+        self,
+        user_id: str,
+        dept_id: str,
+        session_id: str,
+        db: Any | None = None,
+        model_config: dict[str, Any] | None = None,
+    ) -> Team:
         """
         创建带 Agent 的 Team 实例。
 
@@ -26,10 +35,24 @@ class AgnoFactory:
         - dept_id (str): 部门/团队标识。
         - session_id (str): 会话 ID。
         - db (Any | None): Agno 持久化数据库实例，可选。
+        - model_config (dict | None): 运行时模型配置，覆盖系统默认。
+            支持字段：base_url, api_key, model_id, temperature。
 
         返回:
         - Team: 配置好的 Team。
         """
+        # 优先使用运行时配置，否则 fallback 到系统 settings
+        base_url = settings.OPENAI_BASE_URL
+        api_key = settings.OPENAI_API_KEY
+        model_id = settings.OPENAI_MODEL
+        temperature = self.AGENT_TEMPERATURE
+
+        if model_config:
+            base_url = model_config.get("base_url") or base_url
+            api_key = model_config.get("api_key") or api_key
+            model_id = model_config.get("model_id") or model_id
+            if isinstance(model_config.get("temperature"), (int, float)):
+                temperature = float(model_config["temperature"])
 
         # 创建 Agent
         fastapiadmin_agent = Agent(
@@ -46,10 +69,11 @@ class AgnoFactory:
             user_id=user_id,
             session_id=session_id,
             model=OpenAILike(
-                id=settings.OPENAI_MODEL,
-                api_key=settings.OPENAI_API_KEY,
-                base_url=settings.OPENAI_BASE_URL,
-                temperature=self.AGENT_TEMPERATURE,
+                id=model_id,
+                api_key=api_key,
+                base_url=base_url,
+                temperature=temperature,
+                timeout=self.REQUEST_TIMEOUT,
             ),
             members=[fastapiadmin_agent],
             instructions=self.AGENT_INSTRUCTIONS,

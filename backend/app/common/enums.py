@@ -53,6 +53,7 @@ class RedisInitKeyConfig(Enum):
         "key": "scheduler_job_lock",
         "remark": "定时任务初始化锁",
     }
+    AI_MODEL_CONFIG = {"key": "ai_model_config", "remark": "用户AI模型配置"}
 
     @property
     def key(self) -> str:

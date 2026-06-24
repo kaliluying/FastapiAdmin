@@ -697,10 +697,10 @@ function formatTicketOperationCell(row: TicketTable) {
 async function closeTicket(id: number) {
   try {
     await TicketAPI.updateTicket(id, { status: 3 });
-    ElMessage.success("工单已关闭");
+    // 成功 / 失败提示由 axios 拦截器统一处理
     await refreshData();
   } catch {
-    ElMessage.error("关闭失败");
+    /* 接口错误已由拦截器提示 */
   }
 }
 

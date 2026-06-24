@@ -26,9 +26,9 @@
     </ElForm>
 
     <ul>
-      <div class="pb-5 text-lg font-medium">评论 {{ comments.length }}</div>
+      <div class="pb-5 text-lg font-medium">评论 {{ internalComments.length }}</div>
       <FaCommentItem
-        v-for="comment in comments.slice().reverse()"
+        v-for="comment in internalComments.slice().reverse()"
         :key="comment.id"
         :comment="comment"
         :show-reply-form="showReplyForm"
@@ -42,16 +42,17 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { type Comment } from "@/mock/temp/commentDetail";
+import { commentList, Comment } from "@/mock/temp/commentDetail";
 import { ElMessage } from "element-plus";
 
 defineOptions({ name: "FaCommentWidget" });
 
 interface Props {
+  /** 评论列表数据，不传则使用 mock 数据 */
   comments?: Comment[];
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   comments: () => [],
 });
 
@@ -61,6 +62,11 @@ interface Emits {
 }
 
 const emit = defineEmits<Emits>();
+
+/** 内部评论数据（优先使用 props，否则使用 mock 数据） */
+const internalComments = ref<Comment[]>(
+  props.comments.length > 0 ? props.comments : commentList.value
+);
 
 const newComment = ref<Partial<Comment>>({
   author: "",
@@ -75,16 +81,19 @@ const addComment = () => {
     return;
   }
 
-  emit("add-comment", {
+  const newCommentData: Comment = {
     id: Date.now(),
     author: newComment.value.author.trim(),
     content: newComment.value.content.trim(),
     timestamp: new Date().toISOString(),
     replies: [],
-  });
+  };
+
+  internalComments.value.push(newCommentData);
 
   newComment.value.author = "";
   newComment.value.content = "";
+  emit("add-comment", newCommentData);
   ElMessage.success("评论发布成功");
 };
 
@@ -94,12 +103,35 @@ const addReply = (commentId: number, replyAuthor: string, replyContent: string) 
     return;
   }
 
-  emit("add-reply", commentId, replyAuthor.trim(), replyContent.trim());
-  showReplyForm.value = null;
-  ElMessage.success("回复发布成功");
+  const comment = findComment(internalComments.value, commentId);
+  if (comment) {
+    comment.replies.push({
+      id: Date.now(),
+      author: replyAuthor.trim(),
+      content: replyContent.trim(),
+      timestamp: new Date().toISOString(),
+      replies: [],
+    });
+    showReplyForm.value = null;
+    emit("add-reply", commentId, replyAuthor, replyContent);
+    ElMessage.success("回复发布成功");
+  }
 };
 
 const toggleReply = (commentId: number) => {
   showReplyForm.value = showReplyForm.value === commentId ? null : commentId;
+};
+
+const findComment = (comments: Comment[], commentId: number): Comment | undefined => {
+  for (const comment of comments) {
+    if (comment.id === commentId) {
+      return comment;
+    }
+    const found = findComment(comment.replies, commentId);
+    if (found) {
+      return found;
+    }
+  }
+  return undefined;
 };
 </script>

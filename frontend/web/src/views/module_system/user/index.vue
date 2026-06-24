@@ -537,9 +537,8 @@ async function deleteUserRow(id: number) {
     const idSet = [id];
     if (userStore.basicInfo.id && idSet.includes(userStore.basicInfo.id)) {
       userStore.clearUserInfo();
-    } else {
-      ElMessage.success("删除成功");
     }
+    // 成功 / 失败提示由 axios 拦截器统一处理
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
@@ -785,12 +784,11 @@ async function handleImportUpload(formDataUpload: FormData) {
       ElMessage.success(`${response.data.msg}，${response.data.data}`);
       importVisible.value = false;
       await refreshData();
-    } else {
-      ElMessage.error(response.data.msg || "导入失败");
     }
+    // 失败分支提示由 axios 拦截器统一处理
   } catch (error: unknown) {
     console.error(error);
-    ElMessage.error("上传失败");
+    // 接口错误已由拦截器提示
   } finally {
     uploadLoading.value = false;
   }

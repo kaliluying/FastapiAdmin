@@ -298,7 +298,7 @@ export const useSettingsStore = defineStore(
       menuOpen.value = open;
     };
 
-    /** 切换 `refresh`，驱动 `layouts/art-page-content` 内 `v-if="isRefresh"` 重建视图 */
+    /** 切换 `refresh`，驱动 `layouts/fa-page-content` 内 `v-if="isRefresh"` 重建视图 */
     const reload = () => {
       refresh.value = !refresh.value;
     };

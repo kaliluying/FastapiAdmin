@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -9,7 +10,7 @@ from app.core.logger import logger
 from app.core.router_class import OperationLogRoute
 
 from .schema import ChatQuerySchema
-from .service import ChatService
+from .service import ChatService, get_user_model_config
 
 WS_AI = APIRouter(
     route_class=OperationLogRoute,
@@ -36,9 +37,9 @@ async def websocket_chat_controller(websocket: WebSocket) -> None:
     """
     WebSocket 聊天接口。
 
-    支持两种消息格式：
-    1. 纯文本：直接发送消息内容
-    2. JSON 格式：{"message": "消息内容", "session_id": "会话ID", "files": [...]}
+    支持的消息格式（JSON）：
+    - 对话：{"message": "...", "session_id": "...", "files": [...]}
+    - 停止：{"action": "stop", "session_id": "..."}
 
     ws://127.0.0.1:8001/api/v1/ai/chat/ws?token=xxx
     """
@@ -49,14 +50,20 @@ async def websocket_chat_controller(websocket: WebSocket) -> None:
         await _send_error_and_close(websocket, "未提供认证token，请重新登录")
         return
 
+    # 跨消息循环共享的停止信号：客户端发送 stop 时 set，生成器检测到后退出
+    stop_event = asyncio.Event()
+    # 标记当前是否在生成中，便于 stop 校验
+    is_generating = asyncio.Event()
+
     try:
-        # 认证：db 会话需在整个连接生命周期内保持打开（auth.db 供 ChatService 使用）
         redis = websocket.app.state.redis
         async with async_db_session() as db:
             auth = await _authenticate(token, db, redis)
 
             user = auth.user
             logger.info("WebSocket连接已建立: {} - 用户: {}", websocket.client, user.username if user else "未认证")
+
+            chat_service = ChatService(auth)
 
             # 消息循环
             while True:
@@ -65,22 +72,54 @@ async def websocket_chat_controller(websocket: WebSocket) -> None:
                     try:
                         message_data = json.loads(data)
                         query = ChatQuerySchema(**message_data)
-                        logger.info("收到聊天查询: {} - 会话ID: {}", query, query.session_id)
-
-                        chat_result = ChatService.chat_query(query=query, auth=auth)
-                        async for chunk in chat_result:
-                            if chunk:
-                                try:
-                                    await websocket.send_text(chunk)
-                                except RuntimeError:
-                                    logger.warning("WebSocket连接已关闭，停止发送消息")
-                                    return
                     except json.JSONDecodeError:
                         logger.warning("收到非JSON消息: {}", data)
                         await websocket.send_text("消息格式错误，请发送JSON格式的消息")
+                        continue
                     except Exception as e:
-                        logger.error("处理消息时出错: {}", e)
-                        await websocket.send_text(f"处理消息时出错: {e}")
+                        logger.warning("消息校验失败: {}", e)
+                        await websocket.send_text(f"消息格式错误: {e}")
+                        continue
+
+                    # 处理停止指令
+                    if query.action == "stop":
+                        if is_generating.is_set():
+                            stop_event.set()
+                            logger.info("收到停止指令: session={}", query.session_id)
+                            await websocket.send_text("[STOPPED]")
+                        else:
+                            await websocket.send_text("当前没有正在进行的生成任务")
+                        continue
+
+                    # 对话指令
+                    logger.info("收到聊天查询: session_id={}", query.session_id)
+
+                    is_generating.set()
+                    stop_event.clear()
+                    # 读取用户的 AI 模型配置（每次可动态切换）
+                    model_config = await get_user_model_config(redis, user.id)
+                    try:
+                        async for chunk in chat_service.chat_query(
+                            query=query,
+                            stop_event=stop_event,
+                            model_config=model_config,
+                        ):
+                            if not chunk:
+                                continue
+                            try:
+                                await websocket.send_text(chunk)
+                            except RuntimeError:
+                                logger.warning("WebSocket连接已关闭，停止发送消息")
+                                return
+                    finally:
+                        is_generating.clear()
+                        stop_event.clear()
+
+                    # 告知前端生成结束
+                    try:
+                        await websocket.send_text("[DONE]")
+                    except RuntimeError:
+                        return
 
                 except WebSocketDisconnect:
                     logger.info("WebSocket连接已断开: {}", websocket.client)

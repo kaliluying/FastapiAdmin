@@ -135,6 +135,7 @@ interface Props {
 interface Emits {
   (e: "select-session", session: ChatSession): void;
   (e: "new-session"): void;
+  (e: "open-config"): void;
 }
 
 const { currentSessionId, isCollapsed = false } = defineProps<Props>();
@@ -246,11 +247,10 @@ const handleSessionCommand = async (command: string, session: ChatSession) => {
       await AiChatAPI.updateSession(session.id, { title: value });
       session.title = value;
     } catch (error) {
-      if (error !== "cancel") {
-        ElMessage.error("重命名失败");
-      } else {
+      if (error === "cancel") {
         ElMessage.info("已取消重命名");
       }
+      // 非 cancel 的接口错误已由拦截器提示
     }
   } else if (command === "delete") {
     try {
@@ -265,20 +265,19 @@ const handleSessionCommand = async (command: string, session: ChatSession) => {
         sessions.value.splice(index, 1);
       }
     } catch (error) {
-      if (error !== "cancel") {
-        ElMessage.error("删除失败");
-      } else {
+      if (error === "cancel") {
         ElMessage.info("已取消删除");
       }
+      // 非 cancel 的接口错误已由拦截器提示
     }
   }
 };
 
 const handleUserCommand = (command: string) => {
   if (command === "profile") {
-    router.push("/profile");
+    router.push("/fastlink/profile");
   } else if (command === "settings") {
-    ElMessage.info("设置功能开发中");
+    emit("open-config");
   } else if (command === "logout") {
     userStore.logout();
   }

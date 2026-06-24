@@ -138,7 +138,9 @@
                       :show-tip="true"
                       :enable-preview="true"
                       :enable-crop="true"
-                      v-bind="brandCropBind('tenant_logo')"
+                      crop-dialog-title="裁剪站点 Logo"
+                      crop-inner-title="调整 Logo"
+                      crop-preview-title="预览"
                     />
                   </ElFormItem>
                 </ElCol>
@@ -152,7 +154,9 @@
                       :show-tip="true"
                       :enable-preview="true"
                       :enable-crop="true"
-                      v-bind="brandCropBind('tenant_favicon')"
+                      crop-dialog-title="裁剪网站图标"
+                      crop-inner-title="调整图标"
+                      crop-preview-title="预览"
                     />
                   </ElFormItem>
                 </ElCol>
@@ -166,7 +170,9 @@
                       :show-tip="true"
                       :enable-preview="true"
                       :enable-crop="true"
-                      v-bind="brandCropBind('tenant_login_bg')"
+                      crop-dialog-title="裁剪登录背景"
+                      crop-inner-title="调整背景图"
+                      crop-preview-title="预览"
                     />
                   </ElFormItem>
                 </ElCol>
@@ -214,6 +220,7 @@ import TenantAPI, {
   type TenantTable,
   type TenantUpdateForm,
 } from "@/api/module_platform/tenant";
+import PackageAPI from "@/api/module_platform/package";
 import { useAuth } from "@/hooks/core/useAuth";
 import { renderTableOperationCell, type TableOperationAction, resolveStatusColumns } from "@utils";
 import type { SearchFormItem } from "@/components/forms/fa-search-bar/index.vue";
@@ -221,7 +228,7 @@ import type FaSearchBar from "@/components/forms/fa-search-bar/index.vue";
 import type { FormItem } from "@/components/forms/fa-form/index.vue";
 import type FaForm from "@/components/forms/fa-form/index.vue";
 import { ElMessage, ElTabs, ElTabPane, ElForm, ElFormItem, ElRow, ElCol } from "element-plus";
-import { h, ref } from "vue";
+import { h, ref, computed, onMounted } from "vue";
 
 defineOptions({
   name: "Tenant",
@@ -365,7 +372,7 @@ async function toggleTenantStatus(id: number) {
     }
     await refreshData();
   } catch {
-    ElMessage.error("状态切换失败");
+    /* 接口错误已由拦截器提示 */
   }
 }
 
@@ -551,44 +558,6 @@ const dataFormRef = ref<InstanceType<typeof FaForm> | null>(null);
 const submitLoading = ref(false);
 const tenantFormRenderKey = ref(0);
 
-function brandCropBind(key: string) {
-  switch (key) {
-    case "tenant_favicon":
-      return {
-        cropCutWidth: 64,
-        cropCutHeight: 64,
-        cropBoxWidth: 380,
-        cropBoxHeight: 320,
-        cropDialogTitle: "裁剪网站图标",
-        cropInnerTitle: "调整图标",
-        cropPreviewTitle: "预览",
-      };
-    case "tenant_logo":
-      return {
-        cropCutWidth: 320,
-        cropCutHeight: 96,
-        cropBoxWidth: 520,
-        cropBoxHeight: 360,
-        cropDialogTitle: "裁剪站点 Logo",
-        cropInnerTitle: "调整 Logo",
-        cropPreviewTitle: "预览",
-      };
-    case "tenant_login_bg":
-      return {
-        cropCutWidth: 960,
-        cropCutHeight: 540,
-        cropBoxWidth: 560,
-        cropBoxHeight: 380,
-        cropDialogTitle: "裁剪登录背景",
-        cropInnerTitle: "调整背景图",
-        cropPreviewTitle: "预览",
-        cropFileType: "jpeg" as const,
-      };
-    default:
-      return {};
-  }
-}
-
 async function handleAdd() {
   createLoading.value = true;
   try {
@@ -628,7 +597,27 @@ async function handleCloseDialog() {
 
 const activeTab = ref("basic");
 
-const basicFormItems: FormItem[] = [
+const packageOptions = ref<{ label: string; value: number }[]>([]);
+const packageLoading = ref(false);
+
+async function fetchPackageOptions() {
+  packageLoading.value = true;
+  try {
+    const res = await PackageAPI.listPackage({ page_no: 1, page_size: 100 });
+    const list = (res.data?.data?.items ?? res.data?.data ?? []) as { id: number; name: string }[];
+    packageOptions.value = list.map((p) => ({ label: p.name, value: p.id }));
+  } catch {
+    packageOptions.value = [];
+  } finally {
+    packageLoading.value = false;
+  }
+}
+
+onMounted(() => {
+  fetchPackageOptions();
+});
+
+const basicFormItems = computed<FormItem[]>(() => [
   {
     label: "租户名称",
     key: "name",
@@ -659,10 +648,16 @@ const basicFormItems: FormItem[] = [
     },
   },
   {
-    label: "关联套餐ID",
+    label: "关联套餐",
     key: "package_id",
-    type: "number",
-    props: { placeholder: "选填", min: 1, style: { width: "100%" } },
+    type: "select",
+    props: {
+      placeholder: "请选择套餐",
+      options: packageOptions.value,
+      loading: packageLoading.value,
+      clearable: true,
+      style: { width: "100%" },
+    },
   },
   {
     label: "排序",
@@ -726,7 +721,7 @@ const basicFormItems: FormItem[] = [
       valueFormat: "YYYY-MM-DD HH:mm:ss",
     },
   },
-];
+]);
 
 const websiteFormItems: FormItem[] = [
   {

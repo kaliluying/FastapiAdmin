@@ -371,7 +371,7 @@ async function handlePublish(record: WorkflowTable) {
     await WorkflowDefinitionAPI.publishWorkflow(record.id, {});
     await refreshUpdate();
   } catch {
-    ElMessage.error("发布失败");
+    /* 接口错误已由拦截器提示 */
   }
 }
 

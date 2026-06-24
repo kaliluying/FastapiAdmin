@@ -1,13 +1,11 @@
 <!-- 单图上传组件 -->
 <template>
   <div class="single-image-upload">
-    <ElDialog
+    <FaDialog
       v-model="cropVisible"
       :title="cropDialogTitle"
-      width="640px"
-      append-to-body
-      destroy-on-close
-      class="single-image-upload__crop-dialog"
+      width="960px"
+      :draggable="false"
       @closed="onCropDialogClosed"
     >
       <FaCutterImg
@@ -28,7 +26,7 @@
         @update:img-url="onCropConfirm"
         @error="onCropError"
       />
-    </ElDialog>
+    </FaDialog>
 
     <ElUpload
       v-model:file-list="internalFileList"
@@ -82,6 +80,7 @@ defineOptions({ name: "FaUpload" });
 
 import { ref, watch } from "vue";
 import { UploadRawFile, UploadRequestOptions, ElMessage, type UploadUserFile } from "element-plus";
+import { CircleCloseFilled } from "@element-plus/icons-vue";
 import ParamsAPI from "@/api/module_system/params";
 import { dataURLToFile } from "@utils";
 
@@ -146,11 +145,11 @@ const props = withDefaults(defineProps<Props>(), {
   tipText: "",
   enablePreview: true,
   enableCrop: false,
-  cropBoxWidth: 520,
-  cropBoxHeight: 360,
-  cropCutWidth: 400,
-  cropCutHeight: 300,
-  cropQuality: 0.92,
+  cropBoxWidth: 530,
+  cropBoxHeight: 300,
+  cropCutWidth: 360,
+  cropCutHeight: 200,
+  cropQuality: 1,
   cropFileType: "jpeg",
   cropDialogTitle: "裁剪图片",
   cropInnerTitle: "调整图片",

@@ -96,7 +96,7 @@ class {{ class_name }}Service:
         - dict - 创建结果
         """
         {% for column in columns %}
-        {% if column.is_unique %}
+        {% if column.is_unique and column.column_name != 'uuid' %}
         obj = await {{ class_name }}CRUD(auth).get({{ column.column_name }}=data.{{ column.column_name }})
         if obj:
             raise CustomException(msg='创建失败，{{ column.column_comment }}已存在')
@@ -125,7 +125,7 @@ class {{ class_name }}Service:
 
         # 检查唯一性约束
         {% for column in columns %}
-        {% if column.is_unique %}
+        {% if column.is_unique and column.column_name != 'uuid' %}
         exist_obj = await {{ class_name }}CRUD(auth).get({{ column.column_name }}=data.{{ column.column_name }})
         if exist_obj and getattr(exist_obj, '{{ pk_column_name }}') != id:
             raise CustomException(msg='更新失败，{{ column.column_comment }}重复')
@@ -182,7 +182,9 @@ class {{ class_name }}Service:
         """
         mapping_dict = {
             {% for column in columns %}
+            {% if column.column_name not in ['uuid', 'tenant_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] %}
             '{{ column.column_name }}': '{{ column.column_comment }}',
+            {% endif %}
             {% endfor %}
         }
         # 复制数据并转换状态
@@ -214,7 +216,9 @@ class {{ class_name }}Service:
         """
         header_dict = {
             {% for column in columns %}
+            {% if column.column_name not in ['id', 'uuid', 'tenant_id', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
             '{{ column.column_comment }}': '{{ column.column_name }}',
+            {% endif %}
             {% endfor %}
         }
 
@@ -237,7 +241,7 @@ class {{ class_name }}Service:
 
             # 验证必填字段（非主键且不允许为空的列）
             {% for column in columns %}
-            {% if column.is_nullable is false and column.is_pk is false %}
+            {% if column.is_nullable is false and column.is_pk is false and column.column_name not in ['id', 'uuid', 'tenant_id', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] %}
             errors = []
             missing_rows = df[df['{{ column.column_name }}'].isnull()].index.tolist()
             if missing_rows:
@@ -258,7 +262,9 @@ class {{ class_name }}Service:
                 try:
                     data = {
                         {% for column in columns %}
+                        {% if column.column_name not in ['id', 'uuid', 'tenant_id', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
                         "{{ column.column_name }}": row['{{ column.column_name }}'],
+                        {% endif %}
                         {% endfor %}
                     }
                     # 使用CreateSchema做校验后入库
@@ -266,7 +272,7 @@ class {{ class_name }}Service:
 
                     # 检查唯一性约束
                     {% for column in columns %}
-                    {% if column.is_unique %}
+                    {% if column.is_unique and column.column_name not in ['uuid', 'tenant_id', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] %}
                     exists_obj = await {{ class_name }}CRUD(auth).get({{ column.column_name }}=create_schema.{{ column.column_name }})
                     if exists_obj:
                         if update_support:
@@ -303,14 +309,16 @@ class {{ class_name }}Service:
         """
         header_list = [
             {% for column in columns %}
+            {% if column.column_name not in ['id', 'uuid', 'tenant_id', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
             '{{ column.column_comment }}',
+            {% endif %}
             {% endfor %}
         ]
         selector_header_list = []
         option_list = []
 
         {% for column in columns %}
-        {% if column.html_type == 'select' and column.dict_type %}
+        {% if (column.html_type == 'select' or column.html_type == 'radio') and column.dict_type and column.column_name not in ['id', 'uuid', 'tenant_id', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
         selector_header_list.append('{{ column.column_comment }}')
         option_list.append({'{{ column.column_comment }}': []})
         {% endif %}

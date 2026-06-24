@@ -20,13 +20,13 @@ const fastEnterConfig: FastEnterConfig = {
       routeName: "FastlinkTutorial",
     },
     {
-      name: "使用文档",
-      description: "使用指南与开发文档",
-      icon: "ri:book-2-line",
+      name: "文章列表",
+      description: "文章管理与查看",
+      icon: "ri:article-line",
       iconColor: "#377dff",
       enabled: true,
       order: 2,
-      link: WEB_LINKS.DOCS,
+      routeName: "FastlinkArticleList",
     },
     {
       name: "定价",

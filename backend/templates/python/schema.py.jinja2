@@ -10,7 +10,6 @@ from fastapi import Query
 {% for import_stmt in schema_import_list %}
 {{ import_stmt }}
 {% endfor %}
-{# DateTimeStr 由 schema_import_list 在存在 created_time/updated_time 列时注入 #}
 from app.common.enums import QueueEnum
 from app.core.base_params import BaseQueryParam, TenantByQueryParam, UserByQueryParam
 from app.core.base_schema import BaseSchema, TenantBySchema, UserBySchema
@@ -20,11 +19,15 @@ class {{ class_name }}CreateSchema(BaseModel):
     {{ function_name }}新增模型
     """
     {% for column in columns %}
-    {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
+    {% if column.column_name not in ['uuid', 'tenant_id', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
     {% if column.column_name == 'status' %}
-    {{ column.column_name }}: {{ column.python_type }} = Field(default="0", description='{{ column.column_comment }}')
+    {{ column.column_name }}: {{ column.python_type }} = Field(default={% if column.python_type == "str" %}"0"{% else %}0{% endif %}{% if column.python_type == "int" %}, ge=0, le=1{% endif %}, description='{{ column.column_comment }}')
     {% elif column.column_name == 'description' %}
-    {{ column.column_name }}: str | None = Field(default=None, max_length=255, description='{{ column.column_comment }}')
+    {{ column.column_name }}: str | None = Field(default=None, description='{{ column.column_comment }}')
+    {% elif column.python_type == "bool" or column.html_type == "switch" %}
+    {{ column.column_name }}: bool = Field(default=True, description='{{ column.column_comment }}')
+    {% elif column.is_nullable %}
+    {{ column.column_name }}: {{ column.python_type }} | None = Field(default=None, description='{{ column.column_comment }}')
     {% else %}
     {{ column.column_name }}: {{ column.python_type }} = Field(default=..., description='{{ column.column_comment }}')
     {% endif %}
@@ -50,39 +53,19 @@ class {{ class_name }}OutSchema({{ class_name }}CreateSchema, BaseSchema, UserBy
 class {{ class_name }}QueryParam(BaseQueryParam, UserByQueryParam, TenantByQueryParam):
     """{{ function_name }}查询参数"""
 
-    def __init__(
-        self,
+    {% for column in columns %}
+    {% if column.is_query and column.column_name not in ['created_time', 'updated_time', 'created_id', 'updated_id', 'tenant_id', 'is_deleted', 'deleted_time', 'deleted_id'] %}
+    {{ column.column_name }}: {{ column.python_type }} | None = Query(None, description="{{ column.column_comment }}")
+    {% endif %}
+    {% endfor %}
+
+    def __post_init__(self) -> None:
         {% for column in columns %}
-        {% if column.is_query and column.query_type == 'LIKE' %}
-        {{ column.column_name }}: str | None = Query(None, description="{{ column.column_comment }}"),
+        {% if column.is_query and column.query_type == 'LIKE' and column.column_name not in ['created_time', 'updated_time', 'created_id', 'updated_id', 'tenant_id', 'is_deleted', 'deleted_time', 'deleted_id'] %}
+        if self.{{ column.column_name }}:
+            self.{{ column.column_name }} = (QueueEnum.like.value, self.{{ column.column_name }})
+        {% elif column.is_query and column.query_type == 'EQ' and column.column_name not in ['created_time', 'updated_time', 'created_id', 'updated_id', 'tenant_id', 'is_deleted', 'deleted_time', 'deleted_id'] %}
+        if self.{{ column.column_name }} is not None:
+            self.{{ column.column_name }} = (QueueEnum.eq.value, self.{{ column.column_name }})
         {% endif %}
         {% endfor %}
-        {% for column in columns %}
-        {% if column.is_query and column.query_type == 'EQ' and column.column_name not in ['created_time', 'updated_time'] %}
-        {{ column.column_name }}: {{ column.python_type }} | None = Query(None, description="{{ column.column_comment }}"),
-        {% endif %}
-        {% endfor %}
-        *args,
-        **kwargs,
-    ) -> None:
-        super().__init__(*args, **kwargs)
-        {% for column in columns %}
-        {% if column.is_query and column.query_type == 'LIKE' %}
-        # 模糊查询字段
-        self.{{ column.column_name }} = (QueueEnum.like.value, {{ column.column_name }})
-        {% elif column.is_query and column.query_type == 'EQ' and column.column_name not in ['created_time', 'updated_time'] %}
-        # 精确查询字段
-        if {{ column.column_name }} is not None:
-            self.{{ column.column_name }} = (QueueEnum.eq.value, {{ column.column_name }})
-        {% endif %}
-        {% endfor %}
-        {% if 'created_time' in table_column_names %}
-        # 时间范围查询
-        if created_time and len(created_time) == 2:
-            self.created_time = (QueueEnum.between.value, (created_time[0], created_time[1]))
-        {% endif %}
-        {% if 'updated_time' in table_column_names %}
-        if updated_time and len(updated_time) == 2:
-            self.updated_time = (QueueEnum.between.value, (updated_time[0], updated_time[1]))
-        {% endif %}
-        {# created_id / updated_id 若为 EQ 查询列，已在上方 query_type 循环中处理 #}

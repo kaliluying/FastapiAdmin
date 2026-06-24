@@ -44,7 +44,7 @@ class Jinja2TemplateUtil:
         return ct
 
     # 项目路径
-    FRONTEND_PROJECT_PATH = "frontend"
+    FRONTEND_PROJECT_PATH = "frontend/web"
     BACKEND_PROJECT_PATH = "backend"
 
     # 环境对象
@@ -181,6 +181,12 @@ class Jinja2TemplateUtil:
 
         _cols = gen_table.columns or []
         table_column_names = frozenset(c.column_name for c in _cols if getattr(c, "column_name", None))
+        has_dict_column = any(
+            getattr(c, "dict_type", None) for c in _cols
+        )
+        has_image_column = any(
+            getattr(c, "html_type", None) == "imageUpload" for c in _cols
+        )
 
         sub_class_name = ""
         sub_model_class_name = ""
@@ -234,6 +240,8 @@ class Jinja2TemplateUtil:
             "pk_column_name": (gen_table.pk_column.column_name if gen_table.pk_column else None) or "id",
             "parent_pk_column_name": (gen_table.pk_column.column_name if gen_table.pk_column else None) or "id",
             "sub_table_fk_name": "",
+            "has_dict_column": has_dict_column,
+            "has_image_column": has_image_column,
         }
 
         return context
@@ -406,9 +414,6 @@ class Jinja2TemplateUtil:
         has_datetime_import = False
         has_date_import = False
         has_time_import = False
-        has_datetime_str = False
-        has_date_str = False
-        has_time_str = False
 
         for column in columns:
             # 处理datetime类型的导入
@@ -421,10 +426,6 @@ class Jinja2TemplateUtil:
                     has_time_import = True
             elif column.python_type == GenConstant.TYPE_DECIMAL:
                 import_list.add("from decimal import Decimal")
-
-            # 检查是否需要DateTimeStr、DateStr、TimeStr
-            if column.column_name == "created_time" or column.column_name == "updated_time":
-                has_datetime_str = True
 
         if gen_table.sub and gen_table.sub_table and gen_table.sub_table.columns:
             sub_columns = gen_table.sub_table.columns or []
@@ -448,14 +449,6 @@ class Jinja2TemplateUtil:
         if has_time_import:
             import_list.add("from datetime import time")
 
-        # 添加validator导入
-        if has_datetime_str:
-            import_list.add("from app.core.validator import DateTimeStr")
-        if has_date_str:
-            import_list.add("from app.core.validator import DateStr")
-        if has_time_str:
-            import_list.add("from app.core.validator import TimeStr")
-
         return import_list
 
     @classmethod
@@ -476,7 +469,16 @@ class Jinja2TemplateUtil:
         has_date_import = False
         has_time_import = False
 
+        # 基类 ModelMixin/TenantMixin/UserMixin 已定义的列，无需导入 SQLAlchemy 类型
+        _BASE_MODEL_COLUMNS = {
+            'id', 'uuid', 'tenant_id',
+            'created_time', 'updated_time', 'created_id', 'updated_id',
+            'is_deleted', 'deleted_time', 'deleted_id',
+        }
+
         for column in columns:
+            if column.column_name in _BASE_MODEL_COLUMNS:
+                continue
             if column.column_type:
                 data_type = cls.get_db_type(column.column_type)
                 if data_type in GenConstant.COLUMNTYPE_GEOMETRY:

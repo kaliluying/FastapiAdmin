@@ -8,6 +8,9 @@
     @close="onDrawerClosed"
   >
     <ElTabs v-model="activeTabRef" type="border-card">
+      <ElTabPane label="AI 模型" name="aiModel">
+        <FaAiModelConfigPanel />
+      </ElTabPane>
       <ElTabPane label="接口白名单" name="apiWhitelist">
         <ElForm :model="configState" label-suffix=":" label-width="100px" label-position="right">
           <!-- 系统配置 -->
@@ -195,6 +198,7 @@
     <template #footer>
       <ElButton @click="handleCloseDialog">取消</ElButton>
       <ElButton
+        v-if="activeTabRef !== 'aiModel'"
         v-hasPerm="['module_system:config:update']"
         type="primary"
         :disabled="!hasChanges"
@@ -213,6 +217,7 @@ import { useAppStore, useConfigStore } from "@stores";
 import { useI18n } from "vue-i18n";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { DeviceEnum } from "@/enums/settings/device.enum";
+import FaAiModelConfigPanel from "@/views/module_ai/chat/components/FaAiModelConfigPanel.vue";
 
 defineOptions({ name: "FaConfigInfoDrawer" });
 

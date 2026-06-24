@@ -1,12 +1,10 @@
 <!-- 留言墙（大抽屉，替代独立路由） -->
 <template>
-  <ElDrawer
+  <FaDrawer
     v-model="visible"
     title="留言墙"
     direction="rtl"
     size="min(960px, 96vw)"
-    append-to-body
-    destroy-on-close
     class="article-comment-wall-drawer"
   >
     <p class="mt-0 mb-8 text-g-600">每一份留言都记录了您的想法，也为我们提供了珍贵的回忆</p>
@@ -41,42 +39,39 @@
       </li>
     </ul>
 
-    <ElDrawer
+    <FaDrawer
       v-model="cardDrawerOpen"
+      title="详情"
       :lock-scroll="false"
       :size="360"
-      append-to-body
       modal-class="comment-modal"
     >
-      <template #header>
-        <h4 class="m-0">详情</h4>
-      </template>
-      <template #default>
-        <div class="drawer-default">
-          <div
-            class="relative p-4 aspect-16/12 rounded-md"
-            :style="{ background: clickItem.color }"
-          >
-            <p class="text-g-500 text-sm">{{ clickItem.date }}</p>
-            <p class="mt-4 text-sm text-gray-800">{{ clickItem.content }}</p>
-            <div class="absolute bottom-4 left-0 px-4 flex items-center justify-between w-full">
-              <div class="flex items-center">
-                <div class="flex items-center mr-5 text-xs text-g-600">
-                  <FaSvgIcon icon="ri:heart-line" class="mr-1 text-base" />
-                  <span>{{ clickItem.collection }}</span>
-                </div>
-                <div class="flex items-center mr-5 text-xs text-g-600">
-                  <FaSvgIcon icon="ri:message-3-line" class="mr-1 text-base" />
-                  <span>{{ clickItem.comment }}</span>
-                </div>
+      <div class="drawer-default">
+        <div class="relative p-4 aspect-16/12 rounded-md" :style="{ background: clickItem.color }">
+          <p class="text-g-500 text-sm">{{ clickItem.date }}</p>
+          <p class="mt-4 text-sm text-gray-800">{{ clickItem.content }}</p>
+          <div class="absolute bottom-4 left-0 px-4 flex items-center justify-between w-full">
+            <div class="flex items-center">
+              <div class="flex items-center mr-5 text-xs text-g-600">
+                <FaSvgIcon icon="ri:heart-line" class="mr-1 text-base" />
+                <span>{{ clickItem.collection }}</span>
               </div>
-              <span class="text-sm text-gray-700">{{ clickItem.userName }}</span>
+              <div class="flex items-center mr-5 text-xs text-g-600">
+                <FaSvgIcon icon="ri:message-3-line" class="mr-1 text-base" />
+                <span>{{ clickItem.comment }}</span>
+              </div>
             </div>
+            <span class="text-sm text-gray-700">{{ clickItem.userName }}</span>
           </div>
         </div>
-      </template>
-    </ElDrawer>
-  </ElDrawer>
+
+        <!-- 评论组件 -->
+        <div class="mt-6 px-2">
+          <FaCommentWidget />
+        </div>
+      </div>
+    </FaDrawer>
+  </FaDrawer>
 </template>
 
 <script setup lang="ts">

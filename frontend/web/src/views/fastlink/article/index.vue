@@ -94,7 +94,7 @@
       />
     </div>
 
-    <ArticleDetailDrawer
+    <ArticleDetail
       v-model="detailDrawerOpen"
       :article-id="detailArticleId"
       @edit="onDetailEdit"
@@ -114,14 +114,14 @@
 <script setup lang="ts">
 import { Search } from "@element-plus/icons-vue";
 import ArticleCommentWallDrawer from "./components/ArticleCommentWallDrawer.vue";
-import ArticleDetailDrawer from "./components/ArticleDetailDrawer.vue";
+import ArticleDetail from "./components/ArticleDetail.vue";
 import ArticlePublishDrawer from "./components/ArticlePublishDrawer.vue";
 import { useDateFormat } from "@vueuse/core";
 import { EmojiText } from "@utils";
 import { ArticleList } from "@/mock/temp/articleList";
 import { useCommon } from "@/hooks/core/useCommon";
 
-defineOptions({ name: "ArticleList" });
+defineOptions({ name: "FastlinkArticleList" });
 
 const route = useRoute();
 const router = useRouter();

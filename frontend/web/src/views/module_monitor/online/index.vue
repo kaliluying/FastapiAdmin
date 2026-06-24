@@ -64,7 +64,7 @@ import { h, ref, computed } from "vue";
 import { useTable } from "@/hooks/core/useTable";
 import OnlineAPI, { type OnlineUserTable } from "@/api/module_monitor/online";
 import type { ColumnOption } from "@/types/component";
-import { ElMessage, ElMessageBox, ElTooltip } from "element-plus";
+import { ElMessageBox, ElTooltip } from "element-plus";
 import { useAuth } from "@/hooks/core/useAuth";
 import type { SearchFormItem } from "@/components/forms/fa-search-bar/index.vue";
 import type FaSearchBar from "@/components/forms/fa-search-bar/index.vue";
@@ -135,7 +135,7 @@ function kickSession(sessionId: string) {
         type: "warning",
       });
       await OnlineAPI.deleteOnline(sessionId);
-      ElMessage.success("操作成功");
+      // 成功 / 失败提示由 axios 拦截器统一处理
       await refreshData();
     } catch {
       // 用户取消或操作失败
@@ -270,7 +270,7 @@ function handleClearAll() {
       });
       clearAllLoading.value = true;
       await OnlineAPI.clearOnline();
-      ElMessage.success("操作成功");
+      // 成功 / 失败提示由 axios 拦截器统一处理
       await refreshData();
     } catch {
       // 用户取消

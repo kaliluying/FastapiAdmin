@@ -137,7 +137,13 @@
         </div>
       </div>
 
-      <ElDialog v-model="avatarCropVisible" title="裁剪头像" @closed="onAvatarCropDialogClosed">
+      <FaDialog
+        v-model="avatarCropVisible"
+        title="裁剪头像"
+        width="960px"
+        :draggable="false"
+        @closed="onAvatarCropDialogClosed"
+      >
         <FaCutterImg
           v-if="avatarCropVisible && avatarCropSrc"
           :key="avatarCropSrc"
@@ -155,7 +161,7 @@
           @update:img-url="onAvatarCropConfirm"
           @error="onAvatarCropImgError"
         />
-      </ElDialog>
+      </FaDialog>
 
       <!-- 右侧表单 -->
       <div class="flex-1 overflow-hidden max-md:w-full max-md:mt-3.5">

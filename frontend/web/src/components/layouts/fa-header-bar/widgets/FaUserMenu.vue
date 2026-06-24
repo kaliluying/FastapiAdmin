@@ -57,37 +57,6 @@
           </div>
           <ul class="py-4 mt-3 border-t border-g-300/80">
             <li
-              v-if="tenantList.length > 1"
-              class="flex select-none cursor-pointer last:mb-0 hover:bg-(--fa-gray-200) flex-col! items-start! mb-4 p-2! rounded-lg bg-(--fa-gray-100)"
-            >
-              <span class="text-xs text-g-500 mb-2 block w-full">当前租户</span>
-              <ElDropdown trigger="click" @command="handleTenantSwitch">
-                <span
-                  class="flex items-center cursor-pointer w-full text-sm font-medium text-(--el-color-primary) hover:underline"
-                >
-                  {{ currentTenantName }}
-                  <FaSvgIcon icon="ri:arrow-down-s-line" class="ml-1 text-xs" />
-                </span>
-                <template #dropdown>
-                  <ElDropdownMenu>
-                    <ElDropdownItem
-                      v-for="t in tenantList"
-                      :key="t.id"
-                      :command="t.id"
-                      :class="{
-                        'text-(--el-color-primary) font-medium': t.id === currentTenant?.id,
-                      }"
-                    >
-                      <span class="flex items-center justify-between gap-4">
-                        <span>{{ t.name }}</span>
-                        <FaSvgIcon v-if="t.id === currentTenant?.id" icon="ri:check-line" />
-                      </span>
-                    </ElDropdownItem>
-                  </ElDropdownMenu>
-                </template>
-              </ElDropdown>
-            </li>
-            <li
               class="flex items-center p-2 mb-3 select-none rounded-md cursor-pointer last:mb-0 hover:bg-(--fa-gray-200)"
               @click="goPage('/fastlink/profile')"
             >
@@ -152,7 +121,6 @@ const { t } = useI18n();
 const userStore = useUserStore();
 
 const { info: userInfo } = storeToRefs(userStore);
-const { tenantList, currentTenant } = storeToRefs(userStore);
 const userMenuPopover = ref();
 const paramDrawerVisible = ref(false);
 
@@ -169,22 +137,6 @@ const displayName = computed(
 );
 
 const displayEmail = computed(() => (userInfo.value as { email?: string })?.email || "");
-
-const currentTenantName = computed(
-  () => currentTenant.value?.name || tenantList.value[0]?.name || "—"
-);
-
-async function handleTenantSwitch(tenantId: number) {
-  closeUserMenu();
-  try {
-    await userStore.selectTenant(tenantId);
-    setTimeout(() => {
-      window.location.reload();
-    }, 200);
-  } catch {
-    // silently fail
-  }
-}
 
 function openParamConfig(): void {
   closeUserMenu();

@@ -653,7 +653,7 @@ async function submitForm() {
       await refreshCreate();
     }
   } catch {
-    ElMessage.error(editingId.value ? "更新失败" : "创建失败");
+    /* 接口错误已由拦截器提示 */
   } finally {
     submitting.value = false;
   }

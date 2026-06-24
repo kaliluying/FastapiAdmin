@@ -1,12 +1,10 @@
 <!-- 文章新增 / 编辑（抽屉，替代独立发布页） -->
 <template>
-  <ElDrawer
+  <FaDrawer
     v-model="visible"
     :title="drawerTitle"
     direction="rtl"
     size="min(920px, 100vw)"
-    destroy-on-close
-    append-to-body
     class="article-publish-drawer"
   >
     <div class="article-publish-drawer-body">
@@ -117,7 +115,7 @@
         </template>
       </FaResultPage>
     </div>
-  </ElDrawer>
+  </FaDrawer>
 </template>
 
 <script setup lang="ts">

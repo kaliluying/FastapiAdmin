@@ -259,15 +259,7 @@ import PluginAPI, { type PluginForm, type PluginTable } from "@/api/module_platf
 import { useAuth } from "@/hooks/core/useAuth";
 import type { SearchFormItem } from "@/components/forms/fa-search-bar/index.vue";
 import type { FormItem } from "@/components/forms/fa-form/index.vue";
-import {
-  ElTag,
-  ElMessage,
-  ElButton,
-  ElIcon,
-  ElDropdown,
-  ElDropdownMenu,
-  ElDropdownItem,
-} from "element-plus";
+import { ElTag, ElButton, ElIcon, ElDropdown, ElDropdownMenu, ElDropdownItem } from "element-plus";
 import { Plus, Edit, Delete, MoreFilled } from "@element-plus/icons-vue";
 
 defineOptions({
@@ -421,10 +413,10 @@ async function doInstall(row: PluginTable) {
   if (!row.id) return;
   try {
     await PluginAPI.install(row.id);
-    ElMessage.success("安装成功");
+    // 成功 / 失败提示由 axios 拦截器统一处理
     row.installed = true;
   } catch {
-    ElMessage.error("安装失败");
+    /* 接口错误已由拦截器提示 */
   }
 }
 
@@ -432,10 +424,10 @@ async function doUninstall(row: PluginTable) {
   if (!row.id) return;
   try {
     await PluginAPI.uninstall(row.id);
-    ElMessage.success("卸载成功");
+    // 成功 / 失败提示由 axios 拦截器统一处理
     row.installed = false;
   } catch {
-    ElMessage.error("卸载失败");
+    /* 接口错误已由拦截器提示 */
   }
 }
 
@@ -443,10 +435,10 @@ async function doToggle(row: PluginTable) {
   if (!row.id) return;
   try {
     await PluginAPI.toggle(row.id);
-    ElMessage.success(row.status === 0 ? "已禁用" : "已启用");
+    // 成功 / 失败提示由 axios 拦截器统一处理
     row.status = row.status === 0 ? 1 : 0;
   } catch {
-    ElMessage.error("操作失败");
+    /* 接口错误已由拦截器提示 */
   }
 }
 

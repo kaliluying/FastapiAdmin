@@ -88,38 +88,30 @@ export default {{ class_name }}API;
 // ------------------------------
 
 /** 列表查询参数 */
-export interface {{ class_name }}PageQuery extends PageQuery {
+export interface {{ class_name }}PageQuery extends PageQuery, UserByQueryParams, TenantByQueryParams {
   {% for column in columns %}
-  {# 主键列默认不参与查询 #}
-  {% if column.is_query and column.column_name != pk_column_name and column.column_name not in ['created_time', 'updated_time'] %}
+  {% if column.is_query and column.column_name != pk_column_name and column.column_name not in ['created_time', 'updated_time', 'created_id', 'updated_id', 'tenant_id', 'is_deleted', 'deleted_time', 'deleted_id'] %}
   {{ column.column_name }}?: {{
     'string' if column.query_type == 'LIKE'
     else (column.python_type | python_to_ts_type)
   }};
   {% endif %}
   {% endfor %}
-  created_time?: string[];
-  updated_time?: string[];
-  created_id?: number;
-  updated_id?: number;
 }
 
 /** 列表展示项 */
 export interface {{ class_name }}Table extends BaseType {
   {% for column in columns %}
-  {% if column.column_name not in ['id', 'uuid', 'status', 'description', 'created_time', 'updated_time'] and column.column_name != pk_column_name %}
+  {% if column.column_name not in ['id', 'uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id', 'tenant_id'] and column.column_name != pk_column_name %}
   {{ column.column_name }}?: {{ column.python_type | python_to_ts_type }};
   {% endif %}
   {% endfor %}
-  created_by?: CommonType;
-  updated_by?: CommonType;
-  deleted_by?: CommonType;
 }
 
 /** 新增/修改表单参数 */
 export interface {{ class_name }}Form extends BaseFormType {
   {% for column in columns %}
-  {% if (column.is_insert or column.is_edit) and column.column_name not in ['uuid', 'status', 'description', 'created_time', 'updated_time', 'created_id', 'updated_id'] and column.column_name != pk_column_name %}
+  {% if (column.is_insert or column.is_edit) and column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id', 'tenant_id'] and column.column_name != pk_column_name %}
   {{ column.column_name }}?: {{ column.python_type | python_to_ts_type }};
   {% endif %}
   {% endfor %}

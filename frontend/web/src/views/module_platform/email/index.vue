@@ -295,7 +295,6 @@ import type { SearchFormItem } from "@/components/forms/fa-search-bar/index.vue"
 import type { FormItem } from "@/components/forms/fa-form/index.vue";
 import type FaForm from "@/components/forms/fa-form/index.vue";
 import FaStatusTag from "@/components/others/fa-status-tag/index.vue";
-import { ElMessage } from "element-plus";
 
 defineOptions({ name: "Email" });
 
@@ -1004,7 +1003,7 @@ async function handleSubmitSend() {
   sendSubmitting.value = true;
   try {
     await EmailAPI.sendEmail(sendFormData.value);
-    ElMessage.success("发送成功");
+    // 成功 / 失败提示由 axios 拦截器统一处理
     sendVisible.value = false;
   } catch {
     /* ignore */
@@ -1057,7 +1056,7 @@ async function handleSubmitTest() {
       config_id: testFormData.value.config_id,
       to_email: testFormData.value.to_email,
     });
-    ElMessage.success("测试邮件已发送");
+    // 成功 / 失败提示由 axios 拦截器统一处理
     testVisible.value = false;
   } catch {
     /* ignore */

@@ -23,7 +23,7 @@
     </div>
 
     <ul class="pl-2.5" v-if="comment.replies.length > 0">
-      <CommentItem
+      <FaCommentItem
         v-for="reply in comment.replies"
         :key="reply.id"
         :comment="reply"

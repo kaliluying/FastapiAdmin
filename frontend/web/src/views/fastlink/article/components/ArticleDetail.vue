@@ -1,14 +1,14 @@
-<!-- 文章详情（抽屉，无独立路由） -->
+<!-- 文章详情（弹窗，无独立路由） -->
 <template>
-  <FaDrawer
+  <FaDialog
     v-model="visible"
-    :title="drawerTitle"
-    direction="rtl"
-    size="min(900px, 100vw)"
-    class="article-detail-drawer"
+    :title="dialogTitle"
+    width="min(900px, 96vw)"
+    :show-footer="false"
+    class="article-detail-dialog"
   >
-    <div v-loading="loading" class="article-detail-drawer-inner">
-      <ElAlert v-if="error" :title="error" type="error" show-icon :closable="false" />
+    <div v-loading="loading" class="article-detail-inner">
+      <ElEmpty v-if="error" :description="error" />
       <div
         v-else-if="articleHtml"
         class="markdown-body article-detail-markdown"
@@ -26,17 +26,16 @@
         <ElButton v-if="articleId != null" type="primary" @click="onEditClick"> 编辑 </ElButton>
       </div>
     </template>
-  </FaDrawer>
+  </FaDialog>
 </template>
 
 <script setup lang="ts">
-// 第三方 markdown 渲染样式（仅本组件需要，按需 import）
-import "@/views/fastlink/article/components/_markdown.scss";
-import "@/views/fastlink/article/components/_highlight.scss";
-import axios from "axios";
+import "./_markdown.scss";
+import "./_highlight.scss";
 import DOMPurify from "dompurify";
+import { ArticleDetail } from "@/mock/temp/articleDetail";
 
-defineOptions({ name: "ArticleDetailDrawer" });
+defineOptions({ name: "ArticleDetail" });
 
 const props = defineProps<{
   modelValue: boolean;
@@ -60,20 +59,12 @@ const visible = computed({
   set: (v: boolean) => emit("update:modelValue", v),
 });
 
-interface ArticleResponse {
-  code: number;
-  data: {
-    title: string;
-    html_content: string;
-  };
-}
-
 const articleTitle = ref("");
 const articleHtml = shallowRef("");
 const loading = ref(false);
 const error = ref<string | null>(null);
 
-const drawerTitle = computed(() => articleTitle.value || "文章详情");
+const dialogTitle = computed(() => articleTitle.value || "文章详情");
 
 const fetchDetail = async () => {
   const id = props.articleId;
@@ -85,18 +76,19 @@ const fetchDetail = async () => {
   articleHtml.value = "";
 
   try {
-    const { data } = await axios.get<ArticleResponse>(
-      "https://www.qiniu.lingchen.kim/blog_detail.json"
-    );
+    // 使用 mock 数据
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
-    if (data.code === 200) {
-      articleTitle.value = data.data.title;
-      articleHtml.value = DOMPurify.sanitize(data.data.html_content);
+    const mockHtml = ArticleDetail[id];
+    if (mockHtml) {
+      const titleMatch = mockHtml.match(/<h2[^>]*>(.*?)<\/h2>/);
+      articleTitle.value = titleMatch?.[1]?.replace(/<[^>]*>/g, "") || "文章详情";
+      articleHtml.value = DOMPurify.sanitize(mockHtml);
     } else {
-      error.value = "文章加载失败";
+      error.value = "暂无该文章内容";
     }
   } catch (err) {
-    error.value = "文章加载失败";
+    error.value = "文章加载失败，请检查网络连接";
     console.error("获取文章详情失败:", err);
   } finally {
     loading.value = false;
@@ -120,8 +112,10 @@ watch(
 </script>
 
 <style lang="scss" scoped>
-.article-detail-drawer-inner {
+.article-detail-inner {
   min-height: 120px;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 .article-detail-markdown {

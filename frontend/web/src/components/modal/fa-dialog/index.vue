@@ -11,6 +11,7 @@
     destroy-on-close
     v-bind="dialogAttrs"
     @close="emit('close')"
+    @closed="emit('closed')"
     @opened="emit('opened')"
   >
     <template #header="{ titleId, titleClass, close }">
@@ -83,6 +84,7 @@ const props = withDefaults(defineProps<Props>(), {
 interface Emits {
   "update:modelValue": [v: boolean];
   close: [];
+  closed: [];
   opened: [];
   "fullscreen-change": [isFullscreen: boolean];
   /** 点击取消按钮 */

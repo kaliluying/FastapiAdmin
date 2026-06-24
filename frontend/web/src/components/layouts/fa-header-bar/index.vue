@@ -172,6 +172,9 @@
           :icon="isDark ? 'ri:sun-fill' : 'ri:moon-line'"
         />
 
+        <!-- 租户切换器（全局可见，1步切换） -->
+        <FaTenantSwitcher />
+
         <!-- 用户头像、菜单 -->
         <FaUserMenu />
       </div>
@@ -197,6 +200,7 @@ import { mittBus, themeAnimation } from "@utils";
 import { useCommon } from "@/hooks/core/useCommon";
 import { useHeaderBar } from "@/hooks/core/useHeaderBar";
 import FaUserMenu from "./widgets/FaUserMenu.vue";
+import FaTenantSwitcher from "./widgets/FaTenantSwitcher.vue";
 
 defineOptions({ name: "FaHeaderBar" });
 

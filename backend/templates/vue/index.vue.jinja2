@@ -22,7 +22,11 @@
       @reset="onResetSearch"
     />
 
-    <ElCard class="fa-table-card" :style="{ 'margin-top': showSearchBar ? '12px' : '0' }">
+    <ElCard
+      shadow="hover"
+      class="fa-table-card"
+      :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
+    >
       <FaTableHeader
         v-model:columns="columnChecks"
         v-model:showSearchBar="showSearchBar"
@@ -122,7 +126,6 @@
             </ElTable>
           </div>
           {% endif %}
-        </ElScrollbar>
       </template>
 
       <template #footer>
@@ -154,14 +157,15 @@
 </template>
 
 <script setup lang="ts">
-import { h, computed, ref, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { useAuth } from "@/hooks/core/useAuth";
 import { renderTableOperationCell, type TableOperationAction } from "@/utils/table";
 import { useTable } from "@/hooks/core/useTable";
 import { useImportExport } from "@/hooks/core/useImportExport";
 import { useCrudDialog } from "@/hooks/core/useCrudDialog";
 import { useTableSelection } from "@/hooks/core/useTableSelection";
-import { cleanEmptyArrayParams, stripPaginationParams } from "@/utils/query";
+import { confirmDelete, confirmBatchDelete, confirmAction } from "@/hooks/core/useConfirm";
+import { stripPaginationParams } from "@/utils/query";
 import type { IContentConfig, IObject } from "@/components/modal/types";
 import type { AuditSearchFormParams } from "@/components/forms/fa-search-bar/auditSearchFormItems";
 import type { FormItem } from "@/components/forms/fa-form/index.vue";
@@ -171,9 +175,17 @@ import {{ class_name }}API, {
   type {{ class_name }}PageQuery,
   type {{ class_name }}Table,
 } from "@/api/{{ package_name }}/{{ module_name }}";
-import { ElTag, ElMessage } from "element-plus";
-import { useDictStore } from "@/stores/modules/dict";
 import { ResultEnum } from "@/enums/api/result.enum";
+import { ElMessage } from "element-plus";
+{% if table.sub or has_dict_column %}
+import { computed } from "vue";
+{% endif %}
+{% if has_dict_column %}
+import { useDictStore } from "@/stores/modules/dict";
+{% endif %}
+{% if has_image_column %}
+import { h } from "vue";
+{% endif %}
 
 defineOptions({
   name: "{{ class_name }}",
@@ -181,26 +193,43 @@ defineOptions({
 });
 
 const { hasAuth } = useAuth();
+{% if has_dict_column %}
 const dictStore = useDictStore();
+{% endif %}
+
+// 常量定义
+const STATUS_OPTIONS = [
+  { label: "启用", value: 0 },
+  { label: "停用", value: 1 },
+] as const;
+
+const createInitialFormData = (): {{ class_name }}Form => ({
+  {% for column in columns %}
+  {% if column.is_insert or column.is_edit %}
+  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id', 'tenant_id'] and column.column_name != pk_column_name %}
+  {% if column.column_name == "status" %}
+  {{ column.column_name }}: {% if column.python_type == "str" %}"0"{% else %}0{% endif %},
+  {% elif column.python_type == "bool" or column.html_type == "switch" %}
+  {{ column.column_name }}: false,
+  {% else %}
+  {{ column.column_name }}: undefined,
+  {% endif %}
+  {% endif %}
+  {% endif %}
+  {% endfor %}
+});
 
 type {{ class_name }}SearchFormParams = {
   {% for column in columns %}
-  {% if column.is_query and column.column_name not in ['created_time', 'updated_time', 'created_id', 'updated_id'] and column.column_name != pk_column_name %}
+  {% if column.is_query and column.column_name not in ['created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
   {{ column.column_name }}?: string;
   {% endif %}
   {% endfor %}
 } & AuditSearchFormParams;
 
-function normalize{{ class_name }}Query(params: Record<string, unknown>): {{ class_name }}PageQuery {
-  const p = { ...params } as Record<string, unknown>;
-  if (Array.isArray(p.created_time) && p.created_time.length === 0) p.created_time = undefined;
-  if (Array.isArray(p.updated_time) && p.updated_time.length === 0) p.updated_time = undefined;
-  return p as unknown as {{ class_name }}PageQuery;
-}
-
 const searchForm = ref<{{ class_name }}SearchFormParams>({
   {% for column in columns %}
-  {% if column.is_query and column.column_name not in ['created_time', 'updated_time', 'created_id', 'updated_id'] and column.column_name != pk_column_name %}
+  {% if column.is_query and column.column_name not in ['created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
   {{ column.column_name }}: undefined,
   {% endif %}
   {% endfor %}
@@ -213,19 +242,18 @@ const searchForm = ref<{{ class_name }}SearchFormParams>({
 /** 搜索区域默认展开展示 */
 const showSearchBar = ref(true);
 
-const searchBarRef = ref<InstanceType<typeof FaSearchBarWithAudit> | null>(null);
+const searchBarRef = ref<{ validate: () => Promise<boolean> } | null>(null);
 const searchBarRules: Record<string, unknown> = {};
 
-const statusOptions = ref([
-  { label: "启用", value: 0 },
-  { label: "停用", value: 1 },
-]);
-
+{% if has_dict_column %}
+/** 业务搜索项（审计四字段由 FaSearchBarWithAudit 自动追加） */
+const businessSearchItemsRaw = computed(() => [
+{% else %}
 /** 业务搜索项（审计四字段由 FaSearchBarWithAudit 自动追加） */
 const businessSearchItems = computed(() => [
+{% endif %}
   {% for column in columns %}
-  {# 主键列默认不参与搜索 #}
-  {% if column.is_query and column.column_name not in ['created_time', 'updated_time', 'created_id', 'updated_id'] and column.column_name != pk_column_name %}
+  {% if column.is_query and column.column_name not in ['created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
   {% set dict_type = column.dict_type %}
   {% set column_comment = column.column_comment if column.column_comment else '' %}
   {% set parentheseIndex = column_comment.find("（") %}
@@ -237,7 +265,7 @@ const businessSearchItems = computed(() => [
     type: "select",
     props: {
       placeholder: "请选择状态",
-      options: statusOptions.value,
+      options: STATUS_OPTIONS,
       clearable: true,
     },
     span: 6,
@@ -281,17 +309,31 @@ const businessSearchItems = computed(() => [
   {% endfor %}
 ]);
 
-const faTableRef = ref<{ elTableRef?: { clearSelection: () => void } } | null>(null);
-const selectedRows = ref<{{ class_name }}Table[]>([]);
-const selectedIds = computed(() =>
-  selectedRows.value.map((r) => r.id).filter((id): id is number => id != null && !Number.isNaN(id))
-);
-const batchDeleting = ref(false);
-const createLoading = ref(false);
+{% if has_dict_column %}
+const businessSearchItems = computed(() => {
+  const items = businessSearchItemsRaw.value.map(item => ({ ...item }));
+  {% for column in columns %}
+  {% if column.is_query and column.dict_type and (column.html_type == "select" or column.html_type == "radio") %}
+  const item_{{ column.column_name }} = items.find((i: any) => i.key === "{{ column.column_name }}");
+  if (item_{{ column.column_name }} && item_{{ column.column_name }}.props) {
+    item_{{ column.column_name }}.props.options = dictStore.getDictArray("{{ column.dict_type }}").map(
+      (d: { dict_label: string; dict_value: string }) => ({
+        label: d.dict_label,
+        value: d.dict_value,
+      })
+    );
+  }
+  {% endif %}
+  {% endfor %}
+  return items;
+});
+{% endif %}
 
-function onTableSelectionChange(rows: {{ class_name }}Table[]) {
-  selectedRows.value = rows;
-}
+const faTableRef = ref<{ elTableRef?: { clearSelection: () => void } } | null>(null);
+const { selectedRows, selectedIds, batchDeleting, onTableSelectionChange } =
+  useTableSelection<{{ class_name }}Table>();
+
+const createLoading = ref(false);
 
 const PK = "{{ pk_column_name }}" as const;
 
@@ -319,9 +361,10 @@ const {
       page_size: 10,
     },
     columnsFactory: (): ColumnOption<{{ class_name }}Table>[] => [
+      { type: "globalIndex", width: 56, label: "序号" },
       { type: "selection", width: 48, fixed: "left" },
       {% for column in columns %}
-      {% if column.is_list and column.column_name != pk_column_name %}
+      {% if column.is_list and column.column_name not in ['is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
       {% set column_comment = column.column_comment if column.column_comment else '' %}
       {% set parentheseIndex = column_comment.find("（") %}
       {% set comment = column_comment[:parentheseIndex] if parentheseIndex != -1 else column_comment %}
@@ -330,41 +373,38 @@ const {
         prop: "status",
         label: "状态",
         width: 88,
-        formatter: (row: {{ class_name }}Table) => {
-          const ok = row.status === 0;
-          const cfg = ok
-            ? { type: "success" as const, text: "启用" }
-            : { type: "info" as const, text: "停用" };
-          return h(ElTag, { type: cfg.type }, () => cfg.text);
+        status: {
+          0: { type: "success", text: "启用" },
+          1: { type: "info", text: "停用" },
         },
       },
       {% elif column.column_name == "created_id" %}
       {
         prop: "created_by",
-        label: "{{ comment }}",
+        label: "创建人",
         minWidth: 100,
         formatter: (row: {{ class_name }}Table) => row.created_by?.name ?? "—",
       },
       {% elif column.column_name == "updated_id" %}
       {
         prop: "updated_by",
-        label: "{{ comment }}",
+        label: "更新人",
         minWidth: 100,
         formatter: (row: {{ class_name }}Table) => row.updated_by?.name ?? "—",
       },
       {% elif column.column_name == "created_time" %}
-      { prop: "created_time", label: "{{ comment }}", width: 168, showOverflowTooltip: true },
+      { prop: "created_time", label: "创建时间", width: 168, showOverflowTooltip: true },
       {% elif column.column_name == "updated_time" %}
-      { prop: "updated_time", label: "{{ comment }}", width: 168, showOverflowTooltip: true },
+      { prop: "updated_time", label: "更新时间", width: 168, showOverflowTooltip: true },
       {% elif column.python_type == "bool" or column.html_type == "checkbox" %}
       {
         prop: "{{ column.column_name }}",
         label: "{{ comment }}",
         width: 80,
-        formatter: (row: {{ class_name }}Table) =>
-          h(ElTag, { type: row.{{ column.column_name }} ? "success" : "danger" }, () =>
-            row.{{ column.column_name }} ? "是" : "否"
-          ),
+        status: {
+          true: { type: "success", text: "是" },
+          false: { type: "danger", text: "否" },
+        },
       },
       {% elif column.html_type == "imageUpload" %}
       {
@@ -383,7 +423,6 @@ const {
         },
       },
       {% elif (column.html_type == "select" or column.html_type == "radio") and column.dict_type %}
-      {# 字典列在列配置中用 prop 占位，运行时由 dictStore 动态替换 #}
       { prop: "{{ column.column_name }}", label: "{{ comment }}", minWidth: 120, showOverflowTooltip: true },
       {% else %}
       { prop: "{{ column.column_name }}", label: "{{ comment }}", minWidth: 120, showOverflowTooltip: true },
@@ -402,7 +441,6 @@ const {
   },
 });
 
-/** 供 FaImportDialog / FaExportDialog 的列配置 */
 const crudCols = computed(() =>
   columns.value.map((c: ColumnOption<{{ class_name }}Table>) => {
     const t = (c as { type?: string }).type;
@@ -416,12 +454,7 @@ const crudCols = computed(() =>
 );
 
 const exportQueryParams = computed(() => {
-  const sp = { ...(searchParams as object) } as Record<string, unknown>;
-  delete sp.current;
-  delete sp.size;
-  delete sp.page_no;
-  delete sp.page_size;
-  return normalize{{ class_name }}Query(sp);
+  return stripPaginationParams(searchParams as Record<string, unknown>);
 });
 
 const importContentConfig = computed<IContentConfig>(() => ({
@@ -435,11 +468,11 @@ const exportContentConfig = computed(() => ({
   permPrefix: "{{ permission_prefix }}",
   cols: crudCols.value,
   exportsBlobAction: async (params: IObject) => {
-    const merged = normalize{{ class_name }}Query({
+    const merged = {
       ...(exportQueryParams.value as unknown as Record<string, unknown>),
       ...params,
-    } as Record<string, unknown>);
-    const res = await {{ class_name }}API.export{{ class_name }}(merged as {{ class_name }}PageQuery);
+    } as unknown as {{ class_name }}PageQuery;
+    const res = await {{ class_name }}API.export{{ class_name }}(merged);
     return res.data as Blob;
   },
 }));
@@ -450,7 +483,7 @@ const detailFormData = ref<{{ class_name }}Table>({});
 
 const detailItems: import("@/components/others/fa-descriptions/index.vue").DescriptionsItem[] = [
   {% for column in columns %}
-  {% if column.is_list %}
+  {% if column.is_list and column.column_name not in ['is_deleted', 'deleted_time', 'deleted_id'] %}
   {% set column_comment = column.column_comment if column.column_comment else '' %}
   {% set parentheseIndex = column_comment.find("（") %}
   {% set comment = column_comment[:parentheseIndex] if parentheseIndex != -1 else column_comment %}
@@ -471,21 +504,7 @@ const detailItems: import("@/components/others/fa-descriptions/index.vue").Descr
   {% endfor %}
 ];
 
-const formData = ref<{{ class_name }}Form>({
-  {% for column in columns %}
-  {% if column.is_insert or column.is_edit %}
-  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id', 'tenant_id'] and column.column_name != pk_column_name %}
-  {% if column.column_name == "status" %}
-  {{ column.column_name }}: "0",
-  {% elif column.python_type == "bool" or column.html_type == "switch" %}
-  {{ column.column_name }}: false,
-  {% else %}
-  {{ column.column_name }}: undefined,
-  {% endif %}
-  {% endif %}
-  {% endif %}
-  {% endfor %}
-});
+const formData = ref<{{ class_name }}Form>(createInitialFormData());
 
 const rules = reactive({
   {% for column in columns %}
@@ -497,7 +516,7 @@ const rules = reactive({
   {% endfor %}
 });
 
-const dialogFormItems = computed<FormItem[]>(() => [
+const dialogFormItems: FormItem[] = [
   {% for column in columns %}
   {% if column.is_insert or column.is_edit %}
   {% set dict_type = column.dict_type %}
@@ -506,34 +525,55 @@ const dialogFormItems = computed<FormItem[]>(() => [
   {% set comment = column_comment[:parentheseIndex] if parentheseIndex != -1 else column_comment %}
   {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id', 'tenant_id'] and column.column_name != pk_column_name %}
   {% if column.column_name == "status" %}
-  { key: "status", label: "状态", type: "radio", props: { options: [{ label: "启用", value: 0 }, { label: "停用", value: 1 }] } },
+  {
+    key: "status",
+    label: "状态",
+    type: "radiogroup",
+    props: {
+      options: [
+        { label: "启用", value: 0 },
+        { label: "停用", value: 1 },
+      ],
+    },
+  },
   {% elif column.column_name == "description" %}
-  { key: "description", label: "描述", type: "textarea", placeholder: "请输入描述" },
+  {
+    key: "description",
+    label: "描述",
+    type: "input",
+    props: {
+      type: "textarea",
+      rows: 4,
+      maxlength: 100,
+      showWordLimit: true,
+      placeholder: "请输入描述",
+    },
+  },
   {% elif column.python_type == "int" or column.python_type == "float" or column.python_type == "Decimal" %}
-  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "input-number", placeholder: "请输入{{ comment }}"{% if column.python_type == "float" or column.python_type == "Decimal" %}, props: { step: 0.01, precision: 2 }{% endif %} },
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "number", props: { placeholder: "请输入{{ comment }}"{% if column.python_type == "float" or column.python_type == "Decimal" %}, step: 0.01, precision: 2{% endif %} } },
   {% elif column.html_type == "input" %}
-  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "input", placeholder: "请输入{{ comment }}" },
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "input", props: { placeholder: "请输入{{ comment }}" } },
   {% elif column.html_type == "textarea" %}
-  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "textarea", placeholder: "请输入{{ comment }}" },
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "input", props: { type: "textarea", rows: 4, placeholder: "请输入{{ comment }}" } },
   {% elif dict_type != "" %}
   { key: "{{ column.column_name }}", label: "{{ comment }}", type: "select", placeholder: "请选择{{ comment }}", options: dictStore.getDictArray("{{ dict_type }}").map(d => ({ label: d.dict_label, value: d.dict_value })) },
   {% elif column.html_type == "select" or column.html_type == "radio" %}
   { key: "{{ column.column_name }}", label: "{{ comment }}", type: "select", placeholder: "请选择{{ comment }}" },
   {% elif column.html_type == "date" %}
-  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "date", placeholder: "请选择{{ comment }}" },
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "date", props: { placeholder: "请选择{{ comment }}", valueFormat: "YYYY-MM-DD", style: "width: 100%" } },
   {% elif column.html_type == "datetime" %}
-  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "datetime", placeholder: "请选择{{ comment }}" },
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "datetime", props: { placeholder: "请选择{{ comment }}", valueFormat: "YYYY-MM-DD HH:mm:ss", style: "width: 100%" } },
   {% elif column.html_type == "switch" %}
   { key: "{{ column.column_name }}", label: "{{ comment }}", type: "switch" },
   {% elif column.html_type == "checkbox" %}
   { key: "{{ column.column_name }}", label: "{{ comment }}", type: "checkbox" },
   {% else %}
-  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "input", placeholder: "请输入{{ comment }}" },
+  { key: "{{ column.column_name }}", label: "{{ comment }}", type: "input", props: { placeholder: "请输入{{ comment }}" } },
   {% endif %}
   {% endif %}
   {% endif %}
   {% endfor %}
-]);
+];
 
 const dataFormRef = ref<{
   resetFields: () => void;
@@ -545,27 +585,11 @@ const formRenderKey = ref(0);
 
 const { importVisible, exportVisible, openImport, openExport } = useImportExport();
 
-const initialFormData: {{ class_name }}Form = {
-  {% for column in columns %}
-  {% if column.is_insert or column.is_edit %}
-  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id', 'tenant_id'] and column.column_name != pk_column_name %}
-  {% if column.column_name == "status" %}
-  {{ column.column_name }}: "0",
-  {% elif column.python_type == "bool" or column.html_type == "switch" %}
-  {{ column.column_name }}: false,
-  {% else %}
-  {{ column.column_name }}: undefined,
-  {% endif %}
-  {% endif %}
-  {% endif %}
-  {% endfor %}
-};
-
 const handleSearch = async (params: {{ class_name }}SearchFormParams) => {
   await searchBarRef.value?.validate();
   replaceSearchParams({
     {% for column in columns %}
-    {% if column.is_query and column.column_name not in ['created_time', 'updated_time', 'created_id', 'updated_id'] and column.column_name != pk_column_name %}
+    {% if column.is_query and column.column_name not in ['created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
     {{ column.column_name }}: params.{{ column.column_name }},
     {% endif %}
     {% endfor %}
@@ -586,7 +610,7 @@ const handleSearch = async (params: {{ class_name }}SearchFormParams) => {
 const onResetSearch = async () => {
   searchForm.value = {
     {% for column in columns %}
-    {% if column.is_query and column.column_name not in ['created_time', 'updated_time', 'created_id', 'updated_id'] and column.column_name != pk_column_name %}
+    {% if column.is_query and column.column_name not in ['created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
     {{ column.column_name }}: undefined,
     {% endif %}
     {% endfor %}
@@ -657,8 +681,8 @@ async function handleAdd() {
 async function openEditDialog(type: "add" | "edit", row?: {{ class_name }}Table) {
   dialogVisible.type = type === "add" ? "create" : "update";
   if (type === "add") {
-    dialogVisible.title = "新增{{ function_name }}";
-    Object.assign(formData.value, initialFormData);
+    dialogVisible.title = "新增";
+    Object.assign(formData.value, createInitialFormData());
     formData.value[PK] = undefined;
     {% if table.sub %}
     subTableData.value = [];
@@ -681,7 +705,7 @@ async function resetForm() {
     dataFormRef.value.resetFields();
     dataFormRef.value.clearValidate();
   }
-  Object.assign(formData.value, initialFormData);
+  Object.assign(formData.value, createInitialFormData());
 }
 
 async function handleCloseDialog() {
@@ -695,7 +719,6 @@ async function handleSubmit() {
     const submitData = { ...formData.value };
     const id = formData.value[PK] as number | undefined;
     try {
-      submitLoading.value = true;
       if (id) {
         await {{ class_name }}API.update{{ class_name }}(id, { [PK]: id, ...submitData });
         await refreshUpdate();
@@ -707,8 +730,6 @@ async function handleSubmit() {
       await resetForm();
     } catch (error: unknown) {
       console.error(error);
-    } finally {
-      submitLoading.value = false;
     }
   });
 }
@@ -716,21 +737,12 @@ async function handleSubmit() {
 const deleteRow = async (row: {{ class_name }}Table) => {
   if (!row[PK]) return;
   try {
-    await ElMessageBox.confirm(
-      `确定删除该{{ function_name }}吗？此操作不可恢复！`,
-      "删除确认",
-      {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      }
-    );
+    await confirmDelete(`确定删除该{{ function_name }}吗？此操作不可恢复！`);
     await {{ class_name }}API.delete{{ class_name }}([row[PK] as number]);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
-    ElMessage.info("已取消删除");
+    // 用户取消
   }
 };
 
@@ -756,22 +768,13 @@ async function handleBatchDelete() {
   const ids = selectedIds.value;
   if (ids.length === 0) return;
   try {
-    await ElMessageBox.confirm(
-      `确定删除选中的 ${ids.length} 条数据吗？此操作不可恢复！`,
-      "批量删除",
-      {
-        confirmButtonText: "确定",
-        cancelButtonText: "取消",
-        type: "warning",
-      }
-    );
+    await confirmBatchDelete(ids.length);
     batchDeleting.value = true;
     await {{ class_name }}API.delete{{ class_name }}(ids);
-    ElMessage.success("删除成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshRemove();
   } catch {
-    ElMessage.info("已取消删除");
+    // 用户取消
   } finally {
     batchDeleting.value = false;
   }
@@ -784,13 +787,11 @@ async function runBatchStatus(status: number) {
     return;
   }
   try {
-    await ElMessageBox.confirm(
+    await confirmAction(
       `确认对选中的 ${ids.length} 条数据${status === 0 ? "启用" : "停用"}？`,
-      "批量设置",
-      { confirmButtonText: "确定", cancelButtonText: "取消", type: "warning" }
+      "批量设置"
     );
     await {{ class_name }}API.batch{{ class_name }}({ ids, status });
-    ElMessage.success("操作成功");
     faTableRef.value?.elTableRef?.clearSelection();
     await refreshData();
   } catch {
@@ -798,38 +799,20 @@ async function runBatchStatus(status: number) {
   }
 }
 
-async function handleCrudImportUpload(uploadFormData: FormData) {
+async function handleCrudImportUpload(formData: FormData) {
   try {
-    const res = await {{ class_name }}API.import{{ class_name }}(uploadFormData);
-    if (res.data.code !== ResultEnum.SUCCESS) {
-      ElMessage.error(res.data.msg || "导入失败");
-      return;
+    const res = await {{ class_name }}API.import{{ class_name }}(formData);
+    if (res.data.code === ResultEnum.SUCCESS) {
+      ElMessage.success(res.data.msg || "导入成功");
+      importVisible.value = false;
+      await refreshData();
     }
-    ElMessage.success(res.data.msg || "导入成功");
-    importVisible.value = false;
-    await refreshData();
   } catch (error) {
     console.error("[Import]", error);
-    ElMessage.error("导入失败");
   }
 }
 
-onMounted(async () => {
-  {% for column in columns %}
-  {% if column.is_query and column.dict_type and (column.html_type == "select" or column.html_type == "radio") %}
-  (() => {
-    const item = businessSearchItems.value.find((i) => i.key === "{{ column.column_name }}");
-    if (item && "props" in item && item.props) {
-      (item.props as Record<string, unknown>).options = dictStore.getDictArray("{{ column.dict_type }}").map(
-        (d: { dict_label: string; dict_value: string }) => ({
-          label: d.dict_label,
-          value: d.dict_value,
-        })
-      );
-    }
-  })();
-  {% endif %}
-  {% endfor %}
+onMounted(() => {
   getData();
 });
 </script>
