@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+﻿from dataclasses import dataclass, field
 from typing import Literal
 
 from fastapi import Query
@@ -44,9 +44,9 @@ class MenuCreateSchema(BaseModel):
     active_path: str | None = Field(default=None, max_length=200, description="激活菜单路径")
     show_badge: bool = Field(default=False, description="是否显示红点角标")
     show_text_badge: str | None = Field(default=None, max_length=20, description="文字角标内容")
-    scope: Literal["platform", "tenant"] = Field(
-        default="tenant",
-        description="菜单可见范围(platform:仅平台 tenant:租户可用)",
+    scope: Literal["platform", "single_org"] = Field(
+        default="single_org",
+        description="菜单可见范围(platform:仅平台 single_org:内部可用)",
     )
 
     @field_validator("status")
@@ -55,6 +55,11 @@ class MenuCreateSchema(BaseModel):
         if v not in {0, 1}:
             raise ValueError("状态仅支持 0(正常) 或 1(禁用)")
         return v
+
+    @field_validator("scope", mode="before")
+    @classmethod
+    def _normalize_scope(cls, v: str) -> str:
+        return "single_org" if v == "tenant" else v
 
     @model_validator(mode="before")
     @classmethod
@@ -80,6 +85,8 @@ class MenuCreateSchema(BaseModel):
             if "client" in values and isinstance(values["client"], str):
                 cv = values["client"].strip()
                 values["client"] = cv if cv in ("pc", "app") else "pc"
+            if values.get("scope") == "tenant":
+                values["scope"] = "single_org"
             if "parent_id" in values and isinstance(values["parent_id"], str):
                 try:
                     values["parent_id"] = int(values["parent_id"].strip())
@@ -133,9 +140,9 @@ class MenuUpdateSchema(BaseModel):
     active_path: str | None = Field(default=None, max_length=200, description="激活菜单路径")
     show_badge: bool | None = Field(default=None, description="是否显示红点角标")
     show_text_badge: str | None = Field(default=None, max_length=20, description="文字角标内容")
-    scope: Literal["platform", "tenant"] | None = Field(
+    scope: Literal["platform", "single_org"] | None = Field(
         default=None,
-        description="菜单可见范围(platform:仅平台 tenant:租户可用)",
+        description="菜单可见范围(platform:仅平台 single_org:内部可用)",
     )
     parent_name: str | None = Field(default=None, max_length=50, description="父菜单名称")
 
@@ -147,6 +154,11 @@ class MenuUpdateSchema(BaseModel):
         if v not in {0, 1}:
             raise ValueError("状态仅支持 0(正常) 或 1(禁用)")
         return v
+
+    @field_validator("scope", mode="before")
+    @classmethod
+    def _normalize_scope(cls, v: str | None) -> str | None:
+        return "single_org" if v == "tenant" else v
 
     @model_validator(mode="before")
     @classmethod
@@ -172,6 +184,8 @@ class MenuUpdateSchema(BaseModel):
             if "client" in values and isinstance(values["client"], str):
                 cv = values["client"].strip()
                 values["client"] = cv if cv in ("pc", "app") else None
+            if values.get("scope") == "tenant":
+                values["scope"] = "single_org"
             if "parent_id" in values and isinstance(values["parent_id"], str):
                 try:
                     values["parent_id"] = int(values["parent_id"].strip())
@@ -218,9 +232,9 @@ class MenuQueryParam(BaseQueryParam):
         None,
         description="管理端 Tab：pc=桌面端菜单 app=移动端菜单；不传则不过滤终端",
     )
-    scope: Literal["tenant"] | None = Query(
+    scope: Literal["single_org"] | None = Query(
         None,
-        description="菜单范围过滤：tenant=仅租户可用菜单",
+        description="菜单范围过滤：single_org=内部可用菜单",
     )
     client: str | None = field(init=False, default=None)
 
@@ -240,5 +254,6 @@ class MenuQueryParam(BaseQueryParam):
         if self.menu_client in ("pc", "app"):
             self.client = (QueueEnum.eq.value, self.menu_client)
         del self.menu_client
-        if self.scope == "tenant":
-            self.scope = (QueueEnum.eq.value, "tenant")
+        if self.scope == "single_org":
+            self.scope = (QueueEnum.eq.value, "single_org")
+

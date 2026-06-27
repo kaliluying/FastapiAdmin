@@ -3,6 +3,6 @@
 name = "ai"
 title = "AI 子系统"
 version = "1.0.0"
-description = "对话、Agent 等能力（Agno）；路由由 module_ai/**/controller 动态注册。"
+description = "对话、检索增强生成（LangChain/RAG 风格）等能力；路由由 module_ai/**/controller 动态注册。"
 optional = true
-tags = ["ai", "chat", "agno"]
+tags = ["ai", "chat", "rag", "langchain-style"]

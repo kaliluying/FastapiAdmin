@@ -15,19 +15,17 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.module_platform.menu.model import MenuModel
-from app.api.v1.module_platform.tenant.model import TenantModel, TenantUserModel
 from app.api.v1.module_system.dept.model import DeptModel
 from app.api.v1.module_system.dict.model import DictDataModel, DictTypeModel
 from app.api.v1.module_system.log.model import LoginLogModel, OperationLogModel
-from app.api.v1.module_system.notice.model import NoticeModel, NoticeReadModel
 from app.api.v1.module_system.params.model import ParamsModel
-from app.api.v1.module_system.position.model import PositionModel
 from app.api.v1.module_system.role.model import RoleModel
-from app.api.v1.module_system.ticket.model import TicketModel
 from app.api.v1.module_system.user.model import UserModel, UserRolesModel
 from app.config.path_conf import SCRIPT_DIR
 from app.core.database import async_db_session, create_tables
 from app.core.logger import logger
+from app.plugin.module_ai.chat.model import ChatSessionModel
+from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeChunkModel, KnowledgeDocumentModel
 
 
 class InitializeData:
@@ -40,7 +38,6 @@ class InitializeData:
     # 按依赖关系排序：先基础表，再关联表
     prepare_init_models: list[type] = [
         # ── 平台管理：基础表 ──
-        TenantModel,
         MenuModel,
         # ── 系统管理：基础表 ──
         ParamsModel,
@@ -48,18 +45,17 @@ class InitializeData:
         RoleModel,
         DictTypeModel,
         DictDataModel,
-        PositionModel,
         UserModel,
         # ── 关联表 ──
         UserRolesModel,
-        TenantUserModel,
         # ── 其他系统/业务表 ──
-        NoticeModel,
-        NoticeReadModel,
-        TicketModel,
         # ── 日志表（追加写入） ──
         LoginLogModel,
         OperationLogModel,
+        ChatSessionModel,
+        KnowledgeBaseModel,
+        KnowledgeDocumentModel,
+        KnowledgeChunkModel,
     ]
 
     # 树形模型：JSON 含嵌套 children，需递归创建对象

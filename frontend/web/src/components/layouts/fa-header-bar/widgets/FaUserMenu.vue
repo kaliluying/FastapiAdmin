@@ -1,6 +1,6 @@
-<!-- 用户菜单：合并旧版顶栏（配置中心、Gitee、引导）+ 新版 Popover 与链接结构 -->
+<!-- 閻劍鍩涢懣婊冨礋閿涙艾鎮庨獮鑸垫＋閻楀牓銆婇弽蹇ョ礄闁板秶鐤嗘稉顓炵妇閵嗕笩itee閵嗕礁绱╃€电》绱? 閺傛壆澧?Popover 娑撳酣鎽奸幒銉х波閺?-->
 <template>
-  <!-- inline-flex + items-center：与顶栏 FaIconButton 同一中线对齐，避免 Popover 触发层基线偏移 -->
+  <!-- inline-flex + items-center閿涙矮绗屾い鑸电埉 FaIconButton 閸氬奔绔存稉顓犲殠鐎靛綊缍堥敍宀勪缉閸?Popover 鐟欙箑褰傜仦鍌氱唨缁惧灝浜哥粔?-->
   <div class="fa-user-menu inline-flex shrink-0 items-center leading-none">
     <ElPopover
       ref="userMenuPopover"
@@ -29,7 +29,7 @@
             src="@imgs/user/avatar.webp"
             alt="avatar"
           />
-          <!-- 与旧版 NavbarActions.user-profile__online-indicator 一致 -->
+          <!-- 娑撳孩妫悧?NavbarActions.user-profile__online-indicator 娑撯偓閼?-->
           <span class="fa-user-menu__online-dot" aria-hidden="true" />
         </div>
       </template>
@@ -56,37 +56,6 @@
             </div>
           </div>
           <ul class="py-4 mt-3 border-t border-g-300/80">
-            <li
-              v-if="tenantList.length > 1"
-              class="flex select-none cursor-pointer last:mb-0 hover:bg-(--fa-gray-200) flex-col! items-start! mb-4 p-2! rounded-lg bg-(--fa-gray-100)"
-            >
-              <span class="text-xs text-g-500 mb-2 block w-full">当前租户</span>
-              <ElDropdown trigger="click" @command="handleTenantSwitch">
-                <span
-                  class="flex items-center cursor-pointer w-full text-sm font-medium text-(--el-color-primary) hover:underline"
-                >
-                  {{ currentTenantName }}
-                  <FaSvgIcon icon="ri:arrow-down-s-line" class="ml-1 text-xs" />
-                </span>
-                <template #dropdown>
-                  <ElDropdownMenu>
-                    <ElDropdownItem
-                      v-for="t in tenantList"
-                      :key="t.id"
-                      :command="t.id"
-                      :class="{
-                        'text-(--el-color-primary) font-medium': t.id === currentTenant?.id,
-                      }"
-                    >
-                      <span class="flex items-center justify-between gap-4">
-                        <span>{{ t.name }}</span>
-                        <FaSvgIcon v-if="t.id === currentTenant?.id" icon="ri:check-line" />
-                      </span>
-                    </ElDropdownItem>
-                  </ElDropdownMenu>
-                </template>
-              </ElDropdown>
-            </li>
             <li
               class="flex items-center p-2 mb-3 select-none rounded-md cursor-pointer last:mb-0 hover:bg-(--fa-gray-200)"
               @click="openParamConfig"
@@ -143,7 +112,6 @@ const { t } = useI18n();
 const userStore = useUserStore();
 
 const { info: userInfo } = storeToRefs(userStore);
-const { tenantList, currentTenant } = storeToRefs(userStore);
 const userMenuPopover = ref();
 const paramDrawerVisible = ref(false);
 
@@ -156,26 +124,10 @@ const displayName = computed(
   () =>
     (userInfo.value as { name?: string; username?: string })?.name ||
     (userInfo.value as { username?: string })?.username ||
-    "—"
+    "-"
 );
 
 const displayEmail = computed(() => (userInfo.value as { email?: string })?.email || "");
-
-const currentTenantName = computed(
-  () => currentTenant.value?.name || tenantList.value[0]?.name || "—"
-);
-
-async function handleTenantSwitch(tenantId: number) {
-  closeUserMenu();
-  try {
-    await userStore.selectTenant(tenantId);
-    setTimeout(() => {
-      window.location.reload();
-    }, 200);
-  } catch {
-    // silently fail
-  }
-}
 
 function openParamConfig(): void {
   closeUserMenu();
@@ -205,7 +157,7 @@ function handleLogout(): void {
       });
       await userStore.logout();
     } catch {
-      // 用户取消
+      // 閻劍鍩涢崣鏍ㄧХ
     }
   }, 200);
 }
@@ -218,14 +170,14 @@ function closeUserMenu(): void {
 </script>
 
 <style scoped>
-/* ElPopover 基于 Tooltip：触发层默认 inline-block，与顶栏 flex 图标中线对齐 */
+/* ElPopover 閸╄桨绨?Tooltip閿涙俺袝閸欐垵鐪版妯款吇 inline-block閿涘奔绗屾い鑸电埉 flex 閸ョ偓鐖ｆ稉顓犲殠鐎靛綊缍?*/
 .fa-user-menu .el-tooltip__trigger {
   display: inline-flex !important;
   align-items: center;
   line-height: 1;
 }
 
-/* 顶栏头像右下角在线状态（对齐旧版顶栏）；占位与 FaIconButton size-8.5 一致 */
+/* 妞よ埖鐖径鏉戝剼閸欏厖绗呯憴鎺戞躬缁捐法濮搁幀渚婄礄鐎靛綊缍堥弮褏澧楁い鑸电埉閿涘绱遍崡鐘辩秴娑?FaIconButton size-8.5 娑撯偓閼?*/
 .fa-user-menu__avatar-ref {
   position: relative;
   box-sizing: border-box;

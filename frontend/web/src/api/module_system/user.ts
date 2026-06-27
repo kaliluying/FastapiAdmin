@@ -152,7 +152,7 @@ export interface RegisterForm {
   email?: string;
 }
 
-export interface UserPageQuery extends PageQuery, UserByQueryParams, TenantByQueryParams {
+export interface UserPageQuery extends PageQuery, UserByQueryParams {
   username?: string;
   name?: string;
   mobile?: string;
@@ -180,16 +180,11 @@ export interface UserInfo extends BaseType {
   roles?: roleSelectorType[];
   role_names?: roleSelectorType["name"][];
   role_ids?: roleSelectorType["id"][];
-  positions?: positionSelectorType[];
-  position_names?: positionSelectorType["name"][];
-  position_ids?: positionSelectorType["id"][];
   is_superuser?: boolean;
   last_login?: string;
   created_by?: CommonType;
   updated_by?: CommonType;
   deleted_by?: CommonType;
-  tenant_id?: number;
-  tenant_name?: string;
   gitee_login?: string;
   github_login?: string;
   wx_login?: string;
@@ -214,13 +209,6 @@ export interface roleSelectorType {
   menus?: MenuForm[];
 }
 
-export interface positionSelectorType {
-  id?: number;
-  name?: string;
-  status?: number;
-  description?: string;
-}
-
 export interface InfoFormState {
   id?: number;
   name?: string;
@@ -230,7 +218,6 @@ export interface InfoFormState {
   username?: string;
   dept_name?: string;
   dept?: deptTreeType;
-  positions?: positionSelectorType[];
   roles?: roleSelectorType[];
   avatar?: string;
   created_time?: string;
@@ -254,15 +241,12 @@ export interface UserForm extends BaseFormType {
   dept_name?: string;
   role_ids?: number[];
   role_names?: string[];
-  position_ids?: number[];
-  position_names?: string[];
   password?: string;
   gender?: number;
   email?: string;
   mobile?: string;
   is_superuser?: boolean;
   avatar?: string;
-  tenant_id?: number;
   status?: number;
   description?: string;
 }

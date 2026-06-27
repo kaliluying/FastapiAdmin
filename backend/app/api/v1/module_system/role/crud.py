@@ -2,7 +2,6 @@ from app.api.v1.module_platform.menu.crud import MenuCRUD
 from app.api.v1.module_system.dept.crud import DeptCRUD
 from app.core.base_crud import CRUDBase
 from app.core.base_schema import AuthSchema
-from app.core.exceptions import CustomException
 
 from .model import RoleModel
 from .schema import RoleCreateSchema, RoleUpdateSchema

@@ -1,4 +1,4 @@
-<!-- 菜单管理：Art + 树形表格；操作列最多 3 个外露，其余「更多」 -->
+﻿<!-- 菜单管理：Art + 树形表格；操作列最多 3 个外露，其余「更多」 -->
 <template>
   <div class="fa-full-height">
     <FaSearchBar
@@ -505,8 +505,7 @@ const menuDetailItems: import("@/components/others/fa-descriptions/index.vue").D
       prop: "scope",
       tag: {
         map: {
-          platform: { type: "warning", text: "仅平台" },
-          tenant: { type: "success", text: "租户可用" },
+          single_org: { type: "success", text: "内部可用" },
         },
       },
     },
@@ -664,8 +663,7 @@ const menuDialogFormItems = computed<FormItem[]>(() => {
       type: "radiogroup",
       props: {
         options: [
-          { label: "租户可用", value: "tenant" },
-          { label: "仅平台", value: "platform" },
+          { label: "内部可用", value: "single_org" },
         ],
       },
       hidden: t === MenuTypeEnum.BUTTON,
@@ -727,7 +725,7 @@ const formData = ref<MenuForm>({
   show_badge: false,
   show_text_badge: undefined,
   status: 0,
-  scope: "tenant" as "platform" | "tenant",
+  scope: "single_org",
   description: undefined,
   client: MenuClientEnum.PC,
 });
@@ -913,8 +911,7 @@ const { columnChecks, columns } = useTableColumns<MenuTable>(
       width: 96,
       align: "center",
       status: {
-        platform: { type: "warning", text: "仅平台" },
-        tenant: { type: "success", text: "租户可用" },
+        single_org: { type: "success", text: "内部可用" },
       },
     },
     { prop: "order", label: "排序", width: 80 },
@@ -1081,7 +1078,7 @@ const initialFormData: MenuForm = {
   status: 0,
   description: undefined,
   client: MenuClientEnum.PC,
-  scope: "tenant" as "platform" | "tenant",
+  scope: "single_org",
 };
 
 const dataFormRef = ref<InstanceType<typeof FaForm> | null>(null);
@@ -1258,3 +1255,4 @@ onMounted(() => {
   vertical-align: middle;
 }
 </style>
+

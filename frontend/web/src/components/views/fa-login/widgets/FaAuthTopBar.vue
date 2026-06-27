@@ -1,4 +1,4 @@
-<!-- 授权页顶栏：左上 Logo / 标题 / 版本（固定），右上操作（固定）；切换布局时仅下方主体变化 -->
+﻿<!-- 授权页顶栏：左上 Logo / 标题 / 版本（固定），右上操作（固定）；切换布局时仅下方主体变化 -->
 <template>
   <header
     class="auth-top-bar pointer-events-none fixed left-0 right-0 top-0 z-100 flex items-center justify-between gap-3 bg-transparent px-5 py-4.5 md:gap-4 md:px-10"
@@ -172,15 +172,15 @@ const mainColors = AppConfig.systemMainColor;
 const themeColorForCss = computed(() => systemThemeColor.value);
 
 const webLogoSrc = computed(
-  () => configStore.configData.tenant_logo?.config_value?.trim() || undefined
+  () => configStore.configData.system_logo?.config_value?.trim() || undefined
 );
 
 const siteTitle = computed(
-  () => configStore.configData.tenant_name?.config_value?.trim() || AppConfig.systemInfo.name
+  () => configStore.configData.system_name?.config_value?.trim() || AppConfig.systemInfo.name
 );
 
 const displayVersion = computed(() => {
-  const raw = configStore.configData.tenant_version?.config_value?.trim();
+  const raw = configStore.configData.system_version?.config_value?.trim();
   const ver = raw || DEFAULT_APP_VERSION;
   return ver.startsWith("v") || ver.startsWith("V") ? ver : `v${ver}`;
 });
@@ -328,3 +328,5 @@ const changeThemeColor = (color: string) => {
   color: v-bind("themeColorForCss");
 }
 </style>
+
+

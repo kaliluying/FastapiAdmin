@@ -1,4 +1,4 @@
-<!-- 系统配置：Fa 布局 + useTable，与 notice 页一致 -->
+<!-- 系统配置 -->
 <template>
   <div class="fa-full-height">
     <FaSearchBar
@@ -14,7 +14,6 @@
       :disabled-search="false"
       :default-expanded="false"
       include-audit
-      :audit-item-options="{ showTenantId: true }"
       @search="handleSearchBarSearch"
       @reset="onResetSearch"
     />

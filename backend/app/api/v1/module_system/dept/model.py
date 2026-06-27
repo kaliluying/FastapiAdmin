@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+﻿from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -24,8 +24,7 @@ class DeptModel(ModelMixin, TenantMixin, UserMixin):
         "created_by",
         "updated_by",
         "deleted_by",
-        "tenant_by",
-    ]
+            ]
     __permission_strategy__: PermissionFilterStrategy = PermissionFilterStrategy.DEPT_RELATION
 
     name: Mapped[str] = mapped_column(String(64), nullable=False, comment="部门名称")
@@ -56,3 +55,4 @@ class DeptModel(ModelMixin, TenantMixin, UserMixin):
         foreign_keys="UserModel.dept_id",
         lazy="selectin",
     )
+

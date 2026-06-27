@@ -6,7 +6,6 @@ export type AuditSearchFormParams = {
   updated_id?: number | null;
   created_time?: string[];
   updated_time?: string[];
-  tenant_id?: number | null;
 };
 
 export interface GetAuditSearchFormItemsOptions {
@@ -16,17 +15,13 @@ export interface GetAuditSearchFormItemsOptions {
   updatedByLabel?: string;
   createdTimeLabel?: string;
   updatedTimeLabel?: string;
-  tenantIdLabel?: string;
   createdByPlaceholder?: string;
   updatedByPlaceholder?: string;
-  tenantIdPlaceholder?: string;
   /** 日期时间范围 valueFormat，默认 YYYY-MM-DD HH:mm:ss */
   valueFormat?: string;
   rangeSeparator?: string;
   startPlaceholder?: string;
   endPlaceholder?: string;
-  /** 是否显示租户ID字段，默认 false */
-  showTenantId?: boolean;
   /** 是否显示创建人字段，默认 true */
   showCreatedBy?: boolean;
   /** 是否显示更新人字段，默认 true */
@@ -38,7 +33,7 @@ export interface GetAuditSearchFormItemsOptions {
 }
 
 /**
- * 常见「创建人 / 更新人 / 创建时间 / 更新时间 / 租户ID」搜索项，供 FaSearchBar `items` 使用。
+ * 常见「创建人 / 更新人 / 创建时间 / 更新时间」搜索项，供 FaSearchBar `items` 使用。
  * 当 FaSearchBar 设置 `includeAudit` 为 true 时，会自动追加这些字段。
  * 创建人、更新人插槽由 FaSearchBar 内置提供，也可通过 `#created_id`、`#updated_id` 覆盖。
  */
@@ -50,7 +45,6 @@ export function getAuditSearchFormItems(
   const rangeSep = options?.rangeSeparator ?? "至";
   const sp = options?.startPlaceholder ?? "开始";
   const ep = options?.endPlaceholder ?? "结束";
-  const showTenantId = options?.showTenantId ?? false;
   const showCreatedBy = options?.showCreatedBy ?? true;
   const showUpdatedBy = options?.showUpdatedBy ?? true;
   const showCreatedTime = options?.showCreatedTime ?? true;
@@ -109,17 +103,6 @@ export function getAuditSearchFormItems(
       span,
       expandOnly: true, // 标记为展开专属字段
     },
-    tenant_id: {
-      label: options?.tenantIdLabel ?? "租户ID",
-      key: "tenant_id",
-      type: "input",
-      props: {
-        placeholder: options?.tenantIdPlaceholder ?? "请输入租户ID",
-        style: { width: "100%" },
-      },
-      span,
-      expandOnly: true, // 标记为展开专属字段
-    },
   };
 
   const fieldOrder: string[] = [];
@@ -127,7 +110,6 @@ export function getAuditSearchFormItems(
   if (showUpdatedBy) fieldOrder.push("updated_id");
   if (showCreatedTime) fieldOrder.push("created_time");
   if (showUpdatedTime) fieldOrder.push("updated_time");
-  if (showTenantId) fieldOrder.push("tenant_id");
 
   return fieldOrder.map((key) => fieldMap[key]).filter((item): item is SearchFormItem => Boolean(item));
 }

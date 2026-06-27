@@ -1,136 +1,77 @@
-# FastApiAdmin - Backend
+# Backend
 
-基于 FastAPI 框架构建的企业级后端架构，为前端 Vue3 管理系统提供完整的 API 服务支持。
+FastAPI backend for the single-organization admin + AI knowledge-base skeleton.
 
-> **与仓库根文档的关系**：项目总览、一键前后端启动、演示账号、Docker 部署、架构图与默认端口等请以 [根目录 README.md](../README.md) 为准；**本文档**侧重 `backend/` 目录结构、迁移命令与后端开发约定。
+## Runtime Scope
 
-## 技术栈
+The backend keeps the admin foundation:
 
-| 技术 | 版本 | 说明 |
-|------|------|------|
-| FastAPI | 0.115.2 | 现代 Web 框架 |
-| SQLAlchemy | 2.0.36 | ORM 框架 |
-| Alembic | 1.15.1 | 数据库迁移工具 |
-| Pydantic | 2.x | 数据验证与序列化 |
-| Redis | 5.2.1 | 缓存与会话存储 |
-| Uvicorn | 0.30.6 | ASGI 服务器 |
-| Python | 3.12+ | 运行环境 |
+- Auth and current-user APIs
+- RBAC permissions and menu authorization
+- Users, roles, departments, menus, dictionaries, params, logs
+- Common file upload
+- AI chat and session history
+- AI knowledge-base metadata and document indexing
 
-## 项目结构
+Tenant runtime is disabled for this skeleton. Tenant middleware, tenant cache startup, tenant seed models, and tenant route registration are not part of the active application.
 
-```txt
-backend/
-├── app/                     # 项目核心代码
-│   ├── alembic/             # 数据库迁移管理
-│   ├── api/                 # API 接口模块
-│   │   └── v1/              # API v1 版本
-│   │       ├── module_system/   # 系统管理模块
-│   │       ├── module_monitor/  # 系统监控模块
-│   │       ├── module_ai/       # AI 功能模块
-│   │       └── module_*/       # 其他业务模块
-│   ├── common/              # 公共组件（常量、枚举、响应封装）
-│   ├── config/              # 项目配置文件
-│   ├── core/                # 核心模块（数据库、中间件、安全）
-│   ├── plugin/              # 插件模块（二开目录）
-│   ├── scripts/             # 初始化脚本和数据
-│   └── utils/               # 工具类（验证码、文件上传等）
-├── env/                     # 环境配置文件
-├── logs/                    # 日志输出目录
-├── sql/                     # SQL 初始化脚本
-├── static/                  # 静态资源文件
-├── main.py                  # 项目启动入口
-├── alembic.ini              # Alembic 迁移配置
-├── requirements.txt         # Python 依赖包
-└── pyproject.toml           # 项目配置（uv / ruff）
-```
+## Knowledge Base Architecture
 
-### 模块分层
+- MySQL stores knowledge bases, documents, chunks, parse/index status, audit fields, and file metadata.
+- ChromaDB stores vectors and chunk documents.
+- `chromadb-client` connects to a Chroma HTTP server.
+- `openai` client is used for both chat completions and embeddings through OpenAI-compatible providers.
 
-每个业务模块采用统一的分层结构：
+Key modules:
 
 ```txt
-module_*/
-├── controller.py    # 控制器 - HTTP 请求处理
-├── service.py       # 服务层 - 业务逻辑处理
-├── crud.py          # 数据层 - 数据库操作
-├── model.py         # ORM 模型 - 数据库表定义
-├── schema.py        # Pydantic 模型 - 数据验证
-└── param.py         # 参数模型 - 请求参数
+app/plugin/module_ai/chat/
+app/plugin/module_ai/knowledge/
 ```
 
-分包理念（按业务竖切 vs 按技术层次分包）详见 [项目概述](https://service.fastapiadmin.com/guide/overview)。
+## Environment
 
-## 快速开始
+Copy and edit the development env file:
 
-### 环境要求
-
-- **Python**: 3.12+
-- **数据库**: MySQL 8.0+ / PostgreSQL 13+ / SQLite 3.x（连接串在 `env/.env.dev`）
-- **Redis**: 与 `.env.dev` 中配置一致
-
-### 第一次在本机跑起来
-
-1. 复制 `env/.env.dev.example` → `env/.env.dev`，填写数据库、Redis 等（先在 DB 中建好空库）。
-2. 在 **`backend/` 目录下** 安装依赖：推荐 **`uv sync`**；或 `pip install -r requirements.txt`。
-3. **启动**：`uv run main.py run --env=dev`（或 `python main.py run --env=dev`）。**首次启动会自动初始化数据库表与基础数据**，一般**无需**先执行 `upgrade`。接口文档示例：`http://127.0.0.1:8001/docs`（端口见 `.env.dev` 中 `SERVER_PORT`）。
-
-### 数据库迁移命令（模型变更时使用）
-
-日常**首次启动不必手动执行**；当你**修改了 ORM 模型**并需用 Alembic 管理结构变更时再使用：
-
-```bash
-# 生成迁移文件（模型变更后）
-python main.py revision --env=dev
-# 应用迁移
-python main.py upgrade --env=dev
-
-# 使用 uv 时
-uv run main.py revision --env=dev
-uv run main.py upgrade --env=dev
+```powershell
+copy env\.env.dev.example env\.env.dev
 ```
 
-### 安装依赖与启动服务
+Required AI/vector settings:
 
-```bash
-# 推荐使用 uv（与 pyproject.toml 一致）
+```env
+OPENAI_API_KEY=
+OPENAI_BASE_URL=
+OPENAI_MODEL=
+OPENAI_EMBEDDING_MODEL=
+CHROMA_HOST=localhost
+CHROMA_PORT=8000
+CHROMA_SSL=false
+CHROMA_COLLECTION_NAME=knowledge_base
+```
+
+`CHROMA_PERSIST_DIR` is retained only as reserved local deployment metadata. The active implementation uses Chroma HTTP client.
+
+## Start
+
+```powershell
 uv sync
 uv run main.py run --env=dev
-
-# 或使用传统 pip / venv
-python -m venv .venv
-source .venv/bin/activate            # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-python main.py run --env=dev
 ```
 
-### 代码格式化（ruff）
+On first startup, the app creates tables and seeds base data when tables are empty.
 
-```bash
-ruff check
-ruff check --fix
-ruff check --watch
+## Verification
 
-# 使用 uv 时
-uv run ruff check
-uv run ruff check --fix
-uv run ruff check --watch
-
-# 生成开源授权函 JSON 文件
-#uv run --with pip-licenses pip-licenses --format=json \
-  > app/api/v1/module_platform/invoice/oss_licenses.json
+```powershell
+uv run pytest tests\core\test_single_org_runtime.py tests\scripts\test_skeleton_seed_menu.py tests\plugin\module_ai -q
+python -m compileall -q app tests
+uv run ruff check app\plugin\module_ai app\scripts\initialize.py app\api\v1\module_system\__init__.py app\config\setting.py app\init_app.py tests --output-format concise
+uv run python -c "import chromadb, openai, pypdf, docx"
 ```
 
-## 后端约定（日期与序列化）
+## Notes
 
-使用 **Pydantic v2** 与 **PostgreSQL（asyncpg）** 时：ORM 写入需要 Python 原生日期时间，JSON 输出需要可序列化字符串。
-
-- 自定义 `DateStr` / `TimeStr` / `DateTimeStr`（`app/core/validator.py`）使用 **`PlainSerializer(..., when_used='json')`**
-- `model_dump(mode='python')` 供 ORM 使用原生类型；JSON / Redis 使用 `model_dump(mode='json')`
-- 统一 HTTP 响应见 `app/common/response.py` 中的 **`jsonable_encoder`**
-- 写入 Redis 时请使用 **`model_dump(mode='json')`** 再序列化
-
-## 相关链接
-
-- **FastAPI 官方文档**: [https://fastapi.tiangolo.com/](https://fastapi.tiangolo.com/)
-- **SQLAlchemy 文档**: [https://docs.sqlalchemy.org/](https://docs.sqlalchemy.org/)
-- **Pydantic 文档**: [https://pydantic-docs.helpmanual.io/](https://pydantic-docs.helpmanual.io/)
+- A running Chroma server is required for document indexing and retrieval.
+- Knowledge document upload supports `.txt`, `.md`, `.pdf`, and `.docx`.
+- API keys are not exposed by the model-config endpoint; it only reports whether the key is configured.

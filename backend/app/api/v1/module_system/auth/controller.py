@@ -1,4 +1,4 @@
-import json
+﻿import json
 import secrets
 from typing import Annotated
 
@@ -37,29 +37,21 @@ from .schema import (
     AutoLoginTokenSchema,
     AutoLoginUserSchema,
     CaptchaOutSchema,
-    LoginWithTenantsSchema,
-    SelectTenantOutSchema,
-    SelectTenantSchema,
-    TenantOptionSchema,
-    TenantRegisterOutSchema,
-    TenantRegisterSchema,
+    LoginSchema,
 )
 from .service import (
     AutoLoginService,
     CaptchaService,
     LoginService,
-    TenantRegisterService,
 )
 
 AuthRouter = APIRouter(route_class=OperationLogRoute, prefix="/auth", tags=["系统管理", "认证授权"])
-
-_AUTH_TENANTS_NS = "auth_tenants"
 
 
 @AuthRouter.post(
     "/login",
     summary="登录",
-    response_model=LoginWithTenantsSchema,
+    response_model=LoginSchema,
 )
 async def login_for_access_token_controller(
     request: Request,
@@ -164,37 +156,6 @@ async def auto_login_controller(
     return SuccessResponse(data=login_token, msg="登录成功")
 
 
-@AuthRouter.post(
-    "/select-tenant",
-    summary="选择租户",
-    response_model=ResponseSchema[SelectTenantOutSchema],
-    dependencies=[Depends(get_current_user)],
-)
-async def select_tenant_controller(
-    request: Request,
-    data: SelectTenantSchema,
-    auth: Annotated[AuthSchema, Depends(get_current_user)],
-    redis: Annotated[Redis, Depends(redis_getter)],
-) -> JSONResponse:
-    result = await LoginService(auth).select_tenant(request=request, redis=redis, tenant_id=data.tenant_id)
-    await cache_util.clear(namespace=_AUTH_TENANTS_NS)
-    return SuccessResponse(data=result, msg="租户切换成功")
-
-
-@AuthRouter.get(
-    "/tenants",
-    summary="获取可选租户列表",
-    response_model=ResponseSchema[list[TenantOptionSchema]],
-    dependencies=[Depends(get_current_user)],
-)
-@cache(expire=120, namespace=_AUTH_TENANTS_NS)
-async def get_user_tenants_controller(
-    auth: Annotated[AuthSchema, Depends(get_current_user)],
-    db: Annotated[AsyncSession, Depends(db_getter)],
-) -> JSONResponse:
-    service = LoginService(auth)
-    tenants = await service.get_user_tenants()
-    return SuccessResponse(data=tenants, msg="获取租户列表成功")
 
 
 @AuthRouter.get(
@@ -289,26 +250,5 @@ async def oauth_callback_controller(
     except CustomException as e:
         fe = await resolve_frontend()
         return RedirectResponse(url=oauth_service_error_redirect(fe, e.msg), status_code=302)
-
-
-@AuthRouter.post(
-    "/tenant/register",
-    summary="租户自助注册",
-    response_model=ResponseSchema[TenantRegisterOutSchema],
-)
-async def tenant_register_controller(
-    data: TenantRegisterSchema,
-    db: Annotated[AsyncSession, Depends(db_getter)],
-) -> JSONResponse:
-    result = await TenantRegisterService.register(
-        db=db,
-        username=data.username,
-        password=data.password,
-        email=data.email,
-        tenant_name=data.tenant_name,
-    )
-    logger.info(f"新租户注册: username={data.username} tenant={result.tenant_name}")
-    return SuccessResponse(data=result, msg=result.message)
-
 
 

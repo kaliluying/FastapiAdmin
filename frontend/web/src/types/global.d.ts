@@ -119,13 +119,6 @@ declare global {
   }
 
   /**
-   * 租户查询参数（继承基础查询 + 租户ID）
-   */
-  interface TenantByQueryParams extends BaseQueryParams {
-    tenant_id?: number;
-  }
-
-  /**
    * 分页查询参数（继承基础查询 + 分页字段）
    */
   interface PageQuery extends BaseQueryParams {
@@ -154,14 +147,6 @@ declare global {
   }
 
   /**
-   * 租户
-   */
-  interface TenantType {
-    id?: number;
-    name?: string;
-  }
-
-  /**
    * 基础表单类型（基础层：仅包含 id）
    */
   interface BaseFormType {
@@ -181,7 +166,6 @@ declare global {
     created_by?: CommonType;
     updated_by?: CommonType;
     deleted_by?: CommonType;
-    tenant_by?: TenantType;
   }
 
   /**

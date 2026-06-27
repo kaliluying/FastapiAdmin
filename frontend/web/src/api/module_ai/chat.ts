@@ -42,7 +42,7 @@ export const AiChatAPI = {
     });
   },
 
-  chat(body: { message: string; session_id?: string | null }) {
+  chat(body: { message: string; session_id?: string | null; knowledge_base_ids?: number[] }) {
     return request<ApiResponse<AiChatResponse>>({
       url: `${API_PATH}/ai-chat`,
       method: "post",
@@ -53,6 +53,13 @@ export const AiChatAPI = {
   getSessionDetail(sessionId: string) {
     return request<ApiResponse<ChatSessionDetail>>({
       url: `${API_PATH}/detail/${sessionId}`,
+      method: "get",
+    });
+  },
+
+  getModelConfig() {
+    return request<ApiResponse<AiModelConfig>>({
+      url: `${API_PATH}/model-config`,
       method: "get",
     });
   },
@@ -139,4 +146,15 @@ export interface ChatSessionDetail {
   updated_time: string | null;
   message_count: number;
   messages: ChatSessionMessage[];
+}
+
+export interface AiModelConfig {
+  openai_base_url: string;
+  openai_model: string;
+  openai_embedding_model: string;
+  openai_api_key_configured: boolean;
+  chroma_host: string;
+  chroma_port: number;
+  chroma_ssl: boolean;
+  chroma_collection_name: string;
 }

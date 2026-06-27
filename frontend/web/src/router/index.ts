@@ -26,7 +26,6 @@ export async function initRouter(app: App<Element>): Promise<void> {
   app.use(router);
 }
 
-/** 须与 `staticRoutes` 首页子路由 path 一致 */
 export const HOME_PAGE_PATH = "/home";
 
 export { HOME_ROUTE_NAME, ROOT_LAYOUT_ROUTE_NAME };

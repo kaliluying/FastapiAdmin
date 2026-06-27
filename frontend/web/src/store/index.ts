@@ -3,7 +3,6 @@ import { createPinia } from "pinia";
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 import { useUserStore } from "./modules/user.store";
 import { useDictStore } from "./modules/dict.store";
-import { useNoticeStore } from "./modules/notice.store";
 import { useConfigStore } from "./modules/config.store";
 import { useWorktabStore } from "./modules/worktab.store";
 
@@ -19,7 +18,6 @@ export * from "./modules/app.store";
 export * from "./modules/config.store";
 export * from "./modules/dict.store";
 export * from "./modules/menu.store";
-export * from "./modules/notice.store";
 export * from "./modules/setting.store";
 export * from "./modules/table.store";
 export * from "./modules/user.store";
@@ -32,7 +30,6 @@ export interface RefreshCacheOptions {
   refreshUser?: boolean;
   refreshRoutes?: boolean;
   refreshConfig?: boolean;
-  refreshNotice?: boolean;
   clearTags?: boolean;
   clearDictBefore?: boolean;
 }
@@ -43,14 +40,12 @@ export async function refreshAppCaches(opts: RefreshCacheOptions = {}) {
     refreshUser = true,
     refreshRoutes = true,
     refreshConfig = true,
-    refreshNotice = true,
     clearTags = false,
     clearDictBefore = false,
   } = opts;
 
   const userStore = useUserStore(store);
   const dictStore = useDictStore(store);
-  const noticeStore = useNoticeStore(store);
   const configStore = useConfigStore(store);
 
   const tasks: Promise<any>[] = [];
@@ -60,9 +55,6 @@ export async function refreshAppCaches(opts: RefreshCacheOptions = {}) {
   }
   if (refreshConfig) {
     tasks.push(configStore.getConfig(true));
-  }
-  if (refreshNotice) {
-    tasks.push(noticeStore.getNotice());
   }
   if (dictTypes && dictTypes.length > 0) {
     if (clearDictBefore) dictStore.clearDictData();

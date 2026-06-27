@@ -22,7 +22,6 @@ from .utils.console import console_end, console_start
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
-    from app.api.v1.module_platform.tenant.service import TenantService
     from app.api.v1.module_system.dict.service import DictDataService
     from app.api.v1.module_system.params.service import ParamsService
 
@@ -35,8 +34,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
         logger.info("✅ Redis系统参数初始化完成")
         await DictDataService.init_cache(redis=app.state.redis)
         logger.info("✅ Redis数据字典初始化完成")
-        await TenantService.init_cache(redis=app.state.redis)
-        logger.info("✅ Redis租户配置初始化完成")
         await cache_util.init(redis=app.state.redis)
         logger.info("✅ fastapi-admin-cache 初始化完成")
         await FastAPILimiter.init(

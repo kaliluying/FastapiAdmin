@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+﻿from typing import TYPE_CHECKING
 
 from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -76,8 +76,7 @@ class RoleModel(ModelMixin, TenantMixin, UserMixin):
         "created_by",
         "updated_by",
         "deleted_by",
-        "tenant_by",
-    ]
+            ]
     __permission_strategy__: PermissionFilterStrategy = PermissionFilterStrategy.USER_BINDING
 
     name: Mapped[str] = mapped_column(String(64), nullable=False, comment="角色名称")
@@ -95,3 +94,4 @@ class RoleModel(ModelMixin, TenantMixin, UserMixin):
     )
     depts: Mapped[list["DeptModel"]] = relationship(secondary="sys_role_depts", back_populates="roles", lazy="selectin")
     users: Mapped[list["UserModel"]] = relationship(secondary="sys_user_roles", back_populates="roles", lazy="selectin")
+

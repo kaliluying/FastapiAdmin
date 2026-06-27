@@ -1,8 +1,6 @@
 from enum import Enum
 from typing import Protocol
 
-from app.config.setting import settings
-
 
 class RET(Enum):
     """

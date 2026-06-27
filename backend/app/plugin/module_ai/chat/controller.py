@@ -1,4 +1,4 @@
-from typing import Annotated, Any
+﻿from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Path
 from fastapi.responses import JSONResponse
@@ -12,6 +12,7 @@ from app.core.router_class import OperationLogRoute
 from .schema import (
     AiChatRequestSchema,
     AiChatResponseSchema,
+    AiModelConfigOutSchema,
     ChatSessionCreateSchema,
     ChatSessionQueryParam,
     ChatSessionUpdateSchema,
@@ -111,6 +112,7 @@ async def ai_chat_controller(
     result = await service.chat_non_stream(
         message=data.message,
         session_id=data.session_id,
+        knowledge_base_ids=data.knowledge_base_ids,
     )
     return SuccessResponse(
         data=AiChatResponseSchema(
@@ -119,5 +121,17 @@ async def ai_chat_controller(
             function_calls=result.get("function_calls"),
             action=result.get("action"),
         ),
-        msg="对话成功",
+        msg="chat success",
     )
+@ChatRouter.get(
+    "/model-config",
+    summary="AI model configuration",
+    response_model=ResponseSchema[AiModelConfigOutSchema],
+)
+async def model_config_controller(
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:model_config:query"]))],
+) -> JSONResponse:
+    _ = auth
+    result = ChatService.get_model_config()
+    return SuccessResponse(data=result, msg="query AI model configuration success")
+

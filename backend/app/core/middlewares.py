@@ -167,7 +167,7 @@ _TENANT_WHITELIST_PATHS = (
     "/api/v1/system/auth/refresh", "/api/v1/health", "/api/v1/common/health",
 )
 
-_WHITELIST_ALL = _TENANT_WHITELIST_PATHS + tuple(settings.TENANT_WHITELIST_PATHS)
+_WHITELIST_ALL = _TENANT_WHITELIST_PATHS
 
 
 def _tenant_is_whitelisted(path: str) -> bool:

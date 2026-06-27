@@ -118,9 +118,9 @@ Issues and PRs are welcome! See [Contributing Guide](https://service.fastapiadmi
 
 ## 👥 Community
 
-| WeChat Group | Support |
-| ------------ | ------- |
-| ![Group QR](frontend/web/public/group.jpg) | ![WeChat Pay](frontend/web/public/wechatPay.jpg) |
+| WeChat Group |
+| ------------ |
+| ![Group QR](frontend/web/public/group.jpg) |
 
 > If you find this project useful, please give it a ⭐️ Star!
 

@@ -1,4 +1,4 @@
-
+﻿
 from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.exceptions import CustomException
 from app.utils.common_util import (
@@ -54,11 +54,6 @@ class DeptService:
         if obj:
             raise CustomException(msg="创建失败，编码已存在")
 
-        # 检查租户配额
-        from app.api.v1.module_platform.tenant.service import TenantService
-
-        await TenantService(self.auth).check_quota(self.auth.tenant_id, "dept")
-
         dept = await DeptCRUD(self.auth).create(data=data)
         return DeptOutSchema.model_validate(dept)
 
@@ -111,3 +106,4 @@ class DeptService:
                 total_ids.extend(disable_ids)
 
         await DeptCRUD(self.auth).set(ids=total_ids, status=data.status)
+

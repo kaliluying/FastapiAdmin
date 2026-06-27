@@ -63,7 +63,7 @@ const qrCodeRenderOptions: {
   foreground: "#000000",
 };
 
-/** 演示用载荷；接入后端后替换为会话 URL / ticket */
+/** 演示用载荷；接入后端后替换为会话 URL / 会话令牌 */
 const qrPayload = computed(() => {
   if (typeof window === "undefined") return "https://example.com/login";
   const { origin, pathname } = window.location;

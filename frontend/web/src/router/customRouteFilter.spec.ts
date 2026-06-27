@@ -7,29 +7,29 @@ describe("filterCustomDisabledRoutes", () => {
   it("recursively removes customized disabled routes without mutating the input", () => {
     const routes: AppRouteRecord[] = [
       {
-        path: "/home",
-        name: "Home",
-        meta: { title: "Home" },
+        path: "/system",
+        name: "System",
+        meta: { title: "System" },
       },
       {
-        path: "/dashboard",
-        name: "Dashboard",
-        meta: { title: "Dashboard" },
+        path: "/system/role",
+        name: "Role",
+        meta: { title: "Role" },
         children: [
           {
-            path: "workplace",
-            name: "DashboardWorkplace",
-            meta: { title: "Workplace" },
+            path: "permission",
+            name: "RolePermission",
+            meta: { title: "Permission" },
           },
           {
-            path: "analysis",
-            name: "DashboardAnalysis",
-            meta: { title: "Analysis" },
+            path: "audit",
+            name: "RoleAudit",
+            meta: { title: "Audit" },
           },
           {
-            path: "screen/report",
-            name: "DashboardScreenReport",
-            meta: { title: "Screen Report" },
+            path: "settings/report",
+            name: "RoleSettingsReport",
+            meta: { title: "Settings Report" },
           },
         ],
       },
@@ -42,10 +42,14 @@ describe("filterCustomDisabledRoutes", () => {
 
     const originalRoutesSnapshot = structuredClone(routes);
     const filtered = filterCustomDisabledRoutes(routes);
-    const dashboard = filtered.find((route) => route.path === "/dashboard");
+    const role = filtered.find((route) => route.path === "/system/role");
 
-    expect(filtered.map((route) => route.path)).toEqual(["/home", "/dashboard"]);
-    expect(dashboard?.children?.map((route) => route.path)).toEqual(["workplace"]);
+    expect(filtered.map((route) => route.path)).toEqual(["/system", "/system/role"]);
+    expect(role?.children?.map((route) => route.path)).toEqual([
+      "permission",
+      "audit",
+      "settings/report",
+    ]);
     expect(routes).toEqual(originalRoutesSnapshot);
   });
 

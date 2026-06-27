@@ -16,7 +16,6 @@
           :disabled-search="false"
           :default-expanded="false"
           include-audit
-          :audit-item-options="{ showTenantId: true }"
           @search="handleOpSearch"
           @reset="onOpResetSearch"
         />
@@ -120,7 +119,6 @@
           :disabled-search="false"
           :default-expanded="false"
           include-audit
-          :audit-item-options="{ showTenantId: true }"
           @search="handleLoginSearch"
           @reset="onLoginResetSearch"
         />

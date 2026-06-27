@@ -1,4 +1,4 @@
-import io
+﻿import io
 from typing import Any
 
 import pandas as pd
@@ -6,9 +6,7 @@ from fastapi import UploadFile
 
 from app.api.v1.module_platform.menu.crud import MenuCRUD
 from app.api.v1.module_platform.menu.schema import MenuOutSchema
-from app.api.v1.module_platform.tenant.service import TenantService
 from app.api.v1.module_system.dept.crud import DeptCRUD
-from app.api.v1.module_system.position.crud import PositionCRUD
 from app.api.v1.module_system.role.crud import RoleCRUD
 from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.exceptions import CustomException
@@ -83,16 +81,12 @@ class UserService:
             if not dept:
                 raise CustomException(msg="该数据不存在")
 
-        await TenantService(self.auth).check_quota(self.auth.tenant_id, "user")
-
         if data.password:
             data.password = PwdUtil.hash_password(password=data.password)
-        user_dict = data.model_dump(exclude_unset=True, exclude={"role_ids", "position_ids"})
+        user_dict = data.model_dump(exclude_unset=True, exclude={"role_ids"})
         new_user = await UserCRUD(self.auth).create(data=user_dict)
         if data.role_ids and len(data.role_ids) > 0:
             await UserCRUD(self.auth).set_user_roles(user_ids=[new_user.id], role_ids=data.role_ids)
-        if data.position_ids and len(data.position_ids) > 0:
-            await UserCRUD(self.auth).set_user_positions(user_ids=[new_user.id], position_ids=data.position_ids)
         return UserOutSchema.model_validate(new_user)
 
     async def update(self, id: int, data: UserUpdateSchema) -> UserOutSchema:
@@ -131,14 +125,6 @@ class UserService:
                 raise CustomException(msg="更新失败，部分角色已被禁用")
             await UserCRUD(self.auth).set_user_roles(user_ids=[id], role_ids=data.role_ids)
 
-        if data.position_ids and len(data.position_ids) > 0:
-            positions = await PositionCRUD(self.auth).get_list(search={"id": ("in", data.position_ids)})
-            if len(positions) != len(data.position_ids):
-                raise CustomException(msg="更新失败，部分岗位不存在")
-            if not all(position.status == 0 for position in positions):
-                raise CustomException(msg="更新失败，部分岗位已被禁用")
-            await UserCRUD(self.auth).set_user_positions(user_ids=[id], position_ids=data.position_ids)
-
         return UserOutSchema.model_validate(new_user)
 
     async def delete(self, ids: list[int]) -> None:
@@ -158,7 +144,6 @@ class UserService:
                 raise CustomException(msg="不能删除当前登陆用户")
 
         await UserCRUD(self.auth).set_user_roles(user_ids=ids, role_ids=[])
-        await UserCRUD(self.auth).set_user_positions(user_ids=ids, position_ids=[])
         await UserCRUD(self.auth).delete(ids=ids)
 
     async def current_info(self) -> UserOutSchema:
@@ -169,21 +154,28 @@ class UserService:
         if user and user.dept:
             user_dict.dept_name = user.dept.name
 
-        _pc_only = {"client": "pc"}
+        _internal_pc_only = {"client": "pc", "scope": "single_org"}
         if self.auth.user and self.auth.user.is_superuser:
             menu_all = await MenuCRUD(self.auth).tree_list(
-                search={"type": ("in", [1, 2, 3, 4]), "status": 0, **_pc_only},
+                search={"type": ("in", [1, 2, 3, 4]), "status": 0, **_internal_pc_only},
                 order_by=[{"order": "asc"}],
             )
             menus = [MenuOutSchema.model_validate(menu) for menu in menu_all]
         else:
-            menu_ids = {menu.id for role in self.auth.user.roles or [] for menu in role.menus if menu.status == 0 and getattr(menu, "client", "pc") == "pc"}
+            menu_ids = {
+                menu.id
+                for role in self.auth.user.roles or []
+                for menu in role.menus
+                if menu.status == 0
+                and getattr(menu, "client", "pc") == "pc"
+                and getattr(menu, "scope", "single_org") == "single_org"
+            }
 
             menus = (
                 [
                     MenuOutSchema.model_validate(menu)
                     for menu in await MenuCRUD(self.auth).tree_list(
-                        search={"id": ("in", list(menu_ids)), **_pc_only},
+                        search={"id": ("in", list(menu_ids)), **_internal_pc_only},
                         order_by=[{"order": "asc"}],
                     )
                 ]
@@ -258,7 +250,7 @@ class UserService:
 
         data.password = PwdUtil.hash_password(password=data.password)
         data.name = data.username
-        create_dict = data.model_dump(exclude_unset=True, exclude={"role_ids", "position_ids"})
+        create_dict = data.model_dump(exclude_unset=True, exclude={"role_ids"})
 
         if self.auth.user and self.auth.user.id:
             create_dict["created_id"] = self.auth.user.id
@@ -358,12 +350,10 @@ class UserService:
                             error_msgs.append(f"第{i}行: 用户 {user_data['username']} 已存在")
                     else:
                         user_create_schema = UserCreateSchema(**user_data)
-                        user_create_data = user_create_schema.model_dump(exclude_unset=True, exclude={"role_ids", "position_ids"})
+                        user_create_data = user_create_schema.model_dump(exclude_unset=True, exclude={"role_ids"})
                         new_user = await UserCRUD(self.auth).create(data=user_create_data)
                         if user_create_schema.role_ids and len(user_create_schema.role_ids) > 0:
                             await UserCRUD(self.auth).set_user_roles(user_ids=[new_user.id], role_ids=user_create_schema.role_ids)
-                        if user_create_schema.position_ids and len(user_create_schema.position_ids) > 0:
-                            await UserCRUD(self.auth).set_user_positions(user_ids=[new_user.id], position_ids=user_create_schema.position_ids)
                         success_count += 1
 
                 except Exception as e:
@@ -433,3 +423,5 @@ class UserService:
             item["creator"] = item.get("created_by", {}).get("name", "未知") if isinstance(item.get("created_by"), dict) else "未知"
 
         return ExcelUtil.export_list2excel(list_data=data, mapping_dict=mapping_dict)
+
+

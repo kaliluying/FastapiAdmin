@@ -117,7 +117,6 @@ const FILE_SUFFIX: Record<string, string> = {
 
 const REMIX_BY_NAME: Record<string, string> = {
   ai: "ri:robot-2-line",
-  alipay: "ri:alipay-fill",
   api: "ri:plug-line",
   arco: "ri:circle-line",
   "avatar-man": "ri:user-line",
@@ -206,7 +205,6 @@ const REMIX_BY_NAME: Record<string, string> = {
   "menu-test": "ri:test-tube-line",
 
   "icon-msg": "ri:message-3-line",
-  "icon-notice": "ri:notification-3-line",
   "icon-num": "ri:numbers-line",
   "icon-user": "ri:user-line",
   "icon-wait": "ri:timer-line",

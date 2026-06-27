@@ -1,4 +1,4 @@
-<!-- 顶部栏 -->
+﻿<!-- 顶部栏 -->
 <template>
   <div
     class="w-full bg-(--default-bg-color)"
@@ -120,16 +120,6 @@
           </template>
         </ElDropdown>
 
-        <!-- 通知按钮 -->
-        <FaIconButton
-          v-if="shouldShowNotification"
-          icon="ri:notification-2-line"
-          class="notice-button relative"
-          @click="visibleNotice"
-        >
-          <div class="absolute top-2 right-2 size-1.5 bg-danger! rounded-full"></div>
-        </FaIconButton>
-
         <!-- 聊天按钮 -->
         <FaIconButton
           v-if="shouldShowChat"
@@ -174,9 +164,6 @@
 
     <!-- 标签页 -->
     <FaWorkTab />
-
-    <!-- 通知 -->
-    <FaNotification v-model:value="showNotice" ref="notice" />
   </div>
 </template>
 
@@ -207,14 +194,14 @@ const userStore = useUserStore();
 const menuStore = useMenuStore();
 const configStore = useConfigStore();
 
-/** 租户配置：tenant_logo / tenant_name */
+/** 系统配置：system_logo / system_name */
 const headerLogoSrc = computed(() => {
-  const raw = configStore.configData.tenant_logo?.config_value;
+  const raw = configStore.configData.system_logo?.config_value;
   return typeof raw === "string" && raw.trim() ? raw.trim() : undefined;
 });
 
 const headerSystemName = computed(() => {
-  const raw = configStore.configData.tenant_name?.config_value;
+  const raw = configStore.configData.system_name?.config_value;
   if (typeof raw === "string" && raw.trim()) return raw.trim();
   return AppConfig.systemInfo.name;
 });
@@ -226,8 +213,7 @@ const {
   shouldShowBreadcrumb,
   shouldShowGlobalSearch,
   shouldShowFullscreen,
-  shouldShowNotification,
-  shouldShowChat,
+    shouldShowChat,
   shouldShowLanguage,
   shouldShowSettings,
   shouldShowThemeToggle,
@@ -240,8 +226,6 @@ const { menuOpen, systemThemeColor, showSettingGuide, menuType, isDark, tabStyle
 const { language } = storeToRefs(userStore);
 const { menuList } = storeToRefs(menuStore);
 
-const showNotice = ref(false);
-const notice = ref(null);
 
 // 菜单类型判断
 const isLeftMenu = computed(() => menuType.value === MenuTypeEnum.LEFT);
@@ -254,12 +238,8 @@ const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
 onMounted(() => {
   initLanguage();
   settingStore.hideSettingGuide();
-  document.addEventListener("click", bodyCloseNotice);
 });
 
-onUnmounted(() => {
-  document.removeEventListener("click", bodyCloseNotice);
-});
 
 /**
  * 切换全屏状态
@@ -332,30 +312,6 @@ const openSearchDialog = (): void => {
   mittBus.emit("openSearchDialog");
 };
 
-/**
- * 点击页面其他区域关闭通知面板
- * @param {Event} e - 点击事件对象
- */
-const bodyCloseNotice = (e: any): void => {
-  if (!showNotice.value) return;
-
-  const target = e.target as HTMLElement;
-
-  // 检查是否点击了通知按钮或通知面板内部
-  const isNoticeButton = target.closest(".notice-button");
-  const isNoticePanel = target.closest(".fa-notification-panel");
-
-  if (!isNoticeButton && !isNoticePanel) {
-    showNotice.value = false;
-  }
-};
-
-/**
- * 切换通知面板显示状态
- */
-const visibleNotice = (): void => {
-  showNotice.value = !showNotice.value;
-};
 
 /**
  * 打开聊天窗口
@@ -490,7 +446,6 @@ html.dark .w-full {
 .setting-btn,
 .full-screen-btn,
 .exit-full-screen-btn,
-.notice-button,
 .chat-button {
   border: 1px solid transparent;
 }
@@ -525,10 +480,6 @@ html.dark .w-full {
   animation: shrink 0.6s forwards;
 }
 
-.notice-button:hover :deep(.fa-svg-icon) {
-  animation: shake 0.5s ease-in-out;
-}
-
 .chat-button:hover :deep(.fa-svg-icon) {
   animation: shake 0.5s ease-in-out;
 }
@@ -551,3 +502,5 @@ html.dark .w-full {
   }
 }
 </style>
+
+

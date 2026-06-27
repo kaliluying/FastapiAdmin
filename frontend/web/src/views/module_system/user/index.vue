@@ -1,4 +1,4 @@
-<!-- 用户管理：左部门树 + 右 Art 表格 -->
+﻿<!-- 用户管理：左部门树 + 右 Art 表格 -->
 <template>
   <div class="fa-full-height user-manage-page">
     <div
@@ -33,7 +33,6 @@
           :disabled-search="false"
           :default-expanded="false"
           include-audit
-          :audit-item-options="{ showTenantId: true }"
           @search="handleSearchBarSearch"
           @reset="onResetSearch"
         />
@@ -121,14 +120,6 @@
                 : ""
             }}
           </template>
-          <!-- 岗位 → 数组 join 渲染 -->
-          <template #positions="{ row }">
-            {{
-              (row as unknown as UserInfo)?.positions
-                ? (row as unknown as UserInfo).positions!.map((item) => item.name).join("、")
-                : ""
-            }}
-          </template>
         </FaDescriptions>
       </template>
       <template v-else>
@@ -162,17 +153,6 @@
             <ElSelect v-model="formData.role_ids" multiple placeholder="请选择角色">
               <ElOption
                 v-for="item in roleOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-                :disabled="item.disabled"
-              />
-            </ElSelect>
-          </template>
-          <template #position_ids>
-            <ElSelect v-model="formData.position_ids" multiple placeholder="请选择岗位">
-              <ElOption
-                v-for="item in positionOptions"
                 :key="item.value"
                 :label="item.label"
                 :value="item.value"
@@ -230,7 +210,6 @@ import {
   type TableOperationAction,
   resolveStatusColumns,
 } from "@utils";
-import PositionAPI from "@/api/module_system/position";
 import DeptAPI from "@/api/module_system/dept";
 import RoleAPI from "@/api/module_system/role";
 import { useAppStore, useUserStore } from "@stores";
@@ -354,7 +333,6 @@ const deptFilterId = ref<string | number | undefined>(undefined);
 const drawerSize = computed(() => (appStore.device === DeviceEnum.DESKTOP ? "450px" : "90%"));
 const deptOptions = ref<OptionType[]>();
 const roleOptions = ref<Array<{ value: number; label: string; disabled?: boolean }>>();
-const positionOptions = ref<Array<{ value: number; label: string; disabled?: boolean }>>();
 const { importVisible, exportVisible, openImport, openExport } = useImportExport();
 const detailFormData = ref<UserInfo>({});
 
@@ -367,7 +345,6 @@ const userDetailItems: DescriptionsItem[] = [
   { label: "性别", prop: "gender", slot: "gender" }, // 三种状态 Tag
   { label: "部门", prop: "dept.name" }, // 嵌套属性 a.b.c
   { label: "角色", prop: "roles", slot: "roles" }, // 数组 join 渲染
-  { label: "岗位", prop: "positions", slot: "positions" }, // 数组 join 渲染
   { label: "邮箱", prop: "email" },
   { label: "手机号", prop: "mobile" },
   {
@@ -428,7 +405,6 @@ const userDialogFormItems = computed<FormItem[]>(() => [
   },
   { key: "dept_id", label: "部门", type: "input" /* 实际渲染由 #dept_id 插槽接管 */ },
   { key: "role_ids", label: "角色", type: "input" /* 实际渲染由 #role_ids 插槽接管 */ },
-  { key: "position_ids", label: "岗位", type: "input" /* 实际渲染由 #position_ids 插槽接管 */ },
   {
     key: "password",
     label: "密码",
@@ -700,8 +676,6 @@ const formData = ref<UserForm>({
   dept_name: undefined,
   role_ids: undefined,
   role_names: undefined,
-  position_ids: undefined,
-  position_names: undefined,
   password: undefined,
   gender: undefined,
   email: undefined,
@@ -744,8 +718,6 @@ const initialFormData: UserForm = {
   dept_name: undefined,
   role_ids: undefined,
   role_names: undefined,
-  position_ids: undefined,
-  position_names: undefined,
   password: undefined,
   gender: undefined,
   email: undefined,
@@ -829,9 +801,6 @@ async function handleOpenDialog(type: "create" | "update" | "detail", id?: numbe
       dialogVisible.title = "修改用户";
       Object.assign(formData.value, response.data.data);
       formData.value.role_ids = (response.data.data.roles || []).map((item) => item.id as number);
-      formData.value.position_ids = (response.data.data.positions || []).map(
-        (item) => item.id as number
-      );
     }
   } else {
     dialogVisible.title = "新增用户";
@@ -851,17 +820,6 @@ async function handleOpenDialog(type: "create" | "update" | "detail", id?: numbe
   const roleResponse = await RoleAPI.listRole();
   const roleRows = roleResponse.data.data.items ?? [];
   roleOptions.value = roleRows
-    .filter((item) => item.id !== undefined && item.name !== undefined)
-    .map((item) => ({
-      value: item.id as number,
-      label: item.name as string,
-      disabled: item.status === 1,
-    }))
-    .filter((opt) => !opt.disabled);
-
-  const positionResponse = await PositionAPI.listPosition();
-  const positionRows = positionResponse.data.data.items ?? [];
-  positionOptions.value = positionRows
     .filter((item) => item.id !== undefined && item.name !== undefined)
     .map((item) => ({
       value: item.id as number,
@@ -947,3 +905,4 @@ async function handleMoreClick(status: number) {
   padding: 0;
 }
 </style>
+

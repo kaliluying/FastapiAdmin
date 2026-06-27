@@ -14,7 +14,6 @@
       :disabled-search="false"
       :default-expanded="false"
       include-audit
-      :audit-item-options="{ showTenantId: true }"
       @search="handleSearchBarSearch"
       @reset="onResetSearch"
     />

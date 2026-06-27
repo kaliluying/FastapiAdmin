@@ -20,7 +20,7 @@
   {
     "config_name": "接口白名单",
     "config_key": "white_api_list_path",
-    "config_value": "[\"/api/v1/system/auth/login\", \"/api/v1/system/auth/token/refresh\", \"/api/v1/system/auth/captcha/get\", \"/api/v1/system/auth/logout\", \"/api/v1/system/config/info\", \"/api/v1/system/user/current/info\", \"/api/v1/system/notice/available\", \"/api/v1/system/auth/auto-login/users\", \"/api/v1/system/auth/auto-login/token\", \"/api/v1/system/auth/auto-login\", \"/common/health\", \"/common/health/ready\", \"/common/health/live\", \"/metrics\"]",
+    "config_value": "[\"/api/v1/system/auth/login\", \"/api/v1/system/auth/token/refresh\", \"/api/v1/system/auth/captcha/get\", \"/api/v1/system/auth/logout\", \"/api/v1/system/config/info\", \"/api/v1/system/user/current/info\", \"/api/v1/system/auth/auto-login/users\", \"/api/v1/system/auth/auto-login/token\", \"/api/v1/system/auth/auto-login\", \"/common/health\", \"/common/health/ready\", \"/common/health/live\", \"/metrics\"]",
     "config_type": true,
     "status": 0,
     "description": "无需登录即可访问的接口列表",
@@ -141,6 +141,33 @@
     "config_type": true,
     "status": 0,
     "description": "登录时是否查询IP归属地",
+    "tenant_id": 1
+  },
+  {
+    "config_name": "????",
+    "config_key": "system_name",
+    "config_value": "FastApiAdmin AI Knowledge",
+    "config_type": true,
+    "status": 0,
+    "description": "?????????",
+    "tenant_id": 1
+  },
+  {
+    "config_name": "?? Logo",
+    "config_key": "system_logo",
+    "config_value": "",
+    "config_type": true,
+    "status": 0,
+    "description": "??????? Logo URL",
+    "tenant_id": 1
+  },
+  {
+    "config_name": "????",
+    "config_key": "system_version",
+    "config_value": "3.0.0-ai",
+    "config_type": true,
+    "status": 0,
+    "description": "?????????",
     "tenant_id": 1
   }
 ]

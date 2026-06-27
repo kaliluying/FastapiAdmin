@@ -1,4 +1,4 @@
-<!-- 登录、注册、忘记密码左侧背景 -->
+﻿<!-- 登录、注册、忘记密码左侧背景 -->
 <template>
   <div class="login-left-view">
     <div v-if="!hideTopBranding" class="logo">
@@ -108,18 +108,18 @@ withDefaults(defineProps<Props>(), {
 
 const configStore = useConfigStore();
 
-/** 接口 tenant_logo，空则 FaLogo 内置默认图 */
+/** 接口 system_logo，空则 FaLogo 内置默认图 */
 const webLogoSrc = computed(
-  () => configStore.configData.tenant_logo?.config_value?.trim() || undefined
+  () => configStore.configData.system_logo?.config_value?.trim() || undefined
 );
 
 const siteTitle = computed(
-  () => configStore.configData.tenant_name?.config_value?.trim() || AppConfig.systemInfo.name
+  () => configStore.configData.system_name?.config_value?.trim() || AppConfig.systemInfo.name
 );
 
 const DEFAULT_APP_VERSION = "3.0.0";
 const displayVersion = computed(() => {
-  const raw = configStore.configData.tenant_version?.config_value?.trim();
+  const raw = configStore.configData.system_version?.config_value?.trim();
   const ver = raw || DEFAULT_APP_VERSION;
   return ver.startsWith("v") || ver.startsWith("V") ? ver : `v${ver}`;
 });
@@ -688,3 +688,5 @@ $bg-mix-light-7: color-mix(in srgb, $primary-light-7 80%, $main-bg);
   }
 }
 </style>
+
+

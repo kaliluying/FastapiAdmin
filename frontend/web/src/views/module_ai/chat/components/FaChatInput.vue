@@ -9,6 +9,15 @@
         </div>
       </div>
       <div class="input-container">
+        <div class="composer-topline">
+          <span class="composer-context">
+            <FaSvgIcon icon="ri:database-2-line" />
+            知识库问答
+          </span>
+          <span class="composer-status" :class="{ 'composer-status--offline': !isConnected }">
+            {{ isConnected ? "已连接" : "未连接" }}
+          </span>
+        </div>
         <ElForm>
           <ElInput
             v-model="inputMessage"
@@ -23,6 +32,7 @@
           />
         </ElForm>
         <div class="input-footer">
+          <span class="input-hint">Enter 发送 / Shift + Enter 换行</span>
           <div class="input-actions">
             <ElUpload
               ref="uploadRef"
@@ -48,9 +58,6 @@
             </ElButton>
           </div>
         </div>
-      </div>
-      <div class="input-hint">
-        <span>按 Enter 发送消息，Shift + Enter 换行</span>
       </div>
     </div>
   </div>
@@ -144,8 +151,8 @@ defineExpose({
 <style lang="scss" scoped>
 .chat-input {
   .input-wrapper {
-    max-width: 800px;
-    padding: 20px;
+    max-width: 860px;
+    padding: 16px 24px 18px;
     margin: 0 auto;
 
     .uploaded-files {
@@ -199,27 +206,71 @@ defineExpose({
     .input-container {
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      min-height: 124px;
-      padding: 14px 16px;
-      background: var(--el-bg-color-overlay);
-      border: 1px solid var(--el-border-color-light);
-      border-radius: 12px;
-      box-shadow: var(--el-box-shadow-light);
+      gap: 12px;
+      min-height: 112px;
+      padding: 12px 16px 10px;
+      background:
+        linear-gradient(180deg, rgb(255 255 255 / 98%), rgb(249 251 255 / 96%)),
+        var(--el-bg-color-overlay);
+      border: 1px solid rgb(93 135 255 / 18%);
+      border-radius: 8px;
+      box-shadow: 0 16px 38px rgb(23 32 51 / 10%);
       transition:
         border-color 0.2s ease,
-        box-shadow 0.2s ease,
-        transform 0.2s ease;
+        box-shadow 0.2s ease;
 
       &:hover {
-        border-color: var(--el-color-primary);
-        box-shadow: var(--el-box-shadow);
-        transform: translateY(-2px);
+        border-color: rgb(93 135 255 / 34%);
+        box-shadow: 0 18px 44px rgb(23 32 51 / 12%);
       }
 
       &:focus-within {
         border-color: var(--el-color-primary);
-        box-shadow: 0 0 0 1px var(--el-color-primary);
+        box-shadow:
+          0 0 0 3px rgb(93 135 255 / 14%),
+          0 18px 44px rgb(23 32 51 / 12%);
+      }
+
+      .composer-topline {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 24px;
+      }
+
+      .composer-context,
+      .composer-status {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        font-size: 12px;
+        font-weight: 700;
+      }
+
+      .composer-context {
+        color: #4070d8;
+      }
+
+      .composer-status {
+        color: #0f9f8f;
+      }
+
+      .composer-status::before {
+        width: 7px;
+        height: 7px;
+        content: "";
+        background: #2dd4bf;
+        border-radius: 999px;
+        box-shadow: 0 0 0 4px rgb(45 212 191 / 12%);
+      }
+
+      .composer-status--offline {
+        color: var(--el-text-color-secondary);
+      }
+
+      .composer-status--offline::before {
+        background: var(--el-color-warning);
+        box-shadow: 0 0 0 4px rgb(245 158 11 / 12%);
       }
 
       .message-input {
@@ -228,6 +279,7 @@ defineExpose({
 
         :deep(.el-textarea__inner) {
           min-height: 72px !important;
+          max-height: 120px;
           padding: 2px 4px;
           line-height: 1.6;
           color: var(--el-text-color-primary);
@@ -245,8 +297,9 @@ defineExpose({
       .input-footer {
         display: flex;
         align-items: center;
-        justify-content: flex-end;
+        justify-content: space-between;
         padding-top: 8px;
+        border-top: 1px solid rgb(23 32 51 / 7%);
 
         .input-actions {
           display: flex;
@@ -256,6 +309,7 @@ defineExpose({
           .upload-btn {
             font-size: 18px;
             color: var(--el-text-color-secondary);
+            border-radius: 8px;
             transition: all 0.2s ease;
 
             &:hover {
@@ -266,12 +320,12 @@ defineExpose({
 
           .send-button {
             flex-shrink: 0;
-            border-radius: 50%;
-            box-shadow: var(--el-box-shadow-light);
+            border-radius: 8px;
+            box-shadow: 0 8px 18px rgb(93 135 255 / 24%);
             transition: all 0.2s ease;
 
             &:hover {
-              box-shadow: var(--el-box-shadow);
+              box-shadow: 0 12px 24px rgb(93 135 255 / 28%);
               transform: translateY(-1px);
             }
 
@@ -284,12 +338,10 @@ defineExpose({
     }
 
     .input-hint {
-      margin-top: 12px;
       font-size: 12px;
       font-weight: 400;
       color: var(--el-text-color-secondary);
-      text-align: center;
-      letter-spacing: 0.5px;
+      letter-spacing: 0;
     }
   }
 
@@ -300,7 +352,6 @@ defineExpose({
     &:hover {
       border-color: var(--el-border-color-light);
       box-shadow: var(--el-box-shadow-light);
-      transform: none;
     }
 
     &:focus-within {

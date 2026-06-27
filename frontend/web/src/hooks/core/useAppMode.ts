@@ -21,7 +21,7 @@ import { computed } from "vue";
 export function useAppMode() {
   const accessMode = (import.meta.env.VITE_ACCESS_MODE || "").trim();
 
-  /** 仅前端 builtinFrontendRoutes（默认为空，壳层菜单由 mergeShellRoutesIntoMenu 补全） */
+  /** 仅前端 builtinFrontendRoutes。 */
   const isFrontendMode = computed(() => accessMode === "frontend");
   /** 仅后端菜单接口 */
   const isBackendMode = computed(() => accessMode === "backend");

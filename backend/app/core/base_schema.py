@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -49,12 +49,11 @@ class UserBySchema(BaseModel):
 
 
 class TenantBySchema(BaseModel):
-    """租户嵌套出参（不再使用扁平 tenant_id / tenant_name / tenant_code）"""
+    """Single-organization compatibility field."""
 
     model_config = ConfigDict(from_attributes=True)
 
-    tenant_id: int | None = Field(default=None, description="租户ID")
-    tenant_by: CommonSchema | None = Field(default=None, description="租户信息")
+    tenant_id: int | None = Field(default=None, description="单组织兼容ID")
 
 
 class BatchSetAvailable(BaseModel):

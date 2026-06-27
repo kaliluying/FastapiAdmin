@@ -15,6 +15,24 @@
       </button>
     </div>
     <div class="navbar-right">
+      <ElSelect
+        :model-value="knowledgeBaseIds"
+        multiple
+        collapse-tags
+        collapse-tags-tooltip
+        clearable
+        filterable
+        class="knowledge-select"
+        placeholder="知识库"
+        @update:model-value="handleKnowledgeChange"
+      >
+        <ElOption
+          v-for="item in knowledgeBases"
+          :key="item.id"
+          :label="item.name"
+          :value="item.id || 0"
+        />
+      </ElSelect>
       <ElButton text :icon="Setting" @click="handleToggleConnection">
         {{ isConnected ? "断开连接" : "重新连接" }}
       </ElButton>
@@ -39,22 +57,28 @@
 import { resolveIconForFaSvgIcon } from "@utils";
 import { computed } from "vue";
 import { Connection, Loading, Warning, Delete, Setting } from "@element-plus/icons-vue";
+import type { KnowledgeBase } from "@/api/module_ai/knowledge";
 
 interface Props {
   connectionStatus: "connected" | "connecting" | "disconnected";
   isConnected: boolean;
   messageCount: number;
   isSidebarCollapsed?: boolean;
+  knowledgeBases?: KnowledgeBase[];
+  knowledgeBaseIds?: number[];
 }
 
 interface Emits {
   (e: "clear-chat"): void;
   (e: "toggle-connection"): void;
   (e: "toggle-sidebar"): void;
+  (e: "update:knowledgeBaseIds", value: number[]): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isSidebarCollapsed: false,
+  knowledgeBases: () => [],
+  knowledgeBaseIds: () => [],
 });
 const emit = defineEmits<Emits>();
 
@@ -83,6 +107,10 @@ const handleToggleConnection = () => {
 
 const toggleSidebar = () => {
   emit("toggle-sidebar");
+};
+
+const handleKnowledgeChange = (value: number[]) => {
+  emit("update:knowledgeBaseIds", value);
 };
 </script>
 
@@ -139,6 +167,10 @@ const toggleSidebar = () => {
     flex-wrap: nowrap;
     gap: 12px;
     align-items: center;
+
+    .knowledge-select {
+      width: 240px;
+    }
 
     /* EP 相邻按钮自带 margin-left，叠在 flex gap 上会导致间距忽大忽小 */
     :deep(.el-button) {

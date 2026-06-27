@@ -53,7 +53,7 @@ const DeptAPI = {
 
 export default DeptAPI;
 
-export interface DeptPageQuery extends UserByQueryParams, TenantByQueryParams {
+export interface DeptPageQuery extends UserByQueryParams {
   name?: string;
   status?: number;
 }

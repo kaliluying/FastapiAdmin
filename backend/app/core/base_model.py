@@ -1,4 +1,4 @@
-from datetime import datetime
+﻿from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
@@ -12,7 +12,6 @@ from sqlalchemy.orm import (
 )
 
 if TYPE_CHECKING:
-    from app.api.v1.module_platform.tenant.model import TenantModel
     from app.api.v1.module_system.user.model import UserModel
 
 from app.common.enums import PermissionFilterStrategy
@@ -116,39 +115,17 @@ class ModelMixin(MappedBase):
 
 
 class TenantMixin(MappedBase):
-    """
-    租户隔离字段 Mixin
-
-    业务表通过 tenant_id 关联 platform_tenant，实现行级数据隔离。
-    平台超级管理员（is_superuser 且 tenant_id=1）在数据层不按租户过滤。
-    """
+    """Single-organization compatibility field."""
 
     __abstract__ = True
 
     tenant_id: Mapped[int] = mapped_column(
         Integer,
-        ForeignKey("platform_tenant.id", ondelete="RESTRICT", onupdate="CASCADE"),
         nullable=False,
         default=1,
         index=True,
-        comment="租户ID",
+        comment="单组织ID",
     )
-
-    @declared_attr
-    def tenant_by(self) -> Mapped[Optional["TenantModel"]]:
-        """
-        租户关联关系（延迟加载，避免循环依赖）。
-
-        返回:
-        - Mapped[Optional[TenantModel]]: 租户 ORM 关系。
-        """
-        return relationship(
-            "TenantModel",
-            lazy="selectin",
-            foreign_keys=lambda: self.tenant_id,  # pyright: ignore[reportArgumentType]
-            uselist=False,
-        )
-
 
 class UserMixin(MappedBase):
     """
@@ -230,3 +207,4 @@ class UserMixin(MappedBase):
             foreign_keys=lambda: self.deleted_id,  # pyright: ignore[reportArgumentType]
             uselist=False,
         )
+

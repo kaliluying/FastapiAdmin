@@ -17,6 +17,7 @@ const AuthAPI = {
       method: "post",
       headers: {
         "Content-Type": "multipart/form-data",
+        Authorization: "no-auth",
       },
       data: body,
     });
@@ -26,6 +27,9 @@ const AuthAPI = {
     return request<ApiResponse<JWTOut>>({
       url: `${API_PATH}/token/refresh`,
       method: "post",
+      headers: {
+        Authorization: "no-auth",
+      },
       data: body,
     });
   },
@@ -37,52 +41,9 @@ const AuthAPI = {
       data: body,
     });
   },
-
-  /** 获取当前用户的可选租户列表 */
-  getTenants() {
-    return request<ApiResponse<TenantOption[]>>({
-      url: `${API_PATH}/tenants`,
-      method: "get",
-    });
-  },
-
-  /** 选择租户，返回含 tenant_id 的新 JWT */
-  selectTenant(tenantId: number) {
-    return request<ApiResponse<SelectTenantResult>>({
-      url: `${API_PATH}/select-tenant`,
-      method: "post",
-      data: { tenant_id: tenantId },
-    });
-  },
-  /** 租户自助注册（PRD §4.5） */
-  tenantRegister(body: TenantRegisterForm) {
-    return request<ApiResponse<TenantRegisterResult>>({
-      url: `${API_PATH}/tenant/register`,
-      method: "post",
-      data: body,
-    });
-  },
 };
 
 export default AuthAPI;
-
-export interface TenantRegisterForm {
-  username: string;
-  password: string;
-  email: string;
-  tenant_name?: string;
-}
-
-export interface TenantRegisterResult {
-  user_id: number;
-  username: string;
-  tenant_id: number;
-  tenant_name: string;
-  tenant_code: string;
-  package: string | null;
-  trial_end: string;
-  message: string;
-}
 
 // ─── Auth 类型定义 ───
 
@@ -104,7 +65,6 @@ export interface JWTOut {
 
 /** 登录成功返回 */
 export interface LoginResult extends JWTOut {
-  tenants?: TenantOption[];
   user_info?: LoginUserInfo;
 }
 
@@ -126,16 +86,3 @@ export interface LogoutBody {
   token: string;
 }
 
-/** 租户选项 */
-export interface TenantOption {
-  id: number;
-  name: string;
-  code: string;
-}
-
-/** 选择租户返回 (SelectTenantOutSchema) */
-export interface SelectTenantResult {
-  access_token: string;
-  token_type: string;
-  expires_in: number;
-}

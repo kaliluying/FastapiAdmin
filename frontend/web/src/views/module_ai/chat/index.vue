@@ -17,6 +17,8 @@
             :is-connected="isConnected"
             :message-count="messages.length"
             :is-sidebar-collapsed="isSidebarCollapsed"
+            :knowledge-bases="knowledgeBases"
+            v-model:knowledge-base-ids="selectedKnowledgeBaseIds"
             @clear-chat="handleClearChat"
             @toggle-connection="toggleConnection"
             @toggle-sidebar="toggleSidebar"
@@ -53,6 +55,7 @@ defineOptions({
 import { ref, onMounted, onUnmounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import AiChatAPI, { ChatSession } from "@/api/module_ai/chat";
+import KnowledgeAPI, { type KnowledgeBase } from "@/api/module_ai/knowledge";
 import { Auth } from "@utils/auth";
 import type { ChatMessage, UploadedFile } from "./types";
 import FaSidebar from "./components/FaSidebar.vue";
@@ -68,6 +71,8 @@ const connectionStatus = ref<"connected" | "connecting" | "disconnected">("disco
 const error = ref("");
 const currentSessionId = ref<string | null>(null);
 const isSidebarCollapsed = ref(false);
+const knowledgeBases = ref<KnowledgeBase[]>([]);
+const selectedKnowledgeBaseIds = ref<number[]>([]);
 
 // Refs
 const chatMessagesRef = ref<{ scrollToBottom: () => void }>();
@@ -208,6 +213,7 @@ const handleSendMessage = async (message: string, files?: UploadedFile[]) => {
         JSON.stringify({
           message,
           session_id: currentSessionId.value,
+          knowledge_base_ids: selectedKnowledgeBaseIds.value,
           files: files?.map((f) => ({ name: f.name, type: f.type, size: f.size })),
         })
       );
@@ -292,7 +298,19 @@ const toggleSidebar = () => {
 };
 
 // ============ 生命周期 ============
-onMounted(connectWebSocket);
+const loadKnowledgeBases = async () => {
+  try {
+    const res = await KnowledgeAPI.optionselect();
+    knowledgeBases.value = (res.data?.data || []).filter((item) => item.id != null);
+  } catch {
+    knowledgeBases.value = [];
+  }
+};
+
+onMounted(() => {
+  loadKnowledgeBases();
+  connectWebSocket();
+});
 onUnmounted(disconnectWebSocket);
 </script>
 
@@ -300,9 +318,12 @@ onUnmounted(disconnectWebSocket);
 .main-chat {
   height: 100%;
   overflow: hidden;
-  border: 1px solid var(--el-border-color-light);
+  background:
+    radial-gradient(circle at 55% 0%, rgb(93 135 255 / 10%), transparent 32%),
+    linear-gradient(180deg, #f8fbff, #eef4fb);
+  border: 1px solid rgb(23 32 51 / 8%);
   border-radius: 8px;
-  box-shadow: var(--el-box-shadow-light);
+  box-shadow: 0 12px 32px rgb(23 32 51 / 8%);
 
   /* 与右侧同一表面色；与内容区的分界交给 Sidebar 的竖线即可 */
   .sidebar-container {
@@ -325,7 +346,9 @@ onUnmounted(disconnectWebSocket);
   .chat-header {
     height: auto;
     padding: 0;
-    border-bottom: 1px solid var(--el-border-color-lighter);
+    background: rgb(255 255 255 / 78%);
+    border-bottom: 1px solid rgb(23 32 51 / 7%);
+    backdrop-filter: blur(10px);
   }
 
   .chat-main {
@@ -337,7 +360,8 @@ onUnmounted(disconnectWebSocket);
     height: auto;
     min-height: 80px;
     padding: 0;
-    border-top: 1px solid var(--el-border-color-lighter);
+    background: linear-gradient(180deg, rgb(248 251 255 / 78%), rgb(238 244 251 / 96%));
+    border-top: 1px solid rgb(23 32 51 / 7%);
   }
 }
 </style>

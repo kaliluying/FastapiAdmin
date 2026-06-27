@@ -1,5 +1,4 @@
-import json
-import time
+﻿import json
 from collections.abc import AsyncGenerator
 from dataclasses import replace
 
@@ -146,7 +145,6 @@ async def _load_user_from_db(db: AsyncSession, username: str):
         .options(
             selectinload(UserModel.dept),
             selectinload(UserModel.roles).selectinload(RoleModel.menus),
-            selectinload(UserModel.positions),
             selectinload(UserModel.created_by),
         )
         .where(UserModel.username == username, UserModel.is_deleted == False)  # noqa: E712
@@ -161,8 +159,6 @@ async def _load_user_from_db(db: AsyncSession, username: str):
     # 过滤不可用的角色和职位（在会话内完成，确保关联数据已加载）
     if hasattr(user, "roles"):
         user.roles = [role for role in user.roles if role and role.status]
-    if hasattr(user, "positions"):
-        user.positions = [pos for pos in user.positions if pos and pos.status]
 
     return user
 

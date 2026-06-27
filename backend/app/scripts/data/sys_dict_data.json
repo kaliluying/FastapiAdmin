@@ -91,32 +91,6 @@
     "tenant_id": 1
   },
   {
-    "dict_sort": 1,
-    "dict_label": "通知",
-    "dict_value": "1",
-    "dict_type": "sys_notice_type",
-    "dict_type_id": 4,
-    "css_class": "blue",
-    "list_class": "warning",
-    "is_default": true,
-    "status": 0,
-    "description": "通知",
-    "tenant_id": 1
-  },
-  {
-    "dict_sort": 2,
-    "dict_label": "公告",
-    "dict_value": "2",
-    "dict_type": "sys_notice_type",
-    "dict_type_id": 4,
-    "css_class": "orange",
-    "list_class": "success",
-    "is_default": false,
-    "status": 0,
-    "description": "公告",
-    "tenant_id": 1
-  },
-  {
     "dict_sort": 99,
     "dict_label": "其他",
     "dict_value": "0",

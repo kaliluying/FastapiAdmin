@@ -1,0 +1,138 @@
+import { request } from "@utils";
+
+const API_PATH = "/ai/knowledge";
+
+const KnowledgeAPI = {
+  listKnowledgeBase(query: KnowledgeBaseListQuery) {
+    return request<ApiResponse<PageResult<KnowledgeBase>>>({
+      url: `${API_PATH}/list`,
+      method: "get",
+      params: query,
+    });
+  },
+
+  createKnowledgeBase(body: KnowledgeBaseForm) {
+    return request<ApiResponse<KnowledgeBase>>({
+      url: `${API_PATH}/create`,
+      method: "post",
+      data: body,
+    });
+  },
+
+  updateKnowledgeBase(id: number, body: KnowledgeBaseForm) {
+    return request<ApiResponse<KnowledgeBase>>({
+      url: `${API_PATH}/update/${id}`,
+      method: "put",
+      data: body,
+    });
+  },
+
+  optionselect() {
+    return request<ApiResponse<KnowledgeBase[]>>({
+      url: `${API_PATH}/optionselect`,
+      method: "get",
+    });
+  },
+
+  deleteKnowledgeBase(body: number[]) {
+    return request<ApiResponse>({
+      url: `${API_PATH}/delete`,
+      method: "delete",
+      data: body,
+    });
+  },
+
+  listDocument(query: KnowledgeDocumentListQuery) {
+    return request<ApiResponse<PageResult<KnowledgeDocument>>>({
+      url: `${API_PATH}/document/list`,
+      method: "get",
+      params: query,
+    });
+  },
+
+  uploadDocument(body: FormData) {
+    return request<ApiResponse<KnowledgeDocument>>({
+      url: `${API_PATH}/document/upload`,
+      method: "post",
+      headers: { "Content-Type": "multipart/form-data" },
+      data: body,
+    });
+  },
+
+  reindexDocument(id: number) {
+    return request<ApiResponse>({
+      url: `${API_PATH}/document/${id}/reindex`,
+      method: "post",
+    });
+  },
+
+  deleteDocument(body: number[]) {
+    return request<ApiResponse>({
+      url: `${API_PATH}/document/delete`,
+      method: "delete",
+      data: body,
+    });
+  },
+
+  testRetrieval(body: RetrievalTestForm) {
+    return request<ApiResponse<RetrievalTestResult>>({
+      url: `${API_PATH}/retrieval/test`,
+      method: "post",
+      data: body,
+    });
+  },
+};
+
+export default KnowledgeAPI;
+
+export interface KnowledgeBaseListQuery extends PageQuery {
+  name?: string;
+  is_enabled?: boolean;
+}
+
+export interface KnowledgeBaseForm {
+  name: string;
+  description?: string | null;
+  is_enabled: boolean;
+  owner_dept_id?: number | null;
+}
+
+export interface KnowledgeBase extends BaseType, KnowledgeBaseForm {
+  document_count: number;
+}
+
+export interface KnowledgeDocumentListQuery extends PageQuery {
+  knowledge_base_id?: number;
+  file_name?: string;
+  parse_status?: string;
+  index_status?: string;
+}
+
+export interface KnowledgeDocument extends BaseType {
+  knowledge_base_id: number;
+  file_name: string;
+  file_path?: string | null;
+  file_type: string;
+  file_size: number;
+  parse_status: string;
+  index_status: string;
+  error_message?: string | null;
+  chunk_count: number;
+}
+
+export interface RetrievalTestForm {
+  query: string;
+  knowledge_base_ids: number[];
+  top_k: number;
+}
+
+export interface RetrievalHit {
+  content: string;
+  metadata: Record<string, unknown>;
+  distance?: number;
+}
+
+export interface RetrievalTestResult {
+  query: string;
+  results: RetrievalHit[];
+}

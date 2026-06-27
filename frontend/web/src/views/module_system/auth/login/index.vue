@@ -154,7 +154,6 @@
 <script setup lang="ts">
 import type { LocationQuery, RouteLocationRaw } from "vue-router";
 import AuthAPI, { type LoginFormData } from "@/api/module_system/auth";
-import type { TenantRegisterForm } from "@/api/module_system/auth";
 import UserAPI, { type ForgetPasswordForm, type RegisterForm } from "@/api/module_system/user";
 import { useConfigStore, useAppStore, useSettingsStore, useUserStore } from "@stores";
 import { getConfigValue, HttpError } from "@utils";
@@ -480,15 +479,8 @@ async function submitRegister() {
   try {
     await registerPanelRef.value.validate?.();
     registerLoading.value = true;
-    // 租户自助注册（PRD §4.5）
-    const regData: TenantRegisterForm = {
-      username: registerForm.username,
-      password: registerForm.password,
-      email: registerForm.email || `${registerForm.username}@temp.com`,
-    };
-    await AuthAPI.tenantRegister(regData);
+    ElMessage.info("内部系统账号请联系管理员创建");
     loginForm.username = registerForm.username;
-    loginForm.password = registerForm.password;
     registerForm.username = "";
     registerForm.password = "";
     registerForm.confirmPassword = "";

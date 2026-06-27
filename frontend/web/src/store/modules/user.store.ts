@@ -11,103 +11,99 @@ import { AppRouteRecord } from "@/types/router";
 import { Auth, setPageTitle, StorageConfig } from "@utils";
 import AuthAPI from "@/api/module_system/auth";
 import UserAPI from "@/api/module_system/user";
-import type { TenantOption } from "@/api/module_system/auth";
 import type { MenuTable } from "@/api/module_platform/menu";
 import { ResultEnum } from "@/enums/api/result.enum";
 import { ElNotification } from "element-plus";
 import { store, useDictStore } from "@stores";
 import type { UserInfo } from "@/api/module_system/user";
 
-/** 延迟加载 beforeEach 工具函数，避免 user.store 与 beforeEach 的循环依赖 */
+/** Lazily import router guard helpers to avoid a store/guard circular dependency. */
 let _routerUtilsPromise: Promise<typeof import("@/router/beforeEach")> | null = null;
 const getRouterUtils = () => {
   if (!_routerUtilsPromise) _routerUtilsPromise = import("@/router/beforeEach");
   return _routerUtilsPromise;
 };
 
-/** {@link useUserStore} 的 `logout` 可选参数 */
+/** Options for {@link useUserStore}'s `logout`. */
 export interface LogoutOptions {
   /**
-   * 为 false 时仅清理状态，不跳转登录（由调用方自行 next/router，如锁屏页 replace）
+   * When false, only clears local auth state and leaves navigation to the caller.
    * @default true
    */
   navigate?: boolean;
 }
 
 /**
- * 用户状态管理
- * 管理用户登录状态、个人信息、语言设置、搜索历史、锁屏状态等
+ * User state: auth tokens, profile, permissions, dynamic routes, and lock state.
  */
 export const useUserStore = defineStore(
   "userStore",
   () => {
-    // 语言设置
+    // Language setting.
     const language = ref(LanguageEnum.ZH);
-    // 登录状态
+    // Login state.
     const isLogin = ref(false);
-    // 锁屏状态
+    // 閿佸睆鐘舵€?
     const isLock = ref(false);
-    // 锁屏密码
+    // 閿佸睆瀵嗙爜
     const lockPassword = ref("");
-    // 用户信息
+    // 鐢ㄦ埛淇℃伅
     const info = ref<Partial<UserInfo>>({});
-    // 搜索历史记录
+    // 鎼滅储鍘嗗彶璁板綍
     const searchHistory = ref<AppRouteRecord[]>([]);
-    // 访问令牌
+    // 璁块棶浠ょ墝
     const accessToken = ref("");
-    // 刷新令牌
+    // 鍒锋柊浠ょ墝
     const refreshToken = ref("");
-    // 路由列表
+    // 璺敱鍒楄〃
     const routeList = ref<MenuTable[]>([]);
-    // 权限列表
+    // 鏉冮檺鍒楄〃
     const prems = ref<string[]>([]);
-    // 是否已获取路由
+    // 鏄惁宸茶幏鍙栬矾鐢?
     const hasGetRoute = ref(false);
-    // 记住我状态
+    // 璁颁綇鎴戠姸鎬?
     const rememberMe = ref(Auth.getRememberMe());
-    // 租户列表
-    const tenantList = ref<TenantOption[]>([]);
-    // 当前选中租户
-    const currentTenant = ref<TenantOption | null>(null);
-    /** info 扩展类型：兼容 API 返回 `user_id`（非标准 UserInfo 字段） */
+    // 绉熸埛鍒楄〃
+    // 褰撳墠閫変腑绉熸埛
+    /** info 鎵╁睍绫诲瀷锛氬吋瀹?API 杩斿洖 `user_id`锛堥潪鏍囧噯 UserInfo 瀛楁锛?*/
     type UserInfoLike = Partial<UserInfo> & Record<string, any>;
 
-    // 计算属性：基础用户信息
+    // 璁＄畻灞炴€э細鍩虹鐢ㄦ埛淇℃伅
     const basicInfo = computed(() => info.value as UserInfoLike);
-    // 计算属性：获取设置状态
+    // 璁＄畻灞炴€э細鑾峰彇璁剧疆鐘舵€?
     const getSettingState = computed(() => useSettingsStore().$state);
-    // 计算属性：获取工作台状态
+    // 璁＄畻灞炴€э細鑾峰彇宸ヤ綔鍙扮姸鎬?
     const getWorktabState = computed(() => useWorktabStore().$state);
-    // 计算属性：获取基础信息
+    // 璁＄畻灞炴€э細鑾峰彇鍩虹淇℃伅
     const getBasicInfo = computed(() => info.value as UserInfoLike);
-    // 计算属性：获取路由列表
+    // 璁＄畻灞炴€э細鑾峰彇璺敱鍒楄〃
     const getRouteList = computed(() => routeList.value);
-    // 计算属性：获取权限列表
+    // 璁＄畻灞炴€э細鑾峰彇鏉冮檺鍒楄〃
     const getPerms = computed(() => prems.value);
-    // 计算属性：是否已获取路由
+    // 璁＄畻灞炴€э細鏄惁宸茶幏鍙栬矾鐢?
     const getHasGetRoute = computed(() => hasGetRoute.value);
 
     /**
-     * 设置用户信息
-     * @param newInfo 新的用户信息
+     * 璁剧疆鐢ㄦ埛淇℃伅
+     * @param newInfo 鏂扮殑鐢ㄦ埛淇℃伅
      */
     const setUserInfo = (newInfo: UserInfo | UserInfo) => {
       info.value = newInfo;
-      // 设置用户信息后自动更新权限
+      // 璁剧疆鐢ㄦ埛淇℃伅鍚庤嚜鍔ㄦ洿鏂版潈闄?
       setPermissions([]);
     };
 
     /**
-     * 设置登录状态
-     * @param status 登录状态
+     * 璁剧疆鐧诲綍鐘舵€?
+     * @param status 鐧诲綍鐘舵€?
      */
     const setLoginStatus = (status: boolean) => {
       isLogin.value = status;
     };
 
     /**
-     * 设置语言
-     * @param lang 语言枚举值
+     * 璁剧疆璇█
+     * @param lang 璇█鏋氫妇鍊?
      */
     const setLanguage = (lang: LanguageEnum) => {
       setPageTitle(router.currentRoute.value);
@@ -115,33 +111,33 @@ export const useUserStore = defineStore(
     };
 
     /**
-     * 设置搜索历史
-     * @param list 搜索历史列表
+     * 璁剧疆鎼滅储鍘嗗彶
+     * @param list 鎼滅储鍘嗗彶鍒楄〃
      */
     const setSearchHistory = (list: AppRouteRecord[]) => {
       searchHistory.value = list;
     };
 
     /**
-     * 设置锁屏状态
-     * @param status 锁屏状态
+     * 璁剧疆閿佸睆鐘舵€?
+     * @param status 閿佸睆鐘舵€?
      */
     const setLockStatus = (status: boolean) => {
       isLock.value = status;
     };
 
     /**
-     * 设置锁屏密码
-     * @param password 锁屏密码
+     * 璁剧疆閿佸睆瀵嗙爜
+     * @param password 閿佸睆瀵嗙爜
      */
     const setLockPassword = (password: string) => {
       lockPassword.value = password;
     };
 
     /**
-     * 设置令牌
-     * @param newAccessToken 访问令牌
-     * @param newRefreshToken 刷新令牌（可选）
+     * 璁剧疆浠ょ墝
+     * @param newAccessToken 璁块棶浠ょ墝
+     * @param newRefreshToken 鍒锋柊浠ょ墝锛堝彲閫夛級
      */
     const setToken = (newAccessToken: string, newRefreshToken?: string) => {
       accessToken.value = newAccessToken;
@@ -151,87 +147,34 @@ export const useUserStore = defineStore(
     };
 
     /**
-     * 检查并清理工作台标签页
-     * 如果不是同一用户登录，清空工作台标签页
-     * 应在登录成功后调用
+     * 妫€鏌ュ苟娓呯悊宸ヤ綔鍙版爣绛鹃〉
+     * 濡傛灉涓嶆槸鍚屼竴鐢ㄦ埛鐧诲綍锛屾竻绌哄伐浣滃彴鏍囩椤?
+     * 搴斿湪鐧诲綍鎴愬姛鍚庤皟鐢?
      */
     const checkAndClearWorktabs = () => {
       const lastUserId = localStorage.getItem(StorageConfig.LAST_USER_ID_KEY);
       const ui = info.value as UserInfoLike;
       const currentUserId = ui.id || ui.user_id;
 
-      // 无法获取当前用户 ID，跳过检查
+      // 鏃犳硶鑾峰彇褰撳墠鐢ㄦ埛 ID锛岃烦杩囨鏌?
       if (!currentUserId) return;
 
-      // 首次登录或缓存已清除，保留现有标签页
+      // 棣栨鐧诲綍鎴栫紦瀛樺凡娓呴櫎锛屼繚鐣欑幇鏈夋爣绛鹃〉
       if (!lastUserId) {
         return;
       }
 
-      // 不同用户登录：清空工作台标签（含 current，避免与路由脱节；并与持久化一致）
+      // 涓嶅悓鐢ㄦ埛鐧诲綍锛氭竻绌哄伐浣滃彴鏍囩锛堝惈 current锛岄伩鍏嶄笌璺敱鑴辫妭锛涘苟涓庢寔涔呭寲涓€鑷达級
       if (String(currentUserId) !== String(lastUserId)) {
         useWorktabStore().clearAll();
       }
 
-      // 清除临时存储
+      // 娓呴櫎涓存椂瀛樺偍
       localStorage.removeItem(StorageConfig.LAST_USER_ID_KEY);
     };
 
-    /**
-     * 获取用户租户列表
-     */
-    async function fetchTenants() {
-      try {
-        const response = await AuthAPI.getTenants();
-        const data = response.data.data || [];
-        tenantList.value = data;
-        // 恢复上次选择的租户
-        const savedId = localStorage.getItem(StorageConfig.LAST_TENANT_ID_KEY);
-        if (savedId) {
-          const found = data.find((t: TenantOption) => String(t.id) === savedId);
-          if (found) {
-            currentTenant.value = found;
-          }
-        }
-        return data;
-      } catch (error) {
-        console.error("获取租户列表失败:", error);
-        return [];
-      }
-    }
-
-    /**
-     * 选择租户
-     */
-    async function selectTenant(tenantId: number) {
-      const response = await AuthAPI.selectTenant(tenantId);
-      const data = response.data.data;
-      if (response.data.code === ResultEnum.SUCCESS && data?.access_token) {
-        const currentRefreshToken = Auth.getRefreshToken() || "";
-        Auth.setTokens(data.access_token, currentRefreshToken, rememberMe.value);
-        setToken(data.access_token);
-        const found = tenantList.value.find((t) => String(t.id) === String(tenantId));
-        if (found) {
-          currentTenant.value = found;
-          localStorage.setItem(StorageConfig.LAST_TENANT_ID_KEY, String(found.id));
-        }
-      }
-    }
-
-    /**
-     * 设置当前租户
-     */
-    function setCurrentTenant(tenant: TenantOption | null) {
-      currentTenant.value = tenant;
-      if (tenant) {
-        localStorage.setItem(StorageConfig.LAST_TENANT_ID_KEY, String(tenant.id));
-      } else {
-        localStorage.removeItem(StorageConfig.LAST_TENANT_ID_KEY);
-      }
-    }
-
-    /**
-     * 获取用户信息
+                /**
+     * 鑾峰彇鐢ㄦ埛淇℃伅
      */
     async function getUserInfo() {
       try {
@@ -253,14 +196,14 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 设置头像
+     * 璁剧疆澶村儚
      */
     function setAvatar(avatar: string) {
       info.value = { ...info.value, avatar };
     }
 
     /**
-     * 设置路由
+     * 璁剧疆璺敱
      */
     function setRoute(routers: MenuTable[]) {
       routeList.value = routers;
@@ -269,7 +212,7 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 设置权限
+     * 璁剧疆鏉冮檺
      */
     function setPermissions(menus: MenuTable[]) {
       prems.value = [];
@@ -299,14 +242,14 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 登录
+     * 鐧诲綍
      */
     async function login(loginForm: any) {
       const response = await AuthAPI.login(loginForm);
       const data = response.data.data;
       if (response.data.code === ResultEnum.SUCCESS) {
         ElNotification({
-          title: "通知",
+          title: "登录成功",
           message: response.data.msg,
           type: "success",
         });
@@ -316,21 +259,17 @@ export const useUserStore = defineStore(
       const accessToken = data?.access_token || "";
       const refreshToken = data?.refresh_token || "";
       if (!accessToken) {
-        console.error("[Login Debug] ⚠️ 未获取到 access_token！字段名可能与后端不匹配");
+        console.error("[Login Debug] 未获取到 access_token，可能是后端响应字段不匹配");
       }
 
-      // 清除上次会话里「动态路由初始化失败」标记，避免重新登录后侧栏/菜单不注册
+      // Clear stale route/menu state from the previous session before rebuilding routes.
+      useMenuStore().setMenuList([]);
+      useMenuStore().setHomePath("");
       (await getRouterUtils()).resetRouteInitState();
       Auth.setTokens(accessToken, refreshToken, rememberMe.value);
       setToken(accessToken, refreshToken);
       if (data?.user_info) {
         info.value = { ...info.value, ...data.user_info } as Partial<UserInfo>;
-      }
-
-      // 检查登录响应中的租户列表
-      const tenants = data?.tenants || [];
-      if (tenants.length > 0) {
-        tenantList.value = tenants;
       }
 
       await getUserInfo();
@@ -339,7 +278,7 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 登出：有 token 时请求后端；统一清理状态；默认跳转登录页并带 redirect
+     * 鐧诲嚭锛氭湁 token 鏃惰姹傚悗绔紱缁熶竴娓呯悊鐘舵€侊紱榛樿璺宠浆鐧诲綍椤靛苟甯?redirect
      */
     async function logout(options?: LogoutOptions) {
       const shouldNavigate = options?.navigate !== false;
@@ -357,7 +296,7 @@ export const useUserStore = defineStore(
           const response = await AuthAPI.logout({ token });
           if (response.data.code === ResultEnum.SUCCESS) {
             ElNotification({
-              title: "通知",
+              title: "退出成功",
               message: response.data.msg,
               type: "success",
             });
@@ -387,7 +326,7 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 重置所有状态
+     * 閲嶇疆鎵€鏈夌姸鎬?
      */
     function resetAllState() {
       Auth.clearAuth();
@@ -400,14 +339,12 @@ export const useUserStore = defineStore(
       accessToken.value = "";
       refreshToken.value = "";
       prems.value = [];
-      tenantList.value = [];
-      currentTenant.value = null;
-      /** 登出 / 认证失效：会话结束，工作栏与 KeepAlive exclude 一并清空（pinia 持久化随之写入） */
+      /** 鐧诲嚭 / 璁よ瘉澶辨晥锛氫細璇濈粨鏉燂紝宸ヤ綔鏍忎笌 KeepAlive exclude 涓€骞舵竻绌猴紙pinia 鎸佷箙鍖栭殢涔嬪啓鍏ワ級 */
       useWorktabStore().clearAll();
     }
 
     /**
-     * 清空用户信息
+     * 娓呯┖鐢ㄦ埛淇℃伅
      */
     function clearUserInfo() {
       info.value = {};
@@ -416,7 +353,7 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 刷新token
+     * 鍒锋柊token
      */
     async function refreshTokenFn() {
       const currentRefreshToken = Auth.getRefreshToken();
@@ -427,21 +364,21 @@ export const useUserStore = defineStore(
 
       const response = await AuthAPI.refreshToken({ refresh_token: currentRefreshToken });
       const data = response.data.data;
-      // 更新令牌，保持当前记住我状态
+      // 鏇存柊浠ょ墝锛屼繚鎸佸綋鍓嶈浣忔垜鐘舵€?
       Auth.setTokens(data.access_token, data.refresh_token, Auth.getRememberMe());
       setToken(data.access_token, data.refresh_token);
     }
 
     /**
-     * 完全重置所有状态（包括路由、标签页、字典等）
+     * 瀹屽叏閲嶇疆鎵€鏈夌姸鎬侊紙鍖呮嫭璺敱銆佹爣绛鹃〉銆佸瓧鍏哥瓑锛?
      */
     function fullResetAllState() {
-      // 重置用户状态
+      // 閲嶇疆鐢ㄦ埛鐘舵€?
       Auth.clearAuth();
-      // 重置用户信息
+      // 閲嶇疆鐢ㄦ埛淇℃伅
       clearUserInfo();
       useWorktabStore().clearAll();
-      // 重置字典
+      // 閲嶇疆瀛楀吀
       useDictStore(store).clearDictData();
 
       return Promise.resolve();
@@ -484,11 +421,6 @@ export const useUserStore = defineStore(
       refreshTokenFn,
       resetAllState,
       fullResetAllState,
-      tenantList,
-      currentTenant,
-      fetchTenants,
-      selectTenant,
-      setCurrentTenant,
     };
   },
   {
@@ -502,3 +434,4 @@ export const useUserStore = defineStore(
 export function useUserStoreHook() {
   return useUserStore(store);
 }
+

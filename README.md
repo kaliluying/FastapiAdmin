@@ -1,142 +1,86 @@
-<div align="center">
-     <p align="center">
-          <img src="frontend/web/public/logo.svg" width="150" height="150" alt="logo" />
-     </p>
-     <h1>FastApiAdmin <sup style="background-color: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.4em; vertical-align: super; margin-left: 5px;">v3.0.0</sup></h1>
-     <h3>🚀 追求极致代码质量，五分钟搭建企业级中后台，开箱即用</h3>
-     <p>基于 <b>FastAPI + Vue3 + TypeScript</b> 的全栈快速开发平台，Web / H5 / 小程序一站式交付</p>
-     <p align="center">
-          <a href="https://gitee.com/fastapiadmin/FastapiAdmin.git" target="_blank">
-               <img src="https://gitee.com/fastapiadmin/FastapiAdmin/badge/star.svg?theme=dark" alt="Gitee Stars">
-          </a>
-          <a href="https://github.com/fastapiadmin/FastapiAdmin.git" target="_blank">
-               <img src="https://img.shields.io/github/stars/fastapiadmin/FastapiAdmin?style=social" alt="GitHub Stars">
-          </a>
-          <a href="https://github.com/fastapiadmin/FastapiAdmin/forks" target="_blank">
-               <img src="https://img.shields.io/github/forks/fastapiadmin/FastapiAdmin?style=social" alt="GitHub Forks">
-          </a>
-          <br>
-          <a href="https://gitee.com/fastapiadmin/FastapiAdmin/blob/master/LICENSE" target="_blank">
-               <img src="https://img.shields.io/badge/License-MIT-orange" alt="License">
-          </a>
-          <img src="https://img.shields.io/badge/Python-≥3.12-blue">
-          <img src="https://img.shields.io/badge/NodeJS-≥20.0-blue">
-          <img src="https://img.shields.io/badge/MySQL-≥8.0-blue">
-          <img src="https://img.shields.io/badge/Redis-≥7.0-blue">
-     </p>
+# FastApiAdmin AI Knowledge Skeleton
 
-简体中文 | [English](./README.en.md)
+单组织内部后台管理系统骨架，保留用户、角色、部门、菜单、字典、参数、日志、文件上传等后台基础能力，并内置 AI 知识库与 RAG 对话。
 
-</div>
+## 定位
 
-## 💡 为什么选择 FastapiAdmin？
+- 单组织内部使用，不提供租户切换、租户注册和 SaaS 套餐运行时。
+- MySQL 存储业务元数据和知识库元数据。
+- ChromaDB HTTP Server 存储向量和分块检索索引。
+- OpenAI-compatible API 提供对话模型和 embedding 模型。
+- Vue 3 + Element Plus 提供后台管理界面。
 
-| 你需要的 | FastapiAdmin | Django Admin | 纯前端模板 |
-|---------|:-----------:|:-----------:|:---------:|
-| 🎯 **开箱即用**的后台系统 | ✅ | ⚠️ 功能有限 | ❌ 只有 UI |
-| ⚡ **FastAPI 异步**高性能后端 | ✅ | ❌ 同步为主 | ❌ 无后端 |
-| 🔐 **RBAC** 菜单/按钮/数据三级权限 | ✅ | ❌ 基础 | ❌ |
-| 🏢 **多租户 SaaS** 数据隔离 + 配额 + 个性化 | ✅ | ❌ | ❌ |
-| 🤖 **代码生成器**（选表 → 出前后端代码） | ✅ | ❌ | ❌ |
-| 📱 **移动端**（H5 + 小程序）一体 | ✅ | ❌ | ❌ |
-| 🐳 **Docker 一键部署**（含 Nginx + SSL） | ✅ | ❌ | ❌ |
+## 保留模块
 
-> 👉 详细技术选型对比：[为什么选择 FastapiAdmin？](https://service.fastapiadmin.com/guide/why)
+- 系统管理：用户、角色、部门、菜单、字典、参数配置、操作日志。
+- 公共能力：认证、RBAC、动态菜单、文件上传、Redis 缓存。
+- AI 知识库：AI 对话、会话记录、模型配置、知识库管理、文档管理、检索测试。
 
-## 🍪 在线体验
+## 已移除或禁用
 
-| 端 | 地址 | 账号 |
-|----|------|------|
-| 💻 Web 端 | [service.fastapiadmin.com/web](https://service.fastapiadmin.com/web) | `admin` / `123456` |
-| 📱 移动端 | [service.fastapiadmin.com/app](https://service.fastapiadmin.com/app) | `admin` / `123456` |
-| 📖 官方文档 | [service.fastapiadmin.com](https://service.fastapiadmin.com) | 无需登录 |
+- 租户中间件、租户切换、租户注册、租户菜单入口。
+- 通知、工单、岗位、监控等可选后台产品入口。
+- 种子菜单已收敛为最小后台骨架 + AI 知识库。
 
-## 🚀 5 分钟本地跑起来
+## 服务依赖
 
-```bash
-# 1. 克隆
-git clone https://gitee.com/fastapiadmin/FastapiAdmin.git
+- Python 3.12+
+- Node.js 20.19+ / pnpm
+- MySQL 8+
+- Redis 6+
+- ChromaDB HTTP Server
+- OpenAI-compatible chat and embedding endpoint
 
-# 2. 配置环境
-cp backend/env/.env.dev.example backend/env/.env.dev
-cp frontend/web/.env.development.example frontend/web/.env.development
+## 后端启动
 
-# 3. 启动后端（首次自动建表 + 初始化数据）
-cd backend && uv sync && uv run main.py run --env=dev
-
-# 4. 启动前端
-cd ../frontend/web && pnpm install && pnpm run dev
-
-# ✅ 浏览器打开 http://127.0.0.1:5173，用 admin/123456 登录
+```powershell
+cd backend
+copy env\.env.dev.example env\.env.dev
+uv sync
+uv run main.py run --env=dev
 ```
 
-| 环境要求 | |
-|---------|------|
-| Python ≥ 3.12 | Node.js ≥ 20.0 + pnpm |
-| MySQL 8.0+ / PostgreSQL 14+ | Redis 6.x / 7.x |
+关键配置在 `backend/env/.env.dev`：
 
-## 📦 工程结构
-
-```
-FastapiAdmin/            # Monorepo 全栈工程
-├─ backend/              # FastAPI 后端（Pydantic 2.0 + SQLAlchemy + Alembic）
-├─ frontend/
-│   ├── web/             # Vue3 Web 前端（Element Plus + TypeScript）
-│   ├── app/             # UniApp 移动端（H5 + 小程序 + App）
-│   └── docs/            # VitePress 文档网站
-├─ docker/               # Docker Compose 一键部署（Nginx + SSL）
-├─ deploy.sh             # 一键部署脚本
-└─ LICENSE               # MIT 开源协议
+```env
+OPENAI_API_KEY=
+OPENAI_BASE_URL=
+OPENAI_MODEL=
+OPENAI_EMBEDDING_MODEL=
+CHROMA_HOST=localhost
+CHROMA_PORT=8000
+CHROMA_SSL=false
+CHROMA_COLLECTION_NAME=knowledge_base
 ```
 
-## 📌 内置功能（开箱即用）
+Chroma 以 HTTP server 方式运行，后端使用 `chromadb-client` 连接，避免 Windows 本地构建 HNSW 扩展。
 
-| 模块 | 包含能力 |
-|------|---------|
-| 📊 仪表盘 | 工作台、数据分析 |
-| ⚙️ 系统管理 | 用户 / 角色 / 菜单 / 部门 / 岗位 / 字典 / 配置 / 公告 |
-| 🏢 多租户 | 租户管理 / 数据隔离 / 配额控制 / 个性化配置 / 菜单权限 |
-| 👀 监控管理 | 在线用户 / 服务器监控 / 缓存监控 |
-| 📋 任务管理 | 定时任务调度 |
-| 📝 日志管理 | 操作日志审计 |
-| 🧰 开发工具 | 代码生成、表单构建、接口文档 |
-| 📁 文件管理 | 统一文件管理 |
-| 🤖 智能体 | 基于 Agno 的智能体框架 |
+## 前端启动
 
-## 🔧 截图展示
+```powershell
+cd frontend\web
+pnpm install
+pnpm run dev
+```
 
-| 登录 | 仪表盘 | 代码生成 | AI 助手 |
-| ---- | ------ | -------- | ------- |
-| ![登录](frontend/web/public/login.png) | ![仪表盘](frontend/web/public/dashboard.png) | ![代码生成](frontend/web/public/gencode.png) | ![AI](frontend/web/public/ai.png) |
+## 知识库流程
 
-## 📖 文档地址
+1. 在“AI 知识库 / 知识库管理”创建知识库。
+2. 在“文档管理”上传 `.txt`、`.md`、`.pdf`、`.docx`。
+3. 后端提取文本、切分 chunk、写 MySQL 元数据，并将 embedding 写入 ChromaDB。
+4. 在“检索测试”验证召回效果。
+5. 在“AI 对话”选择知识库后进行 RAG 问答。
 
-- 🌐 [官网文档](https://service.fastapiadmin.com) — 完整开发指南、架构设计、二开教程
-- 📁 子工程 README：[backend](backend/README.md) · [web](frontend/web/README.md) · [移动端](frontend/app/README.md) · [Docker](docker/README.md)
+## 验证命令
 
-## 🤝 参与贡献
+```powershell
+cd backend
+uv run pytest tests\core\test_single_org_runtime.py tests\scripts\test_skeleton_seed_menu.py tests\plugin\module_ai -q
+python -m compileall -q app tests
+uv run ruff check app\plugin\module_ai app\scripts\initialize.py app\api\v1\module_system\__init__.py app\config\setting.py app\init_app.py tests --output-format concise
+uv run python -c "import chromadb, openai, pypdf, docx"
 
-欢迎提交 Issue / PR！详见 [贡献指南](https://service.fastapiadmin.com/about/contributing)。
-
-## 👥 社区与支持
-
-| 微信群 | 赞赏支持 |
-| ------ | -------- |
-| ![群组二维码](frontend/web/public/group.jpg) | ![微信支付](frontend/web/public/wechatPay.jpg) |
-
-> 如果你觉得项目有用，请给一个 ⭐️ Star 支持！
-
-[![Stargazers over time](https://starchart.cc/fastapiadmin/FastapiAdmin.svg?variant=adaptive)](https://starchart.cc/fastapiadmin/FastapiAdmin)
-
-## 👥 贡献者
-
-<a href="https://github.com/fastapiadmin/FastapiAdmin/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=fastapiadmin/FastapiAdmin"/>
-</a>
-
-## 🙏 鸣谢
-
-- 后端：[FastAPI](https://fastapi.tiangolo.com/) · [Pydantic](https://docs.pydantic.dev/) · [SQLAlchemy](https://www.sqlalchemy.org/) · [APScheduler](https://github.com/agronholm/apscheduler)
-- 前端：[Vue3](https://cn.vuejs.org/) · [TypeScript](https://www.typescriptlang.org/) · [Vite](https://vitejs.dev/) · [Element Plus](https://element-plus.org/)
-- 移动端：[UniApp](https://uniapp.dcloud.net.cn/) · [Wot Design Uni](https://wot-ui.cn/)
-- AI：[Agno](https://github.com/agno-agi/agno)
+cd ..\frontend\web
+pnpm vitest run src\__tests__\single-org-user-store.test.ts src\__tests__\knowledge-api.test.ts
+pnpm run type-check
+```

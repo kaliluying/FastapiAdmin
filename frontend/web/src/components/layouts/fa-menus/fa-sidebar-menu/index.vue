@@ -1,4 +1,4 @@
-<!-- 左侧菜单 或 双列菜单 -->
+﻿<!-- 左侧菜单 或 双列菜单 -->
 <template>
   <div
     class="layout-sidebar"
@@ -149,14 +149,14 @@ const router = useRouter();
 const settingStore = useSettingsStore();
 const configStore = useConfigStore();
 
-/** 租户配置：tenant_logo / tenant_name */
+/** 系统配置：system_logo / system_name */
 const sidebarLogoSrc = computed(() => {
-  const raw = configStore.configData.tenant_logo?.config_value;
+  const raw = configStore.configData.system_logo?.config_value;
   return typeof raw === "string" && raw.trim() ? raw.trim() : undefined;
 });
 
 const sidebarTitle = computed(() => {
-  const raw = configStore.configData.tenant_name?.config_value;
+  const raw = configStore.configData.system_name?.config_value;
   if (typeof raw === "string" && raw.trim()) return raw.trim();
   return AppConfig.systemInfo.name;
 });
@@ -229,7 +229,7 @@ const menuList = computed(() => {
       allMenus.find((menu) => !menu.meta?.isHide && menu.children?.length) ?? allMenus[0];
   }
   const sub = currentMenu?.children ?? [];
-  // 顶部+左侧 / 双列：顶级为叶子（如 /home）时右侧展示自身
+  // 顶部+左侧 / 双列：顶级为叶子时右侧展示自身
   if (sub.length === 0 && currentMenu?.path && !currentMenu.meta?.isHide) {
     return [currentMenu];
   }
@@ -895,3 +895,5 @@ $popup-menu-radius: 6px;
   }
 }
 </style>
+
+

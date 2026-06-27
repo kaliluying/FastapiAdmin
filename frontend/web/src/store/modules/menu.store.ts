@@ -31,7 +31,6 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { AppRouteRecord } from "@/types/router";
-import { getFirstMenuPath } from "@utils";
 import { HOME_PAGE_PATH } from "@/router";
 import { mergeShellRoutesIntoMenu } from "@/router/staticRoutes";
 
@@ -58,7 +57,7 @@ export const useMenuStore = defineStore(
     const setMenuList = (list: AppRouteRecord[]) => {
       const merged = mergeShellRoutesIntoMenu(list);
       menuList.value = merged;
-      setHomePath(HOME_PAGE_PATH || getFirstMenuPath(merged));
+      setHomePath(HOME_PAGE_PATH);
     };
 
     /**

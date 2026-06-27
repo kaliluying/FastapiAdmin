@@ -3,7 +3,6 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-
 REMOVED_MENU_MARKERS = {
     "/generator",
     "/generator/gencode",

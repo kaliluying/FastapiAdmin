@@ -1,4 +1,4 @@
-from sqlalchemy import Integer, String, Text
+﻿from sqlalchemy import Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.config.setting import settings
@@ -29,7 +29,7 @@ class LoginLogModel(ModelMixin, TenantMixin, UserMixin):
 
     __tablename__: str = "sys_login_log"
     __table_args__: dict[str, str] = {"comment": "登录日志表"}
-    __loader_options__: list[str] = ["created_by", "updated_by", "deleted_by", "tenant_by"]
+    __loader_options__: list[str] = ["created_by", "updated_by", "deleted_by"]
 
     status: Mapped[int] = mapped_column(Integer, default=1, comment="登录状态(1成功 2失败)", index=True)
     description: Mapped[str | None] = mapped_column(Text, default=None, nullable=True, comment="备注")
@@ -48,7 +48,7 @@ class OperationLogModel(ModelMixin, TenantMixin, UserMixin):
 
     __tablename__: str = "sys_operation_log"
     __table_args__: dict[str, str] = {"comment": "操作日志表"}
-    __loader_options__: list[str] = ["created_by", "updated_by", "deleted_by", "tenant_by"]
+    __loader_options__: list[str] = ["created_by", "updated_by", "deleted_by"]
 
     status: Mapped[int] = mapped_column(Integer, default=0, nullable=False, comment="状态(0:启动 1:停用)", index=True)
     description: Mapped[str | None] = mapped_column(Text, default=None, nullable=True, comment="备注")
@@ -58,3 +58,4 @@ class OperationLogModel(ModelMixin, TenantMixin, UserMixin):
     response_code: Mapped[int] = mapped_column(Integer, comment="响应状态码")
     response_json: Mapped[str | None] = mapped_column(get_log_text_column_type(), nullable=True, comment="响应体")
     process_time: Mapped[str | None] = mapped_column(String(20), nullable=True, comment="处理时间")
+

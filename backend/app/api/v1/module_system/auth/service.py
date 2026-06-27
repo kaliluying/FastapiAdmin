@@ -1,4 +1,4 @@
-
+﻿
 import json
 import uuid
 from datetime import datetime, timedelta
@@ -9,7 +9,6 @@ from fastapi import Request
 from redis.asyncio.client import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.module_monitor.online.schema import OnlineOutSchema
 from app.api.v1.module_system.user.crud import UserCRUD
 from app.api.v1.module_system.user.model import UserModel
 from app.common.enums import RedisInitKeyConfig
@@ -38,10 +37,8 @@ from .schema import (
     AutoLoginTokenSchema,
     AutoLoginUserSchema,
     CaptchaOutSchema,
-    LoginWithTenantsSchema,
-    SelectTenantOutSchema,
+    LoginSchema,
     TenantOptionSchema,
-    TenantRegisterOutSchema,
 )
 
 CaptchaKey = NewType("CaptchaKey", str)
@@ -101,7 +98,7 @@ class LoginService:
         redis: Redis,
         login_form: CustomOAuth2PasswordRequestForm,
         db: AsyncSession,
-    ) -> LoginWithTenantsSchema:
+    ) -> LoginSchema:
         """用户认证"""
         ua_result = ua_parser.parse(request.headers.get("user-agent"))
         request_ip = _resolve_request_ip(request)
@@ -160,25 +157,6 @@ class LoginService:
                 msg="用户已被停用",
             )
             raise CustomException(msg="用户已被停用")
-
-        from sqlalchemy import select
-
-        from app.api.v1.module_platform.tenant.model import TenantModel
-
-        tenant_stmt = select(TenantModel).where(TenantModel.id == user.tenant_id, TenantModel.status == 0, TenantModel.is_deleted.is_(False)).limit(1)
-        tenant_result = await auth.db.execute(tenant_stmt)
-        if not tenant_result.scalar_one_or_none():
-            await _write_login_log(
-                username=_login_username,
-                status=2,
-                login_ip=request_ip,
-                login_location=login_location,
-                request_os=_login_os,
-                request_browser=_login_browser,
-                msg="所属租户已被禁用",
-            )
-            raise CustomException(msg="所属租户已被禁用，请联系平台管理员")
-
         await UserCRUD(auth).update_last_login(id=user.id)
 
         if not user:
@@ -192,9 +170,7 @@ class LoginService:
             user=user,
             login_type=login_form.login_type,
         )
-
-        tenants_auth = AuthSchema(db=db, user=user, tenant_id=user.tenant_id, check_data_scope=False)
-        tenants = await LoginService(tenants_auth).get_user_tenants(user_id=user.id)
+        tenants = []
 
         user_info = {
             "id": user.id,
@@ -214,7 +190,7 @@ class LoginService:
             msg="登录成功",
         )
 
-        return LoginWithTenantsSchema(
+        return LoginSchema(
             access_token=token.access_token,
             refresh_token=token.refresh_token,
             expires_in=token.expires_in,
@@ -248,29 +224,15 @@ class LoginService:
         refresh_expires = timedelta(seconds=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
 
         now = datetime.now()
-
-        session_info = OnlineOutSchema(
-            session_id=session_id,
-            user_id=user.id,
-            tenant_id=user.tenant_id,
-            is_superuser=user.is_superuser,
-            name=user.name,
-            user_name=user.username,
-            ipaddr=request_ip,
-            login_location=login_location,
-            os=ua_result.os.family if ua_result.os else "Unknown",
-            browser=ua_result.user_agent.family if ua_result.user_agent else "Unknown",
-            login_time=user.last_login,
-            login_type=login_type,
-        ).model_dump_json()
-
-        # 会话信息存 Redis（完整 JSON），JWT sub 仅含 session_id
-        await RedisCURD(redis).set(
-            key=f"{RedisInitKeyConfig.USER_SESSION.key}:{session_id}",
-            value=session_info,
-            expire=int(refresh_expires.total_seconds()),
-        )
-
+        session_info = {
+            "session_id": session_id,
+            "user_id": user.id,
+            "username": user.username,
+            "user_name": user.username,
+            "tenant_id": user.tenant_id,
+            "login_type": login_type,
+            "login_time": now.isoformat(),
+        }
         access_token = create_access_token(
             payload=JWTPayloadSchema(
                 sub=session_id,
@@ -295,6 +257,12 @@ class LoginService:
         await RedisCURD(redis).set(
             key=f"{RedisInitKeyConfig.REFRESH_TOKEN.key}:{session_id}",
             value=refresh_token,
+            expire=int(refresh_expires.total_seconds()),
+        )
+
+        await RedisCURD(redis).set(
+            key=f"{RedisInitKeyConfig.USER_SESSION.key}:{session_id}",
+            value=session_info,
             expire=int(refresh_expires.total_seconds()),
         )
 
@@ -397,133 +365,6 @@ class LoginService:
         logger.info(f"用户退出登录成功,会话编号:{session_id}")
 
         return True
-
-    async def get_user_tenants(
-        self,
-        user_id: int | None = None,
-    ) -> list[TenantOptionSchema]:
-        """获取用户关联的租户列表"""
-        from sqlalchemy import select
-
-        from app.api.v1.module_platform.tenant.model import TenantModel, TenantUserModel
-
-        uid = user_id or (self.auth.user.id if self.auth.user else None)
-        if not uid:
-            return []
-
-        if self.auth.user and self.auth.user.is_superuser:
-            stmt = select(TenantModel).where(TenantModel.status == 0, TenantModel.is_deleted.is_(False)).order_by(TenantModel.sort, TenantModel.id)
-            result = await self.auth.db.execute(stmt)
-            tenant_objs = result.scalars().all()
-            return [TenantOptionSchema(id=t.id, name=t.name, code=t.code) for t in tenant_objs]
-
-        stmt = (
-            select(TenantModel)
-            .join(TenantUserModel, TenantUserModel.tenant_id == TenantModel.id)
-            .where(
-                TenantUserModel.user_id == uid,
-                TenantModel.status == 0,
-                TenantModel.is_deleted.is_(False),
-            )
-            .order_by(TenantUserModel.is_default.desc(), TenantModel.sort, TenantModel.id)
-        )
-        result = await self.auth.db.execute(stmt)
-        tenant_objs = result.scalars().all()
-        return [TenantOptionSchema(id=t.id, name=t.name, code=t.code) for t in tenant_objs]
-
-    async def select_tenant(
-        self,
-        request: Request,
-        redis: Redis,
-        tenant_id: int,
-    ) -> SelectTenantOutSchema:
-        """选择租户：验证用户归属并签发含租户上下文的新 JWT Token"""
-        from sqlalchemy import select
-
-        from app.api.v1.module_platform.tenant.model import TenantModel, TenantUserModel
-
-        if not self.auth.user:
-            raise CustomException(msg="未认证用户")
-
-        if not self.auth.user.is_superuser:
-            exist_stmt = (
-                select(TenantUserModel)
-                .where(
-                    TenantUserModel.user_id == self.auth.user.id,
-                    TenantUserModel.tenant_id == tenant_id,
-                )
-                .limit(1)
-            )
-            result = await self.auth.db.execute(exist_stmt)
-            if not result.scalar_one_or_none():
-                raise CustomException(msg="您不属于该租户，无法切换")
-
-        tenant_stmt = select(TenantModel).where(TenantModel.id == tenant_id, TenantModel.status == 0).limit(1)
-        result = await self.auth.db.execute(tenant_stmt)
-        tenant = result.scalar_one_or_none()
-        if not tenant:
-            raise CustomException(msg="租户不存在或已被禁用")
-
-        ctx = getattr(request.state, "ctx", None)
-        session_id = ctx.session_id if ctx else None
-        session_info = ctx.session_info if ctx else None
-
-        if not session_id or not session_info:
-            raise CustomException(msg="会话已失效")
-
-        # 更新会话中的租户 ID 并写回 Redis
-        session_info["tenant_id"] = tenant_id
-        refresh_expires = timedelta(seconds=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
-        from app.core.redis_crud import RedisCURD
-        from app.core.security import create_access_token
-
-        await RedisCURD(redis).set(
-            key=f"{RedisInitKeyConfig.USER_SESSION.key}:{session_id}",
-            value=json.dumps(session_info) if isinstance(session_info, dict) else session_info,
-            expire=int(refresh_expires.total_seconds()),
-        )
-
-        access_expires = timedelta(seconds=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        now = datetime.now()
-
-        new_access_token = create_access_token(
-            payload=JWTPayloadSchema(
-                sub=session_id,
-                is_refresh=False,
-                exp=now + access_expires,
-            )
-        )
-
-        await RedisCURD(redis).set(
-            key=f"{RedisInitKeyConfig.ACCESS_TOKEN.key}:{session_id}",
-            value=new_access_token,
-            expire=int(access_expires.total_seconds()),
-        )
-
-        new_refresh_token = create_access_token(
-            payload=JWTPayloadSchema(
-                sub=session_id,
-                is_refresh=True,
-                exp=now + refresh_expires,
-            )
-        )
-        await RedisCURD(redis).set(
-            key=f"{RedisInitKeyConfig.REFRESH_TOKEN.key}:{session_id}",
-            value=new_refresh_token,
-            expire=int(refresh_expires.total_seconds()),
-        )
-
-        from app.core.request_context import set_current_tenant
-
-        set_current_tenant(tenant_id)
-
-        logger.info(f"用户 {self.auth.user.username}(id={self.auth.user.id}) 切换到租户 {tenant.name}(id={tenant_id})")
-
-        return SelectTenantOutSchema(
-            access_token=new_access_token,
-            token_type=settings.TOKEN_TYPE,
-            expires_in=int(access_expires.total_seconds()),
-        )
 
 
 class CaptchaService:
@@ -701,115 +542,3 @@ class AutoLoginService:
 
         return jwt_token
 
-
-class TenantRegisterService:
-    """PRD §4.5 租户自助注册：一次性创建租户 + 管理员 + owner 角色 + 菜单分配"""
-
-    DEFAULT_TRIAL_DAYS = 7
-
-    @classmethod
-    async def register(
-        cls,
-        db: AsyncSession,
-        username: str,
-        password: str,
-        email: str,
-        tenant_name: str | None = None,
-    ) -> TenantRegisterOutSchema:
-        """租户自助注册：一次性创建租户 + 管理员 + owner 角色 + 菜单分配"""
-        from sqlalchemy import func, select
-        from sqlalchemy.exc import IntegrityError
-
-        from app.api.v1.module_platform.tenant.model import TenantModel
-        from app.api.v1.module_system.role.model import RoleMenusModel, RoleModel
-        from app.api.v1.module_system.user.model import UserModel, UserRolesModel
-
-        exists_stmt = (
-            select(func.count())
-            .select_from(UserModel)
-            .where(
-                UserModel.is_deleted.is_(False),
-                (UserModel.username == username) | (UserModel.email == email),
-            )
-        )
-        cnt = (await db.execute(exists_stmt)).scalar() or 0
-        if cnt > 0:
-            raise CustomException(msg="用户名或邮箱已被占用")
-
-        now = datetime.now()
-        trial_end = now + timedelta(days=cls.DEFAULT_TRIAL_DAYS)
-
-        base = tenant_name or username
-        code_suffix = base.encode("utf-8").hex()[:6].upper()
-        tenant_code = f"T{code_suffix}"
-
-        tenant = TenantModel(
-            name=tenant_name or f"{username}的租户",
-            code=tenant_code,
-            contact_name=username,
-            start_time=now,
-            end_time=trial_end,
-            status=0,
-        )
-        db.add(tenant)
-        await db.flush()
-
-        user = UserModel(
-            username=username,
-            password=PwdUtil.hash_password(password),
-            email=email,
-            tenant_id=tenant.id,
-            status=0,
-        )
-        db.add(user)
-        await db.flush()
-
-        owner_role = RoleModel(
-            name="租户管理员",
-            code="owner",
-            tenant_id=tenant.id,
-            order=1,
-            data_scope=4,
-            description="自助注册创建的管理员角色",
-        )
-        db.add(owner_role)
-        await db.flush()
-
-        user_role = UserRolesModel(user_id=user.id, role_id=owner_role.id)
-        db.add(user_role)
-
-        if default_pkg:
-            pkg_menu_stmt = select(PackageMenuModel).where(
-                PackageMenuModel.package_id == default_pkg.id,
-            )
-            pkg_menus = (await db.execute(pkg_menu_stmt)).scalars().all()
-            for pm in pkg_menus:
-                db.add(RoleMenusModel(role_id=owner_role.id, menu_id=pm.menu_id))
-
-        try:
-            await db.commit()
-        except IntegrityError:
-            await db.rollback()
-            raise CustomException(msg="租户编码或用户名已被占用，请重试")
-
-        try:
-            await cls._send_welcome_email(email, username, tenant.name, trial_end)
-        except Exception:
-            logger.warning(f"注册欢迎邮件发送失败: {email}")
-
-        return TenantRegisterOutSchema(
-            user_id=user.id,
-            username=username,
-            tenant_id=tenant.id,
-            tenant_name=tenant.name,
-            tenant_code=tenant_code,
-            package=default_pkg.name if default_pkg else None,
-            trial_end=trial_end.strftime("%Y-%m-%d"),
-            message="注册成功",
-        )
-
-    @classmethod
-    async def _send_welcome_email(cls, to_email: str, username: str, tenant_name: str, trial_end: datetime) -> None:
-        """发送欢迎邮件（邮件模块已删除，跳过）。"""
-        logger.info(f"邮件模块已删除，跳过发送欢迎邮件至 {to_email}")
-        return

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+﻿from dataclasses import dataclass
 from urllib.parse import urlparse
 
 from fastapi import Query
@@ -205,7 +205,6 @@ class UserCreateSchema(CurrentUserUpdateSchema):
     dept_id: int | None = Field(default=None, description="部门ID")
     tenant_id: int | None = Field(default=None, description="租户ID，仅平台管理员创建时可指定")
     role_ids: list[int] | None = Field(default=[], description="角色ID列表")
-    position_ids: list[int] | None = Field(default=[], description="岗位ID列表")
 
     @field_validator("status")
     @classmethod
@@ -249,7 +248,6 @@ class UserUpdateSchema(CurrentUserUpdateSchema):
     description: str | None = Field(default=None, max_length=255, description="备注")
     dept_id: int | None = Field(default=None, description="部门ID")
     role_ids: list[int] | None = Field(default=[], description="角色ID列表")
-    position_ids: list[int] | None = Field(default=[], description="岗位ID列表")
 
     @field_validator("status")
     @classmethod
@@ -291,7 +289,6 @@ class UserOutSchema(UserUpdateSchema, BaseSchema, UserBySchema, TenantBySchema):
     qq_login: str | None = Field(default=None, max_length=32, description="QQ登录")
     dept_name: str | None = Field(default=None, description="部门名称")
     dept: CommonSchema | None = Field(default=None, description="部门")
-    positions: list[CommonSchema] | None = Field(default=[], description="岗位")
     roles: list[RoleOutSchema] | None = Field(default=[], description="角色")
     menus: list[MenuOutSchema] | None = Field(default=[], description="菜单")
 

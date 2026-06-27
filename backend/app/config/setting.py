@@ -1,4 +1,4 @@
-import os
+﻿import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     # ******************* 服务器配置 ****************** #
     # ================================================= #
     SERVER_HOST: str = "0.0.0.0"  # 允许访问的IP地址
-    SERVER_PORT: int = 8001  # 服务端口
+    SERVER_PORT: int = 8004  # 服务端口
 
     # ================================================= #
     # ******************* API文档配置 ****************** #
@@ -71,34 +71,6 @@ class Settings(BaseSettings):
     TOKEN_TYPE: str = "Bearer"  # token类型（RFC 6750 标准大小写）
     TOKEN_REQUEST_PATH_EXCLUDE: list[str] = ["api/v1/auth/login"]  # JWT / RBAC 路由白名单
     TOKEN_SLIDING_EXPIRE: bool = True  # 是否启用滑动过期(用户操作时自动续期)
-
-    # 多租户中间件白名单路径（不需要租户上下文的公开接口）
-    TENANT_WHITELIST_PATHS: list[str] = [
-        "/api/v1/system/auth/",
-        "/api/v1/health",
-        "/api/v1/common/health",
-    ]
-
-    # ================================================= #
-    # ******************* 支付配置 ******************* #
-    # ================================================= #
-    PAYMENT_GATEWAY: str = "mock"  # alipay / wxpay / mock
-    # 支付宝
-    PAYMENT_ALIPAY_APP_ID: str = ""
-    PAYMENT_ALIPAY_PRIVATE_KEY: str = ""
-    PAYMENT_ALIPAY_PUBLIC_KEY: str = ""
-    PAYMENT_ALIPAY_SANDBOX: bool = True
-    # 微信支付
-    PAYMENT_WXPAY_APP_ID: str = ""
-    PAYMENT_WXPAY_MCH_ID: str = ""
-    PAYMENT_WXPAY_API_KEY: str = ""
-    # 站点 URL（用于生成支付通知 URL）
-    SITE_URL: str = "http://localhost:8001"
-
-    # 多租户：通配子域与登录租户一致（默认关闭；生产按 base 解析 {code}.base）
-    TENANT_HOST_ENFORCE: bool = False
-    TENANT_HOST_BASE_DOMAIN: str = ""
-    TENANT_HOST_IGNORE_PREFIXES: list[str] = ["www", "api", "admin"]
 
     # ================================================= #
     # ******************** 数据库配置 ******************* #
@@ -236,12 +208,16 @@ class Settings(BaseSettings):
     # ================================================= #
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = ""
+    OPENAI_EMBEDDING_MODEL: str = ""
     OPENAI_BASE_URL: str = ""  # API Base URL，如 https://api.minimax.chat/v1
 
     # ================================================= #
     # ******************* ChromaDB配置 ****************** #
     # ================================================= #
-    CHROMA_PERSIST_DIR: str = str(BASE_DIR / "data" / "chroma")  # ChromaDB 持久化目录
+    CHROMA_HOST: str = "localhost"
+    CHROMA_PORT: int = 8000
+    CHROMA_SSL: bool = False
+    CHROMA_PERSIST_DIR: str = str(BASE_DIR / "data" / "chroma")  # Reserved for local full Chroma deployments.
     CHROMA_COLLECTION_NAME: str = "knowledge_base"  # ChromaDB 集合名称
 
     # ================================================= #
@@ -265,7 +241,6 @@ class Settings(BaseSettings):
             "app.core.middlewares.CustomGZipMiddleware" if self.GZIP_ENABLE else None,
             "app.core.middlewares.SecurityHeadersMiddleware",  # 安全响应头
             "app.core.middlewares.CorrelationIdMiddleware",  # 请求上下文
-            "app.core.middlewares.TenantMiddleware",  # 租户上下文（需 JWT）
         ]
         return MIDDLEWARES
 
