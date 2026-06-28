@@ -67,7 +67,7 @@ uv run main.py run --env=dev
 ```python
 # 检查点 1：streaming 参数
 llm = ChatOpenAI(
-    model="gpt-3.5-turbo",
+    model=settings.OPENAI_MODEL  # 以配置为准,
     streaming=True  # ← 必须设为 True
 )
 
@@ -563,7 +563,7 @@ except Exception as e:
 # - 优点：表格提取好
 # - 缺点：依赖多
 
-# 3. pypdfium2（我们用的）
+# 3. pypdf（当前依赖）
 # - 优点：基于 Google PDFium，支持好
 # - 缺点：二进制依赖
 
@@ -572,11 +572,11 @@ except Exception as e:
 # - 缺点：License 限制（AGPL）
 ```
 
-**pypdfium2 使用示例**：
+**pypdf 使用示例**：
 
 ```python
 # utils/file_parser.py
-import pypdfium2 as pdfium
+from pypdf import PdfReader
 
 def extract_text_from_pdf(file_path: Path) -> str:
     """从 PDF 提取文本
@@ -666,7 +666,7 @@ def extract_text_from_excel(file_path: Path) -> str:
 ```python
 # 常用 OCR 库
 
-# 1. pytesseract（基于 Tesseract）
+# 1. OCR（选做，需另装 OCR 工具）
 # - 开源免费
 # - 识别率一般
 # - 需要安装 Tesseract 引擎
@@ -685,14 +685,14 @@ def extract_text_from_excel(file_path: Path) -> str:
 
 ```python
 # utils/file_parser.py
-import pytesseract
+# OCR 为选做，需另装 OCR 工具
 from PIL import Image
 
 def extract_text_from_image(file_path: Path) -> str:
     """从图片提取文本（OCR）"""
     try:
         image = Image.open(file_path)
-        text = pytesseract.image_to_string(image, lang='chi_sim')
+        text = ocr_text = "按实际 OCR 工具返回文本"
         return text
     except Exception as e:
         logger.error(f"OCR 失败: {e}")

@@ -144,7 +144,7 @@
 Python 3.12        ← 编程语言
 FastAPI           ← Web 框架（异步、高性能）
 LangChain         ← AI 编排框架（核心）
-OpenAI GPT-3.5    ← 大语言模型
+OpenAI OpenAI 兼容模型    ← 大语言模型
 ChromaDB          ← 向量数据库（核心）
 MySQL             ← 业务数据库
 Redis             ← 缓存（可选）
@@ -366,7 +366,7 @@ pyjwt>=2.10.1                 # JWT 令牌
 密码哈希>=4.0.1                 # 密码安全
 
 # 文件处理
-pypdfium2>=4.30.0             # PDF 解析
+pypdf>=5.1.0,<6                # PDF 解析
 openpyxl>=3.1.0               # Excel 处理
 
 # 工具
@@ -526,7 +526,7 @@ MYSQL_DATABASE=fastapi_db
 # ========== OpenAI 配置（暂时可以不配置）==========
 OPENAI_API_KEY=sk-proj-xxxxx    # ← 暂时留空，下午配置
 OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_MODEL=gpt-3.5-turbo
+OPENAI_MODEL=<按 .env 或 /ai/chat/model-config 配置>
 
 # ========== JWT 配置（生产环境必须改）==========
 SECRET_KEY=your-secret-key-change-in-production
@@ -673,7 +673,7 @@ uv run main.py run --env=dev
 3. **推理阶段**：给它一个开头，它预测后续内容
 
 **常见大模型**：
-- OpenAI GPT-3.5 / GPT-4
+- OpenAI OpenAI 兼容模型 / GPT-4
 - Anthropic Claude
 - Google Gemini
 - 国产：文心一言、通义千问、讯飞星火
@@ -686,7 +686,7 @@ uv run main.py run --env=dev
 ✅ 翻译：多语言翻译
 
 **大模型的局限**：
-❌ 知识有截止日期（GPT-3.5 的知识截止到 2021年）
+❌ 知识有截止日期（OpenAI 兼容模型 的知识截止到 2021年）
 ❌ 会"一本正经地胡说八道"（幻觉问题）
 ❌ 不知道自己不知道
 ❌ 无法访问实时数据
@@ -947,12 +947,12 @@ LangChain 是一个用于开发 AI 应用的框架，它把调用大模型、管
 ```ini
 OPENAI_API_KEY=sk-proj-你的密钥
 OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_MODEL=gpt-3.5-turbo
+OPENAI_MODEL=<按 .env 或 /ai/chat/model-config 配置>
 ```
 
 **注意**：
 - API Key 不要泄露
-- 使用会产生费用（GPT-3.5 很便宜，1000次调用约1美元）
+- 使用会产生费用（OpenAI 兼容模型 很便宜，1000次调用约1美元）
 - 如果没有 Key，可以用讲师提供的测试 Key
 
 **Step 2：创建测试文件**

@@ -1,4 +1,4 @@
-﻿# AI 劳动仲裁辅助系统 - 技术细节与难点讲解
+# AI 劳动仲裁辅助系统 - 技术细节与难点讲解
 > 当前版本更新说明（2026-06-27）：
 > - 课堂主线以 `courseware/index.html` 和 `完整四天授课执行脚本.md` 为准。
 > - 当前讲课顺序调整为：从零实现主线 → 四天逐日节奏 → 技术地图 → 答辩准备。
@@ -159,7 +159,7 @@ async def process_data():
 纯 LLM 的问题：
 
 1. 知识截止日期
-   问题：GPT-3.5 训练截止到 2021年9月
+   问题：OpenAI 兼容模型 训练截止到 2021年9月
    后果：无法回答 2022-2024 年的新法律
 
 2. 幻觉问题（Hallucination）
@@ -232,7 +232,7 @@ RAG 的解决方案：
      + 用户问题
    
 9. 调用 LLM 生成
-   模型：GPT-3.5-turbo
+   模型：OpenAI 兼容模型
    温度：0.3（偏保守）
    
 10. 返回答案
@@ -247,7 +247,7 @@ RAG 的解决方案：
 ```
 LLM 上下文窗口限制：
 
-GPT-3.5-turbo：4096 tokens（约 3000 汉字）
+OpenAI 兼容模型：4096 tokens（约 3000 汉字）
 GPT-4：8192 tokens（约 6000 汉字）
 
 劳动合同法全文：约 15000 汉字 → 无法一次性输入
@@ -1212,27 +1212,27 @@ async def analyze_with_consistency(content: str, n: int = 3):
 # 温度控制随机性
 
 # temperature = 0.0 - 确定性输出
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.0)
+llm = ChatOpenAI(model=settings.OPENAI_MODEL  # 以配置为准, temperature=0.0)
 # 适用：
 # - 数据提取
 # - JSON 输出
 # - 计算任务
 
 # temperature = 0.3 - 稍有创造性（推荐）
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.3)
+llm = ChatOpenAI(model=settings.OPENAI_MODEL  # 以配置为准, temperature=0.3)
 # 适用：
 # - 法律咨询
 # - 案件分析
 # - 文书生成
 
 # temperature = 0.7 - 平衡
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.7)
+llm = ChatOpenAI(model=settings.OPENAI_MODEL  # 以配置为准, temperature=0.7)
 # 适用：
 # - 创意写作
 # - 聊天对话
 
 # temperature = 1.0+ - 高创造性
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=1.2)
+llm = ChatOpenAI(model=settings.OPENAI_MODEL  # 以配置为准, temperature=1.2)
 # 适用：
 # - 头脑风暴
 # - 故事创作
@@ -1342,8 +1342,8 @@ WebSocket 双向通信：
 ```
 1. 客户端发起 HTTP 升级请求
 
-GET /api/chat/ws?token=xxx HTTP/1.1
-Host: localhost:8000
+GET /ai/chat/ws?token=xxx HTTP/1.1
+Host: localhost:<SERVER_PORT>
 Upgrade: websocket
 Connection: Upgrade
 Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
@@ -1525,7 +1525,7 @@ websocket.send_text(chunk)        # ❌ 错误
 ```javascript
 // 建立连接
 const token = localStorage.getItem('token');
-const ws = new WebSocket(`ws://localhost:8000/api/chat/ws?token=${token}`);
+const ws = new WebSocket(`ws://localhost:<SERVER_PORT>/ai/chat/ws?token=${token}`);
 
 // 连接打开
 ws.onopen = () => {
@@ -2167,8 +2167,8 @@ client_max_body_size 10m;
 #### **PDF 解析对比**
 
 ```python
-# 方案 1：pypdfium2（推荐）
-import pypdfium2 as pdfium
+# 方案 1：pypdf（当前依赖，推荐）
+from pypdf import PdfReader
 
 def extract_pdf_pypdfium(file_path):
     pdf = pdfium.PdfDocument(str(file_path))
@@ -2204,7 +2204,7 @@ def extract_pdf_pypdf2(file_path):
 
 # 方案 3：OCR（扫描件）
 from PIL import Image
-import pytesseract
+# OCR 为选做，需另装 OCR 工具
 import pdf2image
 
 def extract_pdf_ocr(file_path):

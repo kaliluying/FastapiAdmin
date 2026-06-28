@@ -1,4 +1,4 @@
-﻿# Day 2 下午课程补充内容
+# Day 2 下午课程补充内容
 > 当前版本更新说明（2026-06-27）：
 > - 课堂主线以 `courseware/index.html` 和 `完整四天授课执行脚本.md` 为准。
 > - 当前讲课顺序调整为：从零实现主线 → 四天逐日节奏 → 技术地图 → 答辩准备。
@@ -83,7 +83,7 @@ async def chat_stream(query: str, session_id: str):
 
 **API 设计**：
 ```
-POST /api/claim/analyses
+POST /api/claim/analyses（设计接口，当前骨架未内置）
 Body: {"content": "案情描述..."}
 Response: {
   "rights_claim": "要求支付违法解除赔偿金",
@@ -177,8 +177,8 @@ async def analyze_claim_controller(
 # 启动服务
 uv run main.py run --env=dev
 
-# 打开 http://localhost:8000/docs
-# 找到 POST /api/claim/analyses
+# 打开 http://localhost:<SERVER_PORT>/docs（当前骨架示例为 8004）
+# 找到或设计 POST /api/claim/analyses（设计接口，当前骨架未内置）
 # 点击 Try it out
 # 输入测试数据并执行
 ```
@@ -204,7 +204,7 @@ uv run main.py run --env=dev
 
 #### 4.3 实现成功率评估接口（40分钟）
 
-类似的步骤，实现 `/api/claim/evaluations` 接口。
+类似的步骤，实现 `/api/claim/evaluations` 设计接口。
 
 **关键代码**：
 

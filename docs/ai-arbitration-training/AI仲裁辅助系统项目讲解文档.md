@@ -1,4 +1,4 @@
-﻿# AI 劳动仲裁辅助系统 - 完整讲解文档
+# AI 劳动仲裁辅助系统 - 完整讲解文档
 > 当前版本更新说明（2026-06-27）：
 > - 课堂主线以 `courseware/index.html` 和 `完整四天授课执行脚本.md` 为准。
 > - 当前讲课顺序调整为：从零实现主线 → 四天逐日节奏 → 技术地图 → 答辩准备。
@@ -430,7 +430,7 @@ VECTOR_MIN_SCORE: float = 0.2       # 最小相似度阈值
 【AI 引擎】
     1. 向量检索: 查找相关法条（劳动合同法第47条、第87条）
     2. 构建 Prompt: 系统提示词 + 检索内容 + 用户问题
-    3. 调用 LLM: OpenAI GPT-3.5-turbo（流式）
+    3. 调用 LLM: OpenAI 兼容模型（具体模型以配置为准，流式）
     ↓
 【后端】逐片段发送响应
     ↓
@@ -440,7 +440,7 @@ VECTOR_MIN_SCORE: float = 0.2       # 最小相似度阈值
 **API 接口**：
 
 ```
-WebSocket URL: ws://localhost:8000/api/chat/ws?token=<JWT_TOKEN>
+WebSocket URL: ws://localhost:<SERVER_PORT>/ai/chat/ws?token=<JWT_TOKEN>
 
 请求:
 {
@@ -670,7 +670,7 @@ Response:
     ↓
 【后台任务】BackgroundTasks.add_task()
     1. 文件解析:
-       - PDF → pypdfium2 提取文本
+       - PDF → pypdf 提取文本
        - 图片 → OCR 识别（可选）
        - Excel → openpyxl 读取数据
     2. AI 分析:
@@ -1465,7 +1465,7 @@ MYSQL_DATABASE=fastapi_db
 # ========== OpenAI 配置（核心）==========
 OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxx
 OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_MODEL=gpt-3.5-turbo          # 或 gpt-4
+OPENAI_MODEL=<按 .env 或 /ai/chat/model-config 配置>          # 或 gpt-4
 OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 
 # ========== 向量检索配置 ==========
@@ -1542,10 +1542,10 @@ gunicorn main:create_app \
 
 ### 访问项目
 
-- **API 文档**: http://localhost:8000/docs
-- **ReDoc 文档**: http://localhost:8000/redoc
-- **健康检查**: http://localhost:8000/api/health-check
-- **调试路由**: http://localhost:8000/debug/routes
+- **API 文档**: http://localhost:<SERVER_PORT>/docs（当前骨架示例为 8004）
+- **ReDoc 文档**: http://localhost:<SERVER_PORT>/redoc
+- **健康检查**: http://localhost:<SERVER_PORT>/api/health-check
+- **调试路由**: http://localhost:<SERVER_PORT>/debug/routes
 
 **默认管理员账号**：
 - 用户名: `admin`
@@ -1798,7 +1798,7 @@ WebSocket connection failed: 1008 Policy Violation
 ```javascript
 // 前端正确连接方式
 const token = localStorage.getItem('token');
-const ws = new WebSocket(`ws://localhost:8000/api/chat/ws?token=${token}`);
+const ws = new WebSocket(`ws://localhost:<SERVER_PORT>/ai/chat/ws?token=${token}`);
 ```
 
 ---
@@ -1892,7 +1892,7 @@ sqlalchemy.exc.OperationalError: (2003, "Can't connect to MySQL server")
 
 ## 📞 技术支持
 
-- **API 文档**: http://localhost:8000/docs
+- **API 文档**: http://localhost:<SERVER_PORT>/docs（当前骨架示例为 8004）
 - **项目仓库**: https://github.com/your-repo/AI 劳动仲裁辅助系统
 - **问题反馈**: GitHub Issues
 

@@ -1,7 +1,7 @@
 [project]
 name = "backend"
 version = "2.0.0"
-description = "fastapiadmin鍚庣宸ョ▼"
+description = "fastapiadmin 后端工程"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -48,14 +48,14 @@ dependencies = [
 ]
 [dependency-groups]
 dev = [
-    "fakeredis>=2.21.0,<3",   # 娴嬭瘯锛氬唴瀛?Redis锛岄厤鍚?TESTING
+    "fakeredis>=2.21.0,<3",   # 测试：内存 Redis，配合 TESTING
     "pytest==9.0.2",
-    "pytest-asyncio>=0.24.0",  # 寮傛娴嬭瘯鏀寔
-    "ruff==0.14.13",          # 浠ｇ爜妫€鏌?鏍煎紡鍖?
+    "pytest-asyncio>=0.24.0",  # 异步测试支持
+    "ruff==0.14.13",          # 代码检查、格式化
 ]
 
 [tool.uv]
-default-groups = ["dev"]     # 鏈湴 uv sync 鍚?dev锛涚敓浜?pip -r requirements.txt 涓嶅惈 pytest/ruff/fakeredis
+default-groups = ["dev"]     # 本地 uv sync 含 dev；生产 pip -r requirements.txt 不含 pytest/ruff/fakeredis
 
 [[tool.uv.index]]
 name = "tuna"
@@ -122,7 +122,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/conftest.py" = ["E402"]  # 鍏堣缃?TESTING/SQLite 鐜鍐?import 搴旂敤
+"tests/conftest.py" = ["E402"]  # 先设置 TESTING/SQLite 环境，再 import 应用
 
 [tool.ruff.format]
 docstring-code-format = true
@@ -135,4 +135,3 @@ line-ending = "auto"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-

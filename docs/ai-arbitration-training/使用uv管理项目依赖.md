@@ -1,4 +1,4 @@
-﻿# 使用 uv 管理 当前骨架项目依赖
+# 使用 uv 管理 当前骨架项目依赖
 
 ---
 
@@ -61,7 +61,7 @@ uv --version
 
 ```bash
 # 进入项目目录
-cd FastapiAdmin-official-web-migration
+cd <项目目录>
 
 # 创建虚拟环境（自动使用项目中的 Python 版本）
 uv venv
@@ -147,7 +147,7 @@ uv lock --upgrade-package fastapi
 ```bash
 # 1. 克隆项目
 git clone https://github.com/your-repo/当前骨架项目.git
-cd FastapiAdmin-official-web-migration
+cd <项目目录>
 
 # 2. 初始化项目（创建虚拟环境 + 安装依赖）
 uv sync
@@ -168,7 +168,7 @@ uv sync
 
 # 1. 克隆项目
 git clone https://github.com/your-repo/当前骨架项目.git
-cd FastapiAdmin-official-web-migration
+cd <项目目录>
 
 # 2. 创建虚拟环境
 uv venv

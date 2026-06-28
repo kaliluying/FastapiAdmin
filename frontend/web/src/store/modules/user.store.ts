@@ -39,71 +39,69 @@ export interface LogoutOptions {
 export const useUserStore = defineStore(
   "userStore",
   () => {
-    // Language setting.
+    // 语言设置。
     const language = ref(LanguageEnum.ZH);
-    // Login state.
+    // 登录状态。
     const isLogin = ref(false);
-    // 閿佸睆鐘舵€?
+    // 锁屏状态。
     const isLock = ref(false);
-    // 閿佸睆瀵嗙爜
+    // 锁屏密码。
     const lockPassword = ref("");
-    // 鐢ㄦ埛淇℃伅
+    // 用户信息。
     const info = ref<Partial<UserInfo>>({});
-    // 鎼滅储鍘嗗彶璁板綍
+    // 搜索历史记录。
     const searchHistory = ref<AppRouteRecord[]>([]);
-    // 璁块棶浠ょ墝
+    // 访问令牌。
     const accessToken = ref("");
-    // 鍒锋柊浠ょ墝
+    // 刷新令牌。
     const refreshToken = ref("");
-    // 璺敱鍒楄〃
+    // 路由列表。
     const routeList = ref<MenuTable[]>([]);
-    // 鏉冮檺鍒楄〃
+    // 权限列表。
     const prems = ref<string[]>([]);
-    // 鏄惁宸茶幏鍙栬矾鐢?
+    // 是否已获取动态路由。
     const hasGetRoute = ref(false);
-    // 璁颁綇鎴戠姸鎬?
+    // 记住我状态。
     const rememberMe = ref(Auth.getRememberMe());
-    // 绉熸埛鍒楄〃
-    // 褰撳墠閫変腑绉熸埛
-    /** info 鎵╁睍绫诲瀷锛氬吋瀹?API 杩斿洖 `user_id`锛堥潪鏍囧噯 UserInfo 瀛楁锛?*/
+    /** 扩展用户信息类型：兼容 API 返回的 `user_id`，该字段不属于标准 UserInfo。 */
     type UserInfoLike = Partial<UserInfo> & Record<string, any>;
 
-    // 璁＄畻灞炴€э細鍩虹鐢ㄦ埛淇℃伅
+    // 基础用户信息。
     const basicInfo = computed(() => info.value as UserInfoLike);
-    // 璁＄畻灞炴€э細鑾峰彇璁剧疆鐘舵€?
+    // 设置状态。
     const getSettingState = computed(() => useSettingsStore().$state);
-    // 璁＄畻灞炴€э細鑾峰彇宸ヤ綔鍙扮姸鎬?
+    // 工作台状态。
     const getWorktabState = computed(() => useWorktabStore().$state);
-    // 璁＄畻灞炴€э細鑾峰彇鍩虹淇℃伅
+    // 获取基础用户信息。
     const getBasicInfo = computed(() => info.value as UserInfoLike);
-    // 璁＄畻灞炴€э細鑾峰彇璺敱鍒楄〃
+    // 获取路由列表。
     const getRouteList = computed(() => routeList.value);
-    // 璁＄畻灞炴€э細鑾峰彇鏉冮檺鍒楄〃
+    // 获取权限列表。
     const getPerms = computed(() => prems.value);
-    // 璁＄畻灞炴€э細鏄惁宸茶幏鍙栬矾鐢?
+    // 获取动态路由加载状态。
     const getHasGetRoute = computed(() => hasGetRoute.value);
 
     /**
-     * 璁剧疆鐢ㄦ埛淇℃伅
-     * @param newInfo 鏂扮殑鐢ㄦ埛淇℃伅
+     * 设置用户信息。
+     * @param newInfo 新的用户信息。
      */
     const setUserInfo = (newInfo: UserInfo | UserInfo) => {
       info.value = newInfo;
-      // 璁剧疆鐢ㄦ埛淇℃伅鍚庤嚜鍔ㄦ洿鏂版潈闄?
+      // 用户信息变更后刷新权限。
       setPermissions([]);
     };
 
     /**
-     * 璁剧疆鐧诲綍鐘舵€?
-     * @param status 鐧诲綍鐘舵€?
+     * 设置登录状态。
+     * @param status 登录状态。
      */
     const setLoginStatus = (status: boolean) => {
       isLogin.value = status;
     };
 
     /**
-     * 璁剧疆璇█
-     * @param lang 璇█鏋氫妇鍊?
+     * 设置语言。
+     * @param lang 语言枚举值。
      */
     const setLanguage = (lang: LanguageEnum) => {
       setPageTitle(router.currentRoute.value);
@@ -111,33 +109,33 @@ export const useUserStore = defineStore(
     };
 
     /**
-     * 璁剧疆鎼滅储鍘嗗彶
-     * @param list 鎼滅储鍘嗗彶鍒楄〃
+     * 设置搜索历史。
+     * @param list 搜索历史列表。
      */
     const setSearchHistory = (list: AppRouteRecord[]) => {
       searchHistory.value = list;
     };
 
     /**
-     * 璁剧疆閿佸睆鐘舵€?
-     * @param status 閿佸睆鐘舵€?
+     * 设置锁屏状态。
+     * @param status 锁屏状态。
      */
     const setLockStatus = (status: boolean) => {
       isLock.value = status;
     };
 
     /**
-     * 璁剧疆閿佸睆瀵嗙爜
-     * @param password 閿佸睆瀵嗙爜
+     * 设置锁屏密码。
+     * @param password 锁屏密码。
      */
     const setLockPassword = (password: string) => {
       lockPassword.value = password;
     };
 
     /**
-     * 璁剧疆浠ょ墝
-     * @param newAccessToken 璁块棶浠ょ墝
-     * @param newRefreshToken 鍒锋柊浠ょ墝锛堝彲閫夛級
+     * 设置认证令牌。
+     * @param newAccessToken 访问令牌。
+     * @param newRefreshToken 可选的刷新令牌。
      */
     const setToken = (newAccessToken: string, newRefreshToken?: string) => {
       accessToken.value = newAccessToken;
@@ -147,34 +145,33 @@ export const useUserStore = defineStore(
     };
 
     /**
-     * 妫€鏌ュ苟娓呯悊宸ヤ綔鍙版爣绛鹃〉
-     * 濡傛灉涓嶆槸鍚屼竴鐢ㄦ埛鐧诲綍锛屾竻绌哄伐浣滃彴鏍囩椤?
-     * 搴斿湪鐧诲綍鎴愬姛鍚庤皟鐢?
+     * 检查并清理工作台标签页。
+     * 当登录用户发生变化时清空旧用户的工作台标签页，登录成功后调用。
      */
     const checkAndClearWorktabs = () => {
       const lastUserId = localStorage.getItem(StorageConfig.LAST_USER_ID_KEY);
       const ui = info.value as UserInfoLike;
       const currentUserId = ui.id || ui.user_id;
 
-      // 鏃犳硶鑾峰彇褰撳墠鐢ㄦ埛 ID锛岃烦杩囨鏌?
+      // 无法获取当前用户 ID 时跳过检查。
       if (!currentUserId) return;
 
-      // 棣栨鐧诲綍鎴栫紦瀛樺凡娓呴櫎锛屼繚鐣欑幇鏈夋爣绛鹃〉
+      // 首次登录或缓存已清理时，保留当前标签页。
       if (!lastUserId) {
         return;
       }
 
-      // 涓嶅悓鐢ㄦ埛鐧诲綍锛氭竻绌哄伐浣滃彴鏍囩锛堝惈 current锛岄伩鍏嶄笌璺敱鑴辫妭锛涘苟涓庢寔涔呭寲涓€鑷达級
+      // 不同用户登录时，清空工作台标签页，包括当前标签页。
       if (String(currentUserId) !== String(lastUserId)) {
         useWorktabStore().clearAll();
       }
 
-      // 娓呴櫎涓存椂瀛樺偍
+      // 清理临时存储。
       localStorage.removeItem(StorageConfig.LAST_USER_ID_KEY);
     };
 
-                /**
-     * 鑾峰彇鐢ㄦ埛淇℃伅
+    /**
+     * 获取当前用户信息。
      */
     async function getUserInfo() {
       try {
@@ -196,14 +193,14 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 璁剧疆澶村儚
+     * 设置头像。
      */
     function setAvatar(avatar: string) {
       info.value = { ...info.value, avatar };
     }
 
     /**
-     * 璁剧疆璺敱
+     * 设置路由。
      */
     function setRoute(routers: MenuTable[]) {
       routeList.value = routers;
@@ -212,7 +209,7 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 璁剧疆鏉冮檺
+     * 设置权限。
      */
     function setPermissions(menus: MenuTable[]) {
       prems.value = [];
@@ -242,7 +239,7 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 鐧诲綍
+     * 登录。
      */
     async function login(loginForm: any) {
       const response = await AuthAPI.login(loginForm);
@@ -262,7 +259,7 @@ export const useUserStore = defineStore(
         console.error("[Login Debug] 未获取到 access_token，可能是后端响应字段不匹配");
       }
 
-      // Clear stale route/menu state from the previous session before rebuilding routes.
+      // 重建路由前清理上一会话残留的路由和菜单状态。
       useMenuStore().setMenuList([]);
       useMenuStore().setHomePath("");
       (await getRouterUtils()).resetRouteInitState();
@@ -278,7 +275,7 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 鐧诲嚭锛氭湁 token 鏃惰姹傚悗绔紱缁熶竴娓呯悊鐘舵€侊紱榛樿璺宠浆鐧诲綍椤靛苟甯?redirect
+     * 登出：有 token 时请求后端，清理本地状态，并按需跳转到登录页。
      */
     async function logout(options?: LogoutOptions) {
       const shouldNavigate = options?.navigate !== false;
@@ -326,7 +323,7 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 閲嶇疆鎵€鏈夌姸鎬?
+     * 重置所有认证相关状态。
      */
     function resetAllState() {
       Auth.clearAuth();
@@ -339,12 +336,12 @@ export const useUserStore = defineStore(
       accessToken.value = "";
       refreshToken.value = "";
       prems.value = [];
-      /** 鐧诲嚭 / 璁よ瘉澶辨晥锛氫細璇濈粨鏉燂紝宸ヤ綔鏍忎笌 KeepAlive exclude 涓€骞舵竻绌猴紙pinia 鎸佷箙鍖栭殢涔嬪啓鍏ワ級 */
+      // 登出或认证失效时，同时清理会话标签页和 KeepAlive 状态。
       useWorktabStore().clearAll();
     }
 
     /**
-     * 娓呯┖鐢ㄦ埛淇℃伅
+     * 清空用户信息。
      */
     function clearUserInfo() {
       info.value = {};
@@ -353,7 +350,7 @@ export const useUserStore = defineStore(
     }
 
     /**
-     * 鍒锋柊token
+     * 刷新 token。
      */
     async function refreshTokenFn() {
       const currentRefreshToken = Auth.getRefreshToken();
@@ -364,21 +361,21 @@ export const useUserStore = defineStore(
 
       const response = await AuthAPI.refreshToken({ refresh_token: currentRefreshToken });
       const data = response.data.data;
-      // 鏇存柊浠ょ墝锛屼繚鎸佸綋鍓嶈浣忔垜鐘舵€?
+      // 更新令牌，并保留当前“记住我”状态。
       Auth.setTokens(data.access_token, data.refresh_token, Auth.getRememberMe());
       setToken(data.access_token, data.refresh_token);
     }
 
     /**
-     * 瀹屽叏閲嶇疆鎵€鏈夌姸鎬侊紙鍖呮嫭璺敱銆佹爣绛鹃〉銆佸瓧鍏哥瓑锛?
+     * 完全重置所有状态，包括路由、标签页和字典。
      */
     function fullResetAllState() {
-      // 閲嶇疆鐢ㄦ埛鐘舵€?
+      // 重置用户认证状态。
       Auth.clearAuth();
-      // 閲嶇疆鐢ㄦ埛淇℃伅
+      // 重置用户信息。
       clearUserInfo();
       useWorktabStore().clearAll();
-      // 閲嶇疆瀛楀吀
+      // 重置字典。
       useDictStore(store).clearDictData();
 
       return Promise.resolve();
@@ -434,4 +431,3 @@ export const useUserStore = defineStore(
 export function useUserStoreHook() {
   return useUserStore(store);
 }
-

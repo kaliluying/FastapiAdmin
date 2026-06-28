@@ -1,6 +1,5 @@
-<!-- 閻劍鍩涢懣婊冨礋閿涙艾鎮庨獮鑸垫＋閻楀牓銆婇弽蹇ョ礄闁板秶鐤嗘稉顓炵妇閵嗕笩itee閵嗕礁绱╃€电》绱? 閺傛壆澧?Popover 娑撳酣鎽奸幒銉х波閺?-->
 <template>
-  <!-- inline-flex + items-center閿涙矮绗屾い鑸电埉 FaIconButton 閸氬奔绔存稉顓犲殠鐎靛綊缍堥敍宀勪缉閸?Popover 鐟欙箑褰傜仦鍌氱唨缁惧灝浜哥粔?-->
+  <!-- 保持触发器为 inline-flex，让弹层锚点跟随头像尺寸。 -->
   <div class="fa-user-menu inline-flex shrink-0 items-center leading-none">
     <ElPopover
       ref="userMenuPopover"
@@ -29,7 +28,7 @@
             src="@imgs/user/avatar.webp"
             alt="avatar"
           />
-          <!-- 娑撳孩妫悧?NavbarActions.user-profile__online-indicator 娑撯偓閼?-->
+          <!-- 在线状态指示点。 -->
           <span class="fa-user-menu__online-dot" aria-hidden="true" />
         </div>
       </template>
@@ -157,7 +156,7 @@ function handleLogout(): void {
       });
       await userStore.logout();
     } catch {
-      // 閻劍鍩涢崣鏍ㄧХ
+      // 用户取消登出。
     }
   }, 200);
 }
@@ -170,14 +169,14 @@ function closeUserMenu(): void {
 </script>
 
 <style scoped>
-/* ElPopover 閸╄桨绨?Tooltip閿涙俺袝閸欐垵鐪版妯款吇 inline-block閿涘奔绗屾い鑸电埉 flex 閸ョ偓鐖ｆ稉顓犲殠鐎靛綊缍?*/
+/* ElPopover 会用 tooltip trigger 包裹 reference，这里保持 inline-flex 以稳定对齐。 */
 .fa-user-menu .el-tooltip__trigger {
   display: inline-flex !important;
   align-items: center;
   line-height: 1;
 }
 
-/* 妞よ埖鐖径鏉戝剼閸欏厖绗呯憴鎺戞躬缁捐法濮搁幀渚婄礄鐎靛綊缍堥弮褏澧楁い鑸电埉閿涘绱遍崡鐘辩秴娑?FaIconButton size-8.5 娑撯偓閼?*/
+/* 头像引用元素负责在线状态点定位，并保持固定按钮尺寸。 */
 .fa-user-menu__avatar-ref {
   position: relative;
   box-sizing: border-box;

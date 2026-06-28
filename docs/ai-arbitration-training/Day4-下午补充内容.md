@@ -1,4 +1,4 @@
-﻿# Day 4 下午课程 - 项目答辩与总结
+# Day 4 下午课程 - 项目答辩与总结
 > 当前版本更新说明（2026-06-27）：
 > - 课堂主线以 `courseware/index.html` 和 `完整四天授课执行脚本.md` 为准。
 > - 当前讲课顺序调整为：从零实现主线 → 四天逐日节奏 → 技术地图 → 答辩准备。
@@ -117,7 +117,7 @@ server {
     }
     
     # WebSocket 支持
-    location /api/chat/ws {
+    location /ai/chat/ws {
         proxy_pass http://127.0.0.1:8000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
@@ -132,16 +132,16 @@ server {
 
 ```bash
 # 1. 访问 API 文档
-http://localhost:8000/docs
+http://localhost:<SERVER_PORT>/docs（当前骨架示例为 8004）
 
 # 2. 测试所有核心接口
 - POST /api/login              ✅ 登录
 - GET  /api/profile            ✅ 获取用户信息
-- POST /api/claim/analyses     ✅ 诉求分析
-- POST /api/claim/evaluations  ✅ 成功率评估
+- POST /api/claim/analyses     设计扩展：诉求分析
+- POST /api/claim/evaluations  设计扩展：成功率评估
 - POST /api/evidences          ✅ 证据上传
-- POST /api/documents/...      ✅ 文书生成
-- WS   /api/chat/ws            ✅ WebSocket 聊天
+- POST /api/documents/...      设计扩展：文书生成
+- WS   /ai/chat/ws             真实接口：WebSocket 聊天
 ```
 
 **前端集成示例（Vue3）**：
@@ -151,7 +151,7 @@ http://localhost:8000/docs
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: 'http://localhost:<SERVER_PORT>/api',
 })
 
 // 请求拦截器（自动添加 Token）
@@ -198,7 +198,7 @@ async function getProfile() {
 // WebSocket 聊天
 function connectChat() {
   const token = localStorage.getItem('token')
-  const ws = new WebSocket(`ws://localhost:8000/api/chat/ws?token=${token}`)
+  const ws = new WebSocket(`ws://localhost:<SERVER_PORT>/ai/chat/ws?token=${token}`)
   
   ws.onopen = () => {
     console.log('WebSocket 连接成功')
@@ -224,7 +224,7 @@ function connectChat() {
 
 ```
 错误：
-Access to fetch at 'http://localhost:8000/api/login' from origin 'http://localhost:3000' 
+Access to fetch at 'http://localhost:<SERVER_PORT>/api/login' from origin 'http://localhost:3000' 
 has been blocked by CORS policy
 ```
 
@@ -250,7 +250,7 @@ app.add_middleware(
 
 ```
 错误：
-WebSocket connection to 'ws://localhost:8000/api/chat/ws' failed: 
+WebSocket connection to 'ws://localhost:<SERVER_PORT>/ai/chat/ws' failed: 
 Error during WebSocket handshake
 ```
 
@@ -262,7 +262,7 @@ const token = localStorage.getItem('token')
 console.log('Token:', token)  // 不应该是 null
 
 // 2. 检查 URL 格式
-const url = `ws://localhost:8000/api/chat/ws?token=${token}`
+const url = `ws://localhost:<SERVER_PORT>/ai/chat/ws?token=${token}`
 console.log('WebSocket URL:', url)
 
 // 3. 检查后端日志

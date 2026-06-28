@@ -1,42 +1,41 @@
-# 涓?pyproject.toml [project] dependencies 涓€鑷达紙鐢熶骇 pip锛涗笉鍚?dev 缁勶細pytest / ruff / fakeredis锛?
-aiofiles==24.1.0                       # 鏂囦欢鎿嶄綔
-aiosmtplib>=3.0.2                      # 寮傛 SMTP 閭欢鍙戦€侊紙fastapi-mail 瑕佹眰 >=3.0.2锛?
-aiosqlite==0.22.1                      # sqlite 寮傛鎿嶄綔鏁版嵁搴?
-alembic==1.18.4                        # 鏁版嵁搴撹縼绉?
-asyncmy==0.2.11                        # 寮傛mysql鎿嶄綔鏁版嵁搴?
-asyncpg==0.31.0                        # 寮傛postgresql鎿嶄綔鏁版嵁搴?
-bleach==6.4.0                          # 杩囨护 HTML 鏍囩
+# 与 pyproject.toml [project] dependencies 保持一致（生产 pip 使用；不含 dev 组：pytest / ruff / fakeredis）
+aiofiles==24.1.0                       # 文件操作
+aiosmtplib>=3.0.2                      # 异步 SMTP 邮件发送（fastapi-mail 要求 >=3.0.2）
+aiosqlite==0.22.1                      # SQLite 异步数据库驱动
+alembic==1.18.4                        # 数据库迁移
+asyncmy==0.2.11                        # MySQL 异步数据库驱动
+asyncpg==0.31.0                        # PostgreSQL 异步数据库驱动
+bleach==6.4.0                          # 过滤 HTML 标签
 chromadb-client>=1.5.9,<2              # Chroma HTTP client for vector store
-tinycss2==1.5.1                        # bleach CSS 娓呮礂渚濊禆
-click==8.1.7                           # 鍛戒护琛屽弬鏁拌В鏋?
-cryptography==49.0.0                   # mysql8 瀵嗙爜鍔犲瘑
-fastapi==0.115.2                       # fastapi 妗嗘灦
-fastapi-limiter==0.1.6                 # 鎺ュ彛闄愭祦
-fastapi-cache2[redis]>=0.1.8           # 缂撳瓨
-fastapi-mail==1.5.1                    # 閭欢鍙戦€侊紙鏇挎崲鎵嬪啓 aiosmtplib 閫昏緫锛?
-greenlet==3.5.2                        # 鍗忕▼鏍稿績渚濊禆锛圫QLAlchemy 寮傛锛?
-httpx==0.28.1                          # HTTP 瀹㈡埛绔?
-jinja2==3.1.6                          # 妯℃澘寮曟搸
+tinycss2==1.5.1                        # bleach CSS 清洗依赖
+click==8.1.7                           # 命令行参数解析
+cryptography==49.0.0                   # MySQL 8 密码加密
+fastapi==0.115.2                       # FastAPI 框架
+fastapi-limiter==0.1.6                 # 接口限流
+fastapi-cache2[redis]>=0.1.8           # 缓存
+fastapi-mail==1.5.1                    # 邮件发送（替换手写 aiosmtplib 逻辑）
+greenlet==3.5.2                        # 协程核心依赖（SQLAlchemy 异步）
+httpx==0.28.1                          # HTTP 客户端
+jinja2==3.1.6                          # 模板引擎
 langchain-openai>=1.1.5,<2             # LangChain OpenAI-compatible chat model
-loguru==0.7.3                          # 鏃ュ織
-openai==2.28.0                         # OpenAI API 瀹㈡埛绔?
+loguru==0.7.3                          # 日志
+openai==2.28.0                         # OpenAI API 客户端
 openpyxl==3.1.5                        # Excel
-pandas==3.0.3                          # 鏁版嵁澶勭悊
-pillow==12.2.0                         # 鍥剧墖澶勭悊
-psutil==7.2.2                          # 绯荤粺淇℃伅
-psycopg[binary]==3.3.2                 # postgresql 鍚屾椹卞姩锛堝惈棰勭紪璇?libpq锛屽紑绠卞嵆鐢級
-pydantic-settings>=2.6.1               # 閰嶇疆璁剧疆锛坒astapi-mail 瑕佹眰 >=2.6.1锛?
+pandas==3.0.3                          # 数据处理
+pillow==12.2.0                         # 图片处理
+psutil==7.2.2                          # 系统信息
+psycopg[binary]==3.3.2                 # PostgreSQL 同步驱动（含预编译 libpq，开箱即用）
+pydantic-settings>=2.6.1               # 配置设置（fastapi-mail 要求 >=2.6.1）
 pyjwt==2.13.0                          # OAuth2
-pymysql==1.2.0                         # MySQL 寮傛鎿嶄綔鏁版嵁搴?
+pymysql==1.2.0                         # MySQL 同步数据库驱动
 pypdf>=5.1.0,<6                        # Knowledge document PDF extraction
 python-docx>=1.1.2,<2                  # Knowledge document DOCX extraction
-python-multipart==0.0.32               # request.form() 瀵硅〃鍗曡繘琛屻€岃В鏋愩€嶆椂瀹夎
-redis==7.1.0                           # Redis 寮傛鎿嶄綔鏁版嵁搴?
-rich==15.0.0                           # 缁堢鎵撳嵃缇庡寲
-sqlalchemy==2.0.51                     # 鏁版嵁搴揙RM
-sqlglot[rs]==27.8.0                    # sql 瑙ｆ瀽
-typer==0.26.7                          # 鍛戒护琛屽伐鍏?
-ua-parser==1.0.2                       # 鑾峰彇鐢ㄦ埛UA
-uvicorn==0.49.0                        # uvicorn web 妗嗘灦
-websockets>=16.0,<17.0                 # websocket 閫氫俊
-
+python-multipart==0.0.32               # request.form() 解析表单时安装
+redis==7.1.0                           # Redis 异步数据库驱动
+rich==15.0.0                           # 终端打印美化
+sqlalchemy==2.0.51                     # 数据库 ORM
+sqlglot[rs]==27.8.0                    # SQL 解析
+typer==0.26.7                          # 命令行工具
+ua-parser==1.0.2                       # 获取用户 UA
+uvicorn==0.49.0                        # Uvicorn Web 框架
+websockets>=16.0,<17.0                 # WebSocket 通信

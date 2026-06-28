@@ -1,4 +1,4 @@
-﻿const coursewareSections = [
+const coursewareSections = [
   {
     id: "overview",
     title: "AI 劳动仲裁辅助系统实训",
@@ -226,7 +226,7 @@
         time: "15:30-16:15",
         points: ["输入用户叙述，输出权利主张和案件摘要。", "Service 层负责组织业务逻辑，AI 工具负责生成结构化结果。", "接口要处理信息不足、JSON 解析失败和异常兜底。"],
         teacherNotes: ["把接口讲成一条数据流：Controller -> Service -> AI -> Schema。"],
-        demoSteps: ["POST /api/claim/analyses", "输入拖欠工资案例"],
+        demoSteps: ["设计接口：POST /api/claim/analyses", "输入拖欠工资案例"],
         practice: "学生准备一个案情文本测试接口。",
       },
       {
