@@ -210,14 +210,14 @@ class Settings(BaseSettings):
     OPENAI_MODEL: str = ""
     OPENAI_EMBEDDING_MODEL: str = ""
     OPENAI_BASE_URL: str = ""  # API Base URL，如 https://api.minimax.chat/v1
+    EMBEDDING_PROVIDER: str = "local"  # local 或 openai
+    LOCAL_EMBEDDING_MODEL: str = "BAAI/bge-small-zh-v1.5"
+    LOCAL_EMBEDDING_CACHE_DIR: str = str(BASE_DIR / "data" / "fastembed")
 
     # ================================================= #
     # ******************* ChromaDB配置 ****************** #
     # ================================================= #
-    CHROMA_HOST: str = "localhost"
-    CHROMA_PORT: int = 8000
-    CHROMA_SSL: bool = False
-    CHROMA_PERSIST_DIR: str = str(BASE_DIR / "data" / "chroma")  # Reserved for local full Chroma deployments.
+    CHROMA_PERSIST_DIR: str = str(BASE_DIR / "data" / "chroma")  # 本地 Chroma 持久化目录
     CHROMA_COLLECTION_NAME: str = "knowledge_base"  # ChromaDB 集合名称
 
     # ================================================= #

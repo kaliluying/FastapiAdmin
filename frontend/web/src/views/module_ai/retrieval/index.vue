@@ -48,10 +48,12 @@
 import { onMounted, reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
 import { Search } from "@element-plus/icons-vue";
+import { useRoute } from "vue-router";
 import KnowledgeAPI, { type KnowledgeBase, type RetrievalHit } from "@/api/module_ai/knowledge";
 
 defineOptions({ name: "AiRetrievalTest" });
 
+const route = useRoute();
 const loading = ref(false);
 const bases = ref<KnowledgeBase[]>([]);
 const results = ref<RetrievalHit[]>([]);
@@ -85,7 +87,17 @@ const testRetrieval = async () => {
   }
 };
 
-onMounted(loadBases);
+const applyRouteQuery = () => {
+  const knowledgeBaseId = Number(route.query.knowledge_base_id);
+  if (Number.isFinite(knowledgeBaseId) && knowledgeBaseId > 0) {
+    form.knowledge_base_ids = [knowledgeBaseId];
+  }
+};
+
+onMounted(async () => {
+  await loadBases();
+  applyRouteQuery();
+});
 </script>
 
 <style scoped>

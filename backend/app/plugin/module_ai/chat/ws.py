@@ -50,14 +50,15 @@ async def websocket_chat_controller(websocket: WebSocket) -> None:
                     query = ChatQuerySchema(**message_data)
                     logger.info(f"收到聊天查询: {query} - 会话ID: {query.session_id}")
 
-                    async for chunk in ChatService(auth).chat_query(query=query):
-                        if not chunk:
-                            continue
-                        try:
-                            await websocket.send_text(chunk)
-                        except RuntimeError:
-                            logger.warning("WebSocket connection closed; stopping response stream")
-                            break
+                    async with db.begin():
+                        async for chunk in ChatService(auth).chat_query(query=query):
+                            if not chunk:
+                                continue
+                            try:
+                                await websocket.send_text(chunk)
+                            except RuntimeError:
+                                logger.warning("WebSocket connection closed; stopping response stream")
+                                break
                 except json.JSONDecodeError:
                     logger.warning(f"收到非 JSON 消息: {data}")
                     try:

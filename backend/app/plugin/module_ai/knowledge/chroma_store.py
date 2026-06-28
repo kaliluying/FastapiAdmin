@@ -6,26 +6,22 @@ from app.config.setting import settings
 
 
 class ChromaKnowledgeStore:
-    """Thin adapter around ChromaDB HTTP collection operations."""
+    """Thin adapter around local ChromaDB collection operations."""
 
     def __init__(
         self,
         *,
-        host: str | None = None,
-        port: int | None = None,
-        ssl: bool | None = None,
+        persist_dir: str | None = None,
         collection_name: str | None = None,
     ) -> None:
         try:
             import chromadb
         except ImportError as exc:
-            raise RuntimeError("chromadb-client is required for knowledge-base vector search") from exc
+            raise RuntimeError("chromadb is required for knowledge-base vector search") from exc
 
-        self.host = host or settings.CHROMA_HOST
-        self.port = port or settings.CHROMA_PORT
-        self.ssl = settings.CHROMA_SSL if ssl is None else ssl
+        self.persist_dir = persist_dir or settings.CHROMA_PERSIST_DIR
         self.collection_name = collection_name or settings.CHROMA_COLLECTION_NAME
-        self.client = chromadb.HttpClient(host=self.host, port=self.port, ssl=self.ssl)
+        self.client = chromadb.PersistentClient(path=self.persist_dir)
         self.collection = self.client.get_or_create_collection(name=self.collection_name)
 
     @staticmethod

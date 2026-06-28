@@ -18,8 +18,56 @@ import { MenuTypeEnum } from "@/enums/system/menu.enum";
  * `getMenuList` 依 `useAppMode` 分支；meta 对齐后端 keep_alive、目录占位组件。
  */
 
-/** 前端模式并入菜单的内置路由（扩展点，默认空） */
-export const builtinFrontendRoutes: AppRouteRecord[] = [];
+/** 前端模式并入菜单的内置路由；后端菜单陈旧时也作为隐藏路由兜底。 */
+export const builtinFrontendRoutes: AppRouteRecord[] = [
+  {
+    path: "/module_ai",
+    name: "ModuleAiFallback",
+    component: ROUTE_COMPONENT_LAYOUT,
+    meta: { title: "AI能力", hidden: true, isHide: true },
+    children: [
+      {
+        path: "/module_ai/document",
+        name: "ModuleAiDocumentFallback",
+        component: "/module_ai/document/index",
+        meta: { title: "文档管理", hidden: true, isHide: true },
+      },
+      {
+        path: "/module_ai/retrieval",
+        name: "ModuleAiRetrievalFallback",
+        component: "/module_ai/retrieval/index",
+        meta: { title: "检索测试", hidden: true, isHide: true },
+      },
+    ],
+  },
+];
+
+function routeKey(route: AppRouteRecord): string {
+  return route.path?.trim() || (route.name ? String(route.name) : "");
+}
+
+export function mergeMissingBuiltinRoutes(
+  menuRoutes: AppRouteRecord[],
+  fallbackRoutes: AppRouteRecord[]
+): AppRouteRecord[] {
+  const merged = menuRoutes.map((route) => ({ ...route }));
+
+  for (const fallback of fallbackRoutes) {
+    const key = routeKey(fallback);
+    const existing = merged.find((route) => routeKey(route) === key);
+
+    if (!existing) {
+      merged.push({ ...fallback });
+      continue;
+    }
+
+    if (fallback.children?.length) {
+      existing.children = mergeMissingBuiltinRoutes(existing.children ?? [], fallback.children);
+    }
+  }
+
+  return merged;
+}
 
 function normalizeMenuNestedPaths(items: MenuTable[], parentAbsolutePath = ""): MenuTable[] {
   return items.map((node) => {
@@ -209,7 +257,7 @@ export class MenuProcessor {
     const fromUser = userStore.routeList;
     if (Array.isArray(fromUser) && fromUser.length > 0) {
       const routes = backendMenusToAppRoutes(fromUser);
-      return this.filterEmptyMenus(routes);
+      return this.filterEmptyMenus(mergeMissingBuiltinRoutes(routes, builtinFrontendRoutes));
     }
     return [];
   }

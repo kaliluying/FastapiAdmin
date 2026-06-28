@@ -161,7 +161,7 @@ const addMessage = (type: "user" | "assistant", content: string, files?: Uploade
     type,
     content,
     timestamp: Date.now(),
-    collapsed: content.length > 200,
+    thinkingCollapsed: type === "assistant",
     files,
   });
 };
@@ -170,7 +170,6 @@ const finishLoadingMessages = () => {
   messages.value.forEach((msg) => {
     if (msg.type === "assistant" && msg.loading) {
       msg.loading = false;
-      msg.collapsed = msg.content.length > 200;
     }
   });
 };
@@ -202,6 +201,7 @@ const handleSendMessage = async (message: string, files?: UploadedFile[]) => {
     content: "",
     timestamp: Date.now(),
     loading: true,
+    thinkingCollapsed: true,
   });
 
   sending.value = true;
@@ -244,18 +244,29 @@ const createNewSession = async (firstMessage: string): Promise<boolean> => {
   }
 };
 
+const isSuccessResponse = (responseData?: ApiResponse<unknown>) =>
+  responseData?.success === true || responseData?.code === 0 || responseData?.code === 200;
+
 // ============ 会话操作 ============
 const handleSelectSession = async (session: ChatSession) => {
-  currentSessionId.value = session.id;
-  messages.value = [];
+  const sessionId = session.id || session.session_id;
+  if (!sessionId) {
+    ElMessage.error("会话 ID 缺失，无法切换");
+    return;
+  }
 
   try {
-    const response = await AiChatAPI.getSessionDetail(session.id);
-    if (response.data?.code !== 0) {
+    const response = await AiChatAPI.getSessionDetail(sessionId);
+    const responseData = response.data;
+    if (!isSuccessResponse(responseData)) {
+      ElMessage.error(responseData?.msg || "获取会话详情失败");
       return;
     }
 
-    const sessionData = response.data.data || {};
+    currentSessionId.value = sessionId;
+    messages.value = [];
+
+    const sessionData = responseData.data || {};
     const runs = sessionData.runs || [];
 
     runs.forEach((run: any) => {

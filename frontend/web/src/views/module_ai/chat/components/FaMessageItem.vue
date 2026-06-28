@@ -30,20 +30,23 @@
             <span class="file-size">{{ formatFileSize(file.size) }}</span>
           </div>
         </div>
-        <ElButton
-          v-if="message.content.length > 200"
-          text
-          size="small"
-          :icon="message.collapsed ? ArrowDown : ArrowUp"
-          class="fold-button"
-          @click="handleToggleFold"
-        >
-          {{ message.collapsed ? "展开" : "收起" }}
-        </ElButton>
-        <div class="message-text" :class="{ collapsed: message.collapsed }">
+        <div v-if="parsedContent.thinking" class="thinking-panel">
+          <ElButton
+            text
+            size="small"
+            :icon="message.thinkingCollapsed ? ArrowDown : ArrowUp"
+            class="thinking-toggle"
+            @click="handleToggleThinking"
+          >
+            {{ message.thinkingCollapsed ? "展开思考过程" : "收起思考过程" }}
+          </ElButton>
+          <div v-show="!message.thinkingCollapsed" class="thinking-content">
+            <FaMarkdownRenderer :content="parsedContent.thinking" />
+          </div>
+        </div>
+        <div v-if="parsedContent.answer" class="message-text">
           <FaMarkdownRenderer
-            :content="message.content"
-            :max-length="message.collapsed ? 200 : undefined"
+            :content="parsedContent.answer"
           />
         </div>
         <div
@@ -80,7 +83,7 @@ interface Props {
 }
 
 interface Emits {
-  (e: "toggle-fold"): void;
+  (e: "toggle-thinking"): void;
 }
 
 const props = defineProps<Props>();
@@ -90,8 +93,32 @@ const userStore = useUserStoreHook();
 
 const userName = computed(() => userStore.basicInfo.name || "用户");
 
-const handleToggleFold = () => {
-  emit("toggle-fold");
+const parsedContent = computed(() => {
+  if (props.message.type !== "assistant") {
+    return { thinking: "", answer: props.message.content };
+  }
+  return parseThinkingContent(props.message.content);
+});
+
+const parseThinkingContent = (content: string) => {
+  const thinkingParts: string[] = [];
+  const answer = content
+    .replace(/<think(?:ing)?>([\s\S]*?)(?:<\/think(?:ing)?>|$)/gi, (_, thinking: string) => {
+      if (thinking.trim()) {
+        thinkingParts.push(thinking.trim());
+      }
+      return "";
+    })
+    .trim();
+
+  return {
+    thinking: thinkingParts.join("\n\n"),
+    answer,
+  };
+};
+
+const handleToggleThinking = () => {
+  emit("toggle-thinking");
 };
 
 const handleCopy = async () => {
@@ -219,9 +246,18 @@ const formatFileSize = (bytes: number): string => {
         }
       }
 
-      .fold-button {
+      .thinking-panel {
+        width: 100%;
+        max-width: 720px;
+        margin-bottom: 10px;
+        border: 1px solid var(--el-border-color-lighter);
+        border-radius: 6px;
+        background: rgb(23 32 51 / 3%);
+      }
+
+      .thinking-toggle {
         padding: 0;
-        margin-bottom: 8px;
+        margin: 8px 10px;
         font-size: 12px;
         color: var(--el-text-color-secondary);
 
@@ -230,32 +266,18 @@ const formatFileSize = (bytes: number): string => {
         }
       }
 
+      .thinking-content {
+        padding: 0 12px 10px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: var(--el-text-color-secondary);
+        border-top: 1px dashed var(--el-border-color-lighter);
+      }
+
       .message-text {
         font-size: 15px;
         line-height: 1.6;
         color: var(--el-text-color-primary);
-        transition:
-          max-height 0.25s ease,
-          opacity 0.2s ease;
-
-        &.collapsed {
-          position: relative;
-          max-height: 120px;
-          overflow: hidden;
-
-          &::after {
-            position: absolute;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            height: 60px;
-            content: "";
-            background: linear-gradient(
-              transparent,
-              var(--chat-area-bg, var(--el-bg-color-overlay))
-            );
-          }
-        }
       }
 
       .typing-indicator {
@@ -314,10 +336,6 @@ const formatFileSize = (bytes: number): string => {
         background: var(--el-color-primary-light-9);
         border: 1px solid var(--el-border-color-light);
         border-radius: 12px;
-
-        &.collapsed::after {
-          background: linear-gradient(transparent, var(--el-color-primary-light-9));
-        }
       }
     }
   }

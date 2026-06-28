@@ -99,6 +99,9 @@ export interface KnowledgeBaseForm {
 
 export interface KnowledgeBase extends BaseType, KnowledgeBaseForm {
   document_count: number;
+  indexed_document_count: number;
+  indexing_document_count: number;
+  failed_document_count: number;
 }
 
 export interface KnowledgeDocumentListQuery extends PageQuery {

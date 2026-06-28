@@ -205,10 +205,10 @@ class ChatService:
             openai_base_url=settings.OPENAI_BASE_URL,
             openai_model=settings.OPENAI_MODEL,
             openai_embedding_model=settings.OPENAI_EMBEDDING_MODEL,
+            embedding_provider=settings.EMBEDDING_PROVIDER,
+            local_embedding_model=settings.LOCAL_EMBEDDING_MODEL,
             openai_api_key_configured=bool(api_key and api_key != "your_api_key"),
-            chroma_host=settings.CHROMA_HOST,
-            chroma_port=settings.CHROMA_PORT,
-            chroma_ssl=settings.CHROMA_SSL,
+            chroma_persist_dir=settings.CHROMA_PERSIST_DIR,
             chroma_collection_name=settings.CHROMA_COLLECTION_NAME,
         )
 

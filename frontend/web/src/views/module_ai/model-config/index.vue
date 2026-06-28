@@ -20,11 +20,16 @@
         <ElDescriptionsItem label="对话模型">
           {{ config?.openai_model || "-" }}
         </ElDescriptionsItem>
-        <ElDescriptionsItem label="向量模型">
-          {{ config?.openai_embedding_model || "-" }}
+        <ElDescriptionsItem label="向量来源">
+          <ElTag :type="config?.embedding_provider === 'local' ? 'success' : 'warning'">
+            {{ config?.embedding_provider || "-" }}
+          </ElTag>
         </ElDescriptionsItem>
-        <ElDescriptionsItem label="Chroma 地址">
-          {{ chromaEndpoint }}
+        <ElDescriptionsItem label="向量模型">
+          {{ embeddingModelLabel }}
+        </ElDescriptionsItem>
+        <ElDescriptionsItem label="Chroma 持久化目录">
+          {{ config?.chroma_persist_dir || "-" }}
         </ElDescriptionsItem>
         <ElDescriptionsItem label="Chroma 集合">
           {{ config?.chroma_collection_name || "-" }}
@@ -44,10 +49,11 @@ defineOptions({ name: "AiModelConfig" });
 const loading = ref(false);
 const config = ref<AiModelConfig>();
 
-const chromaEndpoint = computed(() => {
+const embeddingModelLabel = computed(() => {
   if (!config.value) return "-";
-  const protocol = config.value.chroma_ssl ? "https" : "http";
-  return `${protocol}://${config.value.chroma_host}:${config.value.chroma_port}`;
+  return config.value.embedding_provider === "local"
+    ? config.value.local_embedding_model || "-"
+    : config.value.openai_embedding_model || "-";
 });
 
 const loadConfig = async () => {

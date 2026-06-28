@@ -22,6 +22,9 @@ class KnowledgeBaseQueryParam(BaseQueryParam):
 
 class KnowledgeBaseOutSchema(KnowledgeBaseCreateSchema, BaseSchema, UserBySchema):
     document_count: int = 0
+    indexed_document_count: int = 0
+    indexing_document_count: int = 0
+    failed_document_count: int = 0
 
 
 class KnowledgeDocumentQueryParam(BaseQueryParam):

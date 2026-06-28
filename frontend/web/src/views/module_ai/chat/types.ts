@@ -5,7 +5,7 @@ export interface ChatMessage {
   content: string;
   timestamp: number;
   loading?: boolean;
-  collapsed?: boolean;
+  thinkingCollapsed?: boolean;
   files?: UploadedFile[];
 }
 

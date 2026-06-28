@@ -6,7 +6,7 @@
         v-for="message in messages"
         :key="message.id"
         :message="message"
-        @toggle-fold="handleToggleFold(message)"
+        @toggle-thinking="handleToggleThinking(message)"
       />
     </div>
     <div v-if="error" class="error-banner">
@@ -56,8 +56,8 @@ const handlePromptClick = (prompt: string) => {
   emit("prompt-click", prompt);
 };
 
-const handleToggleFold = (message: ChatMessage) => {
-  message.collapsed = !message.collapsed;
+const handleToggleThinking = (message: ChatMessage) => {
+  message.thinkingCollapsed = !message.thinkingCollapsed;
 };
 
 const handleErrorClose = () => {

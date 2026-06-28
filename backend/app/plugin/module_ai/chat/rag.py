@@ -9,7 +9,7 @@ from langchain_openai import ChatOpenAI
 
 from app.config.setting import settings
 from app.plugin.module_ai.knowledge.chroma_store import ChromaKnowledgeStore
-from app.plugin.module_ai.knowledge.embedding import OpenAICompatibleEmbeddingClient
+from app.plugin.module_ai.knowledge.embedding import EmbeddingClient, create_embedding_client
 
 
 @dataclass(slots=True)
@@ -149,7 +149,7 @@ class ChromaKnowledgeRetriever:
         self,
         *,
         store: ChromaKnowledgeStore | None = None,
-        embedding_client: OpenAICompatibleEmbeddingClient | None = None,
+        embedding_client: EmbeddingClient | None = None,
         top_k: int = 5,
     ) -> None:
         self.store = store
@@ -189,9 +189,9 @@ class ChromaKnowledgeRetriever:
             self.store = ChromaKnowledgeStore()
         return self.store
 
-    def _get_embedding_client(self) -> OpenAICompatibleEmbeddingClient:
+    def _get_embedding_client(self) -> EmbeddingClient:
         if self.embedding_client is None:
-            self.embedding_client = OpenAICompatibleEmbeddingClient()
+            self.embedding_client = create_embedding_client()
         return self.embedding_client
 
     @staticmethod

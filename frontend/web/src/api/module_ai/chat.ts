@@ -152,9 +152,9 @@ export interface AiModelConfig {
   openai_base_url: string;
   openai_model: string;
   openai_embedding_model: string;
+  embedding_provider: string;
+  local_embedding_model: string;
   openai_api_key_configured: boolean;
-  chroma_host: string;
-  chroma_port: number;
-  chroma_ssl: boolean;
+  chroma_persist_dir: string;
   chroma_collection_name: string;
 }

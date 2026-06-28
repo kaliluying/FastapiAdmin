@@ -13,7 +13,7 @@ from app.core.exceptions import CustomException
 
 from .chroma_store import ChromaKnowledgeStore
 from .crud import KnowledgeBaseCRUD, KnowledgeChunkCRUD, KnowledgeDocumentCRUD
-from .embedding import OpenAICompatibleEmbeddingClient
+from .embedding import EmbeddingClient, create_embedding_client
 from .extractors import extract_text
 from .schema import (
     KnowledgeBaseCreateSchema,
@@ -50,7 +50,7 @@ class KnowledgeService:
         auth: AuthSchema,
         *,
         store: ChromaKnowledgeStore | None = None,
-        embedding_client: OpenAICompatibleEmbeddingClient | None = None,
+        embedding_client: EmbeddingClient | None = None,
     ) -> None:
         self.auth = auth
         self.store = store
@@ -67,7 +67,8 @@ class KnowledgeService:
         query = vars(search) if search else {}
         if query.get("name"):
             query["name"] = ("like", query["name"])
-        result = await KnowledgeBaseCRUD(self.auth).page(
+        base_crud = KnowledgeBaseCRUD(self.auth)
+        result = await base_crud.page(
             offset=(page_no - 1) * page_size,
             limit=page_size,
             order_by=order_by or [{"id": "desc"}],
@@ -75,7 +76,11 @@ class KnowledgeService:
             out_schema=KnowledgeBaseOutSchema,
         )
         for item in result.items:
-            item["document_count"] = await KnowledgeBaseCRUD(self.auth).count_documents(item["id"])
+            item["document_count"] = await base_crud.count_documents(item["id"])
+            status_counts = await base_crud.count_documents_by_index_status(item["id"])
+            item["indexed_document_count"] = status_counts.get("success", 0)
+            item["indexing_document_count"] = status_counts.get("pending", 0) + status_counts.get("indexing", 0)
+            item["failed_document_count"] = status_counts.get("failed", 0)
         return result.model_dump()
 
     async def list_enabled_bases(self) -> list[KnowledgeBaseOutSchema]:
@@ -222,9 +227,9 @@ class KnowledgeService:
             self.store = ChromaKnowledgeStore()
         return self.store
 
-    def _get_embedding_client(self) -> OpenAICompatibleEmbeddingClient:
+    def _get_embedding_client(self) -> EmbeddingClient:
         if self.embedding_client is None:
-            self.embedding_client = OpenAICompatibleEmbeddingClient()
+            self.embedding_client = create_embedding_client()
         return self.embedding_client
 
     @staticmethod

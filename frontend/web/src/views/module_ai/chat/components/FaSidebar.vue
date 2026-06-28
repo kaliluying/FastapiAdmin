@@ -1,14 +1,14 @@
 <template>
-  <div class="sidebar" :class="{ collapsed: isCollapsed }">
+  <div class="sidebar" :class="{ collapsed: props.isCollapsed }">
     <div class="sidebar-header">
       <div class="logo-section">
         <ElIcon class="logo-icon" :size="28"><ChatDotRound /></ElIcon>
-        <span v-if="!isCollapsed" class="project-name">FA智能助手</span>
+        <span v-if="!props.isCollapsed" class="project-name">FA智能助手</span>
       </div>
     </div>
 
     <ElScrollbar class="sidebar-content" view-class="p-4">
-      <template v-if="!isCollapsed">
+      <template v-if="!props.isCollapsed">
         <div class="new-session-section">
           <ElButton type="primary" class="new-session-btn" @click="handleNewSession">
             <ElIcon class="btn-icon"><Plus /></ElIcon>
@@ -42,7 +42,7 @@
                   v-for="session in group.sessions"
                   :key="session.id"
                   class="session-item"
-                  :class="{ active: currentSessionId === session.id }"
+                  :class="{ active: props.currentSessionId === session.id }"
                   @click="handleSelectSession(session)"
                 >
                   <ElIcon class="session-icon"><ChatLineRound /></ElIcon>
@@ -73,7 +73,7 @@
     </ElScrollbar>
 
     <div class="sidebar-footer">
-      <div v-if="!isCollapsed" class="user-info">
+      <div v-if="!props.isCollapsed" class="user-info">
         <ElAvatar :size="32" :src="userInfo.avatar">
           <ElIcon><User /></ElIcon>
         </ElAvatar>
@@ -116,7 +116,9 @@ interface Emits {
   (e: "new-session"): void;
 }
 
-const { currentSessionId, isCollapsed = false } = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  isCollapsed: false,
+});
 const emit = defineEmits<Emits>();
 
 const userStore = useUserStoreHook();

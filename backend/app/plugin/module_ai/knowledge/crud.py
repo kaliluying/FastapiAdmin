@@ -23,6 +23,17 @@ class KnowledgeBaseCRUD(CRUDBase[KnowledgeBaseModel, KnowledgeBaseCreateSchema, 
         )
         return result.scalar_one() or 0
 
+    async def count_documents_by_index_status(self, knowledge_base_id: int) -> dict[str, int]:
+        result = await self.db.execute(
+            select(KnowledgeDocumentModel.index_status, func.count(KnowledgeDocumentModel.id))
+            .where(
+                KnowledgeDocumentModel.knowledge_base_id == knowledge_base_id,
+                KnowledgeDocumentModel.is_deleted == False,  # noqa: E712
+            )
+            .group_by(KnowledgeDocumentModel.index_status)
+        )
+        return dict(result.all())
+
 
 class KnowledgeDocumentCRUD(CRUDBase[KnowledgeDocumentModel, dict, dict]):
     def __init__(self, auth: AuthSchema) -> None:

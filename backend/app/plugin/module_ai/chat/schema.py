@@ -93,8 +93,8 @@ class AiModelConfigOutSchema(BaseModel):
     openai_base_url: str
     openai_model: str
     openai_embedding_model: str
+    embedding_provider: str
+    local_embedding_model: str
     openai_api_key_configured: bool
-    chroma_host: str
-    chroma_port: int
-    chroma_ssl: bool
+    chroma_persist_dir: str
     chroma_collection_name: str
