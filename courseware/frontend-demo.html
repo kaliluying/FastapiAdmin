@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI 劳动仲裁辅助系统前端演示</title>
+    <link rel="stylesheet" href="./frontend-demo.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-icon" aria-hidden="true">⚖</div>
+          <div>
+            <strong>AI 劳动仲裁辅助系统</strong>
+            <span>演示级前端 · 核心业务闭环</span>
+          </div>
+        </div>
+
+        <nav class="feature-tabs" aria-label="功能导航">
+          <button class="tab-button active" data-tab="consult" type="button">
+            <span aria-hidden="true">●</span>智能咨询
+          </button>
+          <button class="tab-button" data-tab="upload" type="button">
+            <span aria-hidden="true">◇</span>证据上传
+          </button>
+          <button class="tab-button" data-tab="analysis" type="button">
+            <span aria-hidden="true">□</span>证据分析
+          </button>
+          <button class="tab-button" data-tab="document" type="button">
+            <span aria-hidden="true">▣</span>生成仲裁申请书
+          </button>
+        </nav>
+
+        <div class="top-actions">
+          <button class="icon-button" type="button" aria-label="通知">○</button>
+          <div class="teacher">
+            <span>张老师</span>
+            <i aria-hidden="true"></i>
+          </div>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <aside class="case-panel">
+          <div class="panel-head">
+            <h2>案件列表</h2>
+            <button class="outline-button" type="button">+ 新建案件</button>
+          </div>
+
+          <label class="search-field">
+            <span aria-hidden="true">⌕</span>
+            <input type="search" placeholder="搜索案件名称或当事人" />
+          </label>
+
+          <div class="case-filter" aria-label="案件筛选">
+            <button class="active" type="button">全部</button>
+            <button type="button">进行中</button>
+            <button type="button">已完成</button>
+          </div>
+
+          <div class="case-list" id="caseList"></div>
+
+          <section class="history-panel">
+            <div class="section-title">
+              <h3>历史记录</h3>
+              <button type="button">清空</button>
+            </div>
+            <div class="history-list" id="historyList"></div>
+          </section>
+        </aside>
+
+        <section class="main-stage" id="mainStage" aria-live="polite"></section>
+
+        <aside class="side-stage" id="sideStage"></aside>
+      </main>
+
+      <footer class="status-bar">
+        <strong>系统状态</strong>
+        <span class="dot"></span>
+        <span>运行正常</span>
+        <div class="tech-stack">
+          <span>FastAPI <i>运行中</i></span>
+          <span>RAG 检索 <i>运行中</i></span>
+          <span>WebSocket <i>连接中</i></span>
+          <span>PDF 导出 <i>就绪</i></span>
+        </div>
+      </footer>
+    </div>
+
+    <script src="./frontend-demo.js"></script>
+  </body>
+</html>

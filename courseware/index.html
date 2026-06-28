@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI 劳动仲裁辅助系统四天实训课件</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="courseware-app" id="courseware-app">
+      <header class="command-bar">
+        <div class="brand">
+          <span class="brand-mark">AI</span>
+          <div>
+            <strong>AI 劳动仲裁辅助系统</strong>
+            <span>四天实训课件 · 从零实现到答辩</span>
+          </div>
+        </div>
+
+        <nav class="topnav" aria-label="课程导航">
+          <button class="route-button active" data-route="overview">总览</button>
+          <button class="route-button" data-route="build-lab">从零实现</button>
+          <button class="route-button" data-route="program">四天课程</button>
+          <button class="route-button" data-route="tech-map">技术地图</button>
+          <button class="route-button" data-route="defense">答辩准备</button>
+        </nav>
+
+        <div class="toolbar" aria-label="授课工具">
+          <button class="tool-chip" type="button" title="查看课堂提问">课堂提问</button>
+          <button class="tool-chip" type="button" title="查看资料库">资料库</button>
+          <button class="tool-chip icon-only" type="button" title="通知" aria-label="通知">!</button>
+          <button class="icon-button" id="themeToggle" title="切换明暗主题" aria-label="切换明暗主题">◐</button>
+          <button class="mode-button" id="presentationToggle">演示</button>
+        </div>
+      </header>
+
+      <button class="presentation-exit" id="presentationExit" type="button">退出演示</button>
+
+      <main class="course-workbench" id="content" tabindex="-1"></main>
+    </div>
+
+    <script type="module" src="./main.js?v=20260627-fullstack2"></script>
+  </body>
+</html>
