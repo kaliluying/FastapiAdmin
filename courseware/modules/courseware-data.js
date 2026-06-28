@@ -44,7 +44,7 @@
     id: "day1",
     title: "Day 1：环境搭建与 AI 基础",
     subtitle: "把项目跑起来，并建立 AI 应用开发的第一套心智模型。",
-    tags: ["环境搭建", "uv", "FastAPI", "LangChain", "向量知识库"],
+    tags: ["环境搭建", "uv", "FastAPI", "LangChain", "AI 知识库"],
     slides: [
       {
         title: "开场：为什么做劳动仲裁辅助系统",
@@ -84,7 +84,7 @@
       {
         title: "技术栈地图",
         time: "9:30-9:40",
-        points: ["后端用 FastAPI、SQLModel、Alembic 组织 Web 服务和数据。", "AI 能力由 LangChain、Embedding、ChromaDB、Prompt 共同完成。", "安全和工程化由 JWT、日志、异常、限流、配置管理支撑。"],
+        points: ["后端用 FastAPI、SQLModel、Alembic 组织 Web 服务和数据。", "AI 能力由 RagChatChain、Embedding、ChromaKnowledgeStore 和 Prompt 共同完成。", "安全和工程化由 JWT、日志、异常、限流、配置管理支撑。"],
         teacherNotes: ["用分层方式讲，不要一次列很多库名。"],
         demoSteps: ["打开项目目录", "指出 backend/app/api、backend/app/plugin、backend/app/core、backend/app/config、alembic"],
         practice: "让学生说出 core 和 plugin 的区别。",
@@ -140,10 +140,10 @@
       {
         title: "创建知识库并上传文档",
         time: "15:40-17:20",
-        points: ["知识库链路包括创建知识库、上传文档、解析切片、向量化和索引入库。", "切片大小和重叠会影响检索效果。", "ChromaDB 保存向量索引，聊天时通过 knowledge_base_ids 选择知识库。"],
-        teacherNotes: ["先讲为什么切片，再讲知识库页面和接口如何触发索引。"],
-        demoSteps: ["调用 POST /ai/knowledge/create 创建劳动法知识库", "调用 POST /ai/knowledge/document/upload 上传 txt/md/pdf/docx", "调用 POST /ai/knowledge/retrieval/test 测试检索"],
-        practice: "新增一小段法律材料，上传到知识库并测试召回效果。",
+        points: ["知识库链路包括创建知识库、上传文档、解析切片、Embedding、Chroma 写入和 chunk 记录更新。", "切片大小、文档状态和 knowledge_base_ids 会影响聊天召回效果。", "当前实现由 KnowledgeService.upload_document 触发 KnowledgeService.index_document，再通过 KnowledgeService.query_retrieval 验证召回。"],
+        teacherNotes: ["先讲为什么切片，再讲知识库页面和 /ai/knowledge 接口如何触发当前仓库的索引流程。"],
+        demoSteps: ["调用 POST /ai/knowledge/create 创建劳动法知识库", "调用 POST /ai/knowledge/document/upload 上传 txt/md/pdf/docx", "必要时调用 POST /ai/knowledge/document/{id}/reindex 重建索引", "调用 POST /ai/knowledge/retrieval/test 测试检索"],
+        practice: "新增一小段法律材料，上传到知识库，检查文档状态并用 retrieval/test 测试召回效果。",
       },
       {
         title: "Day1 总结与课堂验收",
@@ -175,7 +175,7 @@
         teacherNotes: ["不要逐个排查所有学生电脑，先讲共性问题，再给学生自查清单。"],
         talkTrack: ["Day2 的开场要把昨天的问题收束掉，否则后面 RAG 深入会跟不上。", "今天的目标很明确：让系统不只是能回答，而是更准确、更稳定、更像一个产品功能。"],
         quickQuestions: ["检索结果不准时，应该先怀疑模型还是知识库？", "为什么向量化慢不一定是代码错了？"],
-        demoSteps: ["检查 uv sync", "检查知识库构建输出", "演示一个检索不准的案例"],
+        demoSteps: ["检查 uv sync", "检查 KnowledgeDocument 的 parse_status/index_status", "演示一个检索不准的案例"],
         keyTakeaway: "RAG 质量问题通常先从数据、切片、召回数量和阈值排查，不要一上来怪模型。",
         classroomFlow: ["统计 Day1 完成情况。", "讲三个共性问题。", "展示 Day2 要实现的 AI 功能。"],
         visual: { title: "Day2 开场复盘", type: "flow", steps: ["环境结果", "检索问题", "Prompt 约束", "实时对话"] },
@@ -200,9 +200,9 @@
       {
         title: "检索边界与结果排序",
         time: "10:10-10:50",
-        points: ["教学版先把检索做成清楚的边界：输入问题，输出候选资料。", "文件上下文和内置知识会合并成候选片段，再按命中程度排序。", "后续要升级向量库或 BM25 时，只替换检索部分，不破坏问答主流程。"],
-        teacherNotes: ["这是 Day2 核心：先讲清检索边界，再讲未来可以替换成向量检索或 BM25。"],
-        demoSteps: ["打开 RAG 代码入口", "讲检索函数的输入和输出", "说明未来如何替换为向量检索"],
+        points: ["教学版先把检索做成清楚的边界：输入问题，输出候选资料。", "文件上下文和 Chroma 知识库召回会合并成候选片段，再进入 Prompt。", "后续要升级 BM25、混合检索或重排序时，只替换 Retriever，不破坏问答主流程。"],
+        teacherNotes: ["这是 Day2 核心：先讲清检索边界，再讲当前 ChromaKnowledgeRetriever 与未来可替换的 Retriever。"],
+        demoSteps: ["打开 RAG 代码入口", "讲 Retriever 的输入和输出", "说明未来如何替换为 BM25 或混合检索"],
         practice: "让学生为“经济补偿”和“工资拖欠”设计关键词命中规则。",
       },
       {
@@ -549,7 +549,7 @@ const slideEnhancements = {
     visual: { title: "依赖同步", type: "flow", steps: ["读取配置", "解析依赖", "安装锁定", "运行验证"] },
   },
   "创建知识库并上传文档": {
-    talkTrack: ["先在知识库页面创建库，再上传文档触发解析、切片和向量化；学生更容易把页面操作和后端链路对上。", "提醒学生：法条被切断，后面检索和回答都会受影响。"],
+    talkTrack: ["先在知识库页面创建库，再上传文档触发 KnowledgeService.upload_document、文本抽取、切片、Embedding 和 Chroma 写入；学生更容易把页面操作和后端链路对上。", "提醒学生：法条被切断，后面检索和回答都会受影响。"],
     quickQuestions: ["为什么不能把整本文档一次性塞给模型？", "chunk_size 改小或改大会带来什么影响？"],
     rescueTips: ["上传失败先检查文件类型是否是 txt、md、pdf、docx；Embedding 超时再检查网络、代理和 Key。"],
     keyTakeaway: "知识库质量决定回答质量，创建、上传、索引和检索验证必须逐步确认。",
@@ -819,7 +819,7 @@ const polishedSlideCopy = {
       "检索错了，后面的 Prompt 再漂亮，AI 回答也会偏。",
     ],
     talkTrack: [
-      "这页要让学生意识到：RAG 的核心不是把文档丢进向量库就结束。",
+      "这页要让学生意识到：RAG 的核心不是上传文档后等待索引成功就结束。",
       "法律场景对“依据”非常敏感，语义相似和精确命中都需要。",
     ],
     classroomFlow: ["先问一个口语问题。", "再问一个法条编号问题。", "对比召回结果，引出 BM25 和混合检索。"],
@@ -1381,16 +1381,16 @@ export const techMapSection = {
       points: [
         "前端层由路由、菜单、页面组件、状态和 API 封装组成，负责把用户操作转成稳定的 HTTP/WS 请求。",
         "后端层由 Controller、WebSocket、Service、CRUD 和权限依赖组成，负责接入、校验、业务编排和数据保存。",
-        "AI 与数据层由 RAG、Embedding、ChatModel、MySQL、ChromaDB 和文件存储组成，负责依据召回、模型生成和结果追踪。",
+        "AI 与数据层由 RagChatChain、Embedding、ChatModel、MySQL、ChromaKnowledgeStore 和文件存储组成，负责依据召回、模型生成和结果追踪。",
       ],
       teacherNotes: ["这页必须讲成全栈系统架构图：先让学生看到浏览器端、接口层、后端服务、AI 能力、数据层如何连成一条链。"],
       talkTrack: [
-        "这张图不是后端架构图，而是全栈项目架构图：用户在浏览器操作，前端页面维护状态并调用 API，后端服务编排 RAG，最后由数据库和向量库保存证据。",
+        "这张图不是后端架构图，而是全栈项目架构图：用户在浏览器操作，前端页面维护状态并调用 API，后端服务编排 RAG，最后由 MySQL、文件存储和 ChromaKnowledgeStore 分别保存业务记录、原始资料和可召回片段。",
         "答辩时要强调：AI 能力只是系统中的一层，真正的项目能力来自前端交互、接口契约、服务编排、知识召回和数据追踪一起闭环。",
       ],
       quickQuestions: ["用户点击发送后，前端做了什么，后端做了什么？", "哪一层负责界面状态，哪一层负责 AI 编排，哪一层负责证据保存？"],
       rescueTips: ["学生只说后端用了 FastAPI 和大模型时，要求他从浏览器页面开始重新讲一遍完整链路。"],
-      demoSteps: ["先投屏本页全栈架构图", "指出前端路由、页面、API 封装", "指出 HTTP/WS 接入和 Service 编排", "指出 RAG、Embedding、Chroma、MySQL 的位置"],
+      demoSteps: ["先投屏本页全栈架构图", "指出前端路由、页面、API 封装", "指出 HTTP/WS 接入和 Service 编排", "指出 RagChatChain、Embedding、ChromaKnowledgeStore、MySQL 的位置"],
       keyTakeaway: "整体技术地图要展示前端、接口、后端、AI 和数据如何协作，而不是只展示后端文件。",
       classroomFlow: ["先讲浏览器端。", "再讲接口契约和后端服务。", "最后讲 AI 能力层和数据层如何协作。"],
       visual: {
@@ -1402,15 +1402,15 @@ export const techMapSection = {
           { title: "前端交互层", note: "状态、事件、组件", items: ["chat/index.vue", "FaChatInput", "FaChatMessages", "knowledge/retrieval"] },
           { title: "接口契约层", note: "HTTP / WebSocket", items: ["chat.ts", "knowledge.ts", "request 封装", "WS 连接"] },
           { title: "后端服务层", note: "接入、权限、编排", items: ["controller.py", "ws.py", "ChatService", "KnowledgeService"] },
-          { title: "AI 与数据层", note: "生成、召回、追踪", items: ["RagChatChain", "Embedding", "MySQL", "ChromaDB"] },
+          { title: "AI 与数据层", note: "生成、召回、追踪", items: ["RagChatChain", "Embedding", "MySQL", "ChromaKnowledgeStore"] },
         ],
       },
       deepDive: [
         { label: "前端层", text: "路由决定入口，页面组件维护状态，api/module_ai 把用户事件变成 HTTP 或 WebSocket 调用。" },
         { label: "后端层", text: "controller/ws 负责接入，Service 负责编排，CRUD 与 RAG 分别处理数据保存和 AI 生成。" },
-        { label: "证据层", text: "MySQL 保存会话和知识库元数据，ChromaDB 保存向量索引，文件存储保留原始资料。" },
+        { label: "证据层", text: "MySQL 保存会话和知识库元数据，ChromaKnowledgeStore 负责 Chroma 集合中的召回片段，文件存储保留原始资料。" },
       ],
-      acceptance: ["能按五层解释全栈架构。", "能指出前端状态如何进入后端接口。", "能说明 MySQL 与 ChromaDB 的分工。"],
+      acceptance: ["能按五层解释全栈架构。", "能指出前端状态如何进入后端接口。", "能说明 MySQL、文件存储与 ChromaKnowledgeStore 的分工。"],
       practice: "让学生把本页架构图改写成答辩中的 60 秒全栈系统架构说明。",
     },
     {
@@ -1456,7 +1456,7 @@ export const techMapSection = {
       time: "专题 2",
       points: [
         "聊天事件通过 chat.ts 或 WebSocket 进入 /ai/chat，核心字段是 message、session_id、knowledge_base_ids。",
-        "知识库事件通过 knowledge.ts 进入 /ai/knowledge，覆盖列表、新建、上传文档、重建索引和检索测试。",
+        "知识库事件通过 knowledge.ts 进入 /ai/knowledge，覆盖列表、新建、上传文档、/document/{id}/reindex 和检索测试。",
         "接口契约要同时看前端 TypeScript 类型、请求封装、后端 schema 和 controller，不能只看后端函数。",
       ],
       teacherNotes: ["这一页用契约图讲全栈协作：前端事件、API 文件、HTTP/WS 入口、schema、service 必须一一对应。"],
@@ -1476,7 +1476,7 @@ export const techMapSection = {
         columns: [
           { title: "页面事件", items: ["发送消息", "切换会话", "选择知识库", "上传文档", "检索测试"] },
           { title: "前端契约", items: ["AiChatAPI.chat", "getSessionList", "KnowledgeAPI.uploadDocument", "KnowledgeAPI.testRetrieval", "request/WS"] },
-          { title: "后端入口", items: ["/ai/chat/ai-chat", "chat/ws.py", "/ai/knowledge/document/upload", "/retrieval/test", "schema.py"] },
+          { title: "后端入口", items: ["/ai/chat/ai-chat", "chat/ws.py", "/ai/knowledge/document/upload", "/ai/knowledge/document/{id}/reindex", "/ai/knowledge/retrieval/test"] },
           { title: "服务响应", items: ["回答内容", "session_id", "文档状态", "召回片段", "错误提示"] },
         ],
       },
@@ -1519,7 +1519,7 @@ export const techMapSection = {
       deepDive: [
         { label: "接入职责", text: "controller.py 和 ws.py 只负责协议入口、鉴权依赖和请求转交。" },
         { label: "业务职责", text: "service.py 负责校验、编排、调用 RAG 或知识库索引流程。" },
-        { label: "存储职责", text: "crud.py、model.py 和 ChromaKnowledgeStore 分别承接关系数据和向量数据。" },
+        { label: "存储职责", text: "crud.py、model.py 和 ChromaKnowledgeStore 分别承接关系数据、文档状态和 Chroma 召回数据。" },
       ],
       acceptance: ["能画出 Controller -> Service -> CRUD/RAG 的依赖方向。", "能说清 chat 与 knowledge 两个子域边界。"],
       practice: "让学生选一个新功能，说明它应该新增 controller、service、crud 还是只改 RAG。",
@@ -1612,9 +1612,9 @@ export const techMapSection = {
       title: "知识流水线：上传、索引、召回",
       time: "专题 6",
       points: [
-        "控制面：knowledge/controller.py 提供知识库创建、文档上传、重建索引、删除和检索测试接口。",
-        "处理面：KnowledgeService 串起文件保存、文本抽取、切片、Embedding、Chroma 写入和 chunk 记录更新。",
-        "查询面：ChromaKnowledgeRetriever 根据 knowledge_base_ids 限定召回范围，把命中的片段交给 Prompt。",
+        "控制面：knowledge/controller.py 提供 /ai/knowledge/create、/document/upload、/document/{id}/reindex、/retrieval/test 等接口。",
+        "处理面：KnowledgeService.upload_document 保存文件并建文档记录，KnowledgeService.index_document 完成抽取、切片、Embedding、Chroma 写入和 chunk 记录更新。",
+        "查询面：KnowledgeService.query_retrieval 与 ChromaKnowledgeRetriever 根据 knowledge_base_ids 限定召回范围，把命中的片段交给 Prompt。",
       ],
       teacherNotes: ["用数据生命周期讲知识库：文件如何变成可召回片段，而不是只讲上传按钮。"],
       talkTrack: [
@@ -1624,8 +1624,8 @@ export const techMapSection = {
       quickQuestions: ["上传成功、解析成功、索引成功分别代表什么？", "为什么检索测试页是 RAG 质量的验收入口？"],
       rescueTips: ["召回失败按三步查：文档状态、Chroma 写入、query/knowledge_base_ids 是否正确。"],
       demoSteps: [
-        "打开 knowledge/controller.py 查看 /create、/document/upload、/retrieval/test",
-        "打开 knowledge/service.py 查看 upload_document 和 index_document",
+        "打开 knowledge/controller.py 查看 /create、/document/upload、/document/{id}/reindex、/retrieval/test",
+        "打开 knowledge/service.py 查看 KnowledgeService.upload_document、KnowledgeService.index_document、KnowledgeService.query_retrieval",
         "打开 knowledge/text_splitter.py 与 embedding.py",
         "打开 knowledge/chroma_store.py 查看 query",
         "回到 chat/rag.py 查看 knowledge_base_ids 如何进入检索",
@@ -1640,13 +1640,13 @@ export const techMapSection = {
           { title: "原始文件", detail: "上传并保存文档元数据" },
           { title: "文本抽取", detail: "PDF、文本、表格进入统一文本处理" },
           { title: "切片与 Embedding", detail: "形成可索引的 chunk 与向量" },
-          { title: "Chroma 写入", detail: "向量库保存可召回文本和 metadata" },
+          { title: "Chroma 写入", detail: "ChromaKnowledgeStore 保存可召回文本、向量和 metadata" },
           { title: "检索召回", detail: "retrieval/test 与聊天链路复用召回结果" },
         ],
       },
       deepDive: [
         { label: "状态管理", text: "KnowledgeDocument 记录 parse_status、index_status、error_message，便于定位解析或索引失败。" },
-        { label: "双存储", text: "关系数据库保存知识库、文档、分块元数据；Chroma 保存向量和可召回文本。" },
+        { label: "双存储", text: "关系数据库保存知识库、文档、分块元数据；ChromaKnowledgeStore 对接 Chroma 保存向量和可召回文本。" },
         { label: "验收证据", text: "retrieval/test 返回 content、metadata、distance，是证明知识库可用的直接证据。" },
       ],
       acceptance: ["能解释 parse_status 与 index_status。", "能说出关系库和 Chroma 分别存什么。", "能用 retrieval/test 验证一条材料被召回。"],
@@ -1658,7 +1658,7 @@ export const techMapSection = {
       points: [
         "前端主线：router 负责入口，views/module_ai 负责页面，components 负责交互拆分，api/module_ai 负责接口封装。",
         "后端主线：main/init_app 负责应用启动，controller/ws 负责接入，service 负责编排，crud/model 负责关系数据。",
-        "AI 与数据主线：rag.py、embedding.py、chroma_store.py、KnowledgeService 共同完成检索、Prompt、模型调用和向量索引。",
+        "AI 与数据主线：rag.py、embedding.py、chroma_store.py、KnowledgeService 共同完成检索、Prompt、模型调用和知识库索引。",
       ],
       teacherNotes: ["这页回答“整体项目代码在哪里”：前端、后端、AI、数据四类目录一起讲，避免学生只记住后端 module_ai。"],
       talkTrack: [
@@ -1687,7 +1687,7 @@ export const techMapSection = {
           { label: "接口契约", title: "请求封装与类型定义", items: ["api/module_ai/chat.ts", "api/module_ai/knowledge.ts", "utils/http/index.ts", "ChatSession / KnowledgeDocument"] },
           { label: "后端接入", title: "HTTP / WebSocket / 权限", items: ["chat/controller.py", "chat/ws.py", "knowledge/controller.py", "core/dependencies.py"] },
           { label: "后端服务", title: "业务编排与持久化", items: ["chat/service.py", "chat/crud.py", "knowledge/service.py", "knowledge/model.py"] },
-          { label: "AI 与数据", title: "RAG、Embedding、向量库", items: ["chat/rag.py", "knowledge/embedding.py", "knowledge/chroma_store.py", "MySQL + ChromaDB"] },
+          { label: "AI 与数据", title: "RAG、Embedding、知识索引", items: ["chat/rag.py", "knowledge/embedding.py", "knowledge/chroma_store.py", "KnowledgeService"] },
         ],
       },
       deepDive: [

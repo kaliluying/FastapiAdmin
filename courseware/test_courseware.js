@@ -80,8 +80,25 @@ for (const outdated of [
   "[\"apps/api/v1/controller.py\"",
   "[\"apps/api/service.py\"",
   "[\"utils/vector_kb.py\"",
+  "build-vector-kb",
+  "向量知识库",
+  "知识库构建输出",
+  "后续要升级向量库",
+  "把文档丢进向量库",
+  "向量库保存可召回文本",
 ]) {
   assert(!dataSource.includes(outdated), `top-level code refs should not point at old backend paths: ${outdated}`);
+}
+
+for (const required of [
+  "KnowledgeService.upload_document",
+  "KnowledgeService.index_document",
+  "KnowledgeService.query_retrieval",
+  "ChromaKnowledgeStore",
+  "/ai/knowledge/document/{id}/reindex",
+  "uv run main.py run --env=dev",
+]) {
+  assert(dataSource.includes(required), `courseware should point at the real AI knowledge implementation: ${required}`);
 }
 
 for (const required of ["courseware-app", "presentationToggle", "presentationExit", "type=\"module\"", "main.js", "data-route=\"build-lab\""]) {
