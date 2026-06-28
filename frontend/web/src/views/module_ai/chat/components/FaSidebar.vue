@@ -81,30 +81,11 @@
           <div class="user-name">{{ userInfo.name }}</div>
           <div class="user-status">在线</div>
         </div>
-        <ElDropdown trigger="click" @command="handleUserCommand">
-          <ElIcon class="user-menu-icon"><Setting /></ElIcon>
-          <template #dropdown>
-            <ElDropdownMenu>
-              <ElDropdownItem command="profile">个人中心</ElDropdownItem>
-              <ElDropdownItem command="settings">设置</ElDropdownItem>
-              <ElDropdownItem command="logout" divided>退出登录</ElDropdownItem>
-            </ElDropdownMenu>
-          </template>
-        </ElDropdown>
       </div>
       <div v-else class="collapsed-user">
-        <ElDropdown trigger="click" @command="handleUserCommand">
-          <ElAvatar :size="32" :src="userInfo.avatar">
-            <ElIcon><User /></ElIcon>
-          </ElAvatar>
-          <template #dropdown>
-            <ElDropdownMenu>
-              <ElDropdownItem command="profile">个人中心</ElDropdownItem>
-              <ElDropdownItem command="settings">设置</ElDropdownItem>
-              <ElDropdownItem command="logout" divided>退出登录</ElDropdownItem>
-            </ElDropdownMenu>
-          </template>
-        </ElDropdown>
+        <ElAvatar :size="32" :src="userInfo.avatar">
+          <ElIcon><User /></ElIcon>
+        </ElAvatar>
       </div>
     </div>
   </div>
@@ -112,12 +93,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox, ElScrollbar } from "element-plus";
 import {
   ChatLineRound,
   User,
-  Setting,
   MoreFilled,
   Plus,
   Search,
@@ -140,7 +119,6 @@ interface Emits {
 const { currentSessionId, isCollapsed = false } = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const router = useRouter();
 const userStore = useUserStoreHook();
 
 const sessions = ref<ChatSession[]>([]);
@@ -271,16 +249,6 @@ const handleSessionCommand = async (command: string, session: ChatSession) => {
         ElMessage.info("已取消删除");
       }
     }
-  }
-};
-
-const handleUserCommand = (command: string) => {
-  if (command === "profile") {
-    router.push("/profile");
-  } else if (command === "settings") {
-    ElMessage.info("设置功能开发中");
-  } else if (command === "logout") {
-    userStore.logout();
   }
 };
 
@@ -573,15 +541,6 @@ defineExpose({
         }
       }
 
-      .user-menu-icon {
-        font-size: 18px;
-        color: var(--el-text-color-secondary);
-        cursor: pointer;
-
-        &:hover {
-          color: var(--el-color-primary);
-        }
-      }
     }
 
     .collapsed-user {
