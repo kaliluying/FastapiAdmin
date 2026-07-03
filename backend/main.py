@@ -8,12 +8,10 @@ from fastapi import FastAPI
 
 from alembic import command
 from app.common.enums import EnvironmentEnum
-from app.config.setting import settings
 from app.core.logger import logger
 from app.utils.banner import worship
 
 fastapiadmin_cli = typer.Typer()
-alembic_cfg = Config("alembic.ini")
 
 
 def create_app() -> FastAPI:
@@ -23,6 +21,7 @@ def create_app() -> FastAPI:
     返回:
     - FastAPI: 已配置生命周期的应用对象。
     """
+    from app.config.setting import settings
     from app.init_app import lifespan, register_exceptions, register_files, register_middlewares, register_routers, reset_api_docs
     # 创建FastAPI应用
     app = FastAPI(**settings.FASTAPI_CONFIG, lifespan=lifespan)
@@ -58,9 +57,9 @@ def run(
     返回:
     - None
     """
-
     # 设置环境变量（必须在 import settings 之前，确保加载正确环境）
     os.environ["ENVIRONMENT"] = env.value
+    from app.config.setting import settings
 
     typer.secho(
         message="FastapiAdmin 服务启动",
@@ -74,6 +73,8 @@ def run(
         host=settings.SERVER_HOST,
         port=settings.SERVER_PORT,
         reload=env.value == EnvironmentEnum.DEV.value,
+        reload_dirs=["app"] if env.value == EnvironmentEnum.DEV.value else None,
+        reload_includes=["main.py"] if env.value == EnvironmentEnum.DEV.value else None,
         factory=True,
         log_config=None,
     )
@@ -101,6 +102,7 @@ def revision(
     from app.config.setting import get_settings
 
     get_settings.cache_clear()
+    alembic_cfg = Config("alembic.ini")
     command.revision(alembic_cfg, autogenerate=True, message="迁移脚本")
     typer.echo("迁移脚本已生成")
 
@@ -127,6 +129,7 @@ def upgrade(
     from app.config.setting import get_settings
 
     get_settings.cache_clear()
+    alembic_cfg = Config("alembic.ini")
     command.upgrade(alembic_cfg, "head")
     typer.echo("所有迁移已应用。")
 

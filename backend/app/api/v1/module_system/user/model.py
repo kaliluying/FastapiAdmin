@@ -1,7 +1,7 @@
-﻿from datetime import datetime
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.base_model import MappedBase, ModelMixin, TenantMixin, UserMixin
@@ -59,6 +59,14 @@ class UserModel(ModelMixin, TenantMixin, UserMixin):
     qq_login: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="QQ登录")
     status: Mapped[int] = mapped_column(Integer, default=0, nullable=False, comment="状态(0:启动 1:停用)", index=True)
     description: Mapped[str | None] = mapped_column(Text, default=None, nullable=True, comment="备注")
+
+    # 劳动仲裁相关字段
+    monthly_salary: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True, comment="月工资(元)")
+    hire_date: Mapped[datetime | None] = mapped_column(Date, nullable=True, comment="入职日期")
+    company_name: Mapped[str | None] = mapped_column(String(128), nullable=True, comment="公司名称")
+    position_name: Mapped[str | None] = mapped_column(String(64), nullable=True, comment="岗位名称")
+    contract_type: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="合同类型(劳动合同/劳务合同/无合同)")
+    social_insurance: Mapped[bool | None] = mapped_column(Boolean, nullable=True, comment="是否缴纳社保")
 
     dept_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("sys_dept.id", ondelete="SET NULL", onupdate="CASCADE"), nullable=True, index=True, comment="部门ID")
     dept: Mapped["DeptModel | None"] = relationship(back_populates="users", foreign_keys=[dept_id], lazy="selectin")

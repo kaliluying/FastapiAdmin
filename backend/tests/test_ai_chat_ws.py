@@ -4,6 +4,80 @@ from types import SimpleNamespace
 from typing import Any
 
 
+async def test_websocket_chat_rejects_missing_token(monkeypatch) -> None:
+    from app.plugin.module_ai.chat import ws
+
+    class FakeWebSocket:
+        query_params = {}
+        app = SimpleNamespace(state=SimpleNamespace(redis=object()))
+        client = "test-client"
+        state = SimpleNamespace()
+
+        def __init__(self) -> None:
+            self.accepted = False
+            self.closed_code: int | None = None
+
+        async def accept(self) -> None:
+            self.accepted = True
+
+        async def close(self, code: int = 1000, reason: str | None = None) -> None:
+            self.closed_code = code
+
+    websocket = FakeWebSocket()
+    await ws.websocket_chat_controller(websocket)
+
+    assert websocket.accepted is False
+    assert websocket.closed_code == 1008
+
+
+async def test_websocket_chat_rejects_invalid_token(monkeypatch) -> None:
+    from app.core.exceptions import CustomException
+    from app.plugin.module_ai.chat import ws
+
+    class FakeTransaction:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    class FakeDb:
+        def begin(self) -> FakeTransaction:
+            return FakeTransaction()
+
+    @asynccontextmanager
+    async def fake_db_session():
+        yield FakeDb()
+
+    async def fake_verify_token(token: str, db: object, redis: object) -> Any:
+        raise CustomException(msg="认证已失效", code=10401, status_code=401)
+
+    class FakeWebSocket:
+        query_params = {"token": "bad-token"}
+        app = SimpleNamespace(state=SimpleNamespace(redis=object()))
+        client = "test-client"
+        state = SimpleNamespace()
+
+        def __init__(self) -> None:
+            self.accepted = False
+            self.closed_code: int | None = None
+
+        async def accept(self) -> None:
+            self.accepted = True
+
+        async def close(self, code: int = 1000, reason: str | None = None) -> None:
+            self.closed_code = code
+
+    monkeypatch.setattr(ws, "async_db_session", fake_db_session)
+    monkeypatch.setattr(ws, "_verify_token", fake_verify_token)
+
+    websocket = FakeWebSocket()
+    await ws.websocket_chat_controller(websocket)
+
+    assert websocket.accepted is False
+    assert websocket.closed_code == 1008
+
+
 async def test_websocket_chat_uses_authenticated_service_instance(monkeypatch) -> None:
     from app.plugin.module_ai.chat import ws
 

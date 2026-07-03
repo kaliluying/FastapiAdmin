@@ -1,11 +1,20 @@
 import logging
+import os
 import sys
 
 from loguru import logger
 
 from app.config.path_conf import LOG_DIR
-from app.config.setting import settings
 from app.core.request_context import get_correlation_id
+
+
+def _get_log_level() -> str:
+    """Get LOGGER_LEVEL from env or settings (lazy to avoid early settings import)."""
+    try:
+        from app.config.setting import settings
+        return str(settings.LOGGER_LEVEL)
+    except Exception:
+        return os.getenv("LOGGER_LEVEL", "INFO")
 
 
 def _context_patcher(record: dict) -> None:
@@ -40,7 +49,8 @@ def setup_logger() -> None:
         "<level>{message}</level>"
         "{extra[ctx]}"
     )
-    logger.add(sys.stdout, format=LOG_FMT, level=settings.LOGGER_LEVEL)
+    log_level = _get_log_level()
+    logger.add(sys.stdout, format=LOG_FMT, level=log_level)
     logger.add(
         str(LOG_DIR / "fastapiadmin.log"),
         format=LOG_FMT,
@@ -51,7 +61,7 @@ def setup_logger() -> None:
         encoding="utf-8",
     )
 
-    logging.basicConfig(handlers=[InterceptHandler()], level=settings.LOGGER_LEVEL, force=True)
+    logging.basicConfig(handlers=[InterceptHandler()], level=log_level, force=True)
     for name in [k for k in logging.root.manager.loggerDict if isinstance(k, str)] + ["uvicorn", "uvicorn.error", "uvicorn.access"]:
         std = logging.getLogger(name)
         std.handlers = [InterceptHandler()]

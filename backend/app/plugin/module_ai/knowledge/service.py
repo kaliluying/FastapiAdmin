@@ -24,7 +24,7 @@ from .schema import (
     KnowledgeDocumentQueryParam,
     RetrievalTestSchema,
 )
-from .text_splitter import split_text
+from .text_splitter import split_legal_text, split_text as split_text_fallback
 
 UPLOAD_DIR = Path("storage") / "knowledge"
 
@@ -35,13 +35,22 @@ def build_chroma_metadata(
     document_id: int,
     chunk_index: int,
     file_name: str,
+    extra: dict[str, Any] | None = None,
 ) -> dict[str, int | str]:
-    return {
+    base = {
         "knowledge_base_id": knowledge_base_id,
         "document_id": document_id,
         "chunk_index": chunk_index,
         "file_name": file_name,
     }
+    if extra:
+        # Merge legal metadata, converting list values to strings for ChromaDB compatibility.
+        for key, value in extra.items():
+            if isinstance(value, list):
+                base[key] = ",".join(str(v) for v in value)
+            elif value is not None:
+                base[key] = str(value)
+    return base
 
 
 class KnowledgeService:
@@ -155,13 +164,26 @@ class KnowledgeService:
         doc_crud = KnowledgeDocumentCRUD(self.auth)
         try:
             text = extract_text(document.file_path)
-            chunks = split_text(text)
-            if not chunks:
-                raise CustomException(msg="document text is empty")
+            legal_chunks = split_legal_text(text)
+
+            if legal_chunks:
+                # Legal document: use article-aware chunks with rich metadata.
+                chunks = [c.content for c in legal_chunks]
+                chunk_metas = legal_chunks
+            else:
+                # Non-legal document: fall back to character-based splitting.
+                raw_chunks = split_text_fallback(text)
+                if not raw_chunks:
+                    raise CustomException(msg="document text is empty")
+                chunks = raw_chunks
+                chunk_metas = None
 
             now = datetime.now()
             await doc_crud.update_status(document_id, parse_status="success", index_status="indexing", parsed_at=now)
-            chroma_ids = [f"kb-{document.knowledge_base_id}-doc-{document.id}-{index}-{uuid.uuid4().hex}" for index in range(len(chunks))]
+            chroma_ids = [
+                f"kb-{document.knowledge_base_id}-doc-{document.id}-{index}-{uuid.uuid4().hex}"
+                for index in range(len(chunks))
+            ]
             embeddings = await self._get_embedding_client().embed_texts(chunks)
             metadatas = [
                 build_chroma_metadata(
@@ -169,18 +191,23 @@ class KnowledgeService:
                     document_id=document.id,
                     chunk_index=index,
                     file_name=document.file_name,
+                    extra=chunk_metas[index].metadata if chunk_metas else None,
                 )
                 for index in range(len(chunks))
             ]
             self._get_store().delete_document(document.id)
-            self._get_store().upsert_chunks(ids=chroma_ids, embeddings=embeddings, documents=chunks, metadatas=metadatas)
+            self._get_store().upsert_chunks(
+                ids=chroma_ids, embeddings=embeddings, documents=chunks, metadatas=metadatas
+            )
             await KnowledgeChunkCRUD(self.auth).replace_chunks(
                 knowledge_base_id=document.knowledge_base_id,
                 document_id=document.id,
                 chunks=chunks,
                 chroma_ids=chroma_ids,
             )
-            obj = await doc_crud.update_status(document_id, index_status="success", error_message=None, indexed_at=datetime.now())
+            obj = await doc_crud.update_status(
+                document_id, index_status="success", error_message=None, indexed_at=datetime.now()
+            )
             return KnowledgeDocumentOutSchema.model_validate(obj)
         except CustomException:
             await doc_crud.update_status(document_id, parse_status="failed", index_status="failed", error_message="index failed")

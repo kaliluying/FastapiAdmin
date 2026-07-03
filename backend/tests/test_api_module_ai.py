@@ -44,3 +44,32 @@ class TestAiChat:
             "/ai/chat/ai-chat",
             json={"message": "你好", "session_id": "test_session"},
         )
+
+
+class TestAiArbitration:
+    """仲裁申请书接口。"""
+
+    def test_arbitration_draft(self, test_client: TestClient) -> None:
+        assert_route(
+            test_client,
+            "POST",
+            "/ai/arbitration/draft",
+            json={
+                "respondent_name": "深圳某电子厂",
+                "dispute_summary": "公司拖欠 3 个月工资。",
+                "claims": ["请求支付拖欠工资 24000 元"],
+                "evidence_items": ["劳动合同", "工资流水"],
+            },
+        )
+
+    def test_arbitration_case_list(self, test_client: TestClient) -> None:
+        assert_route(test_client, "GET", "/ai/arbitration/case/list")
+
+    def test_arbitration_draft_list(self, test_client: TestClient) -> None:
+        assert_route(test_client, "GET", "/ai/arbitration/draft/list")
+
+    def test_arbitration_draft_detail(self, test_client: TestClient) -> None:
+        assert_route(test_client, "GET", "/ai/arbitration/draft/1")
+
+    def test_arbitration_draft_export(self, test_client: TestClient) -> None:
+        assert_route(test_client, "GET", "/ai/arbitration/draft/1/export?file_type=docx")

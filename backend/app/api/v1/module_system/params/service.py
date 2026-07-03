@@ -24,6 +24,23 @@ _MID_CONFIG_TTL: float = 60.0  # 缓存 60 秒
 _mid_config_cache: dict = {"ts": 0.0, "data": None}
 
 
+def _parse_bool_config(value: object, *, default: bool = False) -> bool:
+    """Parse bool-like system config values stored as strings."""
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return default
+    if isinstance(value, int | float):
+        return value != 0
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"true", "1", "yes", "y", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "n", "off", ""}:
+            return False
+    return default
+
+
 class ParamsService:
     """
     参数管理服务
@@ -417,7 +434,7 @@ class ParamsService:
             try:
                 demo_config = json.loads(config_values[0])
                 config_result["demo_enable"] = (
-                    demo_config.get("config_value", False) if isinstance(demo_config, dict) else False
+                    _parse_bool_config(demo_config.get("config_value", False)) if isinstance(demo_config, dict) else False
                 )
             except json.JSONDecodeError:
                 logger.error("解析演示模式配置失败")

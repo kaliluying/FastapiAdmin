@@ -28,6 +28,15 @@ async def test_rag_chain_injects_retrieved_context_into_model_prompt() -> None:
         retriever=FakeRetriever(),
         prompt_builder=RagPromptBuilder(),
         chat_model=model,
+        user_profile={
+            "name": "张三",
+            "company_name": "深圳某电子厂",
+            "position_name": "操作工",
+            "monthly_salary": 2000,
+            "hire_date": "2023-03-01",
+            "contract_type": "劳动合同",
+            "social_insurance": False,
+        },
     )
 
     result = await chain.ainvoke(
@@ -43,6 +52,14 @@ async def test_rag_chain_injects_retrieved_context_into_model_prompt() -> None:
     assert "/system/user" in model.prompt
     assert "用户管理在哪" in model.prompt
     assert "source=menu" in model.prompt
+    assert "【个人中心信息——仅作为用户自述背景参考】" in model.prompt
+    assert "姓名: 张三" in model.prompt
+    assert "公司名称: 深圳某电子厂" in model.prompt
+    assert "岗位: 操作工" in model.prompt
+    assert "月工资: 2000元" in model.prompt
+    assert "入职日期: 2023-03-01" in model.prompt
+    assert "合同类型: 劳动合同" in model.prompt
+    assert "是否缴纳社保: 否" in model.prompt
 
 
 def test_ai_chat_stack_uses_langchain_not_legacy_agent_framework() -> None:
@@ -188,7 +205,7 @@ async def test_chat_query_returns_message_when_stream_has_no_content(monkeypatch
                 yield None
 
     class FakeFactory:
-        def create_chain(self, db=None):
+        def create_chain(self, db=None, auth=None):
             return FakeChain()
 
     monkeypatch.setattr(service.settings, "OPENAI_API_KEY", "test_key")
@@ -230,9 +247,14 @@ async def test_chat_query_passes_context_to_rag_chain(monkeypatch) -> None:
             yield "pong"
 
     class FakeFactory:
-        def create_chain(self, db=None):
+        def create_chain(self, db=None, auth=None):
             captured["db"] = db
+            captured["auth"] = auth
             return FakeChain()
+
+    class FakeDB:
+        async def commit(self) -> None:
+            captured["committed"] = True
 
     monkeypatch.setattr(service.settings, "OPENAI_API_KEY", "test_key")
     monkeypatch.setattr(service.settings, "OPENAI_MODEL", "MiniMax-M3")
@@ -241,7 +263,7 @@ async def test_chat_query_passes_context_to_rag_chain(monkeypatch) -> None:
     monkeypatch.setattr(service, "RagChainFactory", FakeFactory)
 
     files = [{"name": "manual.md", "content": "用户管理路径是 /system/user"}]
-    auth = SimpleNamespace(user=SimpleNamespace(username="admin", dept_id=1))
+    auth = SimpleNamespace(user=SimpleNamespace(username="admin", dept_id=1), db=FakeDB())
     chunks = [
         chunk
         async for chunk in ChatService(auth).chat_query(
@@ -256,4 +278,6 @@ async def test_chat_query_passes_context_to_rag_chain(monkeypatch) -> None:
     assert captured["session_id"] == "test_session"
     assert captured["files"] == files
     assert captured["db"] is FakeCrud.db
+    assert captured["auth"] is auth
+    assert captured["committed"] is True
     assert stored_runs == [("hello", "pong")]

@@ -1,4 +1,4 @@
-﻿from dataclasses import dataclass
+from dataclasses import dataclass
 from urllib.parse import urlparse
 
 from fastapi import Query
@@ -27,6 +27,14 @@ class CurrentUserUpdateSchema(BaseModel):
     email: EmailStr | None = Field(default=None, description="邮箱")
     gender: str | None = Field(default=None, max_length=1, description="性别(0:男 1:女 2:未知)")
     avatar: str | None = Field(default=None, max_length=255, description="头像")
+
+    # 劳动仲裁相关字段
+    monthly_salary: float | None = Field(default=None, description="月工资(元)")
+    hire_date: str | None = Field(default=None, description="入职日期(YYYY-MM-DD)")
+    company_name: str | None = Field(default=None, max_length=128, description="公司名称")
+    position_name: str | None = Field(default=None, max_length=64, description="岗位名称")
+    contract_type: str | None = Field(default=None, max_length=32, description="合同类型")
+    social_insurance: bool | None = Field(default=None, description="是否缴纳社保")
 
     @field_validator("mobile")
     @classmethod
@@ -76,9 +84,17 @@ class UserRegisterSchema(BaseModel):
     mobile: str | None = Field(default=None, max_length=11, description="手机号")
     username: str = Field(..., min_length=3, max_length=32, description="账号")
     password: str = Field(..., min_length=6, max_length=128, description="密码")
-    role_ids: list[int] | None = Field(default=[1], description="角色ID列表")
+    role_ids: list[int] | None = Field(default=[3], description="角色ID列表")
     created_id: int | None = Field(default=1, description="创建人ID")
     description: str | None = Field(default=None, max_length=255, description="备注")
+
+    # 劳动仲裁相关字段（注册时可选填写）
+    monthly_salary: float | None = Field(default=None, description="月工资(元)")
+    hire_date: str | None = Field(default=None, description="入职日期(YYYY-MM-DD)")
+    company_name: str | None = Field(default=None, max_length=128, description="公司名称")
+    position_name: str | None = Field(default=None, max_length=64, description="岗位名称")
+    contract_type: str | None = Field(default=None, max_length=32, description="合同类型")
+    social_insurance: bool | None = Field(default=None, description="是否缴纳社保")
 
     @field_validator("mobile")
     @classmethod

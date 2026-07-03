@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
 from app.config.path_conf import ALEMBIC_VERSION_DIR
-from app.config.setting import settings
+from app.config.setting import get_settings
 from app.core.base_model import MappedBase
 from app.utils.import_util import ImportUtil
 
@@ -47,7 +47,7 @@ target_metadata = MappedBase.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-alembic_config.set_main_option("sqlalchemy.url", settings.ASYNC_DB_URI)
+alembic_config.set_main_option("sqlalchemy.url", get_settings().ASYNC_DB_URI)
 
 
 def run_migrations_offline() -> None:

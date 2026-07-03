@@ -1,0 +1,348 @@
+<!-- AI 记忆管理：对 user_preference / fact / work_rule 进行增删改查 -->
+<template>
+  <div class="fa-full-height">
+    <FaSearchBar
+      v-show="showSearchBar"
+      ref="searchBarRef"
+      v-model="searchForm"
+      :items="searchItems"
+      :rules="searchBarRules"
+      :is-expand="false"
+      :show-expand="false"
+      :show-reset="true"
+      :show-search="true"
+      :disabled-search="false"
+      :default-expanded="true"
+      @search="handleSearch"
+      @reset="onResetSearch"
+    />
+
+    <ElCard shadow="hover" class="fa-table-card" :style="{ 'margin-top': showSearchBar ? '12px' : '0' }">
+      <FaTableHeader
+        v-model:columns="columnChecks"
+        v-model:showSearchBar="showSearchBar"
+        :loading="loading"
+        @refresh="refreshData"
+      >
+        <template #left>
+          <FaTableHeaderLeft
+            :remove-ids="selectedIds"
+            :perm-create="['module_ai:memory:create']"
+            :perm-delete="['module_ai:memory:delete']"
+            :delete-loading="batchDeleting"
+            :create-loading="createLoading"
+            @add="handleAdd"
+            @delete="handleBatchDelete"
+          />
+        </template>
+      </FaTableHeader>
+
+      <FaTable
+        ref="faTableRef"
+        row-key="id"
+        :loading="loading"
+        :data="data"
+        :columns="columns"
+        :pagination="pagination"
+        @selection-change="onTableSelectionChange"
+        @pagination:size-change="handleSizeChange"
+        @pagination:current-change="handleCurrentChange"
+      >
+        <template #memory-type="{ row }">
+          <ElTag :type="memoryTypeTag(row.memory_type)" size="small">
+            {{ memoryTypeLabel(row.memory_type) }}
+          </ElTag>
+        </template>
+        <template #memory-status="{ row }">
+          <ElSwitch
+            :model-value="row.is_active"
+            size="small"
+            @change="(val: string | number | boolean) => handleToggleActive(row, Boolean(val))"
+          />
+        </template>
+        <template #actions="{ row }">
+          <ElButton type="primary" link size="small" @click="handleEdit(row)">编辑</ElButton>
+          <ElButton type="danger" link size="small" @click="handleDeleteOne(row)">删除</ElButton>
+        </template>
+      </FaTable>
+    </ElCard>
+
+    <FaDialog
+      v-model="dialogVisible.visible"
+      :title="dialogVisible.title"
+      width="600px"
+      :form-mode="dialogVisible.type"
+      :confirm-loading="submitLoading"
+      @confirm="handleDialogConfirm"
+      @closed="handleDialogClosed"
+    >
+      <ElForm ref="formRef" :model="formData" :rules="formRules" label-width="80px">
+        <ElFormItem label="记忆类型" prop="memory_type">
+          <ElSelect v-model="formData.memory_type" :disabled="dialogVisible.type === 'update'" style="width:100%">
+            <ElOption label="用户偏好 (user_preference)" value="user_preference" />
+            <ElOption label="用户事实 (fact)" value="fact" />
+            <ElOption label="工作规则 (work_rule)" value="work_rule" />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="标签" prop="key">
+          <ElInput v-model="formData.key" placeholder="如: 用户角色" maxlength="128" />
+        </ElFormItem>
+        <ElFormItem label="内容" prop="value">
+          <ElInput
+            v-model="formData.value"
+            type="textarea"
+            :rows="4"
+            placeholder="如: 劳动仲裁调解员，主要负责工伤类案件"
+            maxlength="5000"
+            show-word-limit
+          />
+        </ElFormItem>
+        <ElFormItem label="分类" prop="category">
+          <ElInput v-model="formData.category" placeholder="可选分组，如: 用户信息" maxlength="64" />
+        </ElFormItem>
+        <ElFormItem label="优先级" prop="priority">
+          <ElInputNumber v-model="formData.priority" :min="0" :max="100" />
+          <span class="form-tip">越高越优先注入</span>
+        </ElFormItem>
+        <ElFormItem label="启用" prop="is_active">
+          <ElSwitch v-model="formData.is_active" />
+        </ElFormItem>
+      </ElForm>
+    </FaDialog>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive, computed } from "vue";
+import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from "element-plus";
+import { AiMemoryAPI, type AiMemoryItem, type MemoryCreatePayload, type MemoryType } from "@/api/module_ai/memory";
+import type { SearchFormItem } from "@/components/forms/fa-search-bar/index.vue";
+import type { ColumnOption } from "@/types/component";
+
+defineOptions({ name: "AiMemoryManage" });
+
+// ── 搜索栏 ──
+const showSearchBar = ref(true);
+const searchForm = reactive<{ memory_type?: string; key?: string }>({});
+const searchItems = ref<SearchFormItem[]>([
+  {
+    key: "memory_type",
+    label: "记忆类型",
+    type: "select",
+    options: [
+      { label: "全部", value: "" },
+      { label: "用户偏好", value: "user_preference" },
+      { label: "用户事实", value: "fact" },
+      { label: "工作规则", value: "work_rule" },
+    ],
+  },
+  { key: "key", label: "标签搜索", type: "input", placeholder: "模糊搜索标签" },
+]);
+const searchBarRules: FormRules = {};
+
+const memoryTypeLabel = (type: string) =>
+  ({ user_preference: "用户偏好", fact: "用户事实", work_rule: "工作规则" } as Record<string, string>)[type] || type;
+
+const memoryTypeTag = (type: string): "primary" | "success" | "info" | "warning" | "danger" =>
+  ({ user_preference: "primary", fact: "success", work_rule: "warning" } as const)[
+    type as "user_preference" | "fact" | "work_rule"
+  ] || "info";
+
+// ── 表格 ──
+const loading = ref(false);
+const data = ref<AiMemoryItem[]>([]);
+const selectedIds = ref<number[]>([]);
+const batchDeleting = ref(false);
+const createLoading = ref(false);
+
+const columnChecks = ref([
+  { prop: "memory_type", label: "类型", visible: true },
+  { prop: "category", label: "分类", visible: true },
+  { prop: "key", label: "标签", visible: true },
+  { prop: "value", label: "内容", visible: true },
+  { prop: "priority", label: "优先级", visible: true },
+  { prop: "is_active", label: "启用", visible: true },
+  { prop: "created_time", label: "创建时间", visible: true },
+  { prop: "updated_time", label: "更新时间", visible: true },
+]);
+
+const columns = computed<ColumnOption<AiMemoryItem>[]>(() => [
+  { type: "selection", width: 50, fixed: "left" },
+  ...columnChecks.value
+    .filter((c) => c.visible)
+    .map((c) => ({
+      prop: c.prop,
+      label: c.label,
+      minWidth: c.prop === "value" ? 250 : c.prop === "key" ? 150 : 100,
+      showOverflowTooltip: c.prop === "value",
+      useSlot: c.prop === "memory_type" || c.prop === "is_active",
+      slotName: c.prop === "memory_type" ? "memory-type" : c.prop === "is_active" ? "memory-status" : undefined,
+    })),
+  { label: "操作", width: 140, fixed: "right", useSlot: true, slotName: "actions" },
+]);
+
+const pagination = reactive({
+  current: 1,
+  size: 20,
+  total: 0,
+});
+
+// ── 数据加载 ──
+async function loadData() {
+  loading.value = true;
+  try {
+    const res = await AiMemoryAPI.list({
+      page_no: pagination.current,
+      page_size: pagination.size,
+      memory_type: (searchForm.memory_type || undefined) as MemoryType | undefined,
+      key: searchForm.key || undefined,
+    });
+    const body = res.data.data;
+    data.value = body.items || [];
+    pagination.total = body.total || 0;
+  } finally {
+    loading.value = false;
+  }
+}
+
+function refreshData() { loadData(); }
+function handleSearch() { pagination.current = 1; loadData(); }
+function onResetSearch() { searchForm.memory_type = ""; searchForm.key = ""; handleSearch(); }
+function handleSizeChange(val: number) { pagination.size = val; loadData(); }
+function handleCurrentChange(val: number) { pagination.current = val; loadData(); }
+function onTableSelectionChange(rows: AiMemoryItem[]) { selectedIds.value = rows.map((row) => row.id); }
+
+// ── 批量删除 ──
+async function handleBatchDelete() {
+  if (!selectedIds.value.length) { ElMessage.warning("请先选择要删除的记录"); return; }
+  try {
+    await ElMessageBox.confirm(`确定要删除 ${selectedIds.value.length} 条记忆吗？`, "删除确认", { type: "warning" });
+    batchDeleting.value = true;
+    await AiMemoryAPI.delete(selectedIds.value);
+    ElMessage.success("批量删除成功");
+    selectedIds.value = [];
+    loadData();
+  } catch (e: any) {
+    if (e !== "cancel") ElMessage.error(e?.message || "删除失败");
+  } finally {
+    batchDeleting.value = false;
+  }
+}
+
+async function handleDeleteOne(row: AiMemoryItem) {
+  try {
+    await ElMessageBox.confirm("确定要删除这条记忆吗？", "删除确认", { type: "warning" });
+    await AiMemoryAPI.delete([row.id]);
+    ElMessage.success("删除成功");
+    loadData();
+  } catch (e: any) {
+    if (e !== "cancel") ElMessage.error(e?.message || "删除失败");
+  }
+}
+
+// ── 对话框 ──
+const dialogVisible = reactive({ visible: false, title: "", type: "create" as "create" | "update" });
+const submitLoading = ref(false);
+const formRef = ref<FormInstance>();
+const editingId = ref<number | null>(null);
+
+const formData = reactive<MemoryCreatePayload & { memory_type: MemoryType }>({
+  memory_type: "fact",
+  category: null,
+  key: "",
+  value: "",
+  priority: 0,
+  is_active: true,
+});
+
+const formRules: FormRules = {
+  memory_type: [{ required: true, message: "请选择记忆类型", trigger: "change" }],
+  key: [{ required: true, message: "请输入标签", trigger: "blur" }],
+  value: [{ required: true, message: "请输入内容", trigger: "blur" }],
+};
+
+function handleAdd() {
+  dialogVisible.type = "create";
+  dialogVisible.title = "新增记忆";
+  formData.memory_type = "fact";
+  formData.category = null;
+  formData.key = "";
+  formData.value = "";
+  formData.priority = 0;
+  formData.is_active = true;
+  editingId.value = null;
+  dialogVisible.visible = true;
+}
+
+function handleEdit(row: AiMemoryItem) {
+  dialogVisible.type = "update";
+  dialogVisible.title = "编辑记忆";
+  formData.memory_type = row.memory_type;
+  formData.category = row.category;
+  formData.key = row.key;
+  formData.value = row.value;
+  formData.priority = row.priority;
+  formData.is_active = row.is_active;
+  editingId.value = row.id;
+  dialogVisible.visible = true;
+}
+
+function handleDialogClosed() {
+  formRef.value?.resetFields();
+}
+
+async function handleDialogConfirm() {
+  const valid = await formRef.value?.validate().catch(() => false);
+  if (!valid) return;
+  submitLoading.value = true;
+  try {
+    if (dialogVisible.type === "create") {
+      await AiMemoryAPI.create({
+        memory_type: formData.memory_type,
+        category: formData.category || null,
+        key: formData.key,
+        value: formData.value,
+        priority: formData.priority,
+        is_active: formData.is_active,
+      });
+      ElMessage.success("创建成功");
+    } else if (editingId.value) {
+      await AiMemoryAPI.update(editingId.value, {
+        memory_type: formData.memory_type,
+        category: formData.category || null,
+        key: formData.key,
+        value: formData.value,
+        priority: formData.priority,
+        is_active: formData.is_active,
+      });
+      ElMessage.success("更新成功");
+    }
+    dialogVisible.visible = false;
+    loadData();
+  } catch (e: any) {
+    ElMessage.error(e?.message || "操作失败");
+  } finally {
+    submitLoading.value = false;
+  }
+}
+
+async function handleToggleActive(row: AiMemoryItem, val: boolean) {
+  try {
+    await AiMemoryAPI.update(row.id, { is_active: val });
+    ElMessage.success(val ? "已启用" : "已禁用");
+    row.is_active = val;
+  } catch (e: any) {
+    ElMessage.error(e?.message || "切换失败");
+  }
+}
+
+loadData();
+</script>
+
+<style scoped>
+.form-tip {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+</style>

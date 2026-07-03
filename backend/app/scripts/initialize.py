@@ -26,6 +26,7 @@ from app.config.path_conf import SCRIPT_DIR
 from app.core.database import async_db_session, async_engine, create_tables
 from app.core.logger import logger
 from app.plugin.module_ai.chat.model import ChatSessionModel
+from app.plugin.module_ai.arbitration.model import ArbitrationCaseModel, ArbitrationDraftModel
 from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeChunkModel, KnowledgeDocumentModel
 
 
@@ -54,6 +55,8 @@ class InitializeData:
         LoginLogModel,
         OperationLogModel,
         ChatSessionModel,
+        ArbitrationCaseModel,
+        ArbitrationDraftModel,
         KnowledgeBaseModel,
         KnowledgeDocumentModel,
         KnowledgeChunkModel,

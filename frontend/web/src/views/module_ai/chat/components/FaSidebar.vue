@@ -114,6 +114,7 @@ interface Props {
 interface Emits {
   (e: "select-session", session: ChatSession): void;
   (e: "new-session"): void;
+  (e: "delete-session", sessionId: string): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -244,6 +245,8 @@ const handleSessionCommand = async (command: string, session: ChatSession) => {
       if (index > -1) {
         sessions.value.splice(index, 1);
       }
+      emit("delete-session", session.id);
+      ElMessage.success("咨询对话已删除");
     } catch (error) {
       if (error !== "cancel") {
         ElMessage.error("删除失败");

@@ -1,0 +1,1 @@
+"""Arbitration document generation plugin."""

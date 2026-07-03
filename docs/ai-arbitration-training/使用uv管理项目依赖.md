@@ -87,7 +87,7 @@ uv add fastapi
 uv add --dev pytest
 
 # 从 requirements.txt 安装（兼容旧项目）
-uv pip install -r requirements.txt
+uv add -r requirements.txt
 
 # 从 pyproject.toml 安装（推荐）
 uv sync

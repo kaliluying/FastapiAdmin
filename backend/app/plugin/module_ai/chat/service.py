@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import AsyncGenerator
 from datetime import datetime
 from typing import Any
+from uuid import uuid4
 
 from app.api.v1.module_system.dept.service import DeptService
 from app.common.request import PaginationService
@@ -13,6 +15,7 @@ from app.core.exceptions import CustomException
 from app.core.logger import logger
 
 from .crud import ChatSession, ChatSessionCRUD
+from .memory_extractor import MemoryExtractor
 from .rag import RagChainFactory
 from .schema import (
     AiModelConfigOutSchema,
@@ -108,9 +111,14 @@ class ChatService:
                 yield config_error
                 return
 
-            crud = ChatSessionCRUD(self.auth)
-            session_id = await self._ensure_session_id(crud, query.session_id)
-            chain = RagChainFactory().create_chain(db=crud.db)
+            crud = ChatSessionCRUD(self.auth) if self._should_persist_session() else None
+            active_session_id = (
+                await self._ensure_session_id(crud, query.session_id)
+                if crud is not None
+                else self._ensure_runtime_session_id(query.session_id)
+            )
+            db = crud.db if crud else self._get_db()
+            chain = RagChainFactory().create_chain(db=db, auth=self.auth)
 
             has_content = False
             response_chunks: list[str] = []
@@ -118,7 +126,7 @@ class ChatService:
                 message=query.message,
                 user_id=self._get_user_id(),
                 dept_id=self._get_dept_id(),
-                session_id=session_id,
+                session_id=active_session_id,
                 files=query.files,
                 knowledge_base_ids=query.knowledge_base_ids,
             ):
@@ -131,13 +139,26 @@ class ChatService:
                 yield "AI 服务没有返回内容，请检查 OPENAI_API_KEY、OPENAI_BASE_URL 和 OPENAI_MODEL 配置。"
                 return
 
-            await crud.append_run_crud(
-                session_id=session_id,
-                message=query.message,
-                response="".join(response_chunks),
-            )
+            if crud:
+                full_response = "".join(response_chunks)
+                await crud.append_run_crud(
+                    session_id=active_session_id,
+                    message=query.message,
+                    response=full_response,
+                )
+                db = self._get_db()
+                if db:
+                    await db.commit()
+                # 异步触发记忆提取，不阻塞用户看到回复
+                self._trigger_memory_extraction(
+                    user_message=query.message,
+                    assistant_response=full_response,
+                )
         except Exception as e:
             logger.error(f"聊天查询失败: {e}")
+            db = self._get_db()
+            if db:
+                await db.rollback()
             yield f"抱歉，处理您的请求时出现错误：{e}"
 
     async def chat_non_stream(
@@ -151,9 +172,10 @@ class ChatService:
             if config_error:
                 return {"response": config_error, "session_id": session_id or "", "function_calls": None, "action": None}
 
-            crud = ChatSessionCRUD(self.auth)
+            crud = ChatSessionCRUD(self.auth) if self._should_persist_session() else None
             active_session_id = await self._ensure_session_id(crud, session_id)
-            chain = RagChainFactory().create_chain(db=crud.db)
+            db = crud.db if crud else self._get_db()
+            chain = RagChainFactory().create_chain(db=db, auth=self.auth)
             response_text = await chain.ainvoke(
                 message=message,
                 user_id=self._get_user_id(),
@@ -162,20 +184,82 @@ class ChatService:
                 knowledge_base_ids=knowledge_base_ids or [],
             )
             action = self._extract_action(response_text) if response_text else None
-            if response_text:
+            if response_text and crud:
                 await crud.append_run_crud(session_id=active_session_id, message=message, response=response_text)
+                db = self._get_db()
+                if db:
+                    await db.commit()
+                # 异步触发记忆提取
+                self._trigger_memory_extraction(
+                    user_message=message,
+                    assistant_response=response_text,
+                )
             return {"response": response_text, "session_id": active_session_id, "function_calls": None, "action": action}
         except Exception as e:
             logger.error(f"聊天查询失败: {e}")
+            db = self._get_db()
+            if db:
+                await db.rollback()
             return {"response": f"抱歉，处理您的请求时出现错误：{e}", "session_id": session_id, "function_calls": None, "action": None}
 
-    async def _ensure_session_id(self, crud: ChatSessionCRUD, session_id: str | None) -> str:
+    async def _ensure_session_id(self, crud: ChatSessionCRUD | None, session_id: str | None) -> str:
         if session_id:
             return session_id
+        if crud is None:
+            return self._generate_ephemeral_session_id()
         session = await crud.create_crud(data=ChatSessionCreateSchema(title="新对话"))
         if not session:
             raise CustomException(msg="创建会话失败")
         return session.session_id
+
+    def _ensure_runtime_session_id(self, session_id: str | None) -> str:
+        return session_id or self._generate_ephemeral_session_id()
+
+    def _trigger_memory_extraction(
+        self,
+        user_message: str,
+        assistant_response: str,
+    ) -> None:
+        """Fire-and-forget 触发记忆提取，不阻塞主流程。"""
+        auth = self.auth
+        db = self._get_db()
+        if not auth or not db:
+            return
+        try:
+            from app.plugin.module_ai.memory.crud import MemoryCRUD
+
+            async def _extract() -> None:
+                try:
+                    crud = MemoryCRUD(auth)
+                    extractor = MemoryExtractor()
+                    saved = await extractor.extract_and_save(
+                        crud=crud,
+                        user_message=user_message,
+                        assistant_response=assistant_response,
+                    )
+                    if saved > 0:
+                        await db.commit()
+                        logger.info(f"记忆提取完成: 已保存 {saved} 条")
+                except Exception as e:
+                    logger.warning(f"记忆提取后台任务失败: {e}")
+                    try:
+                        await db.rollback()
+                    except Exception:
+                        pass
+
+            asyncio.create_task(_extract())
+        except Exception as e:
+            logger.warning(f"启动记忆提取任务失败: {e}")
+
+    def _should_persist_session(self) -> bool:
+        return getattr(self.auth, "user", None) is not None and self._get_db() is not None
+
+    def _get_db(self) -> Any | None:
+        return getattr(self.auth, "db", None)
+
+    @staticmethod
+    def _generate_ephemeral_session_id() -> str:
+        return f"guest-{uuid4().hex}"
 
     @staticmethod
     def _validate_ai_config() -> str | None:
@@ -192,11 +276,11 @@ class ChatService:
 
     def _get_user_id(self) -> str:
         username = getattr(getattr(self.auth, "user", None), "username", None)
-        return str(username) if username else "user"
+        return str(username) if username else "anonymous"
 
     def _get_dept_id(self) -> str:
         dept_id = getattr(getattr(self.auth, "user", None), "dept_id", None)
-        return str(dept_id) if dept_id else "default"
+        return str(dept_id) if dept_id else "anonymous"
 
     @staticmethod
     def get_model_config() -> AiModelConfigOutSchema:

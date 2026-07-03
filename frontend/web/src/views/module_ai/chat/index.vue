@@ -8,6 +8,7 @@
           :is-collapsed="isSidebarCollapsed"
           @select-session="handleSelectSession"
           @new-session="handleNewSession"
+          @delete-session="handleDeleteSession"
         />
       </ElAside>
       <ElContainer class="chat-container">
@@ -288,6 +289,14 @@ const handleNewSession = () => {
   currentSessionId.value = null;
   messages.value = [];
   ElMessage.success("已开启新对话");
+};
+
+const handleDeleteSession = (sessionId: string) => {
+  if (currentSessionId.value !== sessionId) return;
+
+  currentSessionId.value = null;
+  messages.value = [];
+  finishLoadingMessages();
 };
 
 const handleClearChat = async () => {

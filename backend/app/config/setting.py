@@ -14,7 +14,6 @@ class Settings(BaseSettings):
     """系统配置类"""
 
     model_config = SettingsConfigDict(
-        env_file=ENV_DIR / f".env.{os.getenv('ENVIRONMENT')}",
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=True,  # 区分大小写
@@ -49,7 +48,7 @@ class Settings(BaseSettings):
     # ================================================= #
     # ******************** 日志配置 ******************** #
     # ================================================= #
-    LOGGER_LEVEL: str = "DEBUG"  # 日志级别
+    LOGGER_LEVEL: str = "INFO"  # 日志级别
 
     # ================================================= #
     # ******************** 跨域配置 ******************** #
@@ -148,7 +147,10 @@ class Settings(BaseSettings):
     LOG_JSON_RETENTION_DAYS: int = 7  # JSON 文件保留天数（通常比文本日志短）
 
     OPERATION_LOG_RECORD: bool = True  # 是否记录操作日志
-    IGNORE_OPERATION_FUNCTION: list[str] = ["get_captcha_for_login"]  # 忽略记录的函数
+    IGNORE_OPERATION_FUNCTION: list[str] = [
+        "get_captcha_for_login",
+        "upload_analyze_controller",
+    ]  # 忽略记录的函数
     OPERATION_RECORD_METHOD: list[str] = [
         "POST",
         "PUT",
@@ -310,7 +312,9 @@ class Settings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    return Settings()
+    env = os.getenv("ENVIRONMENT")
+    env_file = ENV_DIR / f".env.{env}" if env else ENV_DIR / ".env"
+    return Settings(_env_file=env_file)
 
 
 settings = get_settings()

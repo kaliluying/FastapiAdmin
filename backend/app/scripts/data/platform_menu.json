@@ -208,10 +208,25 @@
         ]
       },
       {
+        "name": "仲裁申请书",
+        "type": 2,
+        "icon": "ri:file-edit-line",
+        "order": 3,
+        "permission": "module_ai:arbitration:draft",
+        "route_name": "ArbitrationDraft",
+        "route_path": "arbitration",
+        "component_path": "module_ai/arbitration/index",
+        "title": "仲裁申请书",
+        "scope": "single_org",
+        "children": [
+          { "name": "生成", "title": "生成", "type": 3, "order": 1, "permission": "module_ai:arbitration:draft", "scope": "single_org" }
+        ]
+      },
+      {
         "name": "模型配置",
         "type": 2,
         "icon": "ri:cpu-line",
-        "order": 3,
+        "order": 4,
         "permission": "module_ai:model_config:query",
         "route_name": "ModelConfig",
         "route_path": "model-config",
@@ -223,7 +238,7 @@
         "name": "知识库管理",
         "type": 2,
         "icon": "ri:database-2-line",
-        "order": 4,
+        "order": 5,
         "permission": "module_ai:knowledge:query",
         "route_name": "Knowledge",
         "route_path": "knowledge",
@@ -238,10 +253,28 @@
         ]
       },
       {
+        "name": "AI 记忆",
+        "type": 2,
+        "icon": "ri:brain-line",
+        "order": 6,
+        "permission": "module_ai:memory:query",
+        "route_name": "AiMemory",
+        "route_path": "ai-memory",
+        "component_path": "module_ai/memory-manage/index",
+        "title": "AI 记忆",
+        "scope": "single_org",
+        "children": [
+          { "name": "查询", "title": "查询", "type": 3, "order": 1, "permission": "module_ai:memory:query", "scope": "single_org" },
+          { "name": "新增", "title": "新增", "type": 3, "order": 2, "permission": "module_ai:memory:create", "scope": "single_org" },
+          { "name": "编辑", "title": "编辑", "type": 3, "order": 3, "permission": "module_ai:memory:update", "scope": "single_org" },
+          { "name": "删除", "title": "删除", "type": 3, "order": 4, "permission": "module_ai:memory:delete", "scope": "single_org" }
+        ]
+      },
+      {
         "name": "文档管理",
         "type": 2,
         "icon": "ri:file-text-line",
-        "order": 5,
+        "order": 7,
         "permission": "module_ai:document:query",
         "route_name": "Document",
         "route_path": "document",
@@ -258,7 +291,7 @@
         "name": "检索测试",
         "type": 2,
         "icon": "ri:search-eye-line",
-        "order": 6,
+        "order": 8,
         "permission": "module_ai:retrieval:test",
         "route_name": "Retrieval",
         "route_path": "retrieval",

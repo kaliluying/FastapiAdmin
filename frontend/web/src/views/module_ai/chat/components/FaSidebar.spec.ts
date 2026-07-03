@@ -18,4 +18,9 @@ describe("FaSidebar user menu", () => {
     expect(sidebarSource).not.toContain('command="profile"');
     expect(sidebarSource).not.toContain('command="logout"');
   });
+
+  it("notifies the chat page after a session is deleted", () => {
+    expect(sidebarSource).toContain('(e: "delete-session", sessionId: string): void');
+    expect(sidebarSource).toContain('emit("delete-session", session.id)');
+  });
 });
