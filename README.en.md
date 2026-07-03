@@ -1,6 +1,6 @@
 <div align="center">
      <p align="center">
-          <img src="frontend/web/public/logo.svg" width="150" height="150" alt="logo" />
+          <img src="frontend/public/logo.svg" width="150" height="150" alt="logo" />
      </p>
      <h1>FastApiAdmin <sup style="background-color: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.4em; vertical-align: super; margin-left: 5px;">v3.0.0</sup></h1>
      <h3>🚀 Exceptional Code Quality, Production-Ready Admin Dashboard in 5 Minutes</h3>
@@ -58,13 +58,13 @@ git clone https://github.com/fastapiadmin/FastapiAdmin.git
 
 # 2. Configure environments
 cp backend/env/.env.dev.example backend/env/.env.dev
-cp frontend/web/.env.development.example frontend/web/.env.development
+cp frontend/.env.example frontend/.env
 
 # 3. Start backend (auto-creates tables + seed data on first run)
 cd backend && uv sync && uv run main.py run --env=dev
 
 # 4. Start frontend
-cd ../frontend/web && pnpm install && pnpm run dev
+cd ../frontend && pnpm install && pnpm run dev
 
 # ✅ Open http://127.0.0.1:5173, login with admin/123456
 ```
@@ -79,10 +79,10 @@ cd ../frontend/web && pnpm install && pnpm run dev
 ```
 FastapiAdmin/            # Monorepo full-stack project
 ├─ backend/              # FastAPI backend (Pydantic 2.0 + SQLAlchemy + Alembic)
-├─ frontend/
-│   ├── web/             # Vue3 Web (Element Plus + TypeScript)
-│   ├── app/             # UniApp Mobile (H5 + Mini Program + App)
-│   └── docs/            # VitePress documentation
+├── frontend/             # Vue3 Web (Element Plus + TypeScript)
+│   ├── src/
+│   ├── public/
+│   └── package.json
 ├─ docker/               # Docker Compose deploy (Nginx + SSL)
 ├─ deploy.sh             # One-click deploy script
 └─ LICENSE               # MIT
@@ -105,12 +105,12 @@ FastapiAdmin/            # Monorepo full-stack project
 
 | Login | Dashboard | Code Generator | AI Assistant |
 | ----- | --------- | -------------- | ------------ |
-| ![Login](frontend/web/public/login.png) | ![Dashboard](frontend/web/public/dashboard.png) | ![Code Generator](frontend/web/public/gencode.png) | ![AI](frontend/web/public/ai.png) |
+| ![Login](frontend/public/login.png) | ![Dashboard](frontend/public/dashboard.png) | ![Code Generator](frontend/public/gencode.png) | ![AI](frontend/public/ai.png) |
 
 ## 📖 Documentation
 
 - 🌐 [Official Docs](https://service.fastapiadmin.com) — Full guides, architecture, custom development
-- 📁 Sub-project READMEs: [backend](backend/README.md) · [web](frontend/web/README.md) · [mobile](frontend/app/README.md) · [Docker](docker/README.md)
+- 📁 Sub-project READMEs: [backend](backend/README.md) · [frontend](frontend/README.md) · [Docker](docker/README.md)
 
 ## 🤝 Contributing
 
@@ -120,7 +120,7 @@ Issues and PRs are welcome! See [Contributing Guide](https://service.fastapiadmi
 
 | WeChat Group |
 | ------------ |
-| ![Group QR](frontend/web/public/group.jpg) |
+| ![Group QR](frontend/public/group.jpg) |
 
 > If you find this project useful, please give it a ⭐️ Star!
 

@@ -40,14 +40,13 @@ FastApiAdmin AI Knowledge Skeleton 是一个面向单组织内部使用的后台
 │   ├── env/                  # 环境变量模板
 │   ├── tests/                # 后端测试
 │   └── pyproject.toml
-├── frontend/
-│   └── web/                  # Vue 3 前端
-│       ├── src/
-│       │   ├── api/          # 前端 API 封装
-│       │   ├── router/       # 路由
-│       │   ├── stores/       # Pinia 状态
-│       │   └── views/        # 页面
-│       └── package.json
+├── frontend/                  # Vue 3 frontend
+│   ├── src/
+│   │   ├── api/               # Frontend API wrappers
+│   │   ├── router/            # Routes
+│   │   ├── stores/            # Pinia state
+│   │   └── views/             # Pages
+│   └── package.json
 ├── courseware/               # 实训课件与展示材料
 └── docs/                     # 项目文档与实训资料
 ```
@@ -126,7 +125,7 @@ uv run main.py run --env=dev
 进入前端目录并安装依赖：
 
 ```powershell
-cd frontend\web
+cd frontend
 pnpm install
 ```
 
@@ -151,7 +150,7 @@ VITE_ACCESS_MODE=mixed
 ## 前端启动
 
 ```powershell
-cd frontend\web
+cd frontend
 pnpm run dev
 ```
 
@@ -185,8 +184,8 @@ backend/app/plugin/module_ai/knowledge/
 核心前端路径：
 
 ```txt
-frontend/web/src/api/module_ai/
-frontend/web/src/views/module_ai/
+frontend/src/api/module_ai/
+frontend/src/views/module_ai/
 ```
 
 ## 验证命令
@@ -204,7 +203,7 @@ uv run python -c "import chromadb, openai, pypdf, docx"
 前端：
 
 ```powershell
-cd frontend\web
+cd frontend
 pnpm vitest run src\__tests__\single-org-user-store.test.ts src\__tests__\knowledge-api.test.ts
 pnpm run type-check
 ```

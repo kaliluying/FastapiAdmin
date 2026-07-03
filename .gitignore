@@ -12,11 +12,14 @@ __pycache__
 
 .env
 !.env.example
+!frontend/.env
 
 *.egg
 *.egg-info
 dist
 build
+!frontend/build/
+!frontend/build/**
 eggs
 .eggs
 *.manifest
@@ -66,16 +69,6 @@ frontend/node_modules
 frontend/dist
 frontend/src/types/auto-imports.d.ts
 frontend/src/types/components.d.ts
-frontend/.env.development
-frontend/.env.production
-frontend/web/.env
-
-frontend/docs/*
-!frontend/docs/.gitkeep
-
-frontend/app/*
-!frontend/app/.gitkeep
-
 .plan
 CLAUDE.md
 AGENTS.md
