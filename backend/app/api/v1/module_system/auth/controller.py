@@ -9,14 +9,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.response import ErrorResponse, ResponseSchema, SuccessResponse
 from app.config.setting import settings
-from app.core import cache_util
 from app.core.base_schema import (
     AuthSchema,
     JWTOutSchema,
     LogoutPayloadSchema,
     RefreshTokenPayloadSchema,
 )
-from app.core.cache_util import cache
 from app.core.dependencies import db_getter, get_current_user, redis_getter
 from app.core.exceptions import CustomException
 from app.core.logger import logger
@@ -119,8 +117,7 @@ async def get_auto_login_users_controller(
     auth: Annotated[AuthSchema, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(db_getter)],
 ) -> JSONResponse:
-    tenant_id = None if auth.user.is_superuser else auth.user.tenant_id
-    users = await AutoLoginService.get_auto_login_users(db=db, tenant_id=tenant_id)
+    users = await AutoLoginService.get_auto_login_users(db=db)
     return SuccessResponse(data=users, msg="获取成功")
 
 
@@ -135,8 +132,7 @@ async def get_auto_login_token_controller(
     db: Annotated[AsyncSession, Depends(db_getter)],
     user_id: int,
 ) -> JSONResponse:
-    tenant_id = None if auth.user.is_superuser else auth.user.tenant_id
-    result = await AutoLoginService.create_auto_login_token(redis=redis, db=db, user_id=user_id, tenant_id=tenant_id)
+    result = await AutoLoginService.create_auto_login_token(redis=redis, db=db, user_id=user_id)
     return SuccessResponse(data=result, msg="获取成功")
 
 

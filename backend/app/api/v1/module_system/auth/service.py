@@ -38,7 +38,6 @@ from .schema import (
     AutoLoginUserSchema,
     CaptchaOutSchema,
     LoginSchema,
-    TenantOptionSchema,
 )
 
 CaptchaKey = NewType("CaptchaKey", str)
@@ -170,8 +169,6 @@ class LoginService:
             user=user,
             login_type=login_form.login_type,
         )
-        tenants = []
-
         user_info = {
             "id": user.id,
             "username": user.username,
@@ -195,7 +192,6 @@ class LoginService:
             refresh_token=token.refresh_token,
             expires_in=token.expires_in,
             token_type=token.token_type,
-            tenants=tenants,
             user_info=user_info,
         )
 
@@ -203,7 +199,6 @@ class LoginService:
     async def create_token(cls, request: Request, redis: Redis, user: UserModel, login_type: str) -> JWTOutSchema:
         """创建访问令牌和刷新令牌"""
         session_id = str(uuid.uuid4())
-        ua_result = ua_parser.parse(request.headers.get("user-agent"))
         request_ip = _resolve_request_ip(request)
 
         login_location = await IpLocalUtil.resolve_location_for_log(request_ip)
@@ -229,7 +224,6 @@ class LoginService:
             "user_id": user.id,
             "username": user.username,
             "user_name": user.username,
-            "tenant_id": user.tenant_id,
             "login_type": login_type,
             "login_time": now.isoformat(),
         }
@@ -417,15 +411,13 @@ class AutoLoginService:
     TOKEN_EXPIRE = 300
 
     @classmethod
-    async def get_auto_login_users(cls, db: AsyncSession, tenant_id: int | None = None) -> list[AutoLoginUserSchema]:
+    async def get_auto_login_users(cls, db: AsyncSession) -> list[AutoLoginUserSchema]:
         """获取免登录用户列表"""
         from sqlalchemy import select
 
         from app.api.v1.module_system.user.model import UserModel
 
         stmt = select(UserModel).where(UserModel.status == 0)
-        if tenant_id is not None:
-            stmt = stmt.where(UserModel.tenant_id == tenant_id)
         stmt = stmt.order_by(UserModel.id)
         result = await db.execute(stmt)
         users = result.scalars().all()
@@ -446,7 +438,6 @@ class AutoLoginService:
         redis: Redis,
         db: AsyncSession,
         user_id: int,
-        tenant_id: int | None = None,
     ) -> AutoLoginTokenSchema:
         """创建免登录Token"""
         from sqlalchemy import select
@@ -454,8 +445,6 @@ class AutoLoginService:
         from app.api.v1.module_system.user.model import UserModel
 
         stmt = select(UserModel).where(UserModel.id == user_id)
-        if tenant_id is not None:
-            stmt = stmt.where(UserModel.tenant_id == tenant_id)
         result = await db.execute(stmt)
         user = result.scalar_one_or_none()
 
@@ -473,7 +462,6 @@ class AutoLoginService:
         token_data = {
             "user_id": user.id,
             "username": user.username,
-            "tenant_id": user.tenant_id,
             "created_at": datetime.now().isoformat(),
         }
         await RedisCURD(redis).set(
@@ -501,7 +489,6 @@ class AutoLoginService:
         redis: Redis,
         db: AsyncSession,
         token: str,
-        tenant_id: int | None = None,
     ) -> JWTOutSchema:
         """免登录"""
         from sqlalchemy import select
@@ -519,12 +506,8 @@ class AutoLoginService:
 
         token_data = json.loads(token_data_str)
         user_id = token_data.get("user_id")
-        token_tenant_id = token_data.get("tenant_id")
 
         stmt = select(UserModel).where(UserModel.id == user_id)
-        effective_tenant_id = tenant_id if tenant_id is not None else token_tenant_id
-        if effective_tenant_id is not None:
-            stmt = stmt.where(UserModel.tenant_id == effective_tenant_id)
         result = await db.execute(stmt)
         user = result.scalar_one_or_none()
 

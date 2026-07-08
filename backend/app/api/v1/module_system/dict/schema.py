@@ -11,8 +11,8 @@ from pydantic import (
 )
 
 from app.common.enums import QueueEnum
-from app.core.base_params import BaseQueryParam, TenantByQueryParam, UserByQueryParam
-from app.core.base_schema import BaseSchema, TenantBySchema, UserBySchema
+from app.core.base_params import BaseQueryParam, UserByQueryParam
+from app.core.base_schema import BaseSchema, UserBySchema
 
 
 class DictTypeCreateSchema(BaseModel):
@@ -78,14 +78,14 @@ class DictTypeUpdateSchema(DictTypeCreateSchema):
     """字典类型更新模型"""
 
 
-class DictTypeOutSchema(DictTypeCreateSchema, BaseSchema, UserBySchema, TenantBySchema):
+class DictTypeOutSchema(DictTypeCreateSchema, BaseSchema, UserBySchema):
     """字典类型响应模型"""
 
     model_config = ConfigDict(from_attributes=True)
 
 
 @dataclass
-class DictTypeQueryParam(BaseQueryParam, UserByQueryParam, TenantByQueryParam):
+class DictTypeQueryParam(BaseQueryParam, UserByQueryParam):
     """字典类型查询参数"""
 
     dict_name: str | None = Query(default=None, description="字典名称", max_length=100)
@@ -156,14 +156,14 @@ class DictDataUpdateSchema(DictDataCreateSchema):
     """字典数据更新模型"""
 
 
-class DictDataOutSchema(DictDataCreateSchema, BaseSchema, UserBySchema, TenantBySchema):
+class DictDataOutSchema(DictDataCreateSchema, BaseSchema, UserBySchema):
     """字典数据响应模型"""
 
     model_config = ConfigDict(from_attributes=True)
 
 
 @dataclass
-class DictDataQueryParam(BaseQueryParam, UserByQueryParam, TenantByQueryParam):
+class DictDataQueryParam(BaseQueryParam, UserByQueryParam):
     """字典数据查询参数"""
 
     dict_label: str | None = Query(default=None, description="字典标签", max_length=100)

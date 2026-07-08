@@ -4,8 +4,8 @@ from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.common.enums import QueueEnum
-from app.core.base_params import BaseQueryParam, TenantByQueryParam, UserByQueryParam
-from app.core.base_schema import BaseSchema, TenantBySchema, UserBySchema
+from app.core.base_params import BaseQueryParam, UserByQueryParam
+from app.core.base_schema import BaseSchema, UserBySchema
 
 ALLOWED_REQUEST_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"]
 
@@ -39,7 +39,7 @@ class LoginLogCreateSchema(BaseModel):
         return v
 
 
-class LoginLogOutSchema(LoginLogCreateSchema, BaseSchema, UserBySchema, TenantBySchema):
+class LoginLogOutSchema(LoginLogCreateSchema, BaseSchema, UserBySchema):
     """登录日志响应"""
 
     model_config = ConfigDict(from_attributes=True)
@@ -50,7 +50,7 @@ class LoginLogDetailOutSchema(LoginLogOutSchema):
 
 
 @dataclass
-class LoginLogQueryParam(BaseQueryParam, UserByQueryParam, TenantByQueryParam):
+class LoginLogQueryParam(BaseQueryParam, UserByQueryParam):
     """登录日志查询参数"""
 
     username: str | None = Query(None, max_length=64, description="用户名")
@@ -64,7 +64,7 @@ class LoginLogQueryParam(BaseQueryParam, UserByQueryParam, TenantByQueryParam):
 
 
 @dataclass
-class OperationLogQueryParam(BaseQueryParam, UserByQueryParam, TenantByQueryParam):
+class OperationLogQueryParam(BaseQueryParam, UserByQueryParam):
     """操作日志查询参数"""
 
     request_path: str | None = Query(None, description="请求路径")
@@ -83,7 +83,7 @@ class OperationLogQueryParam(BaseQueryParam, UserByQueryParam, TenantByQueryPara
             self.status = (QueueEnum.eq.value, self.status)
 
 
-class OperationLogOutSchema(BaseSchema, UserBySchema, TenantBySchema):
+class OperationLogOutSchema(BaseSchema, UserBySchema):
     """操作日志响应模型"""
 
     model_config = ConfigDict(from_attributes=True)

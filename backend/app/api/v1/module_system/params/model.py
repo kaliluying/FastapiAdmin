@@ -1,15 +1,14 @@
 ﻿from sqlalchemy import Boolean, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.base_model import ModelMixin, TenantMixin, UserMixin
+from app.core.base_model import ModelMixin, UserMixin
 
 
-class ParamsModel(ModelMixin, TenantMixin, UserMixin):
+class ParamsModel(ModelMixin, UserMixin):
     """
     系统参数表
 
     用于存储全局系统配置（如 retention_days、smtp 主机等）。
-    平台参数（tenant_id=1）对所有租户共享；租户级参数仅本租户可见。
     """
 
     __tablename__: str = "sys_param"

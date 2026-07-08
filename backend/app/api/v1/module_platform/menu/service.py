@@ -22,7 +22,7 @@ from .schema import (
 
 
 class MenuService:
-    """菜单管理服务（查询操作租户可见，写操作仅超级管理员可操作）"""
+    """菜单管理服务（查询操作登录用户可见，写操作仅超级管理员可操作）"""
 
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth

@@ -33,7 +33,7 @@
           <FaTableHeaderLeft
             :remove-ids="selectedIds"
             :perm-create="['module_ai:chat:create']"
-            :perm-delete="['module_ai:chat:delete']"
+            :perm-delete="['module_ai:session:delete']"
             :delete-loading="batchDeleting"
             :create-loading="createLoading"
             @add="handleAdd"
@@ -443,7 +443,7 @@ function buildMemoryRowActions(row: ChatSession): TableOperationAction[] {
       key: "detail",
       label: "详情",
       artType: "view",
-      perm: "module_ai:chat:detail",
+      perm: "module_ai:session:detail",
       run: () => {
         void handleOpenDialog("detail", row.id);
       },
@@ -453,7 +453,7 @@ function buildMemoryRowActions(row: ChatSession): TableOperationAction[] {
       label: "删除",
       artType: "delete",
       icon: "ri:delete-bin-4-line",
-      perm: "module_ai:chat:delete",
+      perm: "module_ai:session:delete",
       run: () => {
         deleteSessionRow(row.id);
       },

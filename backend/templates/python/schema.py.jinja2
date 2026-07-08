@@ -12,8 +12,8 @@ from fastapi import Query
 {% endfor %}
 {# DateTimeStr 由 schema_import_list 在存在 created_time/updated_time 列时注入 #}
 from app.common.enums import QueueEnum
-from app.core.base_params import BaseQueryParam, TenantByQueryParam, UserByQueryParam
-from app.core.base_schema import BaseSchema, TenantBySchema, UserBySchema
+from app.core.base_params import BaseQueryParam, UserByQueryParam
+from app.core.base_schema import BaseSchema, UserBySchema
 
 class {{ class_name }}CreateSchema(BaseModel):
     """
@@ -39,7 +39,7 @@ class {{ class_name }}UpdateSchema({{ class_name }}CreateSchema):
     ...
 
 
-class {{ class_name }}OutSchema({{ class_name }}CreateSchema, BaseSchema, UserBySchema, TenantBySchema):
+class {{ class_name }}OutSchema({{ class_name }}CreateSchema, BaseSchema, UserBySchema):
     """
     {{ function_name }}响应模型
     """
@@ -47,7 +47,7 @@ class {{ class_name }}OutSchema({{ class_name }}CreateSchema, BaseSchema, UserBy
 
 
 @dataclass
-class {{ class_name }}QueryParam(BaseQueryParam, UserByQueryParam, TenantByQueryParam):
+class {{ class_name }}QueryParam(BaseQueryParam, UserByQueryParam):
     """{{ function_name }}查询参数"""
 
     def __init__(

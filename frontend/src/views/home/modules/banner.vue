@@ -108,16 +108,16 @@ const statusCards = [
   grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
   gap: 24px;
   min-height: 214px;
-  padding: 28px 32px;
+  padding: 30px 34px;
   overflow: hidden;
-  color: #172033;
+  color: #0b1220;
   background:
-    linear-gradient(135deg, rgb(255 255 255 / 94%), rgb(245 249 255 / 90%)),
-    radial-gradient(circle at 18% 12%, rgb(93 135 255 / 18%), transparent 32%),
-    radial-gradient(circle at 92% 12%, rgb(45 212 191 / 18%), transparent 30%);
-  border: 1px solid rgb(93 135 255 / 18%);
+    linear-gradient(135deg, rgb(255 255 255 / 96%), rgb(241 247 255 / 92%)),
+    radial-gradient(circle at 18% 12%, rgb(59 130 246 / 17%), transparent 32%),
+    radial-gradient(circle at 92% 12%, rgb(45 212 191 / 20%), transparent 30%);
+  border: 1px solid rgb(11 18 32 / 8%);
   border-radius: 8px;
-  box-shadow: 0 12px 32px rgb(23 32 51 / 8%);
+  box-shadow: 0 24px 60px rgb(11 18 32 / 10%);
 }
 
 .home-command-hero::before {
@@ -126,10 +126,23 @@ const statusCards = [
   pointer-events: none;
   content: "";
   background-image:
-    linear-gradient(rgb(93 135 255 / 7%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(93 135 255 / 7%) 1px, transparent 1px);
+    linear-gradient(rgb(59 130 246 / 7%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(59 130 246 / 7%) 1px, transparent 1px);
   background-size: 28px 28px;
   mask-image: linear-gradient(90deg, rgb(0 0 0 / 75%), transparent 78%);
+}
+
+.home-command-hero::after {
+  position: absolute;
+  right: 28px;
+  bottom: 22px;
+  width: 170px;
+  height: 2px;
+  pointer-events: none;
+  content: "";
+  background: linear-gradient(90deg, transparent, #2dd4bf, #3b82f6);
+  border-radius: 999px;
+  box-shadow: 0 0 24px rgb(45 212 191 / 45%);
 }
 
 .hero-copy,
@@ -145,7 +158,7 @@ const statusCards = [
   margin-bottom: 14px;
   font-size: 12px;
   font-weight: 700;
-  color: #4070d8;
+  color: #2563eb;
   text-transform: uppercase;
 }
 
@@ -163,7 +176,7 @@ h1 {
   font-size: 30px;
   font-weight: 760;
   line-height: 1.22;
-  color: #172033;
+  color: #0b1220;
 }
 
 p {
@@ -171,7 +184,7 @@ p {
   margin: 10px 0 0;
   font-size: 14px;
   line-height: 1.7;
-  color: #667085;
+  color: #64748b;
 }
 
 .operator-card {
@@ -191,9 +204,9 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #5d87ff;
-  background: rgb(93 135 255 / 10%);
-  border: 1px solid rgb(93 135 255 / 18%);
+  color: #2563eb;
+  background: rgb(59 130 246 / 10%);
+  border: 1px solid rgb(59 130 246 / 18%);
   border-radius: 8px;
 }
 
@@ -204,14 +217,14 @@ p {
 
 .operator-meta strong {
   font-size: 16px;
-  color: #172033;
+  color: #0b1220;
 }
 
 .operator-meta span,
 .operator-login {
   margin-top: 4px;
   font-size: 13px;
-  color: #667085;
+  color: #64748b;
 }
 
 .operator-login {
@@ -222,8 +235,8 @@ p {
 .hero-status-panel {
   align-self: center;
   padding: 12px;
-  background: rgb(255 255 255 / 44%);
-  border: 1px solid rgb(23 32 51 / 7%);
+  background: rgb(255 255 255 / 58%);
+  border: 1px solid rgb(11 18 32 / 7%);
   border-radius: 8px;
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%);
   backdrop-filter: blur(10px);
@@ -236,7 +249,7 @@ p {
   margin-bottom: 10px;
   font-size: 12px;
   font-weight: 740;
-  color: #4070d8;
+  color: #2563eb;
 }
 
 .panel-dot {
@@ -259,8 +272,8 @@ p {
   align-items: center;
   min-height: 50px;
   padding: 8px 10px;
-  background: rgb(255 255 255 / 62%);
-  border: 1px solid rgb(23 32 51 / 6%);
+  background: rgb(255 255 255 / 68%);
+  border: 1px solid rgb(11 18 32 / 6%);
   border-radius: 8px;
 }
 
@@ -280,8 +293,8 @@ p {
 }
 
 .status-icon--blue {
-  color: #4070d8;
-  background: rgb(93 135 255 / 13%);
+  color: #2563eb;
+  background: rgb(59 130 246 / 13%);
 }
 
 .status-icon--amber {
@@ -297,14 +310,14 @@ p {
 .status-chip strong {
   font-size: 15px;
   line-height: 1.15;
-  color: #172033;
+  color: #0b1220;
 }
 
 .status-chip span {
   margin-top: 2px;
   font-size: 11px;
   line-height: 1.2;
-  color: #667085;
+  color: #64748b;
 }
 
 @media (width <= 1024px) {

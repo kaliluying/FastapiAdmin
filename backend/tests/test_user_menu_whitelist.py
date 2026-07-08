@@ -3,9 +3,8 @@ from types import SimpleNamespace
 from app.api.v1.module_system.user.service import UserService
 
 
-def test_user_menu_whitelist_rejects_legacy_product_selection_menu() -> None:
-    UserService._allowed_menu_keys = None
-    legacy_menu = SimpleNamespace(
+def test_user_menu_whitelist_allows_runtime_database_menu() -> None:
+    runtime_menu = SimpleNamespace(
         permission="module_amazon:product:query",
         route_name="AmazonProduct",
         route_path="/amazon/product",
@@ -13,11 +12,10 @@ def test_user_menu_whitelist_rejects_legacy_product_selection_menu() -> None:
         title="Amazon选品",
     )
 
-    assert not UserService._is_builtin_menu(legacy_menu)
+    assert UserService._is_builtin_menu(runtime_menu)
 
 
 def test_user_menu_whitelist_allows_seed_menu() -> None:
-    UserService._allowed_menu_keys = None
     seed_menu = SimpleNamespace(
         permission="module_system:user:query",
         route_name="User",

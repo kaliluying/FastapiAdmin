@@ -4,8 +4,8 @@ from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.common.enums import QueueEnum
-from app.core.base_params import BaseQueryParam, TenantByQueryParam, UserByQueryParam
-from app.core.base_schema import BaseSchema, TenantBySchema, UserBySchema
+from app.core.base_params import BaseQueryParam, UserByQueryParam
+from app.core.base_schema import BaseSchema, UserBySchema
 from app.core.validator import validate_required_code
 
 
@@ -49,7 +49,7 @@ class DeptUpdateSchema(DeptCreateSchema):
     """部门更新模型"""
 
 
-class DeptOutSchema(DeptCreateSchema, BaseSchema, UserBySchema, TenantBySchema):
+class DeptOutSchema(DeptCreateSchema, BaseSchema, UserBySchema):
     """部门详情响应模型（不含 children，用于详情和更新）"""
 
     model_config = ConfigDict(from_attributes=True)
@@ -64,7 +64,7 @@ class DeptTreeOutSchema(DeptOutSchema):
 
 
 @dataclass
-class DeptQueryParam(BaseQueryParam, UserByQueryParam, TenantByQueryParam):
+class DeptQueryParam(BaseQueryParam, UserByQueryParam):
     """部门管理查询参数"""
 
     name: str | None = Query(None, description="部门名称")

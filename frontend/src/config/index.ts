@@ -35,7 +35,7 @@ import { headerBarConfig } from "./modules/headerBar";
 const appConfig: SystemConfig = {
   // 系统信息
   systemInfo: {
-    name: "WeComAgent", // 系统名称
+    name: "FastAPI Admin", // 系统名称
   },
   // 系统主题
   systemThemeStyles: {
@@ -85,17 +85,17 @@ const appConfig: SystemConfig = {
     {
       theme: MenuThemeEnum.DESIGN,
       background: "#FFFFFF",
-      systemNameColor: "var(--fa-gray-800)",
-      iconColor: "#6B6B6B",
-      textColor: "#29343D",
+      systemNameColor: "var(--fa-gray-900)",
+      iconColor: "#64748B",
+      textColor: "#334155",
       img: configImages.menuStyles.design,
     },
     {
       theme: MenuThemeEnum.DARK,
-      background: "#F8FAFC",
-      systemNameColor: "#1F2937",
-      iconColor: "#64748B",
-      textColor: "#334155",
+      background: "#0B1220",
+      systemNameColor: "#F8FAFC",
+      iconColor: "#94A3B8",
+      textColor: "#CBD5E1",
       img: configImages.menuStyles.dark,
     },
     {

@@ -258,6 +258,6 @@ async def export_data_list_controller(
     response_model=ResponseSchema[list[DictDataOutSchema]],
 )
 async def get_init_dict_data_controller(dict_type: str, redis: Annotated[Redis, Depends(redis_getter)]) -> JSONResponse:
-    dict_data_query_result = await DictDataService.get_init_cache(redis=redis, dict_type=dict_type, tenant_id=1)
+    dict_data_query_result = await DictDataService.get_init_cache(redis=redis, dict_type=dict_type)
 
     return SuccessResponse(data=dict_data_query_result, msg="获取初始化字典数据成功")

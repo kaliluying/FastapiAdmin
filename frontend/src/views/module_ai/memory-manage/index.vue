@@ -92,7 +92,7 @@
             v-model="formData.value"
             type="textarea"
             :rows="4"
-            placeholder="如: 劳动仲裁调解员，主要负责工伤类案件"
+            placeholder="如: 偏好先看执行摘要，再看明细"
             maxlength="5000"
             show-word-limit
           />

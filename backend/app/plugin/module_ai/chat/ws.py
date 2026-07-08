@@ -1,13 +1,13 @@
 import json
 
 from fastapi import APIRouter, WebSocket
-from starlette.status import WS_1008_POLICY_VIOLATION
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.status import WS_1008_POLICY_VIOLATION
 
 from app.core.base_schema import AuthSchema
-from app.core.exceptions import CustomException
 from app.core.database import async_db_session
 from app.core.dependencies import _verify_token
+from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.core.router_class import OperationLogRoute
 
@@ -30,12 +30,30 @@ async def _resolve_ws_auth(websocket: WebSocket, db: AsyncSession) -> AuthSchema
     return await _verify_token(token, db, redis)
 
 
+def _has_ws_permission(auth: AuthSchema, permission: str) -> bool:
+    user = getattr(auth, "user", None)
+    if not user:
+        return False
+    if getattr(user, "is_superuser", False):
+        return True
+
+    for role in getattr(user, "roles", []) or []:
+        if getattr(role, "status", None) != 0:
+            continue
+        for menu in getattr(role, "menus", []) or []:
+            if getattr(menu, "status", None) == 0 and getattr(menu, "permission", None) == permission:
+                return True
+    return False
+
+
 @WS_AI.websocket("/ws", name="WebSocket Chat")
 async def websocket_chat_controller(websocket: WebSocket) -> None:
     try:
         async with async_db_session() as db:
             try:
                 auth = await _resolve_ws_auth(websocket, db)
+                if not _has_ws_permission(auth, "module_ai:chat:ws"):
+                    raise CustomException(msg="无权限操作", code=10403, status_code=403)
             except Exception as e:
                 logger.warning(f"WebSocket authentication failed: {websocket.client} - {e}")
                 await websocket.close(code=WS_1008_POLICY_VIOLATION)

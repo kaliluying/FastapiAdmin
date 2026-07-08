@@ -81,7 +81,7 @@ async def test_websocket_chat_rejects_invalid_token(monkeypatch) -> None:
 async def test_websocket_chat_uses_authenticated_service_instance(monkeypatch) -> None:
     from app.plugin.module_ai.chat import ws
 
-    auth = SimpleNamespace(user=SimpleNamespace(username="admin", dept_id=1))
+    auth = SimpleNamespace(user=SimpleNamespace(username="admin", dept_id=1, is_superuser=True))
 
     class FakeTransaction:
         async def __aenter__(self):
@@ -172,7 +172,7 @@ async def test_websocket_chat_commits_message_history_per_received_message(monke
             return FakeTransaction(self)
 
     fake_db = FakeDb()
-    auth = SimpleNamespace(user=SimpleNamespace(username="admin", dept_id=1), db=fake_db)
+    auth = SimpleNamespace(user=SimpleNamespace(username="admin", dept_id=1, is_superuser=True), db=fake_db)
 
     @asynccontextmanager
     async def fake_db_session():
@@ -221,3 +221,54 @@ async def test_websocket_chat_commits_message_history_per_received_message(monke
     assert "ok" in websocket.sent
     assert fake_db.begin_count == 1
     assert fake_db.commit_count == 1
+
+
+async def test_websocket_chat_rejects_user_without_chat_ws_permission(monkeypatch) -> None:
+    from app.plugin.module_ai.chat import ws
+
+    class FakeTransaction:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+    class FakeDb:
+        def begin(self) -> FakeTransaction:
+            return FakeTransaction()
+
+    @asynccontextmanager
+    async def fake_db_session():
+        yield FakeDb()
+
+    denied_menu = SimpleNamespace(permission="module_ai:session:query", status=0, id=1)
+    role = SimpleNamespace(status=0, menus=[denied_menu])
+    auth = SimpleNamespace(user=SimpleNamespace(username="user", is_superuser=False, roles=[role]))
+
+    async def fake_verify_token(token: str, db: object, redis: object) -> Any:
+        return auth
+
+    class FakeWebSocket:
+        query_params = {"token": "token"}
+        app = SimpleNamespace(state=SimpleNamespace(redis=object()))
+        client = "test-client"
+        state = SimpleNamespace()
+
+        def __init__(self) -> None:
+            self.accepted = False
+            self.closed_code: int | None = None
+
+        async def accept(self) -> None:
+            self.accepted = True
+
+        async def close(self, code: int = 1000, reason: str | None = None) -> None:
+            self.closed_code = code
+
+    monkeypatch.setattr(ws, "async_db_session", fake_db_session)
+    monkeypatch.setattr(ws, "_verify_token", fake_verify_token)
+
+    websocket = FakeWebSocket()
+    await ws.websocket_chat_controller(websocket)
+
+    assert websocket.accepted is False
+    assert websocket.closed_code == 1008

@@ -323,17 +323,32 @@ const openChat = (): void => {
 
 <style lang="scss" scoped>
 .w-full {
-  background: color-mix(in srgb, var(--default-box-color) 96%, transparent);
-  border-bottom: 1px solid var(--fa-card-border);
-  box-shadow: var(--fa-panel-shadow);
+  padding: 10px 16px 0;
+  background: linear-gradient(180deg, rgb(246 248 252 / 92%), rgb(246 248 252 / 68%));
+  border-bottom: 0;
+  box-shadow: none;
+  backdrop-filter: blur(16px);
 }
 
 html.dark .w-full {
-  background: color-mix(in srgb, var(--default-box-color) 94%, transparent);
+  background: linear-gradient(180deg, rgb(9 15 28 / 92%), rgb(9 15 28 / 64%));
 }
 
 .relative.box-border {
-  backdrop-filter: blur(10px);
+  height: 56px;
+  padding: 0 12px;
+  line-height: 56px;
+  background: rgb(255 255 255 / 78%);
+  border: 1px solid rgb(11 18 32 / 7%);
+  border-radius: 8px;
+  box-shadow: 0 14px 36px rgb(11 18 32 / 8%);
+  backdrop-filter: blur(16px);
+}
+
+html.dark .relative.box-border {
+  background: rgb(16 24 39 / 72%);
+  border-color: rgb(255 255 255 / 8%);
+  box-shadow: 0 14px 36px rgb(0 0 0 / 22%);
 }
 
 /* Custom animations */
@@ -436,10 +451,21 @@ html.dark .w-full {
 #app-header-toolbar :deep(.fa-icon-button),
 #app-header-toolbar :deep(.el-button) {
   border-radius: 8px;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    transform 0.16s ease;
 }
 
 #app-header-toolbar :deep(.fa-icon-button:hover) {
-  background: var(--fa-active-color);
+  background: color-mix(in srgb, var(--theme-color) 8%, white);
+  transform: translateY(-1px);
+}
+
+#app-header-toolbar :deep(.fa-icon-button:focus-visible) {
+  outline: none;
+  box-shadow: var(--fa-focus-ring);
 }
 
 .language-btn,
@@ -451,13 +477,14 @@ html.dark .w-full {
 }
 
 #app-header-toolbar .flex.items-center.justify-between {
-  background: color-mix(in srgb, var(--default-box-color) 96%, transparent);
-  border: 1px solid var(--fa-card-border);
+  background: color-mix(in srgb, white 84%, var(--default-bg-color));
+  border: 1px solid rgb(11 18 32 / 8%);
   border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%);
 }
 
 #app-header-toolbar .flex.items-center.justify-between:hover {
-  border-color: color-mix(in srgb, var(--theme-color) 28%, var(--fa-card-border));
+  border-color: color-mix(in srgb, var(--theme-color) 32%, var(--fa-card-border));
 }
 
 .language-btn:hover :deep(.fa-svg-icon) {

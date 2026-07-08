@@ -27,7 +27,7 @@ async def test_create_token_stores_user_session() -> None:
         state=SimpleNamespace(),
     )
     redis = FakeRedis()
-    user = SimpleNamespace(id=7, username="admin", tenant_id=1)
+    user = SimpleNamespace(id=7, username="admin")
 
     token = await LoginService.create_token(
         request=request,  # type: ignore[arg-type]
@@ -45,4 +45,4 @@ async def test_create_token_stores_user_session() -> None:
     assert session["user_id"] == 7
     assert session["username"] == "admin"
     assert session["user_name"] == "admin"
-    assert session["tenant_id"] == 1
+    assert "tenant_id" not in session

@@ -5,19 +5,18 @@ Revises:
 Create Date: 2026-07-01 20:20:00.000000
 
 """
-from typing import Sequence, Union
+from collections.abc import Sequence
 
-from alembic import op
 from sqlalchemy import MetaData
 
+from alembic import op
 from app.core.base_model import MappedBase
 from app.utils.import_util import ImportUtil
 
-
 revision: str = "000000000001"
-down_revision: Union[str, None] = None
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | None = None
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 BASELINE_TABLES = {
@@ -34,25 +33,13 @@ BASELINE_TABLES = {
     "sys_user",
     "sys_user_roles",
     "ai_chat_session",
-    "ai_evidence_file",
-    "ai_evidence_analysis",
     "ai_knowledge_base",
     "ai_knowledge_document",
     "ai_knowledge_chunk",
     "ai_memory",
 }
 
-EXCLUDED_COLUMNS = {
-    "sys_user": {
-        "monthly_salary",
-        "hire_date",
-        "company_name",
-        "position_name",
-        "contract_type",
-        "social_insurance",
-    },
-    "ai_evidence_file": {"user_id"},
-}
+EXCLUDED_COLUMNS = {}
 
 
 def _baseline_metadata() -> MetaData:

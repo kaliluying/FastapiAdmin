@@ -211,31 +211,9 @@ export const useUserStore = defineStore(
     /**
      * 设置权限。
      */
-    function setPermissions(menus: MenuTable[]) {
-      prems.value = [];
-      if (!info.value.roles) return;
-
-      const roleMenus = info.value.roles
-        .filter((role) => role.menus && role.menus.length > 0)
-        .flatMap((role) => role.menus)
-        .filter((menu): menu is MenuTable => menu !== undefined);
-
-      const allMenus = [...menus, ...roleMenus];
-
-      const permissionSet = new Set<string>();
-      const collect = (items: MenuTable[]) => {
-        items.forEach((item) => {
-          if (item.permission) {
-            permissionSet.add(item.permission);
-          }
-          if (item.children && item.children.length > 0) {
-            collect(item.children.filter((child): child is MenuTable => child !== undefined));
-          }
-        });
-      };
-
-      collect(allMenus);
-      prems.value = Array.from(permissionSet);
+    function setPermissions(_menus: MenuTable[]) {
+      const permissions = info.value.permissions ?? [];
+      prems.value = Array.from(new Set(permissions.filter(Boolean)));
     }
 
     /**

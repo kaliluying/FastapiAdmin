@@ -7,7 +7,6 @@
 import { useSiteConfig } from "@/hooks/core/useSiteConfig";
 import {
   checkStorageCompatibility,
-  startVersionPolling,
   toggleTransition,
   systemUpgrade,
 } from "@utils";
@@ -19,7 +18,6 @@ export function useAppBootstrap() {
     checkStorageCompatibility();
     toggleTransition(false);
     systemUpgrade();
-    startVersionPolling();
     initSiteConfig();
   };
 

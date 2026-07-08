@@ -5,8 +5,7 @@
     "config_value": "false",
     "config_type": true,
     "status": 0,
-    "description": "是否启用演示模式",
-    "tenant_id": 1
+    "description": "是否启用演示模式"
   },
   {
     "config_name": "演示访问IP白名单",
@@ -14,8 +13,7 @@
     "config_value": "[\"127.0.0.1\", \"223.104.209.37\"]",
     "config_type": true,
     "status": 0,
-    "description": "演示模式下允许访问的IP列表",
-    "tenant_id": 1
+    "description": "演示模式下允许访问的IP列表"
   },
   {
     "config_name": "接口白名单",
@@ -23,8 +21,7 @@
     "config_value": "[\"/api/v1/system/auth/login\", \"/api/v1/system/auth/token/refresh\", \"/api/v1/system/auth/captcha/get\", \"/api/v1/system/auth/logout\", \"/api/v1/system/config/info\", \"/api/v1/system/user/current/info\", \"/api/v1/system/auth/auto-login/users\", \"/api/v1/system/auth/auto-login/token\", \"/api/v1/system/auth/auto-login\", \"/common/health\", \"/common/health/ready\", \"/common/health/live\", \"/metrics\"]",
     "config_type": true,
     "status": 0,
-    "description": "无需登录即可访问的接口列表",
-    "tenant_id": 1
+    "description": "无需登录即可访问的接口列表"
   },
   {
     "config_name": "访问IP黑名单",
@@ -32,8 +29,7 @@
     "config_value": "[]",
     "config_type": true,
     "status": 0,
-    "description": "禁止访问的IP列表",
-    "tenant_id": 1
+    "description": "禁止访问的IP列表"
   },
   {
     "config_name": "登录失败次数限制",
@@ -41,8 +37,7 @@
     "config_value": "5",
     "config_type": true,
     "status": 0,
-    "description": "登录失败最大次数",
-    "tenant_id": 1
+    "description": "登录失败最大次数"
   },
   {
     "config_name": "登录锁定时间(分钟)",
@@ -50,8 +45,7 @@
     "config_value": "15",
     "config_type": true,
     "status": 0,
-    "description": "登录失败后锁定时间",
-    "tenant_id": 1
+    "description": "登录失败后锁定时间"
   },
   {
     "config_name": "Token过期时间(分钟)",
@@ -59,8 +53,7 @@
     "config_value": "120",
     "config_type": true,
     "status": 0,
-    "description": "Access Token过期时间",
-    "tenant_id": 1
+    "description": "Access Token过期时间"
   },
   {
     "config_name": "Refresh Token过期时间(天)",
@@ -68,8 +61,7 @@
     "config_value": "7",
     "config_type": true,
     "status": 0,
-    "description": "Refresh Token过期时间",
-    "tenant_id": 1
+    "description": "Refresh Token过期时间"
   },
   {
     "config_name": "密码有效期(天)",
@@ -77,8 +69,7 @@
     "config_value": "90",
     "config_type": true,
     "status": 0,
-    "description": "密码有效期",
-    "tenant_id": 1
+    "description": "密码有效期"
   },
   {
     "config_name": "密码最小长度",
@@ -86,8 +77,7 @@
     "config_value": "6",
     "config_type": true,
     "status": 0,
-    "description": "密码最小长度",
-    "tenant_id": 1
+    "description": "密码最小长度"
   },
   {
     "config_name": "是否启用验证码",
@@ -95,8 +85,7 @@
     "config_value": "false",
     "config_type": true,
     "status": 0,
-    "description": "登录时是否启用验证码",
-    "tenant_id": 1
+    "description": "登录时是否启用验证码"
   },
   {
     "config_name": "是否记录操作日志",
@@ -104,8 +93,7 @@
     "config_value": "true",
     "config_type": true,
     "status": 0,
-    "description": "是否记录用户操作日志",
-    "tenant_id": 1
+    "description": "是否记录用户操作日志"
   },
   {
     "config_name": "操作日志保留天数",
@@ -113,8 +101,7 @@
     "config_value": "90",
     "config_type": true,
     "status": 0,
-    "description": "操作日志保留天数",
-    "tenant_id": 1
+    "description": "操作日志保留天数"
   },
   {
     "config_name": "登录日志保留天数",
@@ -122,8 +109,7 @@
     "config_value": "30",
     "config_type": true,
     "status": 0,
-    "description": "登录日志保留天数",
-    "tenant_id": 1
+    "description": "登录日志保留天数"
   },
   {
     "config_name": "文件上传大小限制(MB)",
@@ -131,8 +117,7 @@
     "config_value": "50",
     "config_type": true,
     "status": 0,
-    "description": "单个文件上传最大大小",
-    "tenant_id": 1
+    "description": "单个文件上传最大大小"
   },
   {
     "config_name": "是否启用IP归属地查询",
@@ -140,8 +125,7 @@
     "config_value": "false",
     "config_type": true,
     "status": 0,
-    "description": "登录时是否查询IP归属地",
-    "tenant_id": 1
+    "description": "登录时是否查询IP归属地"
   },
   {
     "config_name": "????",
@@ -149,8 +133,7 @@
     "config_value": "FastApiAdmin AI Knowledge",
     "config_type": true,
     "status": 0,
-    "description": "?????????",
-    "tenant_id": 1
+    "description": "?????????"
   },
   {
     "config_name": "?? Logo",
@@ -158,8 +141,7 @@
     "config_value": "",
     "config_type": true,
     "status": 0,
-    "description": "??????? Logo URL",
-    "tenant_id": 1
+    "description": "??????? Logo URL"
   },
   {
     "config_name": "????",
@@ -167,7 +149,6 @@
     "config_value": "3.0.0-ai",
     "config_type": true,
     "status": 0,
-    "description": "?????????",
-    "tenant_id": 1
+    "description": "?????????"
   }
 ]

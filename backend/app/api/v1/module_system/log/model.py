@@ -2,7 +2,7 @@
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.config.setting import settings
-from app.core.base_model import ModelMixin, TenantMixin, UserMixin
+from app.core.base_model import ModelMixin, UserMixin
 
 
 def get_log_text_column_type():
@@ -22,7 +22,7 @@ def get_log_text_column_type():
         return Text
 
 
-class LoginLogModel(ModelMixin, TenantMixin, UserMixin):
+class LoginLogModel(ModelMixin, UserMixin):
     """
     登录日志模型
     """
@@ -41,7 +41,7 @@ class LoginLogModel(ModelMixin, TenantMixin, UserMixin):
     msg: Mapped[str | None] = mapped_column(String(255), nullable=True, comment="提示消息")
 
 
-class OperationLogModel(ModelMixin, TenantMixin, UserMixin):
+class OperationLogModel(ModelMixin, UserMixin):
     """
     操作日志模型
     """

@@ -1,7 +1,7 @@
-"""Legal-aware text splitter for Chinese legislation.
+"""Structured text splitter for Chinese documents.
 
-Splits legal documents (法条、司法解释) by article boundaries with chapter-aware
-grouping, ensuring that each chunk retains its complete legal unit (条/款/项).
+Splits structured Chinese documents by article boundaries with chapter-aware
+grouping, ensuring that each chunk retains its complete numbered unit.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from typing import Any
 
 @dataclass(slots=True)
 class LegalChunk:
-    """A law-aware chunk with structured metadata for RAG."""
+    """A structured chunk with metadata for RAG."""
 
     content: str
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -22,7 +22,7 @@ class LegalChunk:
 def split_text(text: str, *, chunk_size: int = 1000, overlap: int = 150) -> list[str]:
     """Backward-compatible wrapper – returns plain text chunks.
 
-    For documents containing Chinese legal articles (第X条), delegates to
+    For documents containing Chinese numbered articles (第X条), delegates to
     :func:`split_legal_text`. Otherwise falls back to character-based splitting.
 
     The returned chunks include 25-35% contextual overlap extracted from the
@@ -303,37 +303,19 @@ def _build_chunk(
 # Summary & keyword generation (rule-based, no LLM dependency)
 # ---------------------------------------------------------------------------
 
-# Chapter-level topic keywords for Chinese labour/social law.
+# Chapter-level topic keywords for general policy and business documents.
 _CHAPTER_TOPICS: dict[str, str] = {
-    # 《中华人民共和国劳动法》
-    "总则": "立法目的、适用范围、劳动者基本权利、用人单位义务",
-    "促进就业": "就业平等、反歧视、禁止童工、职业介绍",
-    "劳动合同和集体合同": "劳动合同订立、解除、终止、经济补偿、集体合同",
-    "工作时间和休息休假": "标准工时、加班限制、法定节假日、年休假",
-    "工资": "工资支付、最低工资、加班费、克扣拖欠",
-    "劳动安全卫生": "安全制度、劳动防护、特种作业、职业病",
-    "女职工和未成年工特殊保护": "女职工四期保护、产假、未成年工禁忌劳动",
-    "职业培训": "职业培训、技能考核、职业资格证书",
-    "社会保险和福利": "五险、社保基金、补充保险、社会福利",
-    "劳动争议": "调解、仲裁、诉讼、争议处理程序",
-    "监督检查": "劳动监察、工会监督、检举控告",
-    "法律责任": "行政处罚、罚款、赔偿、刑事责任",
+    "总则": "目的、适用范围、基本原则、主体义务",
+    "组织管理": "组织职责、岗位分工、审批权限、管理要求",
+    "合同管理": "合同订立、履行、变更、解除、终止",
+    "费用结算": "付款、收款、结算、对账、发票",
+    "交付验收": "交付标准、验收流程、整改、确认记录",
+    "安全合规": "安全要求、合规边界、风险控制、审计",
+    "培训支持": "培训计划、能力要求、支持机制",
+    "监督检查": "监督检查、过程留痕、问题整改",
+    "责任处理": "违约责任、处罚、赔偿、追责",
     "附则": "施行日期、实施步骤",
-    # 《中华人民共和国社会保险法》
-    "基本养老保险": "基本养老保险、缴费年限、个人账户、养老金领取",
-    "基本医疗保险": "基本医疗保险、医保报销、定点医疗机构",
-    "工伤保险": "工伤保险、工伤认定、伤残津贴、工亡补助",
-    "失业保险": "失业保险、失业金领取、停止领取条件",
-    "生育保险": "生育保险、生育津贴、生育医疗费用",
-    "社会保险费征缴": "社保登记、社保缴费、基数申报、逾期缴纳",
-    "社会保险基金": "社保基金管理、投资运营、保值增值、预算决算",
-    "社会保险经办": "社保经办机构、社保服务、异地结算",
-    "社会保险监督": "社保监督、人大监督、行政监督、社会监督",
-    # 《中华人民共和国劳动合同法》
-    "劳动合同的订立": "劳动合同订立、书面合同、必备条款、试用期",
-    "劳动合同的履行和变更": "劳动合同履行、合同变更、劳动报酬",
-    "劳动合同的解除和终止": "劳动合同解除、合同终止、经济补偿、赔偿金",
-    "特别规定": "集体合同、劳务派遣、非全日制用工",
+    "特别规定": "例外情形、特殊流程、补充要求",
 }
 
 
@@ -357,21 +339,16 @@ def _generate_summary(arts: list[dict[str, Any]], chapter: str) -> str:
 def _generate_keywords(arts: list[dict[str, Any]]) -> list[str]:
     """Generate search keywords from article content."""
 
-    # Pre-defined keyword mapping for core labour-law concepts.
+    # Pre-defined keyword mapping for general business concepts.
     concept_map = {
-        "劳动合同": ["劳动合同", "订立", "解除", "终止", "无效", "经济补偿"],
-        "试用期": ["试用期"],
-        "集体合同": ["集体合同"],
-        "工作时间": ["工作时间", "标准工时", "八小时", "加班", "延长工作时间"],
-        "休息休假": ["休息日", "法定节假日", "年休假", "补休"],
-        "工资报酬": ["工资", "劳动报酬", "最低工资", "同工同酬", "克扣", "拖欠", "加班费"],
-        "劳动安全": ["劳动安全", "劳动卫生", "防护用品", "职业病"],
-        "女职工": ["女职工", "孕期", "产假", "哺乳期", "经期"],
-        "未成年工": ["未成年工", "童工"],
-        "社会保险": ["社会保险", "社保", "养老", "医疗", "工伤", "失业", "生育"],
-        "劳动争议": ["劳动争议", "调解", "仲裁", "诉讼", "仲裁时效"],
-        "监督检查": ["监督检查", "劳动监察", "工会"],
-        "法律责任": ["罚款", "赔偿", "刑事责任", "行政处分"],
+        "合同管理": ["合同", "协议", "订立", "履行", "变更", "解除", "终止"],
+        "费用结算": ["付款", "收款", "结算", "发票", "对账", "欠款"],
+        "交付验收": ["交付", "验收", "整改", "确认", "质量"],
+        "组织职责": ["组织", "部门", "岗位", "职责", "权限"],
+        "流程审批": ["审批", "流程", "节点", "提交", "审核"],
+        "安全合规": ["安全", "合规", "审计", "风险", "控制"],
+        "监督检查": ["监督检查", "抽查", "审计"],
+        "责任处理": ["违约", "处罚", "赔偿", "追责", "整改"],
     }
 
     combined = "".join(a["text"] for a in arts)

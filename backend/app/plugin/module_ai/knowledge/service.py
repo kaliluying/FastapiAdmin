@@ -24,7 +24,8 @@ from .schema import (
     KnowledgeDocumentQueryParam,
     RetrievalTestSchema,
 )
-from .text_splitter import split_legal_text, split_text as split_text_fallback
+from .text_splitter import split_legal_text
+from .text_splitter import split_text as split_text_fallback
 
 UPLOAD_DIR = Path("storage") / "knowledge"
 

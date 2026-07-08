@@ -1,10 +1,11 @@
 # FastApiAdmin AI Knowledge Skeleton
 
-FastApiAdmin AI Knowledge Skeleton 是一个面向单组织内部使用的后台管理系统骨架。当前代码线保留后台管理基础能力，并内置 AI 知识库、文档索引、检索测试和 RAG 对话流程。
+FastApiAdmin AI Knowledge Skeleton 是一个面向单组织内部使用的后台管理系统骨架。当前代码线保留后台管理基础能力，并内置 AI 知识库、文档索引和 RAG 对话流程。
 
 ## 项目定位
 
 - **使用场景**：单组织内部后台、知识库管理、RAG 问答、基础系统管理。
+- **组织边界**：当前版本不支持多租户，也不保留多租户字段或切换入口。
 - **后端栈**：FastAPI、SQLAlchemy、Alembic、Redis、MySQL、ChromaDB 本地持久化、OpenAI-compatible API。
 - **前端栈**：Vue 3、Vite、TypeScript、Element Plus、Pinia、Vue Router。
 - **向量检索**：ChromaDB 本地持久化目录存储向量和文本块索引。
@@ -17,12 +18,12 @@ FastApiAdmin AI Knowledge Skeleton 是一个面向单组织内部使用的后台
 - 系统管理：用户、角色、部门、菜单、字典、参数配置、操作日志。
 - 公共能力：认证、RBAC、动态菜单、文件上传、Redis 缓存。
 - AI 对话：会话记录、模型配置、普通对话、结合知识库的 RAG 对话。
-- AI 知识库：知识库管理、文档上传、文本抽取、分块、embedding、Chroma 写入、检索测试。
+- AI 知识库：知识库管理、文档上传、文本抽取、分块、embedding、Chroma 写入、召回验证。
 
 ### 已移除或禁用
 
-- 租户中间件、租户切换、租户注册、租户菜单入口。
-- SaaS 套餐、租户授权、平台租户运营类需求文档。
+- 多租户中间件、组织切换、组织注册、组织运营入口。
+- SaaS 订阅、授权售卖、平台运营类需求文档。
 - 通知、工单、岗位、监控等可选后台产品入口。
 - Dockerfile、docker-compose、Docker nginx/redis/mysql 配置。
 
@@ -171,7 +172,7 @@ pnpm run build
 5. 后端调用 embedding 模型生成向量。
 6. MySQL 保存知识库、文档、chunk 元数据。
 7. ChromaDB 保存向量、chunk 文本和检索 metadata。
-8. 在“检索测试”验证召回效果。
+8. 在知识库页面内验证召回效果。
 9. 在“AI 对话”中选择知识库进行 RAG 问答。
 
 核心后端路径：
@@ -228,9 +229,9 @@ pnpm run type-check
 - `VITE_API_BASE_URL` 是否指向正确后端端口。
 - 浏览器网络请求是否命中 `/api/v1`。
 
-### 启动后看不到旧 SaaS / 租户功能
+### 启动后看不到旧多组织功能
 
-这是当前代码线的预期状态。本分支定位为单组织 AI 知识库后台，旧 SaaS 多租户文档和入口不再维护。
+这是当前代码线的预期状态。本分支定位为单组织 AI 知识库后台，旧多组织文档和入口不再维护。
 
 ## 文档维护原则
 

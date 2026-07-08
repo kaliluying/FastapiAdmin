@@ -9,8 +9,7 @@
     "list_class": null,
     "is_default": true,
     "status": 0,
-    "description": "性别男",
-    "tenant_id": 1
+    "description": "性别男"
   },
   {
     "dict_sort": 2,
@@ -22,8 +21,7 @@
     "list_class": null,
     "is_default": false,
     "status": 0,
-    "description": "性别女",
-    "tenant_id": 1
+    "description": "性别女"
   },
   {
     "dict_sort": 3,
@@ -35,8 +33,7 @@
     "list_class": null,
     "is_default": false,
     "status": 0,
-    "description": "性别未知",
-    "tenant_id": 1
+    "description": "性别未知"
   },
   {
     "dict_sort": 1,
@@ -48,8 +45,7 @@
     "list_class": "primary",
     "is_default": true,
     "status": 0,
-    "description": "是",
-    "tenant_id": 1
+    "description": "是"
   },
   {
     "dict_sort": 2,
@@ -61,8 +57,7 @@
     "list_class": "danger",
     "is_default": false,
     "status": 0,
-    "description": "否",
-    "tenant_id": 1
+    "description": "否"
   },
   {
     "dict_sort": 1,
@@ -74,8 +69,7 @@
     "list_class": "primary",
     "is_default": false,
     "status": 0,
-    "description": "启用状态",
-    "tenant_id": 1
+    "description": "启用状态"
   },
   {
     "dict_sort": 2,
@@ -87,8 +81,7 @@
     "list_class": "danger",
     "is_default": false,
     "status": 0,
-    "description": "停用状态",
-    "tenant_id": 1
+    "description": "停用状态"
   },
   {
     "dict_sort": 99,
@@ -100,8 +93,7 @@
     "list_class": "info",
     "is_default": false,
     "status": 0,
-    "description": "其他操作",
-    "tenant_id": 1
+    "description": "其他操作"
   },
   {
     "dict_sort": 1,
@@ -113,8 +105,7 @@
     "list_class": "info",
     "is_default": false,
     "status": 0,
-    "description": "新增操作",
-    "tenant_id": 1
+    "description": "新增操作"
   },
   {
     "dict_sort": 2,
@@ -126,8 +117,7 @@
     "list_class": "info",
     "is_default": false,
     "status": 0,
-    "description": "修改操作",
-    "tenant_id": 1
+    "description": "修改操作"
   },
   {
     "dict_sort": 3,
@@ -139,8 +129,7 @@
     "list_class": "danger",
     "is_default": false,
     "status": 0,
-    "description": "删除操作",
-    "tenant_id": 1
+    "description": "删除操作"
   },
   {
     "dict_sort": 4,
@@ -152,8 +141,7 @@
     "list_class": "primary",
     "is_default": false,
     "status": 0,
-    "description": "授权操作",
-    "tenant_id": 1
+    "description": "授权操作"
   },
   {
     "dict_sort": 5,
@@ -165,8 +153,7 @@
     "list_class": "warning",
     "is_default": false,
     "status": 0,
-    "description": "导出操作",
-    "tenant_id": 1
+    "description": "导出操作"
   },
   {
     "dict_sort": 6,
@@ -178,8 +165,7 @@
     "list_class": "warning",
     "is_default": false,
     "status": 0,
-    "description": "导入操作",
-    "tenant_id": 1
+    "description": "导入操作"
   },
   {
     "dict_sort": 7,
@@ -191,8 +177,7 @@
     "list_class": "danger",
     "is_default": false,
     "status": 0,
-    "description": "强退操作",
-    "tenant_id": 1
+    "description": "强退操作"
   },
   {
     "dict_sort": 8,
@@ -204,8 +189,7 @@
     "list_class": "warning",
     "is_default": false,
     "status": 0,
-    "description": "生成操作",
-    "tenant_id": 1
+    "description": "生成操作"
   },
   {
     "dict_sort": 9,
@@ -217,8 +201,7 @@
     "list_class": "danger",
     "is_default": false,
     "status": 0,
-    "description": "清空操作",
-    "tenant_id": 1
+    "description": "清空操作"
   },
   {
     "dict_sort": 1,
@@ -230,8 +213,7 @@
     "list_class": null,
     "is_default": true,
     "status": 0,
-    "description": "默认分组",
-    "tenant_id": 1
+    "description": "默认分组"
   },
   {
     "dict_sort": 2,
@@ -243,8 +225,7 @@
     "list_class": null,
     "is_default": false,
     "status": 0,
-    "description": "数据库分组",
-    "tenant_id": 1
+    "description": "数据库分组"
   },
   {
     "dict_sort": 3,
@@ -256,8 +237,7 @@
     "list_class": null,
     "is_default": false,
     "status": 0,
-    "description": "reids分组",
-    "tenant_id": 1
+    "description": "reids分组"
   },
   {
     "dict_sort": 1,
@@ -269,8 +249,7 @@
     "list_class": null,
     "is_default": false,
     "status": 0,
-    "description": "线程池",
-    "tenant_id": 1
+    "description": "线程池"
   },
   {
     "dict_sort": 2,
@@ -282,8 +261,7 @@
     "list_class": null,
     "is_default": false,
     "status": 0,
-    "description": "进程池",
-    "tenant_id": 1
+    "description": "进程池"
   },
   {
     "dict_sort": 1,
@@ -295,8 +273,7 @@
     "list_class": null,
     "is_default": true,
     "status": 0,
-    "description": "演示函数",
-    "tenant_id": 1
+    "description": "演示函数"
   },
   {
     "dict_sort": 1,
@@ -308,8 +285,7 @@
     "list_class": null,
     "is_default": true,
     "status": 0,
-    "description": "指定日期任务触发器",
-    "tenant_id": 1
+    "description": "指定日期任务触发器"
   },
   {
     "dict_sort": 2,
@@ -321,8 +297,7 @@
     "list_class": null,
     "is_default": false,
     "status": 0,
-    "description": "间隔触发器任务触发器",
-    "tenant_id": 1
+    "description": "间隔触发器任务触发器"
   },
   {
     "dict_sort": 3,
@@ -334,8 +309,7 @@
     "list_class": null,
     "is_default": false,
     "status": 0,
-    "description": "间隔触发器任务触发器",
-    "tenant_id": 1
+    "description": "间隔触发器任务触发器"
   },
   {
     "dict_sort": 1,
@@ -347,8 +321,7 @@
     "list_class": null,
     "is_default": true,
     "status": 0,
-    "description": "默认表格回显样式",
-    "tenant_id": 1
+    "description": "默认表格回显样式"
   },
   {
     "dict_sort": 2,
@@ -360,8 +333,7 @@
     "list_class": null,
     "is_default": false,
     "status": 0,
-    "description": "主要表格回显样式",
-    "tenant_id": 1
+    "description": "主要表格回显样式"
   },
   {
     "dict_sort": 3,
@@ -373,8 +345,7 @@
     "list_class": null,
     "is_default": false,
     "status": 0,
-    "description": "成功表格回显样式",
-    "tenant_id": 1
+    "description": "成功表格回显样式"
   },
   {
     "dict_sort": 4,
@@ -386,8 +357,7 @@
     "list_class": null,
     "is_default": false,
     "status": 0,
-    "description": "信息表格回显样式",
-    "tenant_id": 1
+    "description": "信息表格回显样式"
   },
   {
     "dict_sort": 5,
@@ -399,8 +369,7 @@
     "list_class": null,
     "is_default": false,
     "status": 0,
-    "description": "警告表格回显样式",
-    "tenant_id": 1
+    "description": "警告表格回显样式"
   },
   {
     "dict_sort": 6,
@@ -412,7 +381,6 @@
     "list_class": null,
     "is_default": false,
     "status": 0,
-    "description": "危险表格回显样式",
-    "tenant_id": 1
+    "description": "危险表格回显样式"
   }
 ]

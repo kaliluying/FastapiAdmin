@@ -4,7 +4,7 @@ from sqlalchemy import ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.common.enums import PermissionFilterStrategy
-from app.core.base_model import MappedBase, ModelMixin, TenantMixin, UserMixin
+from app.core.base_model import MappedBase, ModelMixin, UserMixin
 
 if TYPE_CHECKING:
     from app.api.v1.module_platform.menu.model import MenuModel
@@ -61,7 +61,7 @@ class RoleDeptsModel(MappedBase):
     )
 
 
-class RoleModel(ModelMixin, TenantMixin, UserMixin):
+class RoleModel(ModelMixin, UserMixin):
     """
     角色模型
 
@@ -69,7 +69,7 @@ class RoleModel(ModelMixin, TenantMixin, UserMixin):
     """
 
     __tablename__: str = "sys_role"
-    __table_args__ = (UniqueConstraint("tenant_id", "code"), {"comment": "角色表"})
+    __table_args__ = (UniqueConstraint("code"), {"comment": "角色表"})
     __loader_options__: list[str] = [
         "menus",
         "depts",

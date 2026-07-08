@@ -114,19 +114,6 @@ class ModelMixin(MappedBase):
     )
 
 
-class TenantMixin(MappedBase):
-    """Single-organization compatibility field."""
-
-    __abstract__ = True
-
-    tenant_id: Mapped[int] = mapped_column(
-        Integer,
-        nullable=False,
-        default=1,
-        index=True,
-        comment="单组织ID",
-    )
-
 class UserMixin(MappedBase):
     """
     用户审计字段 Mixin

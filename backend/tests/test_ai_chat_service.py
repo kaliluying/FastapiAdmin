@@ -30,12 +30,8 @@ async def test_rag_chain_injects_retrieved_context_into_model_prompt() -> None:
         chat_model=model,
         user_profile={
             "name": "张三",
-            "company_name": "深圳某电子厂",
-            "position_name": "操作工",
-            "monthly_salary": 2000,
-            "hire_date": "2023-03-01",
-            "contract_type": "劳动合同",
-            "social_insurance": False,
+            "mobile": "13800138000",
+            "description": "负责后台系统日常运维",
         },
     )
 
@@ -54,12 +50,8 @@ async def test_rag_chain_injects_retrieved_context_into_model_prompt() -> None:
     assert "source=menu" in model.prompt
     assert "【个人中心信息——仅作为用户自述背景参考】" in model.prompt
     assert "姓名: 张三" in model.prompt
-    assert "公司名称: 深圳某电子厂" in model.prompt
-    assert "岗位: 操作工" in model.prompt
-    assert "月工资: 2000元" in model.prompt
-    assert "入职日期: 2023-03-01" in model.prompt
-    assert "合同类型: 劳动合同" in model.prompt
-    assert "是否缴纳社保: 否" in model.prompt
+    assert "手机号: 13800138000" in model.prompt
+    assert "备注: 负责后台系统日常运维" in model.prompt
 
 
 def test_ai_chat_stack_uses_langchain_not_legacy_agent_framework() -> None:
@@ -141,8 +133,7 @@ async def test_chat_session_crud_persists_session_messages_with_sqlalchemy() -> 
     async with session_factory() as db:
         auth = SimpleNamespace(
             db=db,
-            tenant_id=1,
-            user=SimpleNamespace(id=1, username="admin", dept_id=2, tenant_id=1, is_superuser=True),
+            user=SimpleNamespace(id=1, username="admin", dept_id=2, is_superuser=True),
         )
         crud = ChatSessionCRUD(auth)
         session = await crud.create_crud(ChatSessionCreateSchema(title="First chat"))

@@ -1,13 +1,8 @@
 from app.api.v1.module_system.user import service as user_service
-from app.config.setting import settings
 from app.scripts.initialize import InitializeData
 
 
-def test_tenant_middleware_is_not_registered_for_single_org():
-    assert "app.core.middlewares.TenantMiddleware" not in settings.MIDDLEWARE_LIST
-
-
-def test_tenant_models_are_not_seeded_for_single_org():
+def test_single_org_seed_models_only_include_active_runtime_tables():
     table_names = {model.__tablename__ for model in InitializeData.prepare_init_models}
     assert "platform_tenant" not in table_names
     assert "platform_user_tenant" not in table_names

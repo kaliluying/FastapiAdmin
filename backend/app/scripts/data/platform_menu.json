@@ -23,14 +23,70 @@
         "title": "用户管理",
         "scope": "single_org",
         "children": [
-          { "name": "新增", "title": "新增", "type": 3, "order": 1, "permission": "module_system:user:create", "scope": "single_org" },
-          { "name": "编辑", "title": "编辑", "type": 3, "order": 2, "permission": "module_system:user:update", "scope": "single_org" },
-          { "name": "删除", "title": "删除", "type": 3, "order": 3, "permission": "module_system:user:delete", "scope": "single_org" },
-          { "name": "详情", "title": "详情", "type": 3, "order": 4, "permission": "module_system:user:detail", "scope": "single_org" },
-          { "name": "状态变更", "title": "状态变更", "type": 3, "order": 5, "permission": "module_system:user:patch", "scope": "single_org" },
-          { "name": "导入", "title": "导入", "type": 3, "order": 6, "permission": "module_system:user:import", "scope": "single_org" },
-          { "name": "导出", "title": "导出", "type": 3, "order": 7, "permission": "module_system:user:export", "scope": "single_org" },
-          { "name": "模板下载", "title": "模板下载", "type": 3, "order": 8, "permission": "module_system:user:download", "scope": "single_org" }
+          {
+            "name": "新增",
+            "title": "新增",
+            "type": 3,
+            "order": 1,
+            "permission": "module_system:user:create",
+            "scope": "single_org"
+          },
+          {
+            "name": "编辑",
+            "title": "编辑",
+            "type": 3,
+            "order": 2,
+            "permission": "module_system:user:update",
+            "scope": "single_org"
+          },
+          {
+            "name": "删除",
+            "title": "删除",
+            "type": 3,
+            "order": 3,
+            "permission": "module_system:user:delete",
+            "scope": "single_org"
+          },
+          {
+            "name": "详情",
+            "title": "详情",
+            "type": 3,
+            "order": 4,
+            "permission": "module_system:user:detail",
+            "scope": "single_org"
+          },
+          {
+            "name": "状态变更",
+            "title": "状态变更",
+            "type": 3,
+            "order": 5,
+            "permission": "module_system:user:patch",
+            "scope": "single_org"
+          },
+          {
+            "name": "导入",
+            "title": "导入",
+            "type": 3,
+            "order": 6,
+            "permission": "module_system:user:import",
+            "scope": "single_org"
+          },
+          {
+            "name": "导出",
+            "title": "导出",
+            "type": 3,
+            "order": 7,
+            "permission": "module_system:user:export",
+            "scope": "single_org"
+          },
+          {
+            "name": "模板下载",
+            "title": "模板下载",
+            "type": 3,
+            "order": 8,
+            "permission": "module_system:user:download",
+            "scope": "single_org"
+          }
         ]
       },
       {
@@ -45,13 +101,62 @@
         "title": "角色管理",
         "scope": "single_org",
         "children": [
-          { "name": "新增", "title": "新增", "type": 3, "order": 1, "permission": "module_system:role:create", "scope": "single_org" },
-          { "name": "编辑", "title": "编辑", "type": 3, "order": 2, "permission": "module_system:role:update", "scope": "single_org" },
-          { "name": "删除", "title": "删除", "type": 3, "order": 3, "permission": "module_system:role:delete", "scope": "single_org" },
-          { "name": "详情", "title": "详情", "type": 3, "order": 4, "permission": "module_system:role:detail", "scope": "single_org" },
-          { "name": "状态变更", "title": "状态变更", "type": 3, "order": 5, "permission": "module_system:role:patch", "scope": "single_org" },
-          { "name": "分配权限", "title": "分配权限", "type": 3, "order": 6, "permission": "module_system:role:permission", "scope": "single_org" },
-          { "name": "导出", "title": "导出", "type": 3, "order": 7, "permission": "module_system:role:export", "scope": "single_org" }
+          {
+            "name": "新增",
+            "title": "新增",
+            "type": 3,
+            "order": 1,
+            "permission": "module_system:role:create",
+            "scope": "single_org"
+          },
+          {
+            "name": "编辑",
+            "title": "编辑",
+            "type": 3,
+            "order": 2,
+            "permission": "module_system:role:update",
+            "scope": "single_org"
+          },
+          {
+            "name": "删除",
+            "title": "删除",
+            "type": 3,
+            "order": 3,
+            "permission": "module_system:role:delete",
+            "scope": "single_org"
+          },
+          {
+            "name": "详情",
+            "title": "详情",
+            "type": 3,
+            "order": 4,
+            "permission": "module_system:role:detail",
+            "scope": "single_org"
+          },
+          {
+            "name": "状态变更",
+            "title": "状态变更",
+            "type": 3,
+            "order": 5,
+            "permission": "module_system:role:patch",
+            "scope": "single_org"
+          },
+          {
+            "name": "分配权限",
+            "title": "分配权限",
+            "type": 3,
+            "order": 6,
+            "permission": "module_system:role:permission",
+            "scope": "single_org"
+          },
+          {
+            "name": "导出",
+            "title": "导出",
+            "type": 3,
+            "order": 7,
+            "permission": "module_system:role:export",
+            "scope": "single_org"
+          }
         ]
       },
       {
@@ -66,11 +171,46 @@
         "title": "部门管理",
         "scope": "single_org",
         "children": [
-          { "name": "新增", "title": "新增", "type": 3, "order": 1, "permission": "module_system:dept:create", "scope": "single_org" },
-          { "name": "编辑", "title": "编辑", "type": 3, "order": 2, "permission": "module_system:dept:update", "scope": "single_org" },
-          { "name": "删除", "title": "删除", "type": 3, "order": 3, "permission": "module_system:dept:delete", "scope": "single_org" },
-          { "name": "详情", "title": "详情", "type": 3, "order": 4, "permission": "module_system:dept:detail", "scope": "single_org" },
-          { "name": "状态变更", "title": "状态变更", "type": 3, "order": 5, "permission": "module_system:dept:patch", "scope": "single_org" }
+          {
+            "name": "新增",
+            "title": "新增",
+            "type": 3,
+            "order": 1,
+            "permission": "module_system:dept:create",
+            "scope": "single_org"
+          },
+          {
+            "name": "编辑",
+            "title": "编辑",
+            "type": 3,
+            "order": 2,
+            "permission": "module_system:dept:update",
+            "scope": "single_org"
+          },
+          {
+            "name": "删除",
+            "title": "删除",
+            "type": 3,
+            "order": 3,
+            "permission": "module_system:dept:delete",
+            "scope": "single_org"
+          },
+          {
+            "name": "详情",
+            "title": "详情",
+            "type": 3,
+            "order": 4,
+            "permission": "module_system:dept:detail",
+            "scope": "single_org"
+          },
+          {
+            "name": "状态变更",
+            "title": "状态变更",
+            "type": 3,
+            "order": 5,
+            "permission": "module_system:dept:patch",
+            "scope": "single_org"
+          }
         ]
       },
       {
@@ -85,11 +225,46 @@
         "title": "菜单管理",
         "scope": "single_org",
         "children": [
-          { "name": "新增", "title": "新增", "type": 3, "order": 1, "permission": "module_platform:menu:create", "scope": "single_org" },
-          { "name": "编辑", "title": "编辑", "type": 3, "order": 2, "permission": "module_platform:menu:update", "scope": "single_org" },
-          { "name": "删除", "title": "删除", "type": 3, "order": 3, "permission": "module_platform:menu:delete", "scope": "single_org" },
-          { "name": "详情", "title": "详情", "type": 3, "order": 4, "permission": "module_platform:menu:detail", "scope": "single_org" },
-          { "name": "状态变更", "title": "状态变更", "type": 3, "order": 5, "permission": "module_platform:menu:patch", "scope": "single_org" }
+          {
+            "name": "新增",
+            "title": "新增",
+            "type": 3,
+            "order": 1,
+            "permission": "module_platform:menu:create",
+            "scope": "single_org"
+          },
+          {
+            "name": "编辑",
+            "title": "编辑",
+            "type": 3,
+            "order": 2,
+            "permission": "module_platform:menu:update",
+            "scope": "single_org"
+          },
+          {
+            "name": "删除",
+            "title": "删除",
+            "type": 3,
+            "order": 3,
+            "permission": "module_platform:menu:delete",
+            "scope": "single_org"
+          },
+          {
+            "name": "详情",
+            "title": "详情",
+            "type": 3,
+            "order": 4,
+            "permission": "module_platform:menu:detail",
+            "scope": "single_org"
+          },
+          {
+            "name": "状态变更",
+            "title": "状态变更",
+            "type": 3,
+            "order": 5,
+            "permission": "module_platform:menu:patch",
+            "scope": "single_org"
+          }
         ]
       },
       {
@@ -104,18 +279,110 @@
         "title": "字典管理",
         "scope": "single_org",
         "children": [
-          { "name": "新增类型", "title": "新增类型", "type": 3, "order": 1, "permission": "module_system:dict_type:create", "scope": "single_org" },
-          { "name": "编辑类型", "title": "编辑类型", "type": 3, "order": 2, "permission": "module_system:dict_type:update", "scope": "single_org" },
-          { "name": "删除类型", "title": "删除类型", "type": 3, "order": 3, "permission": "module_system:dict_type:delete", "scope": "single_org" },
-          { "name": "类型详情", "title": "类型详情", "type": 3, "order": 4, "permission": "module_system:dict_type:detail", "scope": "single_org" },
-          { "name": "类型状态", "title": "类型状态", "type": 3, "order": 5, "permission": "module_system:dict_type:patch", "scope": "single_org" },
-          { "name": "类型导出", "title": "类型导出", "type": 3, "order": 6, "permission": "module_system:dict_type:export", "scope": "single_org" },
-          { "name": "新增数据", "title": "新增数据", "type": 3, "order": 7, "permission": "module_system:dict_data:create", "scope": "single_org" },
-          { "name": "编辑数据", "title": "编辑数据", "type": 3, "order": 8, "permission": "module_system:dict_data:update", "scope": "single_org" },
-          { "name": "删除数据", "title": "删除数据", "type": 3, "order": 9, "permission": "module_system:dict_data:delete", "scope": "single_org" },
-          { "name": "数据详情", "title": "数据详情", "type": 3, "order": 10, "permission": "module_system:dict_data:detail", "scope": "single_org" },
-          { "name": "数据状态", "title": "数据状态", "type": 3, "order": 11, "permission": "module_system:dict_data:patch", "scope": "single_org" },
-          { "name": "数据导出", "title": "数据导出", "type": 3, "order": 12, "permission": "module_system:dict_data:export", "scope": "single_org" }
+          {
+            "name": "新增类型",
+            "title": "新增类型",
+            "type": 3,
+            "order": 1,
+            "permission": "module_system:dict_type:create",
+            "scope": "single_org"
+          },
+          {
+            "name": "编辑类型",
+            "title": "编辑类型",
+            "type": 3,
+            "order": 2,
+            "permission": "module_system:dict_type:update",
+            "scope": "single_org"
+          },
+          {
+            "name": "删除类型",
+            "title": "删除类型",
+            "type": 3,
+            "order": 3,
+            "permission": "module_system:dict_type:delete",
+            "scope": "single_org"
+          },
+          {
+            "name": "类型详情",
+            "title": "类型详情",
+            "type": 3,
+            "order": 4,
+            "permission": "module_system:dict_type:detail",
+            "scope": "single_org"
+          },
+          {
+            "name": "类型状态",
+            "title": "类型状态",
+            "type": 3,
+            "order": 5,
+            "permission": "module_system:dict_type:patch",
+            "scope": "single_org"
+          },
+          {
+            "name": "类型导出",
+            "title": "类型导出",
+            "type": 3,
+            "order": 6,
+            "permission": "module_system:dict_type:export",
+            "scope": "single_org"
+          },
+          {
+            "name": "查询数据",
+            "title": "查询数据",
+            "type": 3,
+            "order": 7,
+            "permission": "module_system:dict_data:query",
+            "scope": "single_org"
+          },
+          {
+            "name": "新增数据",
+            "title": "新增数据",
+            "type": 3,
+            "order": 8,
+            "permission": "module_system:dict_data:create",
+            "scope": "single_org"
+          },
+          {
+            "name": "编辑数据",
+            "title": "编辑数据",
+            "type": 3,
+            "order": 9,
+            "permission": "module_system:dict_data:update",
+            "scope": "single_org"
+          },
+          {
+            "name": "删除数据",
+            "title": "删除数据",
+            "type": 3,
+            "order": 10,
+            "permission": "module_system:dict_data:delete",
+            "scope": "single_org"
+          },
+          {
+            "name": "数据详情",
+            "title": "数据详情",
+            "type": 3,
+            "order": 11,
+            "permission": "module_system:dict_data:detail",
+            "scope": "single_org"
+          },
+          {
+            "name": "数据状态",
+            "title": "数据状态",
+            "type": 3,
+            "order": 12,
+            "permission": "module_system:dict_data:patch",
+            "scope": "single_org"
+          },
+          {
+            "name": "数据导出",
+            "title": "数据导出",
+            "type": 3,
+            "order": 13,
+            "permission": "module_system:dict_data:export",
+            "scope": "single_org"
+          }
         ]
       },
       {
@@ -130,12 +397,54 @@
         "title": "参数配置",
         "scope": "single_org",
         "children": [
-          { "name": "新增", "title": "新增", "type": 3, "order": 1, "permission": "module_system:param:create", "scope": "single_org" },
-          { "name": "编辑", "title": "编辑", "type": 3, "order": 2, "permission": "module_system:param:update", "scope": "single_org" },
-          { "name": "删除", "title": "删除", "type": 3, "order": 3, "permission": "module_system:param:delete", "scope": "single_org" },
-          { "name": "详情", "title": "详情", "type": 3, "order": 4, "permission": "module_system:param:detail", "scope": "single_org" },
-          { "name": "状态变更", "title": "状态变更", "type": 3, "order": 5, "permission": "module_system:param:patch", "scope": "single_org" },
-          { "name": "导出", "title": "导出", "type": 3, "order": 6, "permission": "module_system:param:export", "scope": "single_org" }
+          {
+            "name": "新增",
+            "title": "新增",
+            "type": 3,
+            "order": 1,
+            "permission": "module_system:param:create",
+            "scope": "single_org"
+          },
+          {
+            "name": "编辑",
+            "title": "编辑",
+            "type": 3,
+            "order": 2,
+            "permission": "module_system:param:update",
+            "scope": "single_org"
+          },
+          {
+            "name": "删除",
+            "title": "删除",
+            "type": 3,
+            "order": 3,
+            "permission": "module_system:param:delete",
+            "scope": "single_org"
+          },
+          {
+            "name": "详情",
+            "title": "详情",
+            "type": 3,
+            "order": 4,
+            "permission": "module_system:param:detail",
+            "scope": "single_org"
+          },
+          {
+            "name": "状态变更",
+            "title": "状态变更",
+            "type": 3,
+            "order": 5,
+            "permission": "module_system:param:patch",
+            "scope": "single_org"
+          },
+          {
+            "name": "导出",
+            "title": "导出",
+            "type": 3,
+            "order": 6,
+            "permission": "module_system:param:export",
+            "scope": "single_org"
+          }
         ]
       },
       {
@@ -150,10 +459,38 @@
         "title": "操作日志",
         "scope": "single_org",
         "children": [
-          { "name": "操作日志查询", "title": "操作日志查询", "type": 3, "order": 1, "permission": "module_system:log:query", "scope": "single_org" },
-          { "name": "操作日志删除", "title": "操作日志删除", "type": 3, "order": 2, "permission": "module_system:log:delete", "scope": "single_org" },
-          { "name": "登录日志查询", "title": "登录日志查询", "type": 3, "order": 3, "permission": "module_system:login_log:query", "scope": "single_org" },
-          { "name": "登录日志删除", "title": "登录日志删除", "type": 3, "order": 4, "permission": "module_system:login_log:delete", "scope": "single_org" }
+          {
+            "name": "操作日志查询",
+            "title": "操作日志查询",
+            "type": 3,
+            "order": 1,
+            "permission": "module_system:log:query",
+            "scope": "single_org"
+          },
+          {
+            "name": "操作日志删除",
+            "title": "操作日志删除",
+            "type": 3,
+            "order": 2,
+            "permission": "module_system:log:delete",
+            "scope": "single_org"
+          },
+          {
+            "name": "登录日志查询",
+            "title": "登录日志查询",
+            "type": 3,
+            "order": 3,
+            "permission": "module_system:login_log:query",
+            "scope": "single_org"
+          },
+          {
+            "name": "登录日志删除",
+            "title": "登录日志删除",
+            "type": 3,
+            "order": 4,
+            "permission": "module_system:login_log:delete",
+            "scope": "single_org"
+          }
         ]
       }
     ]
@@ -182,12 +519,54 @@
         "title": "AI 对话",
         "scope": "single_org",
         "children": [
-          { "name": "对话", "title": "对话", "type": 3, "order": 1, "permission": "module_ai:chat:ws", "scope": "single_org" },
-          { "name": "查询", "title": "查询", "type": 3, "order": 2, "permission": "module_ai:chat:query", "scope": "single_org" },
-          { "name": "详情", "title": "详情", "type": 3, "order": 3, "permission": "module_ai:chat:detail", "scope": "single_org" },
-          { "name": "新增", "title": "新增", "type": 3, "order": 4, "permission": "module_ai:chat:create", "scope": "single_org" },
-          { "name": "编辑", "title": "编辑", "type": 3, "order": 5, "permission": "module_ai:chat:update", "scope": "single_org" },
-          { "name": "删除", "title": "删除", "type": 3, "order": 6, "permission": "module_ai:chat:delete", "scope": "single_org" }
+          {
+            "name": "对话",
+            "title": "对话",
+            "type": 3,
+            "order": 1,
+            "permission": "module_ai:chat:ws",
+            "scope": "single_org"
+          },
+          {
+            "name": "查询",
+            "title": "查询",
+            "type": 3,
+            "order": 2,
+            "permission": "module_ai:chat:query",
+            "scope": "single_org"
+          },
+          {
+            "name": "详情",
+            "title": "详情",
+            "type": 3,
+            "order": 3,
+            "permission": "module_ai:chat:detail",
+            "scope": "single_org"
+          },
+          {
+            "name": "新增",
+            "title": "新增",
+            "type": 3,
+            "order": 4,
+            "permission": "module_ai:chat:create",
+            "scope": "single_org"
+          },
+          {
+            "name": "编辑",
+            "title": "编辑",
+            "type": 3,
+            "order": 5,
+            "permission": "module_ai:chat:update",
+            "scope": "single_org"
+          },
+          {
+            "name": "删除",
+            "title": "删除",
+            "type": 3,
+            "order": 6,
+            "permission": "module_ai:chat:delete",
+            "scope": "single_org"
+          }
         ]
       },
       {
@@ -195,38 +574,44 @@
         "type": 2,
         "icon": "ri:chat-history-line",
         "order": 2,
-        "permission": "module_ai:chat:query",
+        "permission": "module_ai:session:query",
         "route_name": "Memory",
         "route_path": "memory",
         "component_path": "module_ai/memory/index",
         "title": "会话记录",
         "scope": "single_org",
         "children": [
-          { "name": "查询", "title": "查询", "type": 3, "order": 1, "permission": "module_ai:chat:query", "scope": "single_org" },
-          { "name": "详情", "title": "详情", "type": 3, "order": 2, "permission": "module_ai:chat:detail", "scope": "single_org" },
-          { "name": "删除", "title": "删除", "type": 3, "order": 3, "permission": "module_ai:chat:delete", "scope": "single_org" }
-        ]
-      },
-      {
-        "name": "仲裁申请书",
-        "type": 2,
-        "icon": "ri:file-edit-line",
-        "order": 3,
-        "permission": "module_ai:arbitration:draft",
-        "route_name": "ArbitrationDraft",
-        "route_path": "arbitration",
-        "component_path": "module_ai/arbitration/index",
-        "title": "仲裁申请书",
-        "scope": "single_org",
-        "children": [
-          { "name": "生成", "title": "生成", "type": 3, "order": 1, "permission": "module_ai:arbitration:draft", "scope": "single_org" }
+          {
+            "name": "查询",
+            "title": "查询",
+            "type": 3,
+            "order": 1,
+            "permission": "module_ai:session:query",
+            "scope": "single_org"
+          },
+          {
+            "name": "详情",
+            "title": "详情",
+            "type": 3,
+            "order": 2,
+            "permission": "module_ai:session:detail",
+            "scope": "single_org"
+          },
+          {
+            "name": "删除",
+            "title": "删除",
+            "type": 3,
+            "order": 3,
+            "permission": "module_ai:session:delete",
+            "scope": "single_org"
+          }
         ]
       },
       {
         "name": "模型配置",
         "type": 2,
         "icon": "ri:cpu-line",
-        "order": 4,
+        "order": 3,
         "permission": "module_ai:model_config:query",
         "route_name": "ModelConfig",
         "route_path": "model-config",
@@ -246,35 +631,45 @@
         "title": "知识库管理",
         "scope": "single_org",
         "children": [
-          { "name": "查询", "title": "查询", "type": 3, "order": 1, "permission": "module_ai:knowledge:query", "scope": "single_org" },
-          { "name": "新增", "title": "新增", "type": 3, "order": 2, "permission": "module_ai:knowledge:create", "scope": "single_org" },
-          { "name": "编辑", "title": "编辑", "type": 3, "order": 3, "permission": "module_ai:knowledge:update", "scope": "single_org" },
-          { "name": "删除", "title": "删除", "type": 3, "order": 4, "permission": "module_ai:knowledge:delete", "scope": "single_org" }
-        ]
-      },
-      {
-        "name": "AI 记忆",
-        "type": 2,
-        "icon": "ri:brain-line",
-        "order": 6,
-        "permission": "module_ai:memory:query",
-        "route_name": "AiMemory",
-        "route_path": "ai-memory",
-        "component_path": "module_ai/memory-manage/index",
-        "title": "AI 记忆",
-        "scope": "single_org",
-        "children": [
-          { "name": "查询", "title": "查询", "type": 3, "order": 1, "permission": "module_ai:memory:query", "scope": "single_org" },
-          { "name": "新增", "title": "新增", "type": 3, "order": 2, "permission": "module_ai:memory:create", "scope": "single_org" },
-          { "name": "编辑", "title": "编辑", "type": 3, "order": 3, "permission": "module_ai:memory:update", "scope": "single_org" },
-          { "name": "删除", "title": "删除", "type": 3, "order": 4, "permission": "module_ai:memory:delete", "scope": "single_org" }
+          {
+            "name": "查询",
+            "title": "查询",
+            "type": 3,
+            "order": 1,
+            "permission": "module_ai:knowledge:query",
+            "scope": "single_org"
+          },
+          {
+            "name": "新增",
+            "title": "新增",
+            "type": 3,
+            "order": 2,
+            "permission": "module_ai:knowledge:create",
+            "scope": "single_org"
+          },
+          {
+            "name": "编辑",
+            "title": "编辑",
+            "type": 3,
+            "order": 3,
+            "permission": "module_ai:knowledge:update",
+            "scope": "single_org"
+          },
+          {
+            "name": "删除",
+            "title": "删除",
+            "type": 3,
+            "order": 4,
+            "permission": "module_ai:knowledge:delete",
+            "scope": "single_org"
+          }
         ]
       },
       {
         "name": "文档管理",
         "type": 2,
         "icon": "ri:file-text-line",
-        "order": 7,
+        "order": 6,
         "permission": "module_ai:document:query",
         "route_name": "Document",
         "route_path": "document",
@@ -282,24 +677,46 @@
         "title": "文档管理",
         "scope": "single_org",
         "children": [
-          { "name": "查询", "title": "查询", "type": 3, "order": 1, "permission": "module_ai:document:query", "scope": "single_org" },
-          { "name": "上传", "title": "上传", "type": 3, "order": 2, "permission": "module_ai:document:create", "scope": "single_org" },
-          { "name": "删除", "title": "删除", "type": 3, "order": 3, "permission": "module_ai:document:delete", "scope": "single_org" }
-        ]
-      },
-      {
-        "name": "检索测试",
-        "type": 2,
-        "icon": "ri:search-eye-line",
-        "order": 8,
-        "permission": "module_ai:retrieval:test",
-        "route_name": "Retrieval",
-        "route_path": "retrieval",
-        "component_path": "module_ai/retrieval/index",
-        "title": "检索测试",
-        "scope": "single_org",
-        "children": [
-          { "name": "测试", "title": "测试", "type": 3, "order": 1, "permission": "module_ai:retrieval:test", "scope": "single_org" }
+          {
+            "name": "查询",
+            "title": "查询",
+            "type": 3,
+            "order": 1,
+            "permission": "module_ai:document:query",
+            "scope": "single_org"
+          },
+          {
+            "name": "上传",
+            "title": "上传",
+            "type": 3,
+            "order": 2,
+            "permission": "module_ai:document:create",
+            "scope": "single_org"
+          },
+          {
+            "name": "删除",
+            "title": "删除",
+            "type": 3,
+            "order": 3,
+            "permission": "module_ai:document:delete",
+            "scope": "single_org"
+          },
+          {
+            "name": "文件上传",
+            "title": "文件上传",
+            "type": 3,
+            "order": 4,
+            "permission": "module_common:file:upload",
+            "scope": "single_org"
+          },
+          {
+            "name": "文件下载",
+            "title": "文件下载",
+            "type": 3,
+            "order": 5,
+            "permission": "module_common:file:download",
+            "scope": "single_org"
+          }
         ]
       }
     ]

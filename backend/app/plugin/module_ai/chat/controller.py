@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from app.common.response import ResponseSchema, SuccessResponse
 from app.core.base_params import PaginationQueryParam
 from app.core.base_schema import AuthSchema
-from app.core.dependencies import AuthPermission, get_current_user
+from app.core.dependencies import AuthPermission
 from app.core.router_class import OperationLogRoute
 
 from .schema import (
@@ -29,7 +29,7 @@ ChatRouter = APIRouter(route_class=OperationLogRoute, prefix="/chat", tags=["AI�
 )
 async def get_session_detail_controller(
     session_id: Annotated[str, Path(description="会话ID")],
-    auth: Annotated[AuthSchema, Depends(get_current_user)],
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:session:detail"]))],
 ) -> JSONResponse:
     service = ChatService(auth)
     result = await service.get_session(session_id=session_id)
@@ -40,7 +40,7 @@ async def get_session_detail_controller(
 async def get_session_list_controller(
     page: Annotated[PaginationQueryParam, Depends()],
     search: Annotated[ChatSessionQueryParam, Depends()],
-    auth: Annotated[AuthSchema, Depends(get_current_user)],
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:session:query"]))],
 ) -> JSONResponse:
     service = ChatService(auth)
     result_dict = await service.page(
@@ -59,7 +59,7 @@ async def get_session_list_controller(
 )
 async def create_session_controller(
     data: ChatSessionCreateSchema,
-    auth: Annotated[AuthSchema, Depends(get_current_user)],
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:chat:create"]))],
 ) -> JSONResponse:
     service = ChatService(auth)
     result = await service.create(data=data)
@@ -88,7 +88,7 @@ async def update_session_controller(
 )
 async def delete_session_controller(
     session_ids: list[str],
-    auth: Annotated[AuthSchema, Depends(get_current_user)],
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:session:delete"]))],
 ) -> JSONResponse:
     service = ChatService(auth)
     await service.delete(session_ids=session_ids)
@@ -102,7 +102,7 @@ async def delete_session_controller(
 )
 async def ai_chat_controller(
     data: AiChatRequestSchema,
-    auth: Annotated[AuthSchema, Depends(get_current_user)],
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:chat:ws"]))],
 ) -> JSONResponse:
     service = ChatService(auth)
     result = await service.chat_non_stream(

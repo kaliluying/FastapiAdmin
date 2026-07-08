@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.core.base_params import PaginationQueryParam
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
 

@@ -49,17 +49,17 @@ describe("brand and setting defaults", () => {
     return { AppConfig, SETTING_DEFAULT_CONFIG };
   }
 
-  it("uses WeComAgent brand and official web defaults", async () => {
+  it("uses generic admin brand and premium console defaults", async () => {
     const { AppConfig, SETTING_DEFAULT_CONFIG } = await loadConfig();
 
-    expect(AppConfig.systemInfo.name).toBe("WeComAgent");
-    expect(SETTING_DEFAULT_CONFIG.title).toBe("WeComAgent");
+    expect(AppConfig.systemInfo.name).toBe("FastAPI Admin");
+    expect(SETTING_DEFAULT_CONFIG.title).toBe("FastAPI Admin");
     expect(SETTING_DEFAULT_CONFIG.layout).toBe(LayoutMode.LEFT);
     expect(SETTING_DEFAULT_CONFIG.theme).toBe(ThemeMode.LIGHT);
-    expect(SETTING_DEFAULT_CONFIG.themeColor).toBe("#4080FF");
+    expect(SETTING_DEFAULT_CONFIG.themeColor).toBe("#3B82F6");
     expect(SETTING_DEFAULT_CONFIG.sidebarColorScheme).toBe(SidebarColor.CLASSIC_BLUE);
     expect(SETTING_DEFAULT_CONFIG.menuType).toBe(MenuTypeEnum.LEFT);
-    expect(SETTING_DEFAULT_CONFIG.menuThemeType).toBe(MenuThemeEnum.DESIGN);
+    expect(SETTING_DEFAULT_CONFIG.menuThemeType).toBe(MenuThemeEnum.DARK);
     expect(SETTING_DEFAULT_CONFIG.showWatermark).toBe(false);
     expect(SETTING_DEFAULT_CONFIG.watermarkVisible).toBe(false);
     expect(SETTING_DEFAULT_CONFIG.aiEnabled).toBe(false);

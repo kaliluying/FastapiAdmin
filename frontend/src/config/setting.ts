@@ -31,9 +31,9 @@ const { pkg } = __APP_INFO__;
  */
 export const SETTING_DEFAULT_CONFIG = {
   /** 项目名称 */
-  name: "WeComAgent",
+  name: "FastAPI Admin",
   /** 系统标题 */
-  title: "WeComAgent",
+  title: "FastAPI Admin",
   /** 系统版本 */
   version: pkg.version as string,
   /** 是否显示设置按钮 */
@@ -61,11 +61,11 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 语言 */
   language: LanguageEnum.ZH_CN,
   /** 主题颜色 */
-  themeColor: "#4080FF",
+  themeColor: "#3B82F6",
   /** 是否显示水印 */
   showWatermark: false,
   /** 水印内容 */
-  watermarkContent: "WeComAgent",
+  watermarkContent: "FastAPI Admin",
   /** 侧边栏配色方案 */
   sidebarColorScheme: SidebarColor.CLASSIC_BLUE,
   /** 项目引导可见性 */
@@ -91,7 +91,7 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 系统主题模式 */
   systemThemeMode: SystemThemeEnum.LIGHT,
   /** 菜单风格 */
-  menuThemeType: MenuThemeEnum.DESIGN,
+  menuThemeType: MenuThemeEnum.DARK,
   /** 系统主题颜色 */
   systemThemeColor: AppConfig.systemMainColor[0],
   /** 是否显示菜单按钮 */
@@ -164,7 +164,8 @@ export function resetToDefaults(currentSettings: Record<string, any>) {
 // 注意：修改默认主题色时，需要同步修改 src/styles/variables.scss 中的 primary.base 值
 export const themeColorPresets = [
   // === 精选常用颜色 - 多样化色系 ===
-  "#4080FF", // Arco Design 蓝 - 现代感强
+  "#3B82F6", // 操作蓝 - 现代控制台
+  "#2DD4BF", // 信号青 - 在线与成功状态
   "#52C41A", // 成功绿 - 活力清新
   "#722ED1", // 优雅紫 - 高端大气
   "#FA8C16", // 活力橙 - 温暖友好

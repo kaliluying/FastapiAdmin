@@ -1,4 +1,3 @@
-import json
 import time
 import uuid
 from dataclasses import replace
@@ -15,7 +14,7 @@ from app.common.response import ErrorResponse
 from app.config.setting import settings
 from app.core.exceptions import CustomException
 from app.core.logger import logger
-from app.core.request_context import RequestContext, clear_current_tenant, reset_correlation_id, set_correlation_id, set_current_tenant
+from app.core.request_context import RequestContext, reset_correlation_id, set_correlation_id
 from app.core.security import decode_access_token
 
 
@@ -160,71 +159,3 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
         finally:
             reset_correlation_id(token)
 
-
-_TENANT_WHITELIST_PREFIXES = ("/docs", "/redoc", "/ljdoc", "/openapi.json", "/metrics", "/static")
-_TENANT_WHITELIST_PATHS = (
-    "/api/v1/system/auth/login", "/api/v1/system/auth/captcha",
-    "/api/v1/system/auth/refresh", "/api/v1/health", "/api/v1/common/health",
-)
-
-_WHITELIST_ALL = _TENANT_WHITELIST_PATHS
-
-
-def _tenant_is_whitelisted(path: str) -> bool:
-    return any(path.startswith(p) for p in _WHITELIST_ALL) or \
-        any(path.startswith(p) for p in _TENANT_WHITELIST_PREFIXES)
-
-
-async def _extract_tenant_from_token(request: Request) -> int | None:
-    token = _strip_bearer(request.headers.get("Authorization", ""))
-    if not token:
-        return None
-    try:
-        payload = decode_access_token(token)
-        if not payload or not hasattr(payload, "sub"):
-            return None
-        session_id = payload.sub
-        user_info = None
-
-        # 从 Redis 读取完整会话信息（含 tenant_id）
-        redis = request.app.state.redis
-        raw = await await_redis_get(redis, session_id) if redis else None
-        if raw:
-            user_info = json.loads(raw)
-
-        base = getattr(request.state, "ctx", None) or RequestContext()
-        request.state.ctx = replace(base, jwt_payload=payload, jwt_user_info=user_info)
-        return user_info.get("tenant_id") if user_info else None
-    except Exception:
-        return None
-
-
-async def await_redis_get(redis, key: str) -> str | None:
-    """异步获取 Redis 键值（封装为可复用工具函数）。"""
-    from app.common.enums import RedisInitKeyConfig
-    from app.core.redis_crud import RedisCURD
-    try:
-        return await RedisCURD(redis).get(
-            f"{RedisInitKeyConfig.USER_SESSION.key}:{key}"
-        )
-    except Exception:
-        return None
-
-
-class TenantMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app: ASGIApp) -> None:
-        super().__init__(app)
-
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        path = request.url.path
-        if request.method == "OPTIONS" or _tenant_is_whitelisted(path):
-            return await call_next(request)
-        try:
-            tenant_id = await _extract_tenant_from_token(request)
-            set_current_tenant(tenant_id)
-        except Exception:
-            logger.exception("租户中间件异常: path={}", path)
-        try:
-            return await call_next(request)
-        finally:
-            clear_current_tenant()

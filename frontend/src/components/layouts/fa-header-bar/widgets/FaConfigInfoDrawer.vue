@@ -335,7 +335,7 @@ const submitChanges = async () => {
       });
     }
 
-    // 4. 处理其他配置项（已迁移到租户管理的配置不再处理）
+    // 4. 处理其他配置项
     const otherKeys = keysToSubmit.filter(
       (key) => !["white_api_list_path", "ip_black_list", "ip_white_list"].includes(key)
     );

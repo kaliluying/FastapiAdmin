@@ -13,8 +13,8 @@ class AiMemoryModel(ModelMixin):
 
     Three memory modes:
     - user_preference: per-user settings (e.g. "回答要简洁")
-    - fact: key facts about the user or case (e.g. "用户是劳动争议调解员")
-    - work_rule: system-wide business rules (e.g. "所有建议必须引用法条")
+    - fact: key facts about the user or current work context
+    - work_rule: system-wide business rules (e.g. "所有建议必须引用来源")
     """
 
     __tablename__ = "ai_memory"
@@ -36,7 +36,7 @@ class AiMemoryModel(ModelMixin):
     )
     value: Mapped[str] = mapped_column(
         Text, nullable=False,
-        comment="Memory content, e.g. '劳动仲裁调解员，主要负责工伤类案件'",
+        comment="Memory content, e.g. '偏好先看执行摘要，再看明细'",
     )
     priority: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0,

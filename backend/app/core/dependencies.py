@@ -16,11 +16,7 @@ from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.core.redis_crud import RedisCURD
 from app.core.request_context import RequestContext
-from app.core.request_context import get_current_tenant_id as _get_ctx_tenant_id
 from app.core.security import OAuth2Schema, decode_access_token
-
-# 套餐菜单权限缓存: {tenant_id: (timestamp, [menu_ids])}
-_package_menu_cache: dict[int, tuple[float, list[int]]] = {}
 
 
 async def db_getter() -> AsyncGenerator[AsyncSession, None]:
@@ -45,17 +41,6 @@ async def redis_getter(request: Request) -> Redis:
     """
     return request.app.state.redis
 
-
-async def get_current_tenant_id() -> int | None:
-    """获取当前请求的租户 ID 依赖注入函数。
-
-    从 ContextVar 中读取租户 ID（由 TenantMiddleware 设置）。
-    非认证路径（白名单）返回 None。
-
-    返回:
-        int | None: 当前租户 ID，未设置时返回 None。
-    """
-    return _get_ctx_tenant_id()
 
 async def _decode_token_info(token: str, redis: Redis) -> tuple[dict, str]:
     """解码 JWT token 返回 (user_info, session_id)
@@ -158,7 +143,7 @@ async def _load_user_from_db(db: AsyncSession, username: str):
 
     # 过滤不可用的角色和职位（在会话内完成，确保关联数据已加载）
     if hasattr(user, "roles"):
-        user.roles = [role for role in user.roles if role and role.status]
+        user.roles = [role for role in user.roles if role and role.status == 0]
 
     return user
 
@@ -189,7 +174,7 @@ async def get_current_user(
     if token.startswith("Bearer"):
         token = token.split(" ")[1]
 
-    # 优先使用 TenantMiddleware 缓存在 request.state.ctx 中的会话信息（避免重复 Redis 读取）
+    # 优先使用请求上下文缓存的会话信息（避免重复 Redis 读取）
     ctx = getattr(request.state, "ctx", None)
     cached_user_info = ctx.jwt_user_info if ctx else None
 
@@ -210,7 +195,6 @@ async def get_current_user(
     username = user_info.get("user_name")
     if not username:
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
-    tenant_id = user_info.get("tenant_id")
 
     # 用户查询使用独立只读会话（不参与请求事务，查询后立即释放快照）
     async with async_db_session() as lookup_db:
@@ -226,7 +210,7 @@ async def get_current_user(
     )
 
     # 返回的 auth.db 指向请求级事务会话，供后续读写操作使用
-    auth = AuthSchema(db=db, tenant_id=tenant_id, check_data_scope=False)
+    auth = AuthSchema(db=db, check_data_scope=False)
     auth.user = user
     return auth
 
@@ -278,26 +262,12 @@ async def _verify_token(
     username = user_info.get("user_name")
     if not username:
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
-    tenant_id = user_info.get("tenant_id")
 
     user = await _load_user_from_db(db, username)
 
-    auth = AuthSchema(db=db, tenant_id=tenant_id, check_data_scope=False)
+    auth = AuthSchema(db=db, check_data_scope=False)
     auth.user = user
     return auth
-
-async def _get_cached_tenant_menu_ids(auth: AuthSchema, tenant_id: int) -> list[int]:
-    """获取租户可用菜单 ID（套餐模块已删除，返回空列表表示无限制）
-
-    参数:
-        auth: 认证信息
-        tenant_id: 租户 ID
-
-    返回:
-        空列表（表示不进行套餐级别的菜单过滤）
-    """
-    return []
-
 
 class AuthPermission:
     """权限验证类"""
@@ -346,7 +316,7 @@ class AuthPermission:
         if not auth.user or not auth.user.roles:
             raise CustomException(msg="无权限操作", code=10403, status_code=403)
 
-        # 收集角色权限（附带 menu_id 用于套餐过滤）
+        # 收集角色菜单权限。
         role_perms: dict[str, int] = {}
         for role in auth.user.roles:
             if role.status != 0:
@@ -358,7 +328,6 @@ class AuthPermission:
         if not role_perms:
             raise CustomException(msg="无权限操作", code=10403, status_code=403)
 
-        # 套餐模块已删除，不再进行套餐级别的菜单约束
         user_permissions = set(role_perms.keys())
 
         # 权限验证 - 满足任一权限即可

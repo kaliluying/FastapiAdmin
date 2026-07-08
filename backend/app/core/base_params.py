@@ -97,14 +97,3 @@ class UserByQueryParam(QueryParam):
             self.created_id = (QueueEnum.eq.value, self.created_id)
         if isinstance(self.updated_id, int):
             self.updated_id = (QueueEnum.eq.value, self.updated_id)
-
-
-@dataclass
-class TenantByQueryParam(QueryParam):
-    """tenant_id —— 子类自动继承"""
-
-    tenant_id: int | None = Query(None, description="租户ID")
-
-    def __post_init__(self) -> None:
-        if isinstance(self.tenant_id, int):
-            self.tenant_id = (QueueEnum.eq.value, self.tenant_id)

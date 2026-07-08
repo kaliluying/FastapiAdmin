@@ -5,8 +5,8 @@ from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.common.enums import QueueEnum
-from app.core.base_params import BaseQueryParam, TenantByQueryParam, UserByQueryParam
-from app.core.base_schema import BaseSchema, TenantBySchema, UserBySchema
+from app.core.base_params import BaseQueryParam, UserByQueryParam
+from app.core.base_schema import BaseSchema, UserBySchema
 
 
 class ParamsCreateSchema(BaseModel):
@@ -45,7 +45,7 @@ class ParamsUpdateSchema(ParamsCreateSchema):
     """
 
 
-class ParamsOutSchema(ParamsCreateSchema, BaseSchema, UserBySchema, TenantBySchema):
+class ParamsOutSchema(ParamsCreateSchema, BaseSchema, UserBySchema):
     """
     参数响应模型
     """
@@ -54,14 +54,13 @@ class ParamsOutSchema(ParamsCreateSchema, BaseSchema, UserBySchema, TenantBySche
 
 
 @dataclass
-class ParamsQueryParam(BaseQueryParam, UserByQueryParam, TenantByQueryParam):
+class ParamsQueryParam(BaseQueryParam, UserByQueryParam):
     """
     参数管理查询参数
 
     支持：
     - 时间范围（BaseQueryParam）
     - 创建人/更新人筛选（UserByQueryParam）
-    - 租户筛选（TenantByQueryParam）
     - 业务字段：参数名称、参数键名、是否系统内置
     """
 

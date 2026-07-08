@@ -109,8 +109,8 @@
   --theme-color: var(--main-color);
 
   /* Theme Colors - OKLCH Format */
-  --fa-primary: oklch(70% 0.23 260deg);
-  --fa-secondary: oklch(72% 0.19 231.6deg);
+  --fa-primary: #3b82f6;
+  --fa-secondary: #2dd4bf;
   --fa-error: oklch(73% 0.15 25.3deg);
   --fa-info: oklch(58% 0.03 254.1deg);
   --fa-success: oklch(78% 0.17 166.1deg);
@@ -118,36 +118,36 @@
   --fa-danger: oklch(68% 0.22 25.3deg);
 
   /* Gray Scale - Light Mode */
-  --fa-gray-100: #f9fafb;
-  --fa-gray-200: #f2f4f5;
-  --fa-gray-300: #e6eaeb;
-  --fa-gray-400: #dbdfe1;
-  --fa-gray-500: #949eb7;
-  --fa-gray-600: #7987a1;
-  --fa-gray-700: #4d5875;
-  --fa-gray-800: #383853;
-  --fa-gray-900: #323251;
+  --fa-gray-100: #fbfdff;
+  --fa-gray-200: #f4f7fb;
+  --fa-gray-300: #e7edf5;
+  --fa-gray-400: #d3dce9;
+  --fa-gray-500: #8a96a8;
+  --fa-gray-600: #647084;
+  --fa-gray-700: #475569;
+  --fa-gray-800: #1e293b;
+  --fa-gray-900: #0b1220;
 
   /* Border Colors */
-  --fa-card-border: rgb(15 23 42 / 12%);
-  --default-border: #cfd9e6;
-  --default-border-dashed: #c9d4e2;
-  --fa-soft-shadow: 0 2px 6px rgb(15 23 42 / 7%);
-  --fa-panel-shadow: 0 6px 18px rgb(15 23 42 / 7%);
-  --fa-focus-ring: 0 0 0 3px color-mix(in srgb, var(--theme-color) 16%, transparent);
+  --fa-card-border: rgb(11 18 32 / 9%);
+  --default-border: #d7e0ec;
+  --default-border-dashed: #cfd9e8;
+  --fa-soft-shadow: 0 2px 8px rgb(11 18 32 / 6%);
+  --fa-panel-shadow: 0 18px 48px rgb(11 18 32 / 8%);
+  --fa-focus-ring: 0 0 0 3px color-mix(in srgb, var(--theme-color) 18%, transparent);
 
   /* Background Colors */
-  --default-bg-color: #eef3f9;
+  --default-bg-color: #f5f8fc;
   --default-box-color: #fff;
 
   /* Hover Color */
-  --fa-hover-color: #e7edf6;
+  --fa-hover-color: #edf4fb;
 
   /* Active Color */
-  --fa-active-color: #dfe8f5;
+  --fa-active-color: #e5eef9;
 
   /* Element Component Active Color */
-  --fa-el-active-color: #e6eef8;
+  --fa-el-active-color: #e9f2ff;
 }
 
 /* ==================== Dark Mode Variables ==================== */

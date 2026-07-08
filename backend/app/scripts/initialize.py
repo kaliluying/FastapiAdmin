@@ -11,8 +11,7 @@ import re
 from datetime import datetime, time
 from typing import Any
 
-from sqlalchemy import func, inspect, select, text
-from sqlalchemy.engine import Connection
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.module_platform.menu.model import MenuModel
@@ -23,10 +22,9 @@ from app.api.v1.module_system.params.model import ParamsModel
 from app.api.v1.module_system.role.model import RoleModel
 from app.api.v1.module_system.user.model import UserModel, UserRolesModel
 from app.config.path_conf import SCRIPT_DIR
-from app.core.database import async_db_session, async_engine, create_tables
+from app.core.database import async_db_session, create_tables
 from app.core.logger import logger
 from app.plugin.module_ai.chat.model import ChatSessionModel
-from app.plugin.module_ai.arbitration.model import ArbitrationCaseModel, ArbitrationDraftModel
 from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeChunkModel, KnowledgeDocumentModel
 
 
@@ -55,8 +53,6 @@ class InitializeData:
         LoginLogModel,
         OperationLogModel,
         ChatSessionModel,
-        ArbitrationCaseModel,
-        ArbitrationDraftModel,
         KnowledgeBaseModel,
         KnowledgeDocumentModel,
         KnowledgeChunkModel,
@@ -69,7 +65,6 @@ class InitializeData:
         """建表并导入种子数据"""
         try:
             await create_tables()
-            await self.__ensure_compat_columns()
         except asyncio.exceptions.TimeoutError:
             logger.error("❌️ 数据库表结构初始化超时")
             raise
@@ -77,36 +72,6 @@ class InitializeData:
         async with async_db_session() as session:
             async with session.begin():
                 await self.__init_data(session)
-
-    async def __ensure_compat_columns(self) -> None:
-        """补齐旧库缺失的单组织兼容字段。"""
-        async with async_engine.begin() as conn:
-            await conn.run_sync(self.__ensure_tenant_id_columns)
-
-    def __ensure_tenant_id_columns(self, conn: Connection) -> None:
-        inspector = inspect(conn)
-        existing_tables = set(inspector.get_table_names())
-        preparer = conn.dialect.identifier_preparer
-
-        for model in self.prepare_init_models:
-            table = model.__table__
-            if "tenant_id" not in table.c or table.name not in existing_tables:
-                continue
-
-            existing_columns = {column["name"] for column in inspector.get_columns(table.name)}
-            if "tenant_id" in existing_columns:
-                continue
-
-            tenant_column = table.c.tenant_id
-            column_type = tenant_column.type.compile(dialect=conn.dialect)
-            table_name = preparer.quote(table.name)
-            column_name = preparer.quote(tenant_column.name)
-            ddl = f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type} NOT NULL DEFAULT 1"
-            if conn.dialect.name == "mysql" and tenant_column.comment:
-                ddl += f" COMMENT {conn.dialect.literal_processor(str)(tenant_column.comment)}"
-
-            conn.execute(text(ddl))
-            logger.info(f"✅️ 已为 {table.name} 表补齐 tenant_id 兼容字段")
 
     async def __init_data(self, db: AsyncSession) -> None:
         """按依赖顺序初始化各表种子数据"""

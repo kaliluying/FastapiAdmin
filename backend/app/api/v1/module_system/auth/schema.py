@@ -33,20 +33,9 @@ class AutoLoginTokenSchema(BaseModel):
     user: AutoLoginUserSchema = Field(..., description="用户信息")
 
 
-class TenantOptionSchema(BaseModel):
-    """租户选项（用于登录后选择租户）"""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int = Field(..., description="租户ID")
-    name: str = Field(..., description="租户名称")
-    code: str = Field(..., description="租户编码")
-
-
 class LoginSchema(JWTOutSchema):
-    """登录响应（含租户列表）"""
+    """登录响应。"""
 
-    tenants: list[TenantOptionSchema] = Field(default_factory=list, description="可选租户列表")
     user_info: dict = Field(default_factory=dict, description="用户信息")
 
 

@@ -474,7 +474,7 @@ const detailItems: import("@/components/others/fa-descriptions/index.vue").Descr
 const formData = ref<{{ class_name }}Form>({
   {% for column in columns %}
   {% if column.is_insert or column.is_edit %}
-  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id', 'tenant_id'] and column.column_name != pk_column_name %}
+  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
   {% if column.column_name == "status" %}
   {{ column.column_name }}: "0",
   {% elif column.python_type == "bool" or column.html_type == "switch" %}
@@ -490,7 +490,7 @@ const formData = ref<{{ class_name }}Form>({
 const rules = reactive({
   {% for column in columns %}
   {% if column.is_insert or column.is_edit %}
-  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id', 'tenant_id'] and column.column_name != pk_column_name %}
+  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
   {{ column.column_name }}: [{ required: {% if not column.is_nullable %}true{% else %}false{% endif %}, message: "请填写{{ column.column_comment or column.column_name }}", trigger: "blur" }],
   {% endif %}
   {% endif %}
@@ -504,7 +504,7 @@ const dialogFormItems = computed<FormItem[]>(() => [
   {% set column_comment = column.column_comment if column.column_comment else '' %}
   {% set parentheseIndex = column_comment.find("（") %}
   {% set comment = column_comment[:parentheseIndex] if parentheseIndex != -1 else column_comment %}
-  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id', 'tenant_id'] and column.column_name != pk_column_name %}
+  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
   {% if column.column_name == "status" %}
   { key: "status", label: "状态", type: "radio", props: { options: [{ label: "启用", value: 0 }, { label: "停用", value: 1 }] } },
   {% elif column.column_name == "description" %}
@@ -548,7 +548,7 @@ const { importVisible, exportVisible, openImport, openExport } = useImportExport
 const initialFormData: {{ class_name }}Form = {
   {% for column in columns %}
   {% if column.is_insert or column.is_edit %}
-  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id', 'tenant_id'] and column.column_name != pk_column_name %}
+  {% if column.column_name not in ['uuid', 'created_time', 'updated_time', 'created_id', 'updated_id', 'is_deleted', 'deleted_time', 'deleted_id'] and column.column_name != pk_column_name %}
   {% if column.column_name == "status" %}
   {{ column.column_name }}: "0",
   {% elif column.python_type == "bool" or column.html_type == "switch" %}

@@ -33,8 +33,6 @@ export const GRAY_MODE_KEY = "grayMode";
 export const AI_ENABLED_KEY = "aiEnabled";
 export const PAGE_SWITCHING_ANIMATION_KEY = "pageSwitchingAnimation";
 
-export const ROLE_ROOT = "ADMIN"; // 超级管理员角色
-
 // 🎯 功能分组的键映射对象
 
 // 认证相关键集合

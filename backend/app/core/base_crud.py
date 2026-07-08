@@ -1,7 +1,7 @@
 """"统一 CRUD 基类 — 同时支持有认证和无认证场景
 
-- 当 `auth` 不为 None 时（Controller 注入）：自动处理租户隔离、数据权限过滤、审计字段填充
-- 当 `auth` 为 None 时（后台任务/脚本）：纯数据操作，无权限/租户过滤
+- 当 `auth` 不为 None 时（Controller 注入）：自动处理数据权限过滤、审计字段填充
+- 当 `auth` 为 None 时（后台任务/脚本）：纯数据操作，无权限过滤
 
 用法:
     # 带认证（Controller）
@@ -51,7 +51,7 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
 
         参数:
         - model: 数据模型类
-        - auth: 认证信息（Controller 场景），为 None 时跳过所有权限/租户/审计逻辑
+        - auth: 认证信息（Controller 场景），为 None 时跳过所有权限/审计逻辑
         - session: 数据库会话（后台任务场景），仅在 auth=None 时使用
         """
         self.model = model
@@ -334,7 +334,7 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             raise CustomException(msg=f"分页查询失败: {e!s}")
 
     async def create(self, data: CreateSchemaType) -> ModelType:
-        """创建新对象（有认证时自动填充租户与审计字段）
+        """创建新对象（有认证时自动填充审计字段）
 
         事务由 request 级 db_getter 统一管理，本方法不开启独立事务。
 
@@ -349,10 +349,6 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             obj = self.model(**obj_dict)
 
             if self.auth and self.auth.user:
-                if hasattr(obj, "tenant_id"):
-                    # 非超管始终使用当前租户；超管仅当未显式指定时自动填充
-                    if not self.auth.user.is_superuser or getattr(obj, "tenant_id", None) is None:
-                        setattr(obj, "tenant_id", self.auth.tenant_id or self.auth.user.tenant_id)
                 if hasattr(obj, "created_id"):
                     setattr(obj, "created_id", self.auth.user.id)
                 if hasattr(obj, "updated_id"):
@@ -368,7 +364,7 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             raise CustomException(msg=f"创建失败: {e!s}")
 
     async def update(self, id: int, data: UpdateSchemaType) -> ModelType:
-        """更新对象（有认证时检查租户归属 + 填充审计字段）
+        """更新对象（有认证时填充审计字段）
 
         事务由 request 级 db_getter 统一管理，本方法不开启独立事务。
 
@@ -385,16 +381,6 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             obj = await self._get_one(id=id, preload=model_defaults)
             if not obj:
                 raise CustomException(msg="更新对象不存在")
-
-            # 租户权限检查（仅在有认证且非超管时）
-            if self.auth and self.auth.user and not self.auth.user.is_superuser:
-                if hasattr(obj, "tenant_id"):
-                    obj_tid = getattr(obj, "tenant_id", None)
-                    if obj_tid is not None and obj_tid != self.auth.user.tenant_id:
-                        is_platform = getattr(self.model, "__platform_data_shared__", False)
-                        if is_platform and obj_tid == 1:
-                            raise CustomException(msg="平台数据仅管理员可修改")
-                        raise CustomException(msg="无权修改其他租户的数据")
 
             # 审计字段
             if self.auth and self.auth.user and hasattr(obj, "updated_id"):
@@ -413,19 +399,15 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             raise CustomException(msg=f"更新失败: {e!s}")
 
     async def delete(self, ids: list[int]) -> None:
-        """软删除对象（有认证时填充删除人 + 租户隔离）"""
+        """软删除对象（有认证时填充删除人）"""
         try:
             pk = self._get_pk_col()
 
             if self._supports_soft_delete:
-                sql = self._tenant_dml_where(
-                    update(self.model).where(pk.in_(ids))
-                ).values(**self._soft_delete_values())
+                sql = update(self.model).where(pk.in_(ids)).values(**self._soft_delete_values())
                 await self.db.execute(sql)
             else:
-                sql = self._tenant_dml_where(
-                    delete(self.model).where(pk.in_(ids))
-                )
+                sql = delete(self.model).where(pk.in_(ids))
                 await self.db.execute(sql)
             await self.db.flush()
         except CustomException:
@@ -434,13 +416,13 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             raise CustomException(msg=f"删除失败: {e!s}")
 
     async def clear(self) -> None:
-        """软清空对象表（有认证时填充删除人 + 租户隔离）"""
+        """软清空对象表（有认证时填充删除人）"""
         try:
             if self._supports_soft_delete:
-                sql = self._tenant_dml_where(update(self.model)).values(**self._soft_delete_values())
+                sql = update(self.model).values(**self._soft_delete_values())
                 await self.db.execute(sql)
             else:
-                sql = self._tenant_dml_where(delete(self.model))
+                sql = delete(self.model)
                 await self.db.execute(sql)
             await self.db.flush()
         except CustomException:
@@ -449,10 +431,10 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             raise CustomException(msg=f"清空失败: {e!s}")
 
     async def set(self, ids: list[int], **kwargs) -> None:
-        """批量更新字段（带租户隔离）"""
+        """批量更新字段"""
         try:
             pk = self._get_pk_col()
-            sql = self._tenant_dml_where(update(self.model)).where(pk.in_(ids)).values(**kwargs)
+            sql = update(self.model).where(pk.in_(ids)).values(**kwargs)
             await self.db.execute(sql)
             await self.db.flush()
         except CustomException:
@@ -461,14 +443,12 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             raise CustomException(msg=f"批量更新失败: {e!s}")
 
     async def restore(self, ids: list[int]) -> None:
-        """恢复软删除对象（带租户隔离）"""
+        """恢复软删除对象"""
         try:
             if not self._supports_soft_delete:
                 raise CustomException(msg="该模型不支持软删除，无法恢复")
             pk = self._get_pk_col()
-            sql = self._tenant_dml_where(
-                update(self.model).where(pk.in_(ids))
-            ).values(is_deleted=False, deleted_time=None, deleted_id=None)
+            sql = update(self.model).where(pk.in_(ids)).values(is_deleted=False, deleted_time=None, deleted_id=None)
             await self.db.execute(sql)
             await self.db.flush()
         except CustomException:
@@ -480,44 +460,14 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
         """过滤数据权限（仅用于 Select）"""
         if not self.auth:
             return sql
-        if getattr(self.model, "__platform_data_shared__", False):
-            for condition in self._platform_shared_conditions():
-                sql = sql.where(condition)
         filter_obj = Permission(model=self.model, auth=self.auth)
         return await filter_obj.filter_query(sql)
-
-    def _platform_shared_conditions(self) -> list[ColumnElement]:
-        if not self.auth or not self.auth.user:
-            return []
-        tid = self.auth.user.tenant_id
-        if tid is not None and tid != 1:
-            return [
-                (getattr(self.model, "tenant_id") == tid)
-                | (getattr(self.model, "tenant_id") == 1)
-            ]
-        return []
-
-    def _tenant_dml_where(self, sql):
-        """为 DML 语句注入 tenant_id 条件（不读平台数据）"""
-        if self.auth and hasattr(self.model, "tenant_id") \
-           and self.auth.user and not self.auth.user.is_superuser:
-            tid = self.auth.tenant_id
-            if tid is not None:
-                return sql.where(getattr(self.model, "tenant_id") == tid)
-        return sql
 
     async def __build_conditions(self, **kwargs) -> list[ColumnElement]:
         conditions: list[ColumnElement] = []
 
         if hasattr(self.model, "is_deleted"):
             conditions.append(getattr(self.model, "is_deleted") == False)  # noqa: E712
-
-        if self.auth and hasattr(self.model, "tenant_id") \
-           and not getattr(self.model, "__platform_data_shared__", False):
-            if self.auth.user and not self.auth.user.is_superuser:
-                tid = self.auth.tenant_id
-                if tid is not None:
-                    conditions.append(getattr(self.model, "tenant_id") == tid)
 
         for key, value in kwargs.items():
             if value is None or value == "":

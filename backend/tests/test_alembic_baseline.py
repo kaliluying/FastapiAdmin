@@ -1,11 +1,10 @@
-from pathlib import Path
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 from alembic.config import Config
 from alembic.script import ScriptDirectory
-
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
@@ -15,12 +14,10 @@ def test_alembic_chain_starts_from_initial_baseline() -> None:
     script = ScriptDirectory.from_config(config)
 
     baseline = script.get_revision("000000000001")
-    first_business_revision = script.get_revision("5fe8b5f855e5")
 
     assert baseline is not None
     assert baseline.down_revision is None
-    assert first_business_revision is not None
-    assert first_business_revision.down_revision == "000000000001"
+    assert script.get_heads() == ["000000000001"]
 
 
 def test_initial_baseline_creates_core_and_ai_tables() -> None:
@@ -32,7 +29,6 @@ def test_initial_baseline_creates_core_and_ai_tables() -> None:
         "sys_role",
         "platform_menu",
         "ai_chat_session",
-        "ai_evidence_file",
         "ai_knowledge_base",
         "ai_memory",
     ]:
@@ -46,6 +42,7 @@ def test_alembic_upgrade_head_from_empty_sqlite(tmp_path: Path) -> None:
         "DATABASE_TYPE": "sqlite",
         "DATABASE_NAME": str(db_path),
         "REDIS_ENABLE": "false",
+        "PYTHONUTF8": "1",
     }
 
     result = subprocess.run(
@@ -54,6 +51,7 @@ def test_alembic_upgrade_head_from_empty_sqlite(tmp_path: Path) -> None:
         env=env,
         capture_output=True,
         text=True,
+        encoding="utf-8",
         timeout=30,
     )
 

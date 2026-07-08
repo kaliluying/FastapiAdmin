@@ -28,9 +28,9 @@
   --el-fill-color-light: #f7f9fc !important;
   --el-fill-color-lighter: #fafbfe !important;
   --el-fill-color-blank: var(--default-box-color) !important;
-  --el-text-color-primary: #162033 !important;
-  --el-text-color-regular: #4a5568 !important;
-  --el-text-color-secondary: #66758a !important;
+  --el-text-color-primary: #0b1220 !important;
+  --el-text-color-regular: #475569 !important;
+  --el-text-color-secondary: #64748b !important;
   // 按钮样式偏好
   --el-button-hover-bg-color: color-mix(in srgb, var(--theme-color) 9%, white) !important;
   --el-button-hover-border-color: var(--el-color-primary) !important;
@@ -623,10 +623,21 @@ html.dark .el-card {
 }
 
 .el-card {
-  background: var(--default-box-color) !important;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 98%), rgb(248 251 255 / 94%)),
+    var(--default-box-color) !important;
   border: 1px solid var(--fa-card-border) !important;
   border-radius: 8px !important;
   box-shadow: var(--fa-panel-shadow) !important;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease;
+}
+
+.el-card:hover {
+  border-color: color-mix(in srgb, var(--theme-color) 16%, var(--fa-card-border)) !important;
+  box-shadow: 0 22px 52px rgb(11 18 32 / 10%) !important;
 }
 
 .el-card__header {
@@ -735,8 +746,8 @@ html.dark .el-card {
 .el-table {
   --el-table-border-color: var(--fa-card-border) !important;
   --el-table-current-row-bg-color: color-mix(in srgb, var(--theme-color) 8%, white) !important;
-  --el-table-header-bg-color: #f8fafc !important;
-  --el-table-row-hover-bg-color: #f6f9fd !important;
+  --el-table-header-bg-color: #f6f9fd !important;
+  --el-table-row-hover-bg-color: #eef6ff !important;
 
   overflow: hidden;
   border: 1px solid var(--fa-card-border);
@@ -745,8 +756,8 @@ html.dark .el-card {
 
 .el-table th.el-table__cell {
   font-weight: 600;
-  color: #334155;
-  background: #f8fafc !important;
+  color: #1e293b;
+  background: #f6f9fd !important;
 }
 
 .el-table .el-table__cell {

@@ -66,8 +66,8 @@ const normalizedBars = computed(() => {
 .home-card {
   position: relative;
   overflow: hidden;
-  border-color: rgb(23 32 51 / 8%);
-  box-shadow: 0 10px 26px rgb(23 32 51 / 6%);
+  border-color: rgb(11 18 32 / 8%);
+  box-shadow: 0 18px 42px rgb(11 18 32 / 8%);
 
   :deep(.el-card__body) {
     height: 100%;
@@ -77,7 +77,7 @@ const normalizedBars = computed(() => {
 
 .metric-card {
   background:
-    linear-gradient(180deg, rgb(255 255 255), rgb(250 252 255)),
+    linear-gradient(180deg, rgb(255 255 255), rgb(247 251 255)),
     var(--el-bg-color);
 }
 
@@ -95,7 +95,7 @@ const normalizedBars = computed(() => {
   overflow: hidden;
   font-size: 13px;
   font-weight: 650;
-  color: #667085;
+  color: #64748b;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -104,7 +104,7 @@ const normalizedBars = computed(() => {
   font-size: 32px;
   font-weight: 760;
   line-height: 1;
-  color: #172033;
+  color: #0b1220;
 }
 
 .icon-box {

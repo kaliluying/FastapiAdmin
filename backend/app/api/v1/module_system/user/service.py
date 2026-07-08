@@ -1,5 +1,4 @@
 ﻿import io
-import json
 from typing import Any
 
 import pandas as pd
@@ -9,7 +8,6 @@ from app.api.v1.module_platform.menu.crud import MenuCRUD
 from app.api.v1.module_platform.menu.schema import MenuOutSchema
 from app.api.v1.module_system.dept.crud import DeptCRUD
 from app.api.v1.module_system.role.crud import RoleCRUD
-from app.config.path_conf import SCRIPT_DIR
 from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.exceptions import CustomException
 from app.core.logger import logger
@@ -33,8 +31,6 @@ from .schema import (
 
 class UserService:
     """用户管理服务"""
-
-    _allowed_menu_keys: set[tuple[str, str]] | None = None
 
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth
@@ -164,11 +160,7 @@ class UserService:
                 search={"type": ("in", [1, 2, 3, 4]), "status": 0, **_internal_pc_only},
                 order_by=[{"order": "asc"}],
             )
-            menus = [
-                MenuOutSchema.model_validate(menu)
-                for menu in menu_all
-                if self._is_builtin_menu(menu)
-            ]
+            menus = [MenuOutSchema.model_validate(menu) for menu in menu_all]
         else:
             menu_ids = {
                 menu.id
@@ -177,7 +169,6 @@ class UserService:
                 if menu.status == 0
                 and getattr(menu, "client", "pc") == "pc"
                 and getattr(menu, "scope", "single_org") == "single_org"
-                and self._is_builtin_menu(menu)
             }
 
             menus = (
@@ -187,49 +178,35 @@ class UserService:
                         search={"id": ("in", list(menu_ids)), **_internal_pc_only},
                         order_by=[{"order": "asc"}],
                     )
-                    if self._is_builtin_menu(menu)
                 ]
                 if menu_ids
                 else []
             )
+        user_dict.permissions = self._collect_permissions()
         user_dict.menus = traversal_to_tree([menu.model_dump() for menu in menus])
         return user_dict
 
-    @classmethod
-    def _is_builtin_menu(cls, menu: Any) -> bool:
-        return cls._menu_key(menu) in cls._get_allowed_menu_keys()
-
-    @classmethod
-    def _get_allowed_menu_keys(cls) -> set[tuple[str, str]]:
-        if cls._allowed_menu_keys is not None:
-            return cls._allowed_menu_keys
-
-        menu_path = SCRIPT_DIR / "platform_menu.json"
-        try:
-            raw_menus = json.loads(menu_path.read_text(encoding="utf-8"))
-        except Exception as e:
-            logger.warning(f"⚠️ 读取菜单白名单失败，将返回数据库菜单: {e!s}")
-            cls._allowed_menu_keys = set()
-            return cls._allowed_menu_keys
-
-        keys: set[tuple[str, str]] = set()
-        stack = list(raw_menus)
-        while stack:
-            item = stack.pop()
-            keys.add(cls._menu_key(item))
-            stack.extend(item.get("children") or [])
-        cls._allowed_menu_keys = keys
-        return keys
-
     @staticmethod
-    def _menu_key(menu: Any) -> tuple[str, str]:
-        getter = menu.get if isinstance(menu, dict) else lambda key, default=None: getattr(menu, key, default)
-        permission = getter("permission") or ""
-        route_name = getter("route_name") or ""
-        route_path = getter("route_path") or ""
-        component_path = getter("component_path") or ""
-        title = getter("title") or getter("name") or ""
-        return (str(permission), f"{route_name}|{route_path}|{component_path}|{title}")
+    def _is_builtin_menu(_menu: Any) -> bool:
+        return True
+
+    def _collect_permissions(self) -> list[str]:
+        if self.auth.user and self.auth.user.is_superuser:
+            return ["*:*:*"]
+
+        permissions: set[str] = set()
+        for role in self.auth.user.roles or []:
+            if role.status != 0:
+                continue
+            for menu in role.menus or []:
+                if (
+                    menu.status == 0
+                    and getattr(menu, "client", "pc") == "pc"
+                    and getattr(menu, "scope", "single_org") == "single_org"
+                    and menu.permission
+                ):
+                    permissions.add(menu.permission)
+        return sorted(permissions)
 
     async def update_current_info(self, data: CurrentUserUpdateSchema) -> UserOutSchema:
         if not self.auth.user or not self.auth.user.id:

@@ -47,7 +47,6 @@ class RedisInitKeyConfig(Enum):
     USER_SESSION = {"key": "user_session", "remark": "用户会话信息"}
     CAPTCHA_CODES = {"key": "captcha_codes", "remark": "图片验证码"}
     SYSTEM_CONFIG = {"key": "system_config", "remark": "系统配置"}
-    TENANT_CONFIG = {"key": "tenant_config", "remark": "租户配置"}
     SYSTEM_DICT = {"key": "system_dict", "remark": "数据字典"}
     @property
     def key(self) -> str:

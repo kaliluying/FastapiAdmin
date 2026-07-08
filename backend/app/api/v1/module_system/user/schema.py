@@ -14,8 +14,8 @@ from pydantic import (
 from app.api.v1.module_platform.menu.schema import MenuOutSchema
 from app.api.v1.module_system.role.schema import RoleOutSchema
 from app.common.enums import QueueEnum
-from app.core.base_params import BaseQueryParam, TenantByQueryParam, UserByQueryParam
-from app.core.base_schema import BaseSchema, CommonSchema, TenantBySchema, UserBySchema
+from app.core.base_params import BaseQueryParam, UserByQueryParam
+from app.core.base_schema import BaseSchema, CommonSchema, UserBySchema
 from app.core.validator import email_validator, mobile_validator
 
 
@@ -27,14 +27,6 @@ class CurrentUserUpdateSchema(BaseModel):
     email: EmailStr | None = Field(default=None, description="邮箱")
     gender: str | None = Field(default=None, max_length=1, description="性别(0:男 1:女 2:未知)")
     avatar: str | None = Field(default=None, max_length=255, description="头像")
-
-    # 劳动仲裁相关字段
-    monthly_salary: float | None = Field(default=None, description="月工资(元)")
-    hire_date: str | None = Field(default=None, description="入职日期(YYYY-MM-DD)")
-    company_name: str | None = Field(default=None, max_length=128, description="公司名称")
-    position_name: str | None = Field(default=None, max_length=64, description="岗位名称")
-    contract_type: str | None = Field(default=None, max_length=32, description="合同类型")
-    social_insurance: bool | None = Field(default=None, description="是否缴纳社保")
 
     @field_validator("mobile")
     @classmethod
@@ -87,14 +79,6 @@ class UserRegisterSchema(BaseModel):
     role_ids: list[int] | None = Field(default=[3], description="角色ID列表")
     created_id: int | None = Field(default=1, description="创建人ID")
     description: str | None = Field(default=None, max_length=255, description="备注")
-
-    # 劳动仲裁相关字段（注册时可选填写）
-    monthly_salary: float | None = Field(default=None, description="月工资(元)")
-    hire_date: str | None = Field(default=None, description="入职日期(YYYY-MM-DD)")
-    company_name: str | None = Field(default=None, max_length=128, description="公司名称")
-    position_name: str | None = Field(default=None, max_length=64, description="岗位名称")
-    contract_type: str | None = Field(default=None, max_length=32, description="合同类型")
-    social_insurance: bool | None = Field(default=None, description="是否缴纳社保")
 
     @field_validator("mobile")
     @classmethod
@@ -219,7 +203,6 @@ class UserCreateSchema(CurrentUserUpdateSchema):
     description: str | None = Field(default=None, max_length=255, description="备注")
     is_superuser: bool | None = Field(default=False, description="是否超管")
     dept_id: int | None = Field(default=None, description="部门ID")
-    tenant_id: int | None = Field(default=None, description="租户ID，仅平台管理员创建时可指定")
     role_ids: list[int] | None = Field(default=[], description="角色ID列表")
 
     @field_validator("status")
@@ -287,18 +270,13 @@ class UserUpdateSchema(CurrentUserUpdateSchema):
         return v
 
 
-class UserOutSchema(UserUpdateSchema, BaseSchema, UserBySchema, TenantBySchema):
+class UserOutSchema(UserUpdateSchema, BaseSchema, UserBySchema):
     """响应"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes=True)
 
     username: str | None = Field(default=None, max_length=32, description="用户名")
 
-    tenant_id: int | None = Field(
-        default=None,
-        exclude=True,
-        description="创建入参使用；列表/详情出参见 tenant",
-    )
     gitee_login: str | None = Field(default=None, max_length=32, description="Gitee登录")
     github_login: str | None = Field(default=None, max_length=32, description="Github登录")
     wx_login: str | None = Field(default=None, max_length=32, description="微信登录")
@@ -307,17 +285,17 @@ class UserOutSchema(UserUpdateSchema, BaseSchema, UserBySchema, TenantBySchema):
     dept: CommonSchema | None = Field(default=None, description="部门")
     roles: list[RoleOutSchema] | None = Field(default=[], description="角色")
     menus: list[MenuOutSchema] | None = Field(default=[], description="菜单")
+    permissions: list[str] = Field(default_factory=list, description="权限标识列表")
 
 
 @dataclass
-class UserQueryParam(BaseQueryParam, UserByQueryParam, TenantByQueryParam):
+class UserQueryParam(BaseQueryParam, UserByQueryParam):
     """
     用户管理查询参数（继承标准 Mixin）
 
     支持：
     - 时间范围（BaseQueryParam）
     - 创建人/更新人筛选（UserByQueryParam）
-    - 租户筛选（TenantByQueryParam）
     - 业务字段：用户名、名称、手机号、邮箱、部门、状态
     """
 

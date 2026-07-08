@@ -1,7 +1,7 @@
 import type { Directive, DirectiveBinding } from "vue";
 
 import { useUserStore } from "@stores";
-import { ROLE_ROOT } from "@/constants";
+import { hasPermissionCode } from "@/utils/auth/permission";
 
 /**
  * 按钮权限
@@ -17,25 +17,20 @@ export const hasPerm: Directive = {
       );
     }
 
-    const { roles } = useUserStore().basicInfo;
-    const userPrems = useUserStore().prems;
-
-    const isWildcardBypass =
-      (Array.isArray(requiredPerms) && requiredPerms.some((p) => p === "*:*:*")) ||
-      requiredPerms === "*:*:*";
-
-    // 超级管理员；或指令显式传入 "*:*:*" 时跳过校验（勿用 includes 子串匹配，避免含 "*:*:*" 的权限被误放行）
-    if (
-      (roles && roles.map((r: { code?: string }) => r.code).includes(ROLE_ROOT)) ||
-      isWildcardBypass
-    ) {
-      return;
-    }
+    const userStore = useUserStore();
 
     // 检查权限
     const hasAuth = Array.isArray(requiredPerms)
-      ? requiredPerms.some((perm) => userPrems.includes(perm))
-      : userPrems.includes(requiredPerms);
+      ? requiredPerms.some((perm) =>
+          hasPermissionCode(perm, {
+            is_superuser: userStore.basicInfo?.is_superuser,
+            permissions: userStore.prems,
+          })
+        )
+      : hasPermissionCode(requiredPerms, {
+          is_superuser: userStore.basicInfo?.is_superuser,
+          permissions: userStore.prems,
+        });
 
     // 如果没有权限，移除该元素
     if (!hasAuth && el.parentNode) {

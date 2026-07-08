@@ -45,12 +45,12 @@ const chartOptions = computed(() => ({
     type: "category",
     boundaryGap: false,
     data: dates,
-    axisLine: { lineStyle: { color: "#dcdfe6" } },
+    axisLine: { lineStyle: { color: "#d7e0ec" } },
     axisTick: { show: false },
   },
   yAxis: {
     type: "value",
-    splitLine: { lineStyle: { type: "dashed", color: "#ebeef5" } },
+    splitLine: { lineStyle: { type: "dashed", color: "#e7edf5" } },
   },
   series: [
     {
@@ -59,9 +59,9 @@ const chartOptions = computed(() => ({
       smooth: true,
       symbolSize: 7,
       data: chatData,
-      itemStyle: { color: "#409eff" },
-      lineStyle: { width: 3, color: "#409eff" },
-      areaStyle: { color: "rgba(64, 158, 255, 0.12)" },
+      itemStyle: { color: "#3b82f6" },
+      lineStyle: { width: 3, color: "#3b82f6" },
+      areaStyle: { color: "rgba(59, 130, 246, 0.12)" },
     },
     {
       name: "知识检索",
@@ -69,9 +69,9 @@ const chartOptions = computed(() => ({
       smooth: true,
       symbolSize: 7,
       data: retrievalData,
-      itemStyle: { color: "#67c23a" },
-      lineStyle: { width: 3, color: "#67c23a" },
-      areaStyle: { color: "rgba(103, 194, 58, 0.1)" },
+      itemStyle: { color: "#2dd4bf" },
+      lineStyle: { width: 3, color: "#2dd4bf" },
+      areaStyle: { color: "rgba(45, 212, 191, 0.1)" },
     },
   ],
 }));
@@ -80,5 +80,6 @@ const chartOptions = computed(() => ({
 <style scoped lang="scss">
 .home-card {
   min-height: 420px;
+  overflow: hidden;
 }
 </style>

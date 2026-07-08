@@ -174,6 +174,7 @@ export interface UserInfo extends BaseType {
   gender?: string;
   password?: string;
   menus?: MenuTable[];
+  permissions?: string[];
   dept?: deptTreeType;
   dept_id?: deptTreeType["id"];
   dept_name?: deptTreeType["name"];

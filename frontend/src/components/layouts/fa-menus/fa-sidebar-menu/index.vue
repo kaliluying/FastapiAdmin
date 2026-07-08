@@ -367,9 +367,11 @@ watch(menuOpen, (isMenuOpen: boolean) => {
   height: 100vh;
   user-select: none;
   scrollbar-width: none;
-  background: var(--default-box-color);
-  border-right: 1px solid var(--fa-card-border);
-  box-shadow: var(--fa-panel-shadow);
+  background:
+    linear-gradient(180deg, #0b1220 0%, #111827 54%, #0b1220 100%),
+    var(--default-box-color);
+  border-right: 1px solid rgb(255 255 255 / 8%);
+  box-shadow: 18px 0 42px rgb(11 18 32 / 12%);
 
   &.no-border {
     border-right: none !important;
@@ -455,6 +457,23 @@ watch(menuOpen, (isMenuOpen: boolean) => {
     position: relative;
     box-sizing: border-box;
     height: 100vh;
+    border-right: 1px solid rgb(255 255 255 / 7%);
+
+    &::before {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      content: "";
+      background:
+        radial-gradient(circle at 20% 4%, rgb(45 212 191 / 16%), transparent 24%),
+        linear-gradient(180deg, rgb(255 255 255 / 4%), transparent 26%);
+    }
+
+    > * {
+      position: relative;
+      z-index: 1;
+    }
 
     @media only screen and (width <= 640px) {
       height: 100dvh;
@@ -509,9 +528,11 @@ watch(menuOpen, (isMenuOpen: boolean) => {
     align-items: center;
     width: 100%;
     height: 60px;
+    padding: 0 10px;
     overflow: hidden;
     line-height: 60px;
     cursor: pointer;
+    border-bottom: 1px solid rgb(255 255 255 / 7%);
 
     .logo {
       margin-left: 22px;
@@ -525,6 +546,8 @@ watch(menuOpen, (isMenuOpen: boolean) => {
       box-sizing: border-box;
       margin-left: 10px;
       font-size: 18px;
+      font-weight: 780;
+      letter-spacing: 0;
 
       &.is-dual-menu-name {
         left: 25px;
@@ -653,10 +676,23 @@ $popup-menu-radius: 6px;
 /* 通用选中样式 */
 @mixin menu-active($color, $bg-color, $icon-color: var(--theme-color)) {
   .el-menu-item.is-active {
+    position: relative;
     color: $color !important;
     background-color: $bg-color;
     border-color: color-mix(in srgb, var(--theme-color) 20%, transparent);
-    box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
+    box-shadow: 0 10px 24px rgb(0 0 0 / 12%);
+
+    &::before {
+      position: absolute;
+      top: 9px;
+      bottom: 9px;
+      left: 0;
+      width: 3px;
+      content: "";
+      background: #2dd4bf;
+      border-radius: 0 999px 999px 0;
+      box-shadow: 0 0 18px rgb(45 212 191 / 70%);
+    }
 
     .menu-icon {
       .art-svg-icon {
@@ -752,6 +788,11 @@ $popup-menu-radius: 6px;
       border-color 0.2s ease,
       color 0.2s ease;
 
+    &:focus-visible {
+      outline: none;
+      box-shadow: var(--fa-focus-ring);
+    }
+
     span {
       font-size: $menu-font-size !important;
 
@@ -800,10 +841,10 @@ $popup-menu-radius: 6px;
       var(--theme-color),
       color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color))
     );
-    @include menu-hover($hover-bg-color);
+    @include menu-hover(rgb(255 255 255 / 8%));
 
     .el-sub-menu__icon-arrow {
-      color: var(--fa-gray-400);
+      color: rgb(203 213 225 / 72%);
     }
   }
 
@@ -862,10 +903,14 @@ $popup-menu-radius: 6px;
   }
 
   .layout-sidebar {
+    background:
+      linear-gradient(180deg, #0b1220 0%, #111827 54%, #0b1220 100%),
+      var(--default-box-color);
+
     /* 图标颜色、文字颜色 */
     .menu-icon .art-svg-icon,
     .menu-name {
-      color: var(--fa-gray-800) !important;
+      color: rgb(203 213 225 / 82%) !important;
     }
 
     /* 选中的文字颜色跟图标颜色 */
@@ -879,6 +924,34 @@ $popup-menu-radius: 6px;
     /* 右侧箭头颜色 */
     .el-sub-menu__icon-arrow {
       color: #fff;
+    }
+  }
+}
+
+.layout-sidebar {
+  .el-menu-dark {
+    .el-sub-menu__title,
+    .el-menu-item {
+      color: rgb(203 213 225 / 82%) !important;
+      background: transparent !important;
+
+      &:hover {
+        color: #fff !important;
+        background: rgb(255 255 255 / 8%) !important;
+      }
+    }
+
+    .el-menu-item.is-active {
+      color: #fff !important;
+      background:
+        linear-gradient(90deg, rgb(45 212 191 / 16%), rgb(59 130 246 / 10%)),
+        rgb(255 255 255 / 6%) !important;
+      border-color: rgb(45 212 191 / 22%) !important;
+
+      span,
+      .menu-icon .art-svg-icon {
+        color: #fff !important;
+      }
     }
   }
 }

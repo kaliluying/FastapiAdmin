@@ -22,7 +22,7 @@ class DeptService:
     """
     部门管理服务
 
-    提供部门 CRUD、树形结构查询、级联启/禁用、租户配额检查等业务能力。
+    提供部门 CRUD、树形结构查询、级联启/禁用等业务能力。
     """
 
     def __init__(self, auth: AuthSchema) -> None:

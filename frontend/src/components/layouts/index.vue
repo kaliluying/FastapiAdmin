@@ -8,6 +8,7 @@
 -->
 <template>
   <div class="app-layout">
+    <a class="skip-main-link" href="#app-content">跳到主要内容</a>
     <!-- 左侧菜单导航 -->
     <aside id="app-sidebar">
       <FaSidebarMenu />

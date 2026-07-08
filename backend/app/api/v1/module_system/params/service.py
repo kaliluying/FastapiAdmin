@@ -160,7 +160,7 @@ class ParamsService:
         out = ParamsOutSchema.model_validate(obj)
 
         # 同步redis
-        redis_key = f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:{self.auth.user.tenant_id}:{data.config_key}"
+        redis_key = f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:{data.config_key}"
         try:
             redis_payload = out.model_dump(mode="json")
             value = json.dumps(redis_payload, ensure_ascii=False)
@@ -201,7 +201,7 @@ class ParamsService:
         redis_payload = out.model_dump(mode="json")
 
         # 同步redis
-        redis_key = f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:{self.auth.user.tenant_id}:{new_obj.config_key}"
+        redis_key = f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:{new_obj.config_key}"
         try:
             value = json.dumps(redis_payload, ensure_ascii=False)
             result = await RedisCURD(redis).set(
@@ -245,7 +245,7 @@ class ParamsService:
 
         # 同步删除Redis缓存（使用删除前已获取的对象信息）
         for obj in objs:
-            redis_key = f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:{self.auth.user.tenant_id}:{obj.config_key}"
+            redis_key = f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:{obj.config_key}"
             try:
                 await RedisCURD(redis).delete(redis_key)
             except Exception as e:
@@ -303,7 +303,7 @@ class ParamsService:
     @staticmethod
     async def init_cache(redis: Redis) -> None:
         """
-        初始化系统参数并按租户缓存（无 auth）。
+        初始化系统参数缓存（无 auth）。
 
         参数:
         - redis (Redis): Redis 客户端实例
@@ -319,8 +319,7 @@ class ParamsService:
                     raise CustomException(msg="该数据不存在")
                 try:
                     for config in config_obj:
-                        tenant_id = config.tenant_id
-                        redis_key = f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:{tenant_id}:{config.config_key}"
+                        redis_key = f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:{config.config_key}"
                         out = ParamsOutSchema.model_validate(config)
                         redis_payload = out.model_dump(mode="json")
                         value = json.dumps(redis_payload, ensure_ascii=False)
@@ -337,18 +336,16 @@ class ParamsService:
                     raise CustomException(msg="初始化系统配置失败") from e
 
     @staticmethod
-    async def get_init_cache(redis: Redis, tenant_id: int = 1) -> list[dict]:
+    async def get_init_cache(redis: Redis) -> list[dict]:
         """
         获取系统配置（无 auth）。
 
         参数:
         - redis (Redis): Redis 客户端实例
-        - tenant_id (int): 租户ID
-
         返回:
         - list[dict]: 系统配置字典列表
         """
-        redis_keys = await RedisCURD(redis).get_keys(f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:{tenant_id}:*")
+        redis_keys = await RedisCURD(redis).get_keys(f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:*")
         redis_configs = await RedisCURD(redis).mget(redis_keys)
         configs = []
         for config in redis_configs:
@@ -370,7 +367,7 @@ class ParamsService:
                     if config_obj:
                         try:
                             for config in config_obj:
-                                redis_key = f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:{tenant_id}:{config.config_key}"
+                                redis_key = f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:{config.config_key}"
                                 out = ParamsOutSchema.model_validate(config)
                                 config_obj_dict = out.model_dump()
                                 redis_payload = out.model_dump(mode="json")

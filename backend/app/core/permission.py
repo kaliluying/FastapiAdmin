@@ -88,7 +88,7 @@ class Permission:
         """
         基于角色-菜单授权的过滤（适用于菜单模型）
 
-        只显示用户角色授权的菜单，同时受租户套餐约束。
+        只显示用户角色授权的菜单，不再叠加额外运营级约束。
         """
         roles = getattr(self.auth.user, "roles", []) or []
         if not roles:
@@ -101,8 +101,6 @@ class Permission:
         for role in roles:
             if hasattr(role, "menus") and role.menus:
                 menu_ids.update(menu.id for menu in role.menus if menu.status == 0)
-
-        # 套餐模块已删除，不再进行套餐级别的菜单约束
 
         if menu_ids:
             id_attr = getattr(self.model, "id", None)

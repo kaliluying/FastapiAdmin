@@ -221,38 +221,24 @@ class RagPromptBuilder:
         session_history: list[dict[str, Any]] | None = None,
         memories: list[dict[str, Any]] | None = None,
         user_profile: dict[str, Any] | None = None,
-        evidence_analyses: list[dict[str, Any]] | None = None,
     ) -> str:
         context = self._format_context(documents)
         prompt_parts = [
-            "你是劳动仲裁智能辅助助手。\n"
-            "你的任务是根据用户描述和检索上下文，帮助用户整理劳动争议事实、初步维权思路、证据建议和下一步行动。\n"
-            "请优先根据检索上下文回答；如果上下文不足，请明确说明不确定，并提示用户需要补充哪些事实或证据。\n"
-            "不要冒充律师，不要给出最终法律结论，不要承诺仲裁结果。\n"
-            "回答必须包含：初步判断、依据方向、证据建议、下一步行动、风险提示。\n"
+            "你是通用知识库智能助手。\n"
+            "你的任务是根据用户问题和检索上下文，帮助用户梳理事实、提炼依据、形成可执行的下一步建议。\n"
+            "请优先根据检索上下文回答；如果上下文不足，请明确说明不确定，并提示用户需要补充哪些事实或材料。\n"
+            "不要编造不存在的资料，不要给出超出上下文支持的确定结论。\n"
+            "回答必须包含：初步判断、依据方向、补充材料建议、下一步行动、风险提示。\n"
             "回答使用中文，表达清楚、具体、可执行。\n",
         ]
 
-        # ── 证据分析结果：当前会话中已上传并完成 AI 分析的证据材料 ──
-        if evidence_analyses:
-            prompt_parts.append("\n【已分析证据材料——回答问题时请充分参考】\n")
-            prompt_parts.append(
-                "以下证据已经过 AI 分析，包含关键事实、证明目的、关联诉求、证据强度、风险和缺失材料。\n"
-                "请在回答时：1）优先引用这些证据中的关键事实支撑你的判断；"
-                "2）如果用户的问题与某条证据相关，明确指出该证据及分析结论；"
-                "3）如果多条证据之间存在矛盾或互补关系，请一并指出；"
-                "4）证据强度和风险提示应如实告知用户，不得弱化或隐瞒。\n\n"
-            )
-            prompt_parts.append(self._format_evidence_analyses(evidence_analyses))
-            prompt_parts.append("\n")
-
-        # ── 个人中心信息：当前登录用户主动维护的劳动仲裁相关背景 ──
+        # ── 个人中心信息：当前登录用户主动维护的背景资料 ──
         profile_text = self._format_user_profile(user_profile)
         if profile_text:
             prompt_parts.append("\n【个人中心信息——仅作为用户自述背景参考】\n")
             prompt_parts.append(profile_text)
             prompt_parts.append(
-                "\n请把这些信息作为案件背景线索使用；如果与用户本轮描述或证据材料矛盾，"
+                "\n请把这些信息作为背景线索使用；如果与用户本轮描述或材料内容矛盾，"
                 "请提示用户核对，不要直接替用户下最终结论。\n"
             )
 
@@ -290,32 +276,10 @@ class RagPromptBuilder:
         def has_value(value: Any) -> bool:
             return value is not None and value != ""
 
-        def format_salary(value: Any) -> str:
-            try:
-                amount = float(value)
-            except (TypeError, ValueError):
-                return f"{value}元"
-            if amount.is_integer():
-                return f"{int(amount)}元"
-            return f"{amount:.2f}元"
-
-        def format_social_insurance(value: Any) -> str:
-            if value is True:
-                return "是"
-            if value is False:
-                return "否"
-            return str(value)
-
         field_specs = [
             ("name", "姓名", str),
             ("mobile", "手机号", str),
             ("email", "邮箱", str),
-            ("company_name", "公司名称", str),
-            ("position_name", "岗位", str),
-            ("monthly_salary", "月工资", format_salary),
-            ("hire_date", "入职日期", str),
-            ("contract_type", "合同类型", str),
-            ("social_insurance", "是否缴纳社保", format_social_insurance),
             ("description", "备注", str),
         ]
 
@@ -324,60 +288,6 @@ class RagPromptBuilder:
             value = profile.get(key)
             if has_value(value):
                 lines.append(f"- {label}: {formatter(value)}")
-        return "\n".join(lines)
-
-    @staticmethod
-    def _format_evidence_analyses(analyses: list[dict[str, Any]]) -> str:
-        """将证据分析结果列表格式化为自然的结构化段落。
-
-        保留关键事实、证明目的、关联诉求、证据强度、风险和缺失材料，
-        以清晰但自然的方式呈现，避免生硬拼接。
-        """
-        lines: list[str] = []
-        for index, ev in enumerate(analyses, start=1):
-            file_name = ev.get("file_name", "未知文件")
-            evidence_type = ev.get("evidence_type") or "未分类"
-            strength = ev.get("evidence_strength") or "未评估"
-            summary = ev.get("summary") or ""
-
-            # 证据标题行
-            lines.append(f"### 证据 {index}：{file_name}（类型：{evidence_type}，强度：{strength}）")
-
-            # 分析摘要——作为概述最先展示
-            if summary:
-                lines.append(f"概述：{summary}")
-
-            # 关键事实
-            key_facts = ev.get("key_facts") or []
-            if key_facts:
-                facts_text = "；".join(str(f) for f in key_facts)
-                lines.append(f"关键事实：{facts_text}")
-
-            # 证明目的
-            proof_purpose = ev.get("proof_purpose") or []
-            if proof_purpose:
-                purpose_text = "；".join(str(p) for p in proof_purpose)
-                lines.append(f"证明目的：{purpose_text}")
-
-            # 关联诉求
-            related_claims = ev.get("related_claims") or []
-            if related_claims:
-                claims_text = "；".join(str(c) for c in related_claims)
-                lines.append(f"关联诉求：{claims_text}")
-
-            # 风险提示
-            risks = ev.get("risks") or []
-            if risks:
-                risks_text = "；".join(str(r) for r in risks)
-                lines.append(f"风险提示：{risks_text}")
-
-            # 建议补充材料
-            missing = ev.get("missing_materials") or []
-            if missing:
-                missing_text = "；".join(str(m) for m in missing)
-                lines.append(f"建议补充材料：{missing_text}")
-
-            lines.append("")  # 空行分隔不同证据
         return "\n".join(lines)
 
     @staticmethod
@@ -537,11 +447,6 @@ class RagChatChain:
         if self.db and self.user_id:
             memories = await self._fetch_memories()
 
-        # ── 证据分析结果：从 ai_evidence_analysis 表中读取已分析的证据 ──
-        evidence_analyses: list[dict[str, Any]] = []
-        if self.db and session_id:
-            evidence_analyses = await self._fetch_evidence_analyses(session_id)
-
         return self.prompt_builder.build(
             message=message,
             documents=documents,
@@ -551,13 +456,13 @@ class RagChatChain:
             session_history=session_history,
             memories=memories,
             user_profile=self.user_profile,
-            evidence_analyses=evidence_analyses,
         )
 
     async def _fetch_session_history(self, session_id: str) -> list[dict[str, Any]]:
         """Extract recent messages from the session's runs field."""
         try:
             from sqlalchemy import select
+
             from app.plugin.module_ai.chat.model import ChatSessionModel
 
             result = await self.db.execute(
@@ -589,8 +494,8 @@ class RagChatChain:
     async def _fetch_memories(self) -> list[dict[str, Any]]:
         """Fetch active memories for the current user/dept."""
         try:
-            from app.plugin.module_ai.memory.crud import MemoryCRUD
             from app.core.base_schema import AuthSchema
+            from app.plugin.module_ai.memory.crud import MemoryCRUD
 
             # Build a minimal auth object for MemoryCRUD
             class _FakeUser:
@@ -604,24 +509,6 @@ class RagChatChain:
         except Exception as e:
             logger.warning(f"获取长期记忆失败 (非致命): {e}")
             return []
-
-    async def _fetch_evidence_analyses(self, session_id: str) -> list[dict[str, Any]]:
-        """Fetch analyzed evidence results for the current session."""
-        try:
-            from app.plugin.module_ai.evidence.crud import EvidenceAnalysisCRUD
-            from app.core.base_schema import AuthSchema
-
-            class _FakeUser:
-                username = self.user_id
-                dept_id = int(self.team_id) if self.team_id and self.team_id.isdigit() else None
-
-            auth = AuthSchema(user=_FakeUser(), db=self.db)
-            crud = EvidenceAnalysisCRUD(auth)
-            return await crud.get_analyzed_by_session(session_id=session_id)
-        except Exception as e:
-            logger.warning(f"获取证据分析结果失败 (非致命): {e}")
-            return []
-
 
 class RagChainFactory:
     def create_chain(self, db: Any | None = None, auth: Any | None = None) -> RagChatChain:
@@ -653,12 +540,6 @@ class RagChainFactory:
             "name",
             "mobile",
             "email",
-            "company_name",
-            "position_name",
-            "monthly_salary",
-            "hire_date",
-            "contract_type",
-            "social_insurance",
             "description",
         )
         profile: dict[str, Any] = {}

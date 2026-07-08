@@ -48,14 +48,6 @@ class UserBySchema(BaseModel):
     deleted_by: CommonSchema | None = Field(default=None, description="删除人信息")
 
 
-class TenantBySchema(BaseModel):
-    """Single-organization compatibility field."""
-
-    model_config = ConfigDict(from_attributes=True)
-
-    tenant_id: int | None = Field(default=None, description="单组织兼容ID")
-
-
 class BatchSetAvailable(BaseModel):
     """批量设置可用状态的请求模型"""
 
@@ -99,7 +91,6 @@ class AuthSchema(BaseModel):
     user: Any = Field(default=None, description="用户信息（UserModel 实例）", exclude=True)
     check_data_scope: bool = Field(default=True, description="是否检查数据权限")
     db: AsyncSession | None = Field(default=None, description="数据库会话", exclude=True)
-    tenant_id: int | None = Field(default=None, description="租户ID,用于用户认证前查询")
 
     def get_user(self) -> "UserModel | None":
         """类型化的用户访问方法。
