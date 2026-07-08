@@ -43,16 +43,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
             ws_callback=ws_limit_callback,
         )
         logger.info("✅ 请求限流器初始化完成")
+    except Exception as e:
+        logger.error("❌ 应用初始化失败: {}", e)
+        raise SystemExit(1)
 
+    try:
         console_start(
             host=settings.SERVER_HOST, port=settings.SERVER_PORT,
             reload=settings.ENVIRONMENT,
             database_ready=True, redis_ready=True,
             limiter_ready=True,
         )
-    except Exception as e:
-        logger.error("❌ 应用初始化失败: {}", e)
-        raise SystemExit(1)
+    except Exception:
+        pass
 
     yield
 
@@ -66,10 +69,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
         from app.core.database import async_engine
         await async_engine.dispose()
         logger.info("✅ 数据库引擎连接池已释放")
-        console_end()
     except Exception as e:
         logger.error("❌ 应用关闭过程中发生错误: {}", e)
         raise SystemExit(1)
+
+    try:
+        console_end()
+    except Exception:
+        pass
 
 
 def register_middlewares(app: FastAPI) -> None:

@@ -14,7 +14,7 @@ from app.utils.common_util import bytes2file_response
 from .schema import ParamsCreateSchema, ParamsOutSchema, ParamsQueryParam, ParamsUpdateSchema
 from .service import ParamsService
 
-ParamsRouter = APIRouter(route_class=OperationLogRoute, prefix="/param", tags=["系统管理", "参数管理"])
+ParamsRouter = APIRouter(route_class=OperationLogRoute, prefix="/params", tags=["系统管理", "参数管理"])
 
 @ParamsRouter.get(
     "/detail/{id}",
@@ -150,5 +150,5 @@ async def export_param_list_controller(
 async def get_init_config_controller(
     redis: Annotated[Redis, Depends(redis_getter)],
 ) -> JSONResponse:
-    result_dict = await ParamsService.get_init_cache(redis=redis, tenant_id=1)
+    result_dict = await ParamsService.get_init_cache(redis=redis)
     return SuccessResponse(data=result_dict, msg="获取初始化缓存参数成功")

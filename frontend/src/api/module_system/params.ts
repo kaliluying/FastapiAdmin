@@ -1,6 +1,6 @@
 import { request, NO_AUTH_FLAG } from "@utils";
 
-const API_PATH = "/system/param";
+const API_PATH = "/system/params";
 
 const ParamsAPI = {
   uploadFile(body: any) {
