@@ -55,9 +55,8 @@ async def websocket_chat_controller(websocket: WebSocket) -> None:
             auth = await _resolve_ws_auth(websocket, db)
             if not _has_ws_permission(auth, "module_ai:chat:ws"):
                 raise CustomException(msg="无权限操作", code=10403, status_code=403)
-            # _resolve_ws_auth 内部执行了查询留下隐式事务，提交清场以确保
-            # auth.user 的已加载属性在 session 关闭后仍可从内存访问
-            await db.commit()
+            # _resolve_ws_auth 内部只做只读查询，且 EXPIRE_ON_COMMIT=False，
+            # 无需提交即可在 session 关闭后继续访问 auth.user 的已加载属性
     except Exception as e:
         logger.warning(f"WebSocket authentication failed: {websocket.client} - {e}")
         await websocket.close(code=WS_1008_POLICY_VIOLATION)

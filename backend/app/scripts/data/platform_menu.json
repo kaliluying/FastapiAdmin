@@ -620,6 +620,18 @@
         "scope": "single_org"
       },
       {
+        "name": "检索测试",
+        "type": 2,
+        "icon": "ri:search-eye-line",
+        "order": 4,
+        "permission": "module_ai:retrieval:test",
+        "route_name": "Retrieval",
+        "route_path": "retrieval",
+        "component_path": "module_ai/retrieval/index",
+        "title": "检索测试",
+        "scope": "single_org"
+      },
+      {
         "name": "知识库管理",
         "type": 2,
         "icon": "ri:database-2-line",
