@@ -1,7 +1,7 @@
 ﻿from datetime import datetime
 from typing import TYPE_CHECKING, Any, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.validator import DateTimeStr
@@ -91,6 +91,12 @@ class AuthSchema(BaseModel):
     user: Any = Field(default=None, description="用户信息（UserModel 实例）", exclude=True)
     check_data_scope: bool = Field(default=True, description="是否检查数据权限")
     db: AsyncSession | None = Field(default=None, description="数据库会话", exclude=True)
+
+    # 请求级部门树缓存：同一 AuthSchema 实例（即同一次请求）内，
+    # 多次数据权限过滤共享一次 sys_dept 全表查询结果，避免重复扫描。
+    # model_copy() 默认会拷贝 PrivateAttr，这里显式排除，确保派生实例
+    # （如 AuthPermission.__call__ 里的 model_copy）不会带着上一次的缓存。
+    _dept_id_map_cache: dict[int, list[int]] | None = PrivateAttr(default=None)
 
     def get_user(self) -> "UserModel | None":
         """类型化的用户访问方法。

@@ -273,17 +273,35 @@ class Permission:
         # 处理本部门及以下数据权限（3）
         if self.DATA_SCOPE_DEPT_AND_CHILD in data_scopes and user_dept_id is not None:
             try:
-                from app.api.v1.module_system.dept.model import DeptModel
-                dept_sql = select(DeptModel)
-                dept_result = await self.auth.db.execute(dept_sql)
-                dept_objs = dept_result.scalars().all()
-                id_map = get_child_id_map(dept_objs)
+                id_map = await self.__get_dept_id_map()
                 dept_with_children_ids = get_child_recursion(id=user_dept_id, id_map=id_map)
                 accessible_dept_ids.update(dept_with_children_ids)
             except Exception:
                 accessible_dept_ids.add(user_dept_id)
 
         return accessible_dept_ids
+
+    async def __get_dept_id_map(self) -> dict[int, list[int]]:
+        """
+        获取部门父子关系映射（{dept_id: [直接子部门 id, ...]}）。
+
+        同一次请求（同一个 AuthSchema 实例）内缓存查询结果：DATA_SCOPE_DEPT_AND_CHILD
+        策略在一次请求中可能被多次调用（例如分页列表逐条统计、批量接口），
+        没有缓存会导致 sys_dept 全表被反复扫描。缓存整体重新赋值，不做原地修改，
+        避免 AuthSchema.model_copy() 的浅拷贝在派生实例间产生意外共享。
+        """
+        cached = self.auth._dept_id_map_cache
+        if cached is not None:
+            return cached
+
+        from app.api.v1.module_system.dept.model import DeptModel
+
+        dept_sql = select(DeptModel)
+        dept_result = await self.auth.db.execute(dept_sql)
+        dept_objs = dept_result.scalars().all()
+        id_map = get_child_id_map(dept_objs)
+        self.auth._dept_id_map_cache = id_map
+        return id_map
 
     def __filter_dept_model(self, accessible_dept_ids: set[int]) -> ColumnElement | None:
         """

@@ -177,14 +177,16 @@ def reload_dynamic_router() -> APIRouter:
     # ── 2. 清除插件模块缓存，迫使 importlib 重新执行模块代码 ──
     _purge_plugin_modules()
 
-    # ── 3. 将新路由挂载回 app ──
+    # ── 3. 重新扫描一次，结果同时用于挂载 app 和更新缓存，避免重复扫描与缓存不一致 ──
+    new_router = _build_dynamic_router()
+    _dynamic_router_cache = new_router
+
     if app:
-        # 构造与 init_app.py 中相同的依赖项
-        app.include_router(_build_dynamic_router())
+        app.include_router(new_router)
         logger.info("✅ 新插件路由已挂载到运行中的 app")
 
     logger.info("✅ 插件动态路由热重载完成")
-    return _build_dynamic_router()
+    return new_router
 
 
 def _purge_plugin_modules() -> None:
