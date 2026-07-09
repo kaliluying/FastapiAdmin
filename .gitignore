@@ -67,6 +67,8 @@ docker/docker-compose.yaml
 
 frontend/node_modules
 frontend/dist
+frontend/.vite
+*.bak
 frontend/src/types/auto-imports.d.ts
 frontend/src/types/components.d.ts
 .plan

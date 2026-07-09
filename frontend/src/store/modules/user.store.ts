@@ -402,6 +402,20 @@ export const useUserStore = defineStore(
     persist: {
       key: "user",
       storage: localStorage,
+      // accessToken/refreshToken 由 Auth 类按 rememberMe 分别存入 localStorage/sessionStorage，
+      // 这里不重复持久化，否则 rememberMe=false 时 token 仍会残留在 localStorage["user"] 里。
+      pick: [
+        "language",
+        "isLogin",
+        "isLock",
+        "lockPassword",
+        "info",
+        "searchHistory",
+        "routeList",
+        "prems",
+        "hasGetRoute",
+        "rememberMe",
+      ],
     },
   }
 );

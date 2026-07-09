@@ -57,7 +57,12 @@ export const useConfigStore = defineStore(
     };
   },
   {
-    persist: true,
+    // configLoading 是运行时标志，不能持久化：如果请求进行中用户刷新页面，
+    // 恢复出的 configLoading=true 会让 getConfig() 永久提前返回，没有任何
+    // 代码会重置这个标志，只能手动清 localStorage 才能恢复。
+    persist: {
+      pick: ["configData", "isConfigLoaded"],
+    },
   }
 );
 

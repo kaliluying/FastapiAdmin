@@ -1,6 +1,7 @@
 /** UI helpers (flattened). */
 
 import NProgress from "nprogress";
+import { ElLoading } from "element-plus";
 import { ThemeMode } from "@/enums";
 import { useSettingsStore } from "@stores";
 import { fourDotsSpinnerSvg } from "@/assets/svg/loading";
