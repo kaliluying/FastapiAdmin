@@ -132,6 +132,8 @@ async def get_auto_login_token_controller(
     db: Annotated[AsyncSession, Depends(db_getter)],
     user_id: int,
 ) -> JSONResponse:
+    if not auth.user.is_superuser and auth.user.id != user_id:
+        raise CustomException(msg="无权限为其他用户生成免登录Token")
     result = await AutoLoginService.create_auto_login_token(redis=redis, db=db, user_id=user_id)
     return SuccessResponse(data=result, msg="获取成功")
 

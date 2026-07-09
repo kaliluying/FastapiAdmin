@@ -286,6 +286,16 @@ class LoginService:
         if not session_info:
             raise CustomException(msg="会话已过期，请重新登录")
 
+        # 校验传入的 refresh_token 与 Redis 中存储的一致，防止重放攻击
+        stored_rt = await RedisCURD(redis).get(
+            f"{RedisInitKeyConfig.REFRESH_TOKEN.key}:{session_id}"
+        )
+        if not stored_rt:
+            raise CustomException(msg="会话已过期，请重新登录")
+        stored_rt_str = stored_rt.decode("utf-8") if isinstance(stored_rt, bytes) else str(stored_rt)
+        if stored_rt_str != refresh_token.refresh_token:
+            raise CustomException(msg="刷新令牌已失效，请重新登录")
+
         user_id = json.loads(session_info).get("user_id")
 
         if not session_id or not user_id:

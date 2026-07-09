@@ -11,7 +11,7 @@
 import json
 import secrets
 from typing import Any, Literal
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, urlencode, urlparse
 
 import httpx
 from fastapi import Request
@@ -34,6 +34,33 @@ OAuthProvider = Literal["wechat", "qq", "github", "gitee"]
 
 STATE_PREFIX = "oauth_state:"
 STATE_TTL_SECONDS = 600
+
+
+def _extract_url_origin(url: str) -> str:
+    """提取 URL 的 origin（scheme://host[:port]）"""
+    parsed = urlparse(url)
+    if not parsed.scheme or not parsed.netloc:
+        return ""
+    return f"{parsed.scheme}://{parsed.netloc}".lower()
+
+
+def _validate_redirect_uri(redirect_uri: str) -> None:
+    """校验 redirect_uri 是否在白名单内"""
+    uri_origin = _extract_url_origin(redirect_uri)
+    if not uri_origin:
+        raise CustomException(msg="非法的回调地址")
+
+    # 获取白名单
+    allowed = list(settings.OAUTH_ALLOWED_REDIRECT_ORIGINS)
+    fallback_origin = _extract_url_origin(settings.OAUTH_FRONTEND_FALLBACK)
+    if fallback_origin and fallback_origin not in allowed:
+        allowed.append(fallback_origin)
+
+    if not allowed:
+        raise CustomException(msg="OAuth 回调地址未配置")
+
+    if uri_origin not in allowed:
+        raise CustomException(msg="非法的回调地址")
 
 
 def _callback_url(request: Request, provider: OAuthProvider) -> str:
@@ -399,6 +426,7 @@ async def save_oauth_state(
     provider: OAuthProvider,
     frontend_redirect: str,
 ) -> None:
+    _validate_redirect_uri(frontend_redirect)
     rc = RedisCURD(redis)
     ok = await rc.set(
         f"{STATE_PREFIX}{state}",

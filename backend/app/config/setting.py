@@ -123,6 +123,8 @@ class Settings(BaseSettings):
     OAUTH_DEFAULT_ROLE_IDS: list[int] = [2]
     # 回调异常时回跳的前端地址（与前端实际 /login 一致，含协议与端口）
     OAUTH_FRONTEND_FALLBACK: str = "http://127.0.0.1:5173/login"
+    # OAuth 回调地址白名单（scheme://host[:port] 格式），空时仅允许 OAUTH_FRONTEND_FALLBACK 同源
+    OAUTH_ALLOWED_REDIRECT_ORIGINS: list[str] = []
     OAUTH_GITHUB_CLIENT_ID: str = ""
     OAUTH_GITHUB_CLIENT_SECRET: str = ""
     OAUTH_GITEE_CLIENT_ID: str = ""
