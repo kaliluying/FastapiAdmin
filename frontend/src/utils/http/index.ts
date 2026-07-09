@@ -39,11 +39,9 @@ export enum ApiStatus {
   methodNotAllowed = 405,
   requestTimeout = 408,
   internalServerError = 500,
-  notImplemented = 501,
   badGateway = 502,
   serviceUnavailable = 503,
   gatewayTimeout = 504,
-  httpVersionNotSupported = 505,
 }
 
 export interface ErrorLogData {

@@ -23,7 +23,7 @@ export class RouteValidator {
     this.checkNestedIndexComponent(routes);
     return {
       valid: errors.length === 0,
-      errors: [],
+      errors,
       warnings,
     };
   }

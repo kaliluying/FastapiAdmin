@@ -205,28 +205,6 @@ def traversal_to_tree(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return tree
 
 
-def recursive_to_tree(
-    nodes: list[dict[str, Any]], *, parent_id: int | None = None
-) -> list[dict[str, Any]]:
-    """
-    通过递归算法构造树形结构（性能影响较大）
-
-    参数:
-    - nodes (list[dict[str, Any]]): 树节点列表。
-    - parent_id (int | None): 父节点 ID,默认为 None 表示根节点。
-
-    返回:
-    - list[dict[str, Any]]: 构造后的树形结构列表。
-    """
-    tree: list[dict[str, Any]] = []
-    for node in nodes:
-        if node["parent_id"] == parent_id:
-            child_nodes = recursive_to_tree(nodes, parent_id=node["id"])
-            if child_nodes:
-                node["children"] = child_nodes
-            tree.append(node)
-    return tree
-
 
 def bytes2human(n: int, format_str: str = "%(value).1f%(symbol)s") -> str:
     """
@@ -398,18 +376,6 @@ class CamelCaseUtil:
         # 大驼峰命名，所有词首字母大写
         return "".join(word.capitalize() for word in words)
 
-    @classmethod
-    def transform_result(cls, result: Any):
-        """
-        将查询结果递归序列化并将键名转为小驼峰。
-
-        参数:
-        - result (Any): ORM 查询结果或嵌套结构。
-
-        返回:
-        - Any: 小驼峰键名的序列化结果。
-        """
-        return SqlalchemyUtil.serialize_result(result=result, transform_case="snake_to_camel")
 
 
 class SnakeCaseUtil:
@@ -432,15 +398,3 @@ class SnakeCaseUtil:
         words = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", camel_str)
         return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", words).lower()
 
-    @classmethod
-    def transform_result(cls, result: Any):
-        """
-        将查询结果递归序列化并将键名转为下划线形式。
-
-        参数:
-        - result (Any): ORM 查询结果或嵌套结构。
-
-        返回:
-        - Any: 下划线键名的序列化结果。
-        """
-        return SqlalchemyUtil.serialize_result(result=result, transform_case="camel_to_snake")

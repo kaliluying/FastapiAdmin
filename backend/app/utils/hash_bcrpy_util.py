@@ -71,15 +71,3 @@ class AESCipher:
         padded_plaintext = decryptor.update(ciphertext) + decryptor.finalize()
         plaintext = unpadder.update(padded_plaintext) + unpadder.finalize()
         return plaintext.decode("utf-8")
-
-
-class Md5Cipher:
-    """MD5 加密器"""
-
-    @staticmethod
-    def encrypt(plaintext: bytes | str) -> str:
-        md5 = hashlib.md5()
-        if not isinstance(plaintext, bytes):
-            plaintext = str(plaintext).encode("utf-8")
-        md5.update(plaintext)
-        return md5.hexdigest()

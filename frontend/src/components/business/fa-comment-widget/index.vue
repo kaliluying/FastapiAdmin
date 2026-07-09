@@ -42,8 +42,15 @@
 
 <script setup lang="ts">
 import { ref } from "vue";
-import { type Comment } from "@/mock/temp/commentDetail";
 import { ElMessage } from "element-plus";
+
+export interface Comment {
+  id: number;
+  author: string;
+  content: string;
+  timestamp: string;
+  replies: Comment[];
+}
 
 defineOptions({ name: "FaCommentWidget" });
 

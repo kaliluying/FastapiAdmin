@@ -56,115 +56,6 @@ class RET(Enum):
     INVALID_TOKEN = (4504, "无效令牌")
     EXPIRED_TOKEN = (4505, "令牌过期")
 
-    # 认证授权错误码
-    INVALID_CREDENTIALS = (4506, "无效凭证")
-    INVALID_REQUEST = (4507, "无效请求")
-    INVALID_FORMAT = (4508, "格式错误")
-    INVALID_INPUT = (4509, "输入错误")
-    INVALID_STATE = (4510, "状态错误")
-    INVALID_OPERATION = (4511, "操作错误")
-    INVALID_PERMISSION = (4512, "权限错误")
-    INVALID_RESOURCE = (4513, "资源错误")
-    INVALID_CONFIGURATION = (4514, "配置错误")
-
-    # 会话安全错误码
-    INVALID_SESSION = (4515, "会话错误")
-    INVALID_LICENSE = (4516, "许可证错误")
-    INVALID_CERTIFICATE = (4517, "证书错误")
-    INVALID_SIGNATURE = (4518, "签名错误")
-    INVALID_ENCRYPTION = (4519, "加密错误")
-    INVALID_DECRYPTION = (4520, "解密错误")
-    INVALID_COMPRESSION = (4521, "压缩错误")
-    INVALID_DECOMPRESSION = (4522, "解压错误")
-
-    # 权限相关错误码
-    INVALID_AUTHENTICATION = (4523, "认证错误")
-    INVALID_AUTHORIZATION = (4524, "授权错误")
-    INVALID_ACCESS = (4525, "访问错误")
-    INVALID_SECURITY = (4526, "安全错误")
-
-    # 系统组件错误码
-    INVALID_NETWORK = (4527, "网络错误")
-    INVALID_DATABASE = (4528, "数据库错误")
-    INVALID_CACHE = (4529, "缓存错误")
-    INVALID_QUEUE = (4530, "队列错误")
-    INVALID_LOCK = (4531, "锁错误")
-    INVALID_TRANSACTION = (4532, "事务错误")
-    INVALID_LOG = (4533, "日志错误")
-    INVALID_MONITORING = (4534, "监控错误")
-    INVALID_NOTIFICATION = (4535, "通知错误")
-
-    # 开发相关错误码
-    INVALID_SCRIPT = (4540, "脚本错误")
-    INVALID_PLUGIN = (4541, "插件错误")
-    INVALID_MODULE = (4542, "模块错误")
-    INVALID_PACKAGE = (4543, "包错误")
-    INVALID_CLASS = (4544, "类错误")
-    INVALID_FUNCTION = (4545, "函数错误")
-    INVALID_METHOD = (4546, "方法错误")
-    INVALID_PROPERTY = (4547, "属性错误")
-    INVALID_VARIABLE = (4548, "变量错误")
-    INVALID_CONSTANT = (4549, "常量错误")
-    INVALID_ENUM = (4550, "枚举错误")
-    INVALID_INTERFACE = (4551, "接口错误")
-    INVALID_PROTOCOL = (4552, "协议错误")
-
-    # 服务相关错误码
-    INVALID_SERVICE = (4553, "服务错误")
-    INVALID_CLIENT = (4554, "客户端错误")
-    INVALID_SERVER = (4555, "服务器错误")
-    INVALID_SYSTEM = (4556, "系统错误")
-
-    # 用户权限错误码
-    INVALID_USER = (4557, "用户错误")
-    INVALID_GROUP = (4558, "用户组错误")
-    INVALID_ROLE = (4559, "角色错误")
-    INVALID_PERMISSION_GROUP = (4560, "权限组错误")
-    INVALID_PERMISSION_ROLE = (4561, "权限角色错误")
-    INVALID_PERMISSION_USER = (4562, "权限用户错误")
-    INVALID_PERMISSION_RESOURCE = (4563, "权限资源错误")
-    INVALID_PERMISSION_ACTION = (4564, "权限操作错误")
-    INVALID_PERMISSION_SCOPE = (4565, "权限范围错误")
-    INVALID_PERMISSION_LEVEL = (4566, "权限级别错误")
-    INVALID_PERMISSION_TYPE = (4567, "权限类型错误")
-    INVALID_PERMISSION_STATUS = (4568, "权限状态错误")
-    INVALID_PERMISSION_TIME = (4569, "权限时间错误")
-    INVALID_PERMISSION_CONDITION = (4570, "权限条件错误")
-    INVALID_PERMISSION_POLICY = (4571, "权限策略错误")
-    INVALID_PERMISSION_RULE = (4572, "权限规则错误")
-    INVALID_PERMISSION_EXCEPTION = (4573, "权限异常错误")
-    INVALID_PERMISSION_VALIDATION = (4574, "权限验证错误")
-    INVALID_PERMISSION_AUTHENTICATION = (4575, "权限认证错误")
-    INVALID_PERMISSION_AUTHORIZATION = (4576, "权限授权错误")
-    INVALID_PERMISSION_ACCESS = (4577, "权限访问错误")
-    INVALID_PERMISSION_SECURITY = (4578, "权限安全错误")
-    INVALID_PERMISSION_NETWORK = (4579, "权限网络错误")
-    INVALID_PERMISSION_DATABASE = (4580, "权限数据库错误")
-    INVALID_PERMISSION_CACHE = (4581, "权限缓存错误")
-    INVALID_PERMISSION_QUEUE = (4582, "权限队列错误")
-    INVALID_PERMISSION_LOCK = (4583, "权限锁错误")
-    INVALID_PERMISSION_TRANSACTION = (4584, "权限事务错误")
-    INVALID_PERMISSION_LOG = (4585, "权限日志错误")
-    INVALID_PERMISSION_MONITORING = (4586, "权限监控错误")
-    INVALID_PERMISSION_NOTIFICATION = (4587, "权限通知错误")
-    INVALID_PERMISSION_SCRIPT = (4592, "权限脚本错误")
-    INVALID_PERMISSION_PLUGIN = (4593, "权限插件错误")
-    INVALID_PERMISSION_MODULE = (4594, "权限模块错误")
-    INVALID_PERMISSION_PACKAGE = (4595, "权限包错误")
-    INVALID_PERMISSION_CLASS = (4596, "权限类错误")
-    INVALID_PERMISSION_FUNCTION = (4597, "权限函数错误")
-    INVALID_PERMISSION_METHOD = (4598, "权限方法错误")
-    INVALID_PERMISSION_PROPERTY = (4599, "权限属性错误")
-    INVALID_PERMISSION_VARIABLE = (4600, "权限变量错误")
-    INVALID_PERMISSION_CONSTANT = (4601, "权限常量错误")
-    INVALID_PERMISSION_ENUM = (4602, "权限枚举错误")
-    INVALID_PERMISSION_INTERFACE = (4603, "权限接口错误")
-    INVALID_PERMISSION_PROTOCOL = (4604, "权限协议错误")
-    INVALID_PERMISSION_SERVICE = (4605, "权限服务错误")
-    INVALID_PERMISSION_CLIENT = (4606, "权限客户端错误")
-    INVALID_PERMISSION_SERVER = (4607, "权限服务器错误")
-    INVALID_PERMISSION_SYSTEM = (4608, "权限系统错误")
-
     def __init__(self, code: int, msg: str) -> None:
         """
         初始化返回码。
@@ -222,11 +113,6 @@ class CommonConstant:
     WWW = "www."
     HTTP = "http://"
     HTTPS = "https://"
-
-    # 远程调用
-    LOOKUP_RMI = "rmi:"
-    LOOKUP_LDAP = "ldap:"
-    LOOKUP_LDAPS = "ldaps:"
 
     # 系统标识
     YES = "Y"

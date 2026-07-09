@@ -306,21 +306,6 @@ export function validateStorageData(requireAuth: boolean = false): boolean {
   return storageManager.validateStorageData(requireAuth);
 }
 
-/**
- * 检查存储兼容性（带 try-catch 的 validateStorageData 包装）。
- *
- * @param requireAuth  是否需要验证登录状态（默认 false）
- *                     为 true 时，空存储将触发系统登出
- */
-export function checkStorageCompatibility(requireAuth: boolean = false): boolean {
-  try {
-    return storageManager.validateStorageData(requireAuth);
-  } catch (error) {
-    console.error("[Storage] 兼容性检查异常:", error);
-    return false;
-  }
-}
-
 export class StorageKeyManager {
   private getCurrentVersionKey(storeId: string): string {
     return StorageConfig.generateStorageKey(storeId);

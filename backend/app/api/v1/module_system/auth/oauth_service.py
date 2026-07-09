@@ -151,11 +151,13 @@ def build_authorize_url(
     raise CustomException(msg="不支持的 OAuth 渠道")
 
 
-async def _http_json(method: str, url: str, **kwargs: Any) -> Any:
+async def _http_fetch(method: str, url: str, *, parse: str = "json", **kwargs: Any) -> Any:
     timeout = getattr(settings, "HTTPX_DEFAULT_TIMEOUT", 15.0)
     async with httpx.AsyncClient(timeout=timeout) as client:
         r = await client.request(method, url, **kwargs)
         r.raise_for_status()
+        if parse == "text":
+            return r.text
         try:
             return r.json()
         except json.JSONDecodeError:
@@ -164,16 +166,8 @@ async def _http_json(method: str, url: str, **kwargs: Any) -> Any:
             raise CustomException(msg="OAuth 接口返回异常")
 
 
-async def _http_text(method: str, url: str, **kwargs: Any) -> str:
-    timeout = getattr(settings, "HTTPX_DEFAULT_TIMEOUT", 15.0)
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        r = await client.request(method, url, **kwargs)
-        r.raise_for_status()
-        return r.text
-
-
 async def exchange_github_token(client_id: str, client_secret: str, code: str, redirect_uri: str) -> str:
-    data = await _http_json(
+    data = await _http_fetch(
         "POST",
         "https://github.com/login/oauth/access_token",
         headers={"Accept": "application/json"},
@@ -202,7 +196,7 @@ async def exchange_gitee_token(client_id: str, client_secret: str, code: str, re
             "redirect_uri": redirect_uri,
         }
     )
-    data = await _http_json("GET", f"https://gitee.com/oauth/token?{qs}")
+    data = await _http_fetch("GET", f"https://gitee.com/oauth/token?{qs}")
     if not isinstance(data, dict):
         raise CustomException(msg="Gitee token 响应格式错误")
     token = data.get("access_token")
@@ -220,7 +214,7 @@ async def exchange_wechat_token(app_id: str, secret: str, code: str) -> tuple[st
             "grant_type": "authorization_code",
         }
     )
-    data = await _http_json("GET", f"https://api.weixin.qq.com/sns/oauth2/access_token?{qs}")
+    data = await _http_fetch("GET", f"https://api.weixin.qq.com/sns/oauth2/access_token?{qs}")
     if not isinstance(data, dict):
         raise CustomException(msg="微信 token 响应格式错误")
     token = data.get("access_token")
@@ -240,12 +234,12 @@ async def exchange_qq_token(client_id: str, client_secret: str, code: str, redir
             "redirect_uri": redirect_uri,
         }
     )
-    text = await _http_text("GET", f"https://graph.qq.com/oauth2.0/token?{qs}")
+    text = await _http_fetch("GET", f"https://graph.qq.com/oauth2.0/token?{qs}", parse="text")
     parts = dict(p.split("=", 1) for p in text.split("&") if "=" in p)
     token = parts.get("access_token")
     if not token:
         raise CustomException(msg="QQ 换取 access_token 失败")
-    me = await _http_json(
+    me = await _http_fetch(
         "GET",
         "https://graph.qq.com/oauth2.0/me",
         params={"access_token": token, "fmt": "json"},
@@ -260,14 +254,14 @@ async def exchange_qq_token(client_id: str, client_secret: str, code: str, redir
 
 async def fetch_github_profile(access_token: str) -> tuple[str, str, str | None]:
     headers = {"Authorization": f"Bearer {access_token}", "Accept": "application/json"}
-    user = await _http_json("GET", "https://api.github.com/user", headers=headers)
+    user = await _http_fetch("GET", "https://api.github.com/user", headers=headers)
     if not isinstance(user, dict):
         raise CustomException(msg="GitHub 用户信息格式错误")
     login = str(user.get("login") or "")
     name = str(user.get("name") or login or "github")
     email = user.get("email")
     if not email:
-        emails = await _http_json("GET", "https://api.github.com/user/emails", headers=headers)
+        emails = await _http_fetch("GET", "https://api.github.com/user/emails", headers=headers)
         if isinstance(emails, list):
             primary = next((e for e in emails if isinstance(e, dict) and e.get("primary")), None)
             if primary:
@@ -276,7 +270,7 @@ async def fetch_github_profile(access_token: str) -> tuple[str, str, str | None]
 
 
 async def fetch_gitee_profile(access_token: str) -> tuple[str, str, str | None]:
-    user = await _http_json(
+    user = await _http_fetch(
         "GET",
         "https://gitee.com/api/v5/user",
         params={"access_token": access_token},
@@ -291,7 +285,7 @@ async def fetch_gitee_profile(access_token: str) -> tuple[str, str, str | None]:
 
 async def fetch_wechat_profile(access_token: str, openid: str) -> tuple[str, str]:
     qs = urlencode({"access_token": access_token, "openid": openid, "lang": "zh_CN"})
-    user = await _http_json("GET", f"https://api.weixin.qq.com/sns/userinfo?{qs}")
+    user = await _http_fetch("GET", f"https://api.weixin.qq.com/sns/userinfo?{qs}")
     if not isinstance(user, dict):
         raise CustomException(msg="微信用户信息格式错误")
     nickname = str(user.get("nickname") or "wechat")
@@ -308,7 +302,7 @@ async def fetch_qq_profile(access_token: str, app_id: str, openid: str) -> tuple
             "openid": openid,
         }
     )
-    user = await _http_json("GET", f"https://graph.qq.com/user/get_user_info?{qs}")
+    user = await _http_fetch("GET", f"https://graph.qq.com/user/get_user_info?{qs}")
     if not isinstance(user, dict):
         raise CustomException(msg="QQ 用户信息格式错误")
     if user.get("ret") not in (0, "0", None):

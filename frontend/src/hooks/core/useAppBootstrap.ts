@@ -6,7 +6,7 @@
  */
 import { useSiteConfig } from "@/hooks/core/useSiteConfig";
 import {
-  checkStorageCompatibility,
+  validateStorageData,
   toggleTransition,
   systemUpgrade,
 } from "@utils";
@@ -15,7 +15,7 @@ export function useAppBootstrap() {
   const { initSiteConfig } = useSiteConfig();
 
   const bootstrap = () => {
-    checkStorageCompatibility();
+    validateStorageData();
     toggleTransition(false);
     systemUpgrade();
     initSiteConfig();
