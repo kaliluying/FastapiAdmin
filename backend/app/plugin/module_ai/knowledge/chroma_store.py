@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import anyio
+
 from app.config.setting import settings
 
 
@@ -32,7 +34,7 @@ class ChromaKnowledgeStore:
             return {"knowledge_base_id": knowledge_base_ids[0]}
         return {"knowledge_base_id": {"$in": knowledge_base_ids}}
 
-    def upsert_chunks(
+    async def upsert_chunks(
         self,
         *,
         ids: list[str],
@@ -40,15 +42,19 @@ class ChromaKnowledgeStore:
         documents: list[str],
         metadatas: list[dict[str, Any]],
     ) -> None:
-        self.collection.upsert(ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas)
-
-    def query(self, *, query_embedding: list[float], knowledge_base_ids: list[int], top_k: int = 5) -> dict[str, Any]:
-        return self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k,
-            where=self.build_where_filter(knowledge_base_ids),
-            include=["documents", "metadatas", "distances"],
+        await anyio.to_thread.run_sync(
+            lambda: self.collection.upsert(ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas)
         )
 
-    def delete_document(self, document_id: int) -> None:
-        self.collection.delete(where={"document_id": document_id})
+    async def query(self, *, query_embedding: list[float], knowledge_base_ids: list[int], top_k: int = 5) -> dict[str, Any]:
+        return await anyio.to_thread.run_sync(
+            lambda: self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=top_k,
+                where=self.build_where_filter(knowledge_base_ids),
+                include=["documents", "metadatas", "distances"],
+            )
+        )
+
+    async def delete_document(self, document_id: int) -> None:
+        await anyio.to_thread.run_sync(lambda: self.collection.delete(where={"document_id": document_id}))

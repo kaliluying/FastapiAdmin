@@ -85,9 +85,12 @@ class KnowledgeService:
             search=query,
             out_schema=KnowledgeBaseOutSchema,
         )
+        kb_ids = [item["id"] for item in result.items]
+        document_counts = await base_crud.count_documents_bulk(kb_ids)
+        status_counts_by_kb = await base_crud.count_documents_by_index_status_bulk(kb_ids)
         for item in result.items:
-            item["document_count"] = await base_crud.count_documents(item["id"])
-            status_counts = await base_crud.count_documents_by_index_status(item["id"])
+            status_counts = status_counts_by_kb.get(item["id"], {})
+            item["document_count"] = document_counts.get(item["id"], 0)
             item["indexed_document_count"] = status_counts.get("success", 0)
             item["indexing_document_count"] = status_counts.get("pending", 0) + status_counts.get("indexing", 0)
             item["failed_document_count"] = status_counts.get("failed", 0)
@@ -112,7 +115,7 @@ class KnowledgeService:
         doc_ids = [doc.id for doc in docs]
         store = self._get_store()
         for doc in docs:
-            store.delete_document(doc.id)
+            await store.delete_document(doc.id)
         if doc_ids:
             chunks = await KnowledgeChunkCRUD(self.auth).get_list(search={"document_id": ("in", doc_ids)})
             chunk_ids = [chunk.id for chunk in chunks]
@@ -140,8 +143,10 @@ class KnowledgeService:
             out_schema=KnowledgeDocumentOutSchema,
         )
         chunk_crud = KnowledgeChunkCRUD(self.auth)
+        document_ids = [item["id"] for item in result.items]
+        chunk_counts = await chunk_crud.count_by_document_bulk(document_ids)
         for item in result.items:
-            item["chunk_count"] = await chunk_crud.count_by_document(item["id"])
+            item["chunk_count"] = chunk_counts.get(item["id"], 0)
         return result.model_dump()
 
     async def upload_document(self, *, knowledge_base_id: int, file: UploadFile) -> KnowledgeDocumentOutSchema:
@@ -164,7 +169,7 @@ class KnowledgeService:
             raise CustomException(msg="document file path is empty")
         doc_crud = KnowledgeDocumentCRUD(self.auth)
         try:
-            text = extract_text(document.file_path)
+            text = await extract_text(document.file_path)
             legal_chunks = split_legal_text(text)
 
             if legal_chunks:
@@ -196,8 +201,8 @@ class KnowledgeService:
                 )
                 for index in range(len(chunks))
             ]
-            self._get_store().delete_document(document.id)
-            self._get_store().upsert_chunks(
+            await self._get_store().delete_document(document.id)
+            await self._get_store().upsert_chunks(
                 ids=chroma_ids, embeddings=embeddings, documents=chunks, metadatas=metadatas
             )
             await KnowledgeChunkCRUD(self.auth).replace_chunks(
@@ -221,7 +226,7 @@ class KnowledgeService:
         if not ids:
             raise CustomException(msg="document ids cannot be empty")
         for document_id in ids:
-            self._get_store().delete_document(document_id)
+            await self._get_store().delete_document(document_id)
         chunks = await KnowledgeChunkCRUD(self.auth).get_list(search={"document_id": ("in", ids)})
         chunk_ids = [chunk.id for chunk in chunks]
         if chunk_ids:
@@ -232,7 +237,7 @@ class KnowledgeService:
         if not data.knowledge_base_ids:
             raise CustomException(msg="please select at least one knowledge base")
         embeddings = await self._get_embedding_client().embed_texts([data.query])
-        raw = self._get_store().query(
+        raw = await self._get_store().query(
             query_embedding=embeddings[0],
             knowledge_base_ids=data.knowledge_base_ids,
             top_k=data.top_k,

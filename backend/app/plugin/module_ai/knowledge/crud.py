@@ -34,6 +34,43 @@ class KnowledgeBaseCRUD(CRUDBase[KnowledgeBaseModel, KnowledgeBaseCreateSchema, 
         )
         return dict(result.all())
 
+    async def count_documents_bulk(self, knowledge_base_ids: list[int]) -> dict[int, int]:
+        """批量统计每个知识库的文档总数，避免分页列表逐条查询导致的 N+1。"""
+        if not knowledge_base_ids:
+            return {}
+        result = await self.db.execute(
+            select(KnowledgeDocumentModel.knowledge_base_id, func.count(KnowledgeDocumentModel.id))
+            .where(
+                KnowledgeDocumentModel.knowledge_base_id.in_(knowledge_base_ids),
+                KnowledgeDocumentModel.is_deleted == False,  # noqa: E712
+            )
+            .group_by(KnowledgeDocumentModel.knowledge_base_id)
+        )
+        return dict(result.all())
+
+    async def count_documents_by_index_status_bulk(
+        self, knowledge_base_ids: list[int]
+    ) -> dict[int, dict[str, int]]:
+        """批量统计每个知识库各索引状态下的文档数，避免分页列表逐条查询导致的 N+1。"""
+        if not knowledge_base_ids:
+            return {}
+        result = await self.db.execute(
+            select(
+                KnowledgeDocumentModel.knowledge_base_id,
+                KnowledgeDocumentModel.index_status,
+                func.count(KnowledgeDocumentModel.id),
+            )
+            .where(
+                KnowledgeDocumentModel.knowledge_base_id.in_(knowledge_base_ids),
+                KnowledgeDocumentModel.is_deleted == False,  # noqa: E712
+            )
+            .group_by(KnowledgeDocumentModel.knowledge_base_id, KnowledgeDocumentModel.index_status)
+        )
+        grouped: dict[int, dict[str, int]] = {}
+        for kb_id, index_status, count in result.all():
+            grouped.setdefault(kb_id, {})[index_status] = count
+        return grouped
+
 
 class KnowledgeDocumentCRUD(CRUDBase[KnowledgeDocumentModel, dict, dict]):
     def __init__(self, auth: AuthSchema) -> None:
@@ -101,6 +138,20 @@ class KnowledgeChunkCRUD(CRUDBase[KnowledgeChunkModel, dict, dict]):
         )
         return result.scalar_one() or 0
 
+    async def count_by_document_bulk(self, document_ids: list[int]) -> dict[int, int]:
+        """批量统计每个文档的分块数，避免分页列表逐条查询导致的 N+1。"""
+        if not document_ids:
+            return {}
+        result = await self.db.execute(
+            select(KnowledgeChunkModel.document_id, func.count(KnowledgeChunkModel.id))
+            .where(
+                KnowledgeChunkModel.document_id.in_(document_ids),
+                KnowledgeChunkModel.is_deleted == False,  # noqa: E712
+            )
+            .group_by(KnowledgeChunkModel.document_id)
+        )
+        return dict(result.all())
+
     async def replace_chunks(
         self,
         *,
@@ -110,17 +161,19 @@ class KnowledgeChunkCRUD(CRUDBase[KnowledgeChunkModel, dict, dict]):
         chroma_ids: list[str],
     ) -> list[KnowledgeChunkModel]:
         await self.db.execute(delete(KnowledgeChunkModel).where(KnowledgeChunkModel.document_id == document_id))
-        created: list[KnowledgeChunkModel] = []
-        for index, content in enumerate(chunks):
-            obj = await self.create(
-                {
-                    "knowledge_base_id": knowledge_base_id,
-                    "document_id": document_id,
-                    "chunk_index": index,
-                    "content": content,
-                    "token_count": len(content),
-                    "chroma_id": chroma_ids[index],
-                }
+
+        objs = [
+            KnowledgeChunkModel(
+                knowledge_base_id=knowledge_base_id,
+                document_id=document_id,
+                chunk_index=index,
+                content=content,
+                token_count=len(content),
+                chroma_id=chroma_ids[index],
+                **({"created_id": self.auth.user.id} if self.auth and self.auth.user else {}),
             )
-            created.append(obj)
-        return created
+            for index, content in enumerate(chunks)
+        ]
+        self.db.add_all(objs)
+        await self.db.flush()
+        return objs

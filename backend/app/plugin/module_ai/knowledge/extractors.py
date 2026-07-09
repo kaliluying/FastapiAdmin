@@ -1,10 +1,11 @@
 from pathlib import Path
 
+import anyio
 from docx import Document
 from pypdf import PdfReader
 
 
-def extract_text(path: str | Path) -> str:
+def _extract_text_sync(path: str | Path) -> str:
     file_path = Path(path)
     suffix = file_path.suffix.lower()
     if suffix in {".txt", ".md"}:
@@ -16,3 +17,7 @@ def extract_text(path: str | Path) -> str:
         document = Document(str(file_path))
         return "\n".join(paragraph.text for paragraph in document.paragraphs)
     raise ValueError(f"unsupported knowledge document type: {suffix}")
+
+
+async def extract_text(path: str | Path) -> str:
+    return await anyio.to_thread.run_sync(_extract_text_sync, path)

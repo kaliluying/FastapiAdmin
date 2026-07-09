@@ -178,7 +178,7 @@ class ChromaKnowledgeRetriever:
             )
 
         embeddings = await self._get_embedding_client().embed_texts([query])
-        raw = self._get_store().query(
+        raw = await self._get_store().query(
             query_embedding=embeddings[0],
             knowledge_base_ids=knowledge_base_ids,
             top_k=self.top_k,

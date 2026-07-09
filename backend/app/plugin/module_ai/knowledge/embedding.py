@@ -36,6 +36,10 @@ class LocalFastEmbedEmbeddingClient:
 class OpenAICompatibleEmbeddingClient:
     """Embedding client for OpenAI-compatible providers."""
 
+    # 单批次最多提交的文本条数；超过 provider 单请求条数/token 上限会导致整批失败，
+    # 分批后单批失败不影响其它批次已经成功的向量。
+    BATCH_SIZE = 64
+
     def __init__(self) -> None:
         self._validate_config()
         self.client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY, base_url=settings.OPENAI_BASE_URL)
@@ -43,11 +47,26 @@ class OpenAICompatibleEmbeddingClient:
     async def embed_texts(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
-        response = await self.client.embeddings.create(model=settings.OPENAI_EMBEDDING_MODEL, input=texts)
-        embeddings = [item.embedding for item in response.data or [] if getattr(item, "embedding", None)]
+        embeddings: list[list[float]] = []
+        for start in range(0, len(texts), self.BATCH_SIZE):
+            batch = texts[start : start + self.BATCH_SIZE]
+            embeddings.extend(await self._embed_batch(batch))
         _validate_embeddings(
             embeddings,
             len(texts),
+            empty_message=(
+                "Embedding service returned no vectors. Check OPENAI_EMBEDDING_MODEL and whether "
+                "OPENAI_BASE_URL supports the /embeddings endpoint."
+            ),
+        )
+        return embeddings
+
+    async def _embed_batch(self, batch: list[str]) -> list[list[float]]:
+        response = await self.client.embeddings.create(model=settings.OPENAI_EMBEDDING_MODEL, input=batch)
+        embeddings = [item.embedding for item in response.data or [] if getattr(item, "embedding", None)]
+        _validate_embeddings(
+            embeddings,
+            len(batch),
             empty_message=(
                 "Embedding service returned no vectors. Check OPENAI_EMBEDDING_MODEL and whether "
                 "OPENAI_BASE_URL supports the /embeddings endpoint."
