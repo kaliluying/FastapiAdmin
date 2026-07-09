@@ -8,8 +8,6 @@ from fastapi import FastAPI
 
 from alembic import command
 from app.common.enums import EnvironmentEnum
-from app.core.logger import logger
-from app.utils.banner import worship
 
 fastapiadmin_cli = typer.Typer()
 
@@ -57,9 +55,13 @@ def run(
     返回:
     - None
     """
-    # 设置环境变量（必须在 import settings 之前，确保加载正确环境）
+    # 设置环境变量（必须在 import settings/logger 之前，确保加载正确环境；
+    # app.core.logger 模块顶层会调用 setup_logger() 间接读取 settings，
+    # 因此这里连 logger 也要延迟到环境变量设置之后才 import）
     os.environ["ENVIRONMENT"] = env.value
     from app.config.setting import settings
+    from app.core.logger import logger
+    from app.utils.banner import worship
 
     typer.secho(
         message="FastapiAdmin 服务启动",
