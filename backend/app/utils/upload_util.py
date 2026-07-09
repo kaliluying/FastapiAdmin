@@ -242,8 +242,8 @@ class UploadUtil:
         if detected_type:
             expected_ext = MIME_TYPE_MAPPING.get(detected_type, "")
             if expected_ext and expected_ext != claimed_extension.lower():
-                logger.warning(
-                    f"文件类型不匹配: 声明扩展名={claimed_extension}, 检测类型={detected_type}"
+                raise CustomException(
+                    msg=f"文件内容与扩展名不匹配：检测为 {detected_type}，声明为 {claimed_extension}"
                 )
         return True
 

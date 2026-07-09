@@ -177,7 +177,8 @@ function onRefreshed(newToken: string) {
 }
 
 function onRefreshFailed() {
-  pendingRequests.forEach(({ reject }) => reject(new Error("Token refresh failed")));
+  const err = new HttpError("登录已失效，请重新登录", ApiStatus.unauthorized);
+  pendingRequests.forEach(({ reject }) => reject(err));
   pendingRequests = [];
 }
 

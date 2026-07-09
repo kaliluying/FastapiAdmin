@@ -108,7 +108,7 @@
           @select="handleSelect"
           @select-all="handleSelectAll"
         >
-          <template v-for="col in selectConfig.tableColumns" :key="col.prop">
+          <template v-for="col in localTableColumns" :key="col.prop">
             <!-- 自定义 -->
             <template v-if="col.templet === 'custom'">
               <ElTableColumn v-bind="col">
@@ -284,13 +284,12 @@ async function fetchPageData(isRestart = false) {
 
 // 列表操作
 const tableRef = ref<TableInstance>();
-// 数据刷新后是否保留选项
-for (const item of props.selectConfig.tableColumns) {
-  if (item.type === "selection") {
-    item.reserveSelection = true;
-    break;
-  }
-}
+// 不直接修改 props，用 computed 派生一份本地副本
+const localTableColumns = computed(() =>
+  props.selectConfig.tableColumns.map((col) =>
+    col.type === "selection" ? { ...col, reserveSelection: true } : col
+  )
+);
 // 选择
 const selectedItems = ref<IObject[]>([]);
 const confirmText = computed(() => {

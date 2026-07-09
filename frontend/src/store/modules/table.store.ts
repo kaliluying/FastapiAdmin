@@ -56,6 +56,7 @@ export const useTableStore = defineStore(
     persist: {
       key: "table",
       storage: localStorage,
+      pick: ["tableSize", "isZebra", "isBorder", "isHeaderBackground"],
     },
   }
 );
