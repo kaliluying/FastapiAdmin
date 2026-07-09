@@ -148,6 +148,7 @@ type ParamSearchForm = {
   config_name?: string;
   config_key?: string;
   config_type?: string;
+  status?: number;
   created_time?: string[];
 };
 
@@ -163,6 +164,7 @@ function buildParamReplaceParams(p: ParamSearchForm): Record<string, unknown> {
     config_name: p.config_name,
     config_key: p.config_key,
     config_type: p.config_type,
+    status: p.status,
     created_time:
       Array.isArray(p.created_time) && p.created_time.length === 2 ? p.created_time : undefined,
   };
@@ -172,6 +174,7 @@ const searchForm = ref<ParamSearchForm>({
   config_name: undefined,
   config_key: undefined,
   config_type: undefined,
+  status: undefined,
   created_time: undefined,
 });
 
@@ -460,6 +463,7 @@ function onResetSearch() {
     config_name: undefined,
     config_key: undefined,
     config_type: undefined,
+    status: undefined,
     created_time: undefined,
   };
   void resetSearchParams();

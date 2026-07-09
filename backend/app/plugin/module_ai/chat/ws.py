@@ -48,69 +48,57 @@ def _has_ws_permission(auth: AuthSchema, permission: str) -> bool:
 
 @WS_AI.websocket("/ws", name="WebSocket Chat")
 async def websocket_chat_controller(websocket: WebSocket) -> None:
+    # 认证阶段：短生命周期 session，认证后立即释放数据库连接
+    auth: AuthSchema | None = None
     try:
         async with async_db_session() as db:
-            try:
-                auth = await _resolve_ws_auth(websocket, db)
-                if not _has_ws_permission(auth, "module_ai:chat:ws"):
-                    raise CustomException(msg="无权限操作", code=10403, status_code=403)
-            except Exception as e:
-                logger.warning(f"WebSocket authentication failed: {websocket.client} - {e}")
-                await websocket.close(code=WS_1008_POLICY_VIOLATION)
-                return
-
-            # _resolve_ws_auth 内部通过 _load_user_from_db 执行了查询，
-            # 因 autocommit=False 会留下隐式事务。在进入消息循环前提交清场，
-            # 否则后续 async with db.begin() 会触发 "transaction already begun"。
-            commit = getattr(db, "commit", None)
-            if commit:
-                await commit()
-
-            await websocket.accept()
-
-            user_info = f"用户: {auth.user.username}" if auth and auth.user else "未知用户"
-            logger.info(f"WebSocket connected: {websocket.client} - {user_info}")
-            websocket.state.auth = auth
-
-            while True:
-                data = await websocket.receive_text()
-                try:
-                    message_data = json.loads(data)
-                    query = ChatQuerySchema(**message_data)
-                    logger.info(f"收到聊天查询: {query} - 会话ID: {query.session_id}")
-
-                    async with db.begin():
-                        auth.db = db
-                        async for chunk in ChatService(auth).chat_query(query=query):
-                            if not chunk:
-                                continue
-                            try:
-                                await websocket.send_text(chunk)
-                            except RuntimeError:
-                                logger.warning("WebSocket connection closed; stopping response stream")
-                                break
-                except json.JSONDecodeError:
-                    logger.warning(f"收到非 JSON 消息: {data}")
-                    try:
-                        await websocket.send_text("消息格式错误，请发送 JSON 格式的消息")
-                    except RuntimeError:
-                        logger.warning("WebSocket connection closed before format error could be sent")
-                        break
-                except Exception as e:
-                    logger.error(f"处理消息时出错: {e}")
-                    try:
-                        await websocket.send_text(f"处理消息时出错: {e}")
-                    except RuntimeError:
-                        logger.warning("WebSocket connection closed before processing error could be sent")
-                        break
+            auth = await _resolve_ws_auth(websocket, db)
+            if not _has_ws_permission(auth, "module_ai:chat:ws"):
+                raise CustomException(msg="无权限操作", code=10403, status_code=403)
+            # _resolve_ws_auth 内部执行了查询留下隐式事务，提交清场以确保
+            # auth.user 的已加载属性在 session 关闭后仍可从内存访问
+            await db.commit()
     except Exception as e:
-        logger.warning(f"WebSocket chat failed: {e}")
+        logger.warning(f"WebSocket authentication failed: {websocket.client} - {e}")
+        await websocket.close(code=WS_1008_POLICY_VIOLATION)
+        return
+
+    await websocket.accept()
+    user_info = f"用户: {auth.user.username}" if auth and auth.user else "未知用户"
+    logger.info(f"WebSocket connected: {websocket.client} - {user_info}")
+
+    # 消息循环：每条消息独立 session，空闲等待时不占用数据库连接
+    while True:
         try:
-            await websocket.send_text(f"错误: {e}")
-        except RuntimeError:
-            logger.warning("WebSocket connection closed before final error could be sent")
-        finally:
+            data = await websocket.receive_text()
+        except Exception:
+            logger.info(f"WebSocket disconnected: {websocket.client}")
+            break
+        try:
+            message_data = json.loads(data)
+            query = ChatQuerySchema(**message_data)
+            logger.info(f"收到聊天查询: {query} - 会话ID: {query.session_id}")
+
+            async with async_db_session() as db:
+                async with db.begin():
+                    auth.db = db
+                    async for chunk in ChatService(auth).chat_query(query=query):
+                        if not chunk:
+                            continue
+                        try:
+                            await websocket.send_text(chunk)
+                        except RuntimeError:
+                            logger.warning("WebSocket connection closed; stopping response stream")
+                            return
+        except json.JSONDecodeError:
+            logger.warning(f"收到非 JSON 消息: {data}")
             try:
-                await websocket.close()
+                await websocket.send_text("消息格式错误，请发送 JSON 格式的消息")
             except RuntimeError:
-                pass
+                break
+        except Exception as e:
+            logger.error(f"处理消息时出错: {e}")
+            try:
+                await websocket.send_text(f"处理消息时出错: {e}")
+            except RuntimeError:
+                break

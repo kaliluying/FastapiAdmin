@@ -66,6 +66,8 @@
             :http-request="uploadFile"
             :show-file-list="false"
             :disabled="!uploadForm.knowledge_base_id"
+            accept=".txt,.md,.pdf,.docx"
+            :before-upload="beforeUpload"
           >
             <ElIcon class="el-icon--upload"><Upload /></ElIcon>
             <div class="el-upload__text">点击或拖拽文件上传</div>
@@ -141,6 +143,22 @@ const applyRouteQuery = () => {
     query.knowledge_base_id = knowledgeBaseId;
     uploadForm.knowledge_base_id = knowledgeBaseId;
   }
+};
+
+const ALLOWED_EXTS = [".txt", ".md", ".pdf", ".docx"];
+const MAX_UPLOAD_MB = 50;
+
+const beforeUpload = (file: File): boolean => {
+  const ext = "." + (file.name.split(".").pop()?.toLowerCase() ?? "");
+  if (!ALLOWED_EXTS.includes(ext)) {
+    ElMessage.error(`仅支持 ${ALLOWED_EXTS.join("、")} 格式`);
+    return false;
+  }
+  if (file.size > MAX_UPLOAD_MB * 1024 * 1024) {
+    ElMessage.error(`文件大小不能超过 ${MAX_UPLOAD_MB}MB`);
+    return false;
+  }
+  return true;
 };
 
 const uploadFile = async (options: UploadRequestOptions) => {
