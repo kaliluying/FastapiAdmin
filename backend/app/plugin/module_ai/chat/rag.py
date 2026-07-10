@@ -510,41 +510,25 @@ class RagChatChain:
             logger.warning(f"获取长期记忆失败 (非致命): {e}")
             return []
 
-class RagChainFactory:
-    def create_chain(self, db: Any | None = None, auth: Any | None = None) -> RagChatChain:
-        user_id = ""
-        team_id = None
-        user_profile: dict[str, Any] = {}
-        if auth is not None:
-            user = getattr(auth, "user", None)
-            user_id = getattr(user, "username", None) or ""
-            dept_id = getattr(user, "dept_id", None)
-            team_id = str(dept_id) if dept_id else None
-            user_profile = self._extract_user_profile(user)
-        return RagChatChain(
-            retriever=ChromaKnowledgeRetriever(),
-            prompt_builder=RagPromptBuilder(),
-            chat_model=LangChainChatModel(),
-            db=db,
-            user_id=user_id,
-            team_id=team_id,
-            user_profile=user_profile,
-        )
+def _extract_user_profile(user: Any | None) -> dict[str, Any]:
+    if user is None:
+        return {}
+    return {
+        field_name: value
+        for field_name in ("name", "mobile", "email", "description")
+        if (value := getattr(user, field_name, None)) not in (None, "")
+    }
 
-    @staticmethod
-    def _extract_user_profile(user: Any | None) -> dict[str, Any]:
-        if user is None:
-            return {}
 
-        fields = (
-            "name",
-            "mobile",
-            "email",
-            "description",
-        )
-        profile: dict[str, Any] = {}
-        for field_name in fields:
-            value = getattr(user, field_name, None)
-            if value is not None and value != "":
-                profile[field_name] = value
-        return profile
+def create_rag_chain(db: Any | None = None, auth: Any | None = None) -> RagChatChain:
+    user = getattr(auth, "user", None) if auth is not None else None
+    dept_id = getattr(user, "dept_id", None)
+    return RagChatChain(
+        retriever=ChromaKnowledgeRetriever(),
+        prompt_builder=RagPromptBuilder(),
+        chat_model=LangChainChatModel(),
+        db=db,
+        user_id=getattr(user, "username", None) or "",
+        team_id=str(dept_id) if dept_id else None,
+        user_profile=_extract_user_profile(user),
+    )

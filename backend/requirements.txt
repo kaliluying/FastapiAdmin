@@ -3,35 +3,21 @@
 aiofiles==24.1.0
     # via backend
 aiohappyeyeballs==2.6.2
-    # via
-    #   aiohttp
-    #   backend
+    # via aiohttp
 aiohttp==3.14.1
     # via kubernetes
-aioredis==2.0.1
-    # via
-    #   backend
-    #   fastapi-cache2
 aiosignal==1.4.0
-    # via
-    #   aiohttp
-    #   backend
+    # via aiohttp
 aiosmtplib==3.0.2
-    # via
-    #   backend
-    #   fastapi-mail
+    # via fastapi-mail
 aiosqlite==0.22.1
     # via backend
 alembic==1.18.4
     # via backend
 annotated-doc==0.0.4
-    # via
-    #   backend
-    #   typer
+    # via typer
 annotated-types==0.7.0
-    # via
-    #   backend
-    #   pydantic
+    # via pydantic
 anyio==4.12.1
     # via
     #   backend
@@ -40,10 +26,6 @@ anyio==4.12.1
     #   openai
     #   starlette
     #   watchfiles
-async-timeout==5.0.1
-    # via
-    #   aioredis
-    #   backend
 asyncmy==0.2.11
     # via backend
 asyncpg==0.31.0
@@ -51,83 +33,54 @@ asyncpg==0.31.0
 attrs==26.1.0
     # via
     #   aiohttp
-    #   backend
     #   jsonschema
     #   referencing
 bcrypt==5.0.0
-    # via
-    #   backend
-    #   chromadb
+    # via chromadb
 bleach==6.4.0
     # via backend
 blinker==1.9.0
-    # via
-    #   backend
-    #   fastapi-mail
+    # via fastapi-mail
 build==1.5.0
-    # via
-    #   backend
-    #   chromadb
+    # via chromadb
 certifi==2026.1.4
     # via
-    #   backend
     #   httpcore
     #   httpx
     #   kubernetes
     #   requests
-cffi==2.0.0 ; platform_python_implementation != 'PyPy'
-    # via
-    #   backend
-    #   cryptography
 charset-normalizer==3.4.7
-    # via
-    #   backend
-    #   requests
+    # via requests
 chromadb==1.5.9
     # via backend
 click==8.1.7
-    # via
-    #   backend
-    #   uvicorn
+    # via uvicorn
 colorama==0.4.6 ; os_name == 'nt' or sys_platform == 'win32'
     # via
-    #   backend
     #   build
     #   click
     #   loguru
     #   tqdm
     #   typer
     #   uvicorn
-cryptography==49.0.0
-    # via backend
 distro==1.9.0
     # via
-    #   backend
     #   langsmith
     #   openai
 dnspython==2.8.0
-    # via
-    #   backend
-    #   email-validator
+    # via email-validator
 durationpy==0.10
-    # via
-    #   backend
-    #   kubernetes
+    # via kubernetes
 email-validator==2.3.0
     # via
     #   backend
     #   fastapi-mail
 et-xmlfile==2.0.0
-    # via
-    #   backend
-    #   openpyxl
+    # via openpyxl
 fastapi==0.115.2
     # via
     #   backend
-    #   fastapi-cache2
     #   fastapi-limiter
-fastapi-cache2==0.1.8
-    # via backend
 fastapi-limiter==0.1.6
     # via backend
 fastapi-mail==1.5.1
@@ -135,52 +88,33 @@ fastapi-mail==1.5.1
 fastembed==0.8.0
     # via backend
 filelock==3.29.4
-    # via
-    #   backend
-    #   huggingface-hub
+    # via huggingface-hub
 flatbuffers==25.12.19
-    # via
-    #   backend
-    #   onnxruntime
+    # via onnxruntime
 frozenlist==1.8.0
     # via
     #   aiohttp
     #   aiosignal
-    #   backend
 fsspec==2026.6.0
-    # via
-    #   backend
-    #   huggingface-hub
+    # via huggingface-hub
 googleapis-common-protos==1.75.0
-    # via
-    #   backend
-    #   opentelemetry-exporter-otlp-proto-grpc
-greenlet==3.5.2
-    # via
-    #   backend
-    #   sqlalchemy
+    # via opentelemetry-exporter-otlp-proto-grpc
+greenlet==3.5.2 ; platform_machine == 'AMD64' or platform_machine == 'WIN32' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'ppc64le' or platform_machine == 'win32' or platform_machine == 'x86_64'
+    # via sqlalchemy
 grpcio==1.81.1
     # via
-    #   backend
     #   chromadb
     #   opentelemetry-exporter-otlp-proto-grpc
 h11==0.16.0
     # via
-    #   backend
     #   httpcore
     #   uvicorn
 hf-xet==1.5.1 ; platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'
-    # via
-    #   backend
-    #   huggingface-hub
+    # via huggingface-hub
 httpcore==1.0.9
-    # via
-    #   backend
-    #   httpx
+    # via httpx
 httptools==0.8.0
-    # via
-    #   backend
-    #   uvicorn
+    # via uvicorn
 httpx==0.28.1
     # via
     #   backend
@@ -190,45 +124,31 @@ httpx==0.28.1
     #   openai
 huggingface-hub==1.16.1
     # via
-    #   backend
     #   fastembed
     #   tokenizers
 idna==3.11
     # via
     #   anyio
-    #   backend
     #   email-validator
     #   httpx
     #   requests
     #   yarl
 importlib-resources==7.1.0
-    # via
-    #   backend
-    #   chromadb
+    # via chromadb
 jinja2==3.1.6
     # via
     #   backend
     #   fastapi-mail
 jiter==0.12.0
-    # via
-    #   backend
-    #   openai
+    # via openai
 jsonpatch==1.33
-    # via
-    #   backend
-    #   langchain-core
+    # via langchain-core
 jsonpointer==3.1.1
-    # via
-    #   backend
-    #   jsonpatch
+    # via jsonpatch
 jsonschema==4.26.0
-    # via
-    #   backend
-    #   chromadb
+    # via chromadb
 jsonschema-specifications==2025.9.1
-    # via
-    #   backend
-    #   jsonschema
+    # via jsonschema
 kubernetes==36.0.2
     # via chromadb
 langchain-core==1.4.8
@@ -238,62 +158,43 @@ langchain-core==1.4.8
 langchain-openai==1.3.3
     # via backend
 langchain-protocol==0.0.18
-    # via
-    #   backend
-    #   langchain-core
+    # via langchain-core
 langsmith==0.9.3
-    # via
-    #   backend
-    #   langchain-core
+    # via langchain-core
 loguru==0.7.3
     # via
     #   backend
     #   fastembed
 lxml==6.1.1
-    # via
-    #   backend
-    #   python-docx
+    # via python-docx
 mako==1.3.10
-    # via
-    #   alembic
-    #   backend
+    # via alembic
 markdown-it-py==4.0.0
-    # via
-    #   backend
-    #   rich
+    # via rich
 markupsafe==3.0.3
     # via
-    #   backend
     #   jinja2
     #   mako
 mdurl==0.1.2
-    # via
-    #   backend
-    #   markdown-it-py
+    # via markdown-it-py
 mmh3==5.2.1
     # via
-    #   backend
     #   chromadb
     #   fastembed
 multidict==6.7.1
     # via
     #   aiohttp
-    #   backend
     #   yarl
 numpy==2.4.1
     # via
-    #   backend
     #   chromadb
     #   fastembed
     #   onnxruntime
     #   pandas
 oauthlib==3.3.1
-    # via
-    #   backend
-    #   requests-oauthlib
+    # via requests-oauthlib
 onnxruntime==1.27.0
     # via
-    #   backend
     #   chromadb
     #   fastembed
 openai==2.28.0
@@ -324,16 +225,12 @@ opentelemetry-semantic-conventions==0.64b0
     # via opentelemetry-sdk
 orjson==3.11.9
     # via
-    #   backend
     #   chromadb
     #   langsmith
 overrides==7.7.0
-    # via
-    #   backend
-    #   chromadb
+    # via chromadb
 packaging==25.0
     # via
-    #   backend
     #   build
     #   huggingface-hub
     #   langchain-core
@@ -341,10 +238,6 @@ packaging==25.0
     #   onnxruntime
 pandas==3.0.3
     # via backend
-pendulum==3.2.0
-    # via
-    #   backend
-    #   fastapi-cache2
 pillow==12.2.0
     # via
     #   backend
@@ -352,34 +245,20 @@ pillow==12.2.0
 propcache==0.5.2
     # via
     #   aiohttp
-    #   backend
     #   yarl
 protobuf==7.35.1
     # via
-    #   backend
     #   googleapis-common-protos
     #   onnxruntime
     #   opentelemetry-proto
-psutil==7.2.2
-    # via backend
 psycopg==3.3.2
     # via backend
 psycopg-binary==3.3.2 ; implementation_name != 'pypy'
-    # via
-    #   backend
-    #   psycopg
+    # via psycopg
 py-rust-stemmers==0.1.8
-    # via
-    #   backend
-    #   fastembed
+    # via fastembed
 pybase64==1.4.3
-    # via
-    #   backend
-    #   chromadb
-pycparser==2.23 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
-    # via
-    #   backend
-    #   cffi
+    # via chromadb
 pydantic==2.12.5
     # via
     #   backend
@@ -391,18 +270,14 @@ pydantic==2.12.5
     #   openai
     #   pydantic-settings
 pydantic-core==2.41.5
-    # via
-    #   backend
-    #   pydantic
+    # via pydantic
 pydantic-settings==2.14.1
     # via
     #   backend
     #   chromadb
     #   fastapi-mail
 pygments==2.19.2
-    # via
-    #   backend
-    #   rich
+    # via rich
 pyjwt==2.13.0
     # via backend
 pymysql==1.2.0
@@ -410,19 +285,13 @@ pymysql==1.2.0
 pypdf==5.9.0
     # via backend
 pypika==0.51.1
-    # via
-    #   backend
-    #   chromadb
+    # via chromadb
 pyproject-hooks==1.2.0
-    # via
-    #   backend
-    #   build
+    # via build
 python-dateutil==2.9.0.post0
     # via
-    #   backend
     #   kubernetes
     #   pandas
-    #   pendulum
 python-docx==1.2.0
     # via backend
 python-dotenv==1.2.1
@@ -434,7 +303,6 @@ python-multipart==0.0.32
     # via backend
 pyyaml==6.0.3
     # via
-    #   backend
     #   chromadb
     #   huggingface-hub
     #   kubernetes
@@ -446,16 +314,12 @@ redis==7.1.0
     #   fastapi-limiter
 referencing==0.37.0
     # via
-    #   backend
     #   jsonschema
     #   jsonschema-specifications
 regex==2026.5.9
-    # via
-    #   backend
-    #   tiktoken
+    # via tiktoken
 requests==2.34.2
     # via
-    #   backend
     #   fastembed
     #   kubernetes
     #   langsmith
@@ -463,13 +327,9 @@ requests==2.34.2
     #   requests-toolbelt
     #   tiktoken
 requests-oauthlib==2.0.0
-    # via
-    #   backend
-    #   kubernetes
+    # via kubernetes
 requests-toolbelt==1.0.0
-    # via
-    #   backend
-    #   langsmith
+    # via langsmith
 rich==15.0.0
     # via
     #   backend
@@ -477,33 +337,22 @@ rich==15.0.0
     #   typer
 rpds-py==2026.5.1
     # via
-    #   backend
     #   jsonschema
     #   referencing
 shellingham==1.5.4
-    # via
-    #   backend
-    #   typer
+    # via typer
 six==1.17.0
     # via
-    #   backend
     #   kubernetes
     #   python-dateutil
 sniffio==1.3.1
     # via
-    #   backend
     #   langsmith
     #   openai
 sqlalchemy==2.0.51
     # via
     #   alembic
     #   backend
-sqlglot==27.8.0
-    # via backend
-sqlglotrs==0.6.1
-    # via
-    #   backend
-    #   sqlglot
 starlette==0.40.0
     # via
     #   backend
@@ -511,40 +360,30 @@ starlette==0.40.0
     #   fastapi-mail
 tenacity==9.1.4
     # via
-    #   backend
     #   chromadb
     #   langchain-core
 tiktoken==0.13.0
-    # via
-    #   backend
-    #   langchain-openai
-tinycss2==1.5.1
-    # via backend
+    # via langchain-openai
 tokenizers==0.23.1
     # via
-    #   backend
     #   chromadb
     #   fastembed
 tqdm==4.67.1
     # via
-    #   backend
     #   chromadb
     #   fastembed
     #   huggingface-hub
     #   openai
 typer==0.26.7
     # via
-    #   backend
     #   chromadb
     #   huggingface-hub
 typing-extensions==4.15.0
     # via
     #   aiohttp
-    #   aioredis
     #   aiosignal
     #   alembic
     #   anyio
-    #   backend
     #   chromadb
     #   fastapi
     #   grpcio
@@ -566,71 +405,45 @@ typing-extensions==4.15.0
     #   typing-inspection
 typing-inspection==0.4.2
     # via
-    #   backend
     #   pydantic
     #   pydantic-settings
-tzdata==2025.3
+tzdata==2025.3 ; sys_platform == 'emscripten' or sys_platform == 'win32'
     # via
-    #   backend
     #   pandas
-    #   pendulum
     #   psycopg
 ua-parser==1.0.2
     # via backend
 ua-parser-builtins==202601
-    # via
-    #   backend
-    #   ua-parser
+    # via ua-parser
 urllib3==2.7.0
     # via
-    #   backend
     #   kubernetes
     #   requests
 uuid-utils==0.16.2
     # via
-    #   backend
     #   langchain-core
     #   langsmith
 uvicorn==0.49.0
     # via
     #   backend
     #   chromadb
-    #   fastapi-cache2
 uvloop==0.22.1 ; platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32'
-    # via
-    #   backend
-    #   uvicorn
+    # via uvicorn
 watchfiles==1.2.0
-    # via
-    #   backend
-    #   uvicorn
+    # via uvicorn
 webencodings==0.5.1
-    # via
-    #   backend
-    #   bleach
-    #   tinycss2
+    # via bleach
 websocket-client==1.9.0
-    # via
-    #   backend
-    #   kubernetes
+    # via kubernetes
 websockets==16.0
     # via
-    #   backend
     #   langsmith
     #   uvicorn
 win32-setctime==1.2.0 ; sys_platform == 'win32'
-    # via
-    #   backend
-    #   loguru
+    # via loguru
 xxhash==3.7.1
-    # via
-    #   backend
-    #   langsmith
+    # via langsmith
 yarl==1.24.2
-    # via
-    #   aiohttp
-    #   backend
+    # via aiohttp
 zstandard==0.25.0
-    # via
-    #   backend
-    #   langsmith
+    # via langsmith

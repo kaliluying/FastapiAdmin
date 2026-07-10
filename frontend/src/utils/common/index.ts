@@ -543,25 +543,6 @@ class QuickStartManager {
   }
 
   /**
-   * 根据 id 删除快速链接
-   *
-   * @param {string} id - 要删除的链接 id
-   *
-   * @example
-   * ```typescript
-   * quickStartManager.removeQuickLink('link-123');
-   * ```
-   */
-  removeQuickLink(id: string): void {
-    const links = this.getQuickLinks();
-    const filteredLinks = links.filter((link) => link.id !== id);
-
-    if (filteredLinks.length < links.length) {
-      this.saveQuickLinks(filteredLinks);
-    }
-  }
-
-  /**
    * 根据路由路径删除快速链接
    *
    * 用于兼容没有 id 的旧数据
@@ -579,18 +560,6 @@ class QuickStartManager {
     if (filteredLinks.length < links.length) {
       this.saveQuickLinks(filteredLinks);
     }
-  }
-
-  /**
-   * 清空所有快速链接
-   *
-   * @example
-   * ```typescript
-   * quickStartManager.clearQuickLinks();
-   * ```
-   */
-  clearQuickLinks(): void {
-    this.saveQuickLinks([]);
   }
 
   /**

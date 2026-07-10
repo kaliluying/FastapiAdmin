@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Protocol
 
 
 class RET(Enum):
@@ -89,86 +88,6 @@ class RET(Enum):
         - str: 错误信息文本。
         """
         return self._msg
-
-
-class CommonConstant:
-    """
-    常用常量
-
-    WWW: www主域名
-    HTTP: http请求
-    HTTPS: https请求
-    LOOKUP_RMI: RMI远程方法调用
-    LOOKUP_LDAP: LDAP远程方法调用
-    LOOKUP_LDAPS: LDAPS远程方法调用
-    YES: 是否为系统默认（是）
-    NO: 是否为系统默认（否）
-    DEPT_NORMAL: 部门正常状态
-    DEPT_DISABLE: 部门停用状态
-    UNIQUE: 校验是否唯一的返回标识（是）
-    NOT_UNIQUE: 校验是否唯一的返回标识（否）
-    """
-
-    # 域名相关
-    WWW = "www."
-    HTTP = "http://"
-    HTTPS = "https://"
-
-    # 系统标识
-    YES = "Y"
-    NO = "N"
-
-    # 部门状态
-    DEPT_NORMAL = "0"  # 正常
-    DEPT_DISABLE = "1"  # 停用
-
-    # 唯一性校验
-    UNIQUE = True
-    NOT_UNIQUE = False
-
-
-class MenuConstant:
-    """
-    菜单常量
-
-    TYPE_DIR: 菜单类型（目录）
-    TYPE_MENU: 菜单类型（菜单）
-    TYPE_BUTTON: 菜单类型（按钮）
-    YES_FRAME: 是否菜单外链（是）
-    NO_FRAME: 是否菜单外链（否）
-    LAYOUT: Layout组件标识
-    PARENT_VIEW: ParentView组件标识
-    INNER_LINK: InnerLink组件标识
-    """
-
-    TYPE_DIR = "M"
-    TYPE_MENU = "C"
-    TYPE_BUTTON = "F"
-    YES_FRAME = 0
-    NO_FRAME = 1
-    LAYOUT = "Layout"
-    PARENT_VIEW = "ParentView"
-    INNER_LINK = "InnerLink"
-
-
-class TypedContextProtocol(Protocol):
-    """
-    请求上下文中与日志/鉴权相关的结构化字段协议（供类型检查使用）。
-    """
-
-    perf_time: float
-
-    ip: str
-    country: str | None
-    region: str | None
-    city: str | None
-
-    user_agent: str
-    os: str | None
-    browser: str | None
-    device: str | None
-
-    permission: str | None
 
 
 # API 日期 / 时间 / 日期时间统一展示（validator、jsonable_response_content、文档约定一致）

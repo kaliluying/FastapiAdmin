@@ -8,7 +8,7 @@ from typing import Any
 from uuid import uuid4
 
 from app.api.v1.module_system.dept.service import DeptService
-from app.common.request import PaginationService
+from app.common.request import paginate
 from app.config.setting import settings
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
@@ -16,7 +16,7 @@ from app.core.logger import logger
 
 from .crud import ChatSession, ChatSessionCRUD
 from .memory_extractor import MemoryExtractor
-from .rag import RagChainFactory
+from .rag import create_rag_chain
 from .schema import (
     AiModelConfigOutSchema,
     ChatQuerySchema,
@@ -118,7 +118,7 @@ class ChatService:
                 else self._ensure_runtime_session_id(query.session_id)
             )
             db = crud.db if crud else self._get_db()
-            chain = RagChainFactory().create_chain(db=db, auth=self.auth)
+            chain = create_rag_chain(db=db, auth=self.auth)
 
             has_content = False
             response_chunks: list[str] = []
@@ -175,7 +175,7 @@ class ChatService:
             crud = ChatSessionCRUD(self.auth) if self._should_persist_session() else None
             active_session_id = await self._ensure_session_id(crud, session_id)
             db = crud.db if crud else self._get_db()
-            chain = RagChainFactory().create_chain(db=db, auth=self.auth)
+            chain = create_rag_chain(db=db, auth=self.auth)
             response_text = await chain.ainvoke(
                 message=message,
                 user_id=self._get_user_id(),
@@ -357,7 +357,7 @@ class ChatService:
     ) -> dict[str, Any]:
         sessions = await ChatSessionCRUD(self.auth).list_crud(search=search.__dict__ if search else None, order_by=order_by)
         items = [await _format_session_data(session, self.auth) for session in sessions]
-        return await PaginationService.paginate(data_list=items, page_no=page_no, page_size=page_size)
+        return paginate(data_list=items, page_no=page_no, page_size=page_size)
 
     async def update(self, session_id: str, data: ChatSessionUpdateSchema) -> bool:
         return await ChatSessionCRUD(self.auth).update_crud(session_id=session_id, data=data)

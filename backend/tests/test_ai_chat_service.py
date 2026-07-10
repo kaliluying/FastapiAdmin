@@ -195,15 +195,14 @@ async def test_chat_query_returns_message_when_stream_has_no_content(monkeypatch
             if False:
                 yield None
 
-    class FakeFactory:
-        def create_chain(self, db=None, auth=None):
-            return FakeChain()
+    def fake_create_rag_chain(db=None, auth=None):
+        return FakeChain()
 
     monkeypatch.setattr(service.settings, "OPENAI_API_KEY", "test_key")
     monkeypatch.setattr(service.settings, "OPENAI_MODEL", "MiniMax-M3")
     monkeypatch.setattr(service.settings, "OPENAI_BASE_URL", "https://api.minimaxi.com/v1")
     monkeypatch.setattr(service, "ChatSessionCRUD", FakeCrud)
-    monkeypatch.setattr(service, "RagChainFactory", FakeFactory)
+    monkeypatch.setattr(service, "create_rag_chain", fake_create_rag_chain)
 
     auth = SimpleNamespace(user=SimpleNamespace(username="admin", dept_id=1))
     chunks = [
@@ -237,11 +236,10 @@ async def test_chat_query_passes_context_to_rag_chain(monkeypatch) -> None:
             captured.update(kwargs)
             yield "pong"
 
-    class FakeFactory:
-        def create_chain(self, db=None, auth=None):
-            captured["db"] = db
-            captured["auth"] = auth
-            return FakeChain()
+    def fake_create_rag_chain(db=None, auth=None):
+        captured["db"] = db
+        captured["auth"] = auth
+        return FakeChain()
 
     class FakeDB:
         async def commit(self) -> None:
@@ -251,7 +249,7 @@ async def test_chat_query_passes_context_to_rag_chain(monkeypatch) -> None:
     monkeypatch.setattr(service.settings, "OPENAI_MODEL", "MiniMax-M3")
     monkeypatch.setattr(service.settings, "OPENAI_BASE_URL", "https://api.minimaxi.com/v1")
     monkeypatch.setattr(service, "ChatSessionCRUD", FakeCrud)
-    monkeypatch.setattr(service, "RagChainFactory", FakeFactory)
+    monkeypatch.setattr(service, "create_rag_chain", fake_create_rag_chain)
 
     files = [{"name": "manual.md", "content": "用户管理路径是 /system/user"}]
     auth = SimpleNamespace(user=SimpleNamespace(username="admin", dept_id=1), db=FakeDB())

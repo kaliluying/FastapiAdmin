@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from fastapi import Query
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 from app.core.base_params import BaseQueryParam, UserByQueryParam
 
@@ -42,17 +42,6 @@ class ChatSessionUpdateSchema(BaseModel):
         if len(value) < 1 or len(value) > 200:
             raise ValueError("会话标题长度必须在 1-200 个字符之间")
         return value
-
-
-class ChatSessionMessageSchema(BaseModel):
-    """Chat session message."""
-
-    id: str = Field(..., description="Message ID")
-    role: str = Field(..., description="Message role")
-    content: str = Field(..., description="Message content")
-    created_at: int | None = Field(None, description="Created Unix timestamp")
-
-    model_config = ConfigDict(from_attributes=True)
 
 
 @dataclass
