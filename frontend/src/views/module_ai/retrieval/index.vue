@@ -1,6 +1,7 @@
 <template>
   <div class="retrieval-page">
     <ElCard shadow="never">
+      <!-- 主查询区 -->
       <ElForm :model="form" label-width="80px" class="retrieval-form">
         <ElFormItem label="知识库">
           <ElSelect
@@ -14,31 +15,54 @@
             <ElOption v-for="item in bases" :key="item.id" :label="item.name" :value="item.id || 0" />
           </ElSelect>
         </ElFormItem>
-        <ElFormItem label="Top K">
-          <ElInputNumber v-model="form.top_k" :min="1" :max="20" />
-        </ElFormItem>
         <ElFormItem label="问题">
           <ElInput v-model="form.query" type="textarea" :rows="4" maxlength="1000" show-word-limit />
         </ElFormItem>
+
+        <!-- 高级设置 -->
         <ElFormItem>
-          <ElButton type="primary" :icon="Search" :loading="loading" @click="testRetrieval">检索</ElButton>
+          <ElButton link type="primary" class="advanced-toggle" @click="showAdvanced = !showAdvanced">
+            高级设置
+            <span class="toggle-icon">{{ showAdvanced ? "▲" : "▼" }}</span>
+          </ElButton>
+        </ElFormItem>
+        <div v-show="showAdvanced" class="advanced-panel">
+          <ElFormItem label="Top K">
+            <ElInputNumber v-model="form.top_k" :min="1" :max="20" />
+          </ElFormItem>
+        </div>
+
+        <ElFormItem>
+          <ElButton type="primary" :icon="Search" :loading="asyncState === 'loading'" @click="testRetrieval">检索</ElButton>
         </ElFormItem>
       </ElForm>
 
       <ElDivider />
 
-      <ElEmpty v-if="!results.length" description="暂无检索结果" />
-      <div v-else class="result-list">
-        <ElCard v-for="(item, index) in results" :key="index" shadow="never" class="result-card">
-          <div class="result-meta">
-            <ElTag type="primary">#{{ index + 1 }}</ElTag>
-            <span>知识库 {{ item.metadata.knowledge_base_id ?? "-" }}</span>
-            <span>文档 {{ item.metadata.document_id ?? "-" }}</span>
-            <span>分块 {{ item.metadata.chunk_index ?? "-" }}</span>
-            <span v-if="item.distance != null">距离 {{ Number(item.distance).toFixed(4) }}</span>
+      <!-- 检索结果 -->
+      <div class="results-section">
+        <p class="results-title">检索结果</p>
+
+        <FaAsyncState
+          v-if="asyncState === 'loading' || asyncState === 'empty' || asyncState === 'error'"
+          :state="(asyncState as 'loading' | 'empty' | 'error')"
+          :title="asyncState === 'error' ? '检索失败，请重试' : undefined"
+        />
+
+        <div v-else-if="asyncState === 'done'" class="result-list">
+          <div v-for="(item, index) in results" :key="index" class="result-rank">
+            <ElCard shadow="never" class="result-card">
+              <div class="result-meta">
+                <ElTag type="primary">#{{ index + 1 }}</ElTag>
+                <span>知识库 {{ item.metadata.knowledge_base_id ?? "-" }}</span>
+                <span>文档 {{ item.metadata.document_id ?? "-" }}</span>
+                <span>分块 {{ item.metadata.chunk_index ?? "-" }}</span>
+                <span v-if="item.distance != null">距离 {{ Number(item.distance).toFixed(4) }}</span>
+              </div>
+              <p class="result-content">{{ item.content }}</p>
+            </ElCard>
           </div>
-          <p class="result-content">{{ item.content }}</p>
-        </ElCard>
+        </div>
       </div>
     </ElCard>
   </div>
@@ -50,13 +74,15 @@ import { ElMessage } from "element-plus";
 import { Search } from "@element-plus/icons-vue";
 import { useRoute } from "vue-router";
 import KnowledgeAPI, { type KnowledgeBase, type RetrievalHit } from "@/api/module_ai/knowledge";
+import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 
 defineOptions({ name: "AiRetrievalTest" });
 
 const route = useRoute();
-const loading = ref(false);
 const bases = ref<KnowledgeBase[]>([]);
 const results = ref<RetrievalHit[]>([]);
+const showAdvanced = ref(false);
+const asyncState = ref<"idle" | "loading" | "empty" | "error" | "done">("idle");
 
 const form = reactive({
   query: "",
@@ -78,12 +104,13 @@ const testRetrieval = async () => {
     ElMessage.warning("请选择知识库");
     return;
   }
-  loading.value = true;
+  asyncState.value = "loading";
   try {
     const res = await KnowledgeAPI.testRetrieval({ ...form });
     results.value = res.data?.data?.results || [];
-  } finally {
-    loading.value = false;
+    asyncState.value = results.value.length ? "done" : "empty";
+  } catch {
+    asyncState.value = "error";
   }
 };
 
@@ -109,10 +136,37 @@ onMounted(async () => {
   width: 360px;
 }
 
+.advanced-toggle {
+  padding: 0;
+  font-size: 13px;
+}
+
+.toggle-icon {
+  margin-left: 4px;
+  font-size: 10px;
+}
+
+.advanced-panel {
+  padding-left: 8px;
+  border-left: 2px solid var(--el-border-color-light);
+  margin-bottom: 8px;
+}
+
+.results-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+  margin: 0 0 12px;
+}
+
 .result-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.result-rank {
+  width: 100%;
 }
 
 .result-card {
