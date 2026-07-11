@@ -1,6 +1,8 @@
 <!-- 系统配置 -->
 <template>
   <div class="fa-full-height">
+    <FaPageHeader title="参数配置" />
+    <div class="fa-management-page">
     <FaSearchBar
       v-show="showSearchBar"
       ref="searchBarRef"
@@ -110,10 +112,12 @@
       :page-data="data"
       :selection-data="selectedRows"
     />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
 import { useTable } from "@/hooks/core/useTable";
 import { useImportExport } from "@/hooks/core/useImportExport";
 import { useCrudDialog } from "@/hooks/core/useCrudDialog";

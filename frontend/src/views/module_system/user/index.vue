@@ -1,6 +1,8 @@
 ﻿<!-- 用户管理：左部门树 + 右 Art 表格 -->
 <template>
   <div class="fa-full-height user-manage-page">
+    <FaPageHeader title="用户管理" />
+    <div class="fa-management-page">
     <div
       class="user-manage-body box-border flex gap-4 h-full max-md:block max-md:gap-0 max-md:h-auto"
     >
@@ -179,10 +181,12 @@
       :page-data="data"
       :selection-data="selectedRows"
     />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
 defineOptions({
   name: "User",
   inheritAttrs: false,

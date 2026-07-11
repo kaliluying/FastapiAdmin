@@ -1,6 +1,8 @@
 <!-- 日志管理：登录日志 + 操作日志 -->
 <template>
   <div class="fa-full-height">
+    <FaPageHeader title="操作日志" />
+    <div class="fa-management-page">
     <ElTabs v-model="activeTab" type="card">
       <ElTabPane label="操作日志" name="operation">
         <FaSearchBar
@@ -181,10 +183,12 @@
         </FaDialog>
       </ElTabPane>
     </ElTabs>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
 import { h } from "vue";
 import { useTable } from "@/hooks/core/useTable";
 import { useImportExport } from "@/hooks/core/useImportExport";

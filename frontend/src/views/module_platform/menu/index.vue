@@ -1,6 +1,8 @@
 ﻿<!-- 菜单管理：Art + 树形表格；操作列最多 3 个外露，其余「更多」 -->
 <template>
   <div class="fa-full-height">
+    <FaPageHeader title="菜单管理" />
+    <div class="fa-management-page">
     <FaSearchBar
       v-show="showSearchBar"
       ref="searchBarRef"
@@ -335,10 +337,12 @@
         </FaForm>
       </template>
     </FaDrawer>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
 import { h } from "vue";
 defineOptions({
   name: "SysMenu",

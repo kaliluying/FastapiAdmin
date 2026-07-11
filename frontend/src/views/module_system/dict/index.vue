@@ -1,6 +1,8 @@
 <!-- 字典类型：Fa 布局；操作列最多 3 个外露 +「更多」 -->
 <template>
   <div class="fa-full-height">
+    <FaPageHeader title="字典管理" />
+    <div class="fa-management-page">
     <FaSearchBar
       v-show="showSearchBar"
       ref="searchBarRef"
@@ -125,10 +127,12 @@
       :dict-label="currentDictLabel"
       :dict-type-id="currentDictTypeId"
     />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
 import { h } from "vue";
 import { useTable } from "@/hooks/core/useTable";
 import { useImportExport } from "@/hooks/core/useImportExport";

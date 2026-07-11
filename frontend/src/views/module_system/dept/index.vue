@@ -1,6 +1,8 @@
 <!-- 部门配置：FA + 树形表格（对齐 system/menu 模版） -->
 <template>
   <div class="fa-full-height">
+    <FaPageHeader title="部门管理" />
+    <div class="fa-management-page">
     <FaSearchBar
       v-show="showSearchBar"
       ref="searchBarRef"
@@ -106,10 +108,12 @@
         </FaForm>
       </template>
     </FaDialog>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
 import { useTableColumns } from "@/hooks/core/useTableColumns";
 import { useCrudDialog } from "@/hooks/core/useCrudDialog";
 import { useTableSelection } from "@/hooks/core/useTableSelection";

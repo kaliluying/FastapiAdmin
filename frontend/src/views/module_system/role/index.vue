@@ -1,6 +1,8 @@
 <!-- 角色管理：Art + useTable；操作列最多 3 个外露 +「更多」 -->
 <template>
   <div class="fa-full-height">
+    <FaPageHeader title="角色管理" />
+    <div class="fa-management-page">
     <FaSearchBar
       v-show="showSearchBar"
       ref="searchBarRef"
@@ -151,10 +153,12 @@
       :page-data="data"
       :selection-data="selectedRows"
     />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
 import { h } from "vue";
 import { useTable } from "@/hooks/core/useTable";
 import { useImportExport } from "@/hooks/core/useImportExport";
