@@ -9,15 +9,14 @@
 
 // 引入 Element Plus 暗黑主题 CSS 变量
 @use "element-plus/theme-chalk/src/dark/css-vars.scss" as *;
+// 引入主题色 token 单一来源（与 element-plus-theme.scss 共用）
+@use "../core/fa-tokens" as *;
 
 // Quiet Operations dark surface tokens (explicit override for _dark.scss consumers)
 html.dark {
   --fa-color-surface-raised: #1b252c;
   --fa-color-border: #2c3941;
 }
-
-// 引入主题色 token 单一来源（与 element-plus-theme.scss 共用）
-@use "../core/fa-tokens" as *;
 
 $font-color: rgba(#fff, 0.85);
 
