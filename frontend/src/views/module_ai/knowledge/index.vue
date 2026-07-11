@@ -1,5 +1,6 @@
 <template>
   <div class="knowledge-page">
+    <FaAiPageHeader title="知识库管理" />
     <ElCard shadow="never">
       <div class="toolbar">
         <ElForm :inline="true" :model="query" class="query-form">
@@ -20,57 +21,63 @@
         <ElButton type="primary" :icon="Plus" @click="openCreate">新建</ElButton>
       </div>
 
-      <ElTable v-loading="loading" :data="rows" row-key="id" border>
-        <ElTableColumn prop="name" label="名称" min-width="180" show-overflow-tooltip />
-        <ElTableColumn prop="description" label="描述" min-width="220" show-overflow-tooltip />
-        <ElTableColumn prop="document_count" label="文档数" width="90" />
-        <ElTableColumn label="索引状态" min-width="210">
-          <template #default="{ row }">
-            <div class="index-status">
-              <ElTag type="success" effect="plain">成功 {{ row.indexed_document_count }}</ElTag>
-              <ElTag type="warning" effect="plain">处理中 {{ row.indexing_document_count }}</ElTag>
-              <ElTag type="danger" effect="plain">失败 {{ row.failed_document_count }}</ElTag>
-            </div>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="is_enabled" label="状态" width="90">
-          <template #default="{ row }">
-            <ElTag :type="row.is_enabled ? 'success' : 'info'">
-              {{ row.is_enabled ? "启用" : "停用" }}
-            </ElTag>
-          </template>
-        </ElTableColumn>
-        <ElTableColumn prop="created_time" label="创建时间" width="180" show-overflow-tooltip />
-        <ElTableColumn label="操作" width="360" fixed="right">
-          <template #default="{ row }">
-            <div class="action-buttons">
-              <ElButton class="action-button action-button-primary" type="primary" plain :icon="Upload" @click="goUploadDocuments(row)">
-                上传文档
-              </ElButton>
-              <ElButton class="action-button action-button-primary" type="primary" plain :icon="Document" @click="goViewDocuments(row)">
-                查看文档
-              </ElButton>
-              <ElButton class="action-button action-button-primary" type="primary" plain :icon="Search" @click="goRetrievalTest(row)">
-                检索测试
-              </ElButton>
-              <ElButton class="action-button" type="primary" plain :icon="EditPen" @click="openUpdate(row)">编辑</ElButton>
-              <ElButton class="action-button action-button-danger" type="danger" plain :icon="Delete" @click="remove(row)">
-                删除
-              </ElButton>
-            </div>
-          </template>
-        </ElTableColumn>
-      </ElTable>
-
-      <ElPagination
-        v-model:current-page="query.page_no"
-        v-model:page-size="query.page_size"
-        class="pagination"
-        layout="total, sizes, prev, pager, next"
-        :total="total"
-        @size-change="loadData"
-        @current-change="loadData"
+      <FaAsyncState
+        v-if="loading || loadError || (!loading && rows.length === 0)"
+        :state="loading ? 'loading' : loadError ? 'error' : 'empty'"
       />
+      <template v-else>
+        <ElTable :data="rows" row-key="id" border>
+          <ElTableColumn prop="name" label="名称" min-width="180" show-overflow-tooltip />
+          <ElTableColumn prop="description" label="描述" min-width="220" show-overflow-tooltip />
+          <ElTableColumn prop="document_count" label="文档数" width="90" />
+          <ElTableColumn label="索引状态" min-width="210">
+            <template #default="{ row }">
+              <div class="index-status">
+                <ElTag type="success" effect="plain">成功 {{ row.indexed_document_count }}</ElTag>
+                <ElTag type="warning" effect="plain">处理中 {{ row.indexing_document_count }}</ElTag>
+                <ElTag type="danger" effect="plain">失败 {{ row.failed_document_count }}</ElTag>
+              </div>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn prop="is_enabled" label="状态" width="90">
+            <template #default="{ row }">
+              <ElTag :type="row.is_enabled ? 'success' : 'info'">
+                {{ row.is_enabled ? "启用" : "停用" }}
+              </ElTag>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn prop="created_time" label="创建时间" width="180" show-overflow-tooltip />
+          <ElTableColumn label="操作" width="360" fixed="right">
+            <template #default="{ row }">
+              <div class="action-buttons">
+                <ElButton class="action-button action-button-primary" type="primary" plain :icon="Upload" @click="goUploadDocuments(row)">
+                  上传文档
+                </ElButton>
+                <ElButton class="action-button action-button-primary" type="primary" plain :icon="Document" @click="goViewDocuments(row)">
+                  查看文档
+                </ElButton>
+                <ElButton class="action-button action-button-primary" type="primary" plain :icon="Search" @click="goRetrievalTest(row)">
+                  检索测试
+                </ElButton>
+                <ElButton class="action-button" type="primary" plain :icon="EditPen" @click="openUpdate(row)">编辑</ElButton>
+                <ElButton class="action-button action-button-danger" type="danger" plain :icon="Delete" @click="remove(row)">
+                  删除
+                </ElButton>
+              </div>
+            </template>
+          </ElTableColumn>
+        </ElTable>
+
+        <ElPagination
+          v-model:current-page="query.page_no"
+          v-model:page-size="query.page_size"
+          class="pagination"
+          layout="total, sizes, prev, pager, next"
+          :total="total"
+          @size-change="loadData"
+          @current-change="loadData"
+        />
+      </template>
     </ElCard>
 
     <ElDialog v-model="dialogVisible" :title="editingId ? '编辑知识库' : '新建知识库'" width="560px">
@@ -99,11 +106,14 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from "elem
 import { Delete, Document, EditPen, Plus, Refresh, Search, Upload } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
 import KnowledgeAPI, { type KnowledgeBase, type KnowledgeBaseForm } from "@/api/module_ai/knowledge";
+import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
+import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 
 defineOptions({ name: "AiKnowledge" });
 
 const router = useRouter();
 const loading = ref(false);
+const loadError = ref(false);
 const saving = ref(false);
 const rows = ref<KnowledgeBase[]>([]);
 const total = ref(0);
@@ -131,11 +141,14 @@ const rules: FormRules = {
 
 const loadData = async () => {
   loading.value = true;
+  loadError.value = false;
   try {
     const res = await KnowledgeAPI.listKnowledgeBase({ ...query });
     const data = res.data?.data;
     rows.value = data?.items || [];
     total.value = data?.total || 0;
+  } catch {
+    loadError.value = true;
   } finally {
     loading.value = false;
   }
