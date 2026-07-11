@@ -36,3 +36,6 @@ export interface SessionDetail {
   message_count: number;
   messages: SessionMessage[];
 }
+
+// 工作区面板类型
+export type ChatWorkspacePanel = "sessions" | "conversation" | "evidence";

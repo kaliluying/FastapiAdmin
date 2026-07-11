@@ -1,7 +1,7 @@
 <template>
   <div class="fa-full-height">
     <ElContainer class="main-chat">
-      <ElAside class="sidebar-container" :class="{ collapsed: isSidebarCollapsed }">
+      <ElAside aria-label="会话列表" class="sidebar-container" :class="{ collapsed: isSidebarCollapsed }">
         <FaSidebar
           ref="sidebarRef"
           :current-session-id="currentSessionId"
@@ -11,7 +11,7 @@
           @delete-session="handleDeleteSession"
         />
       </ElAside>
-      <ElContainer class="chat-container">
+      <ElContainer aria-label="对话内容" class="chat-container">
         <ElHeader class="chat-header">
           <FaChatNavbar
             :connection-status="connectionStatus"
@@ -43,7 +43,21 @@
           />
         </ElFooter>
       </ElContainer>
+      <ElAside aria-label="回答依据" class="evidence-panel">
+        <FaAiProcessStatus :stage="processStage" />
+        <FaCitationList :citations="activeCitations" />
+      </ElAside>
     </ElContainer>
+    <!-- 移动端会话抽屉（≤768px 时使用） -->
+    <ElDrawer v-model="isMobileDrawerOpen" title="会话列表" direction="ltr" size="260px">
+      <FaSidebar
+        :current-session-id="currentSessionId"
+        :is-collapsed="false"
+        @select-session="handleSelectSession"
+        @new-session="handleNewSession"
+        @delete-session="handleDeleteSession"
+      />
+    </ElDrawer>
   </div>
 </template>
 
@@ -53,7 +67,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import AiChatAPI, { ChatSession } from "@/api/module_ai/chat";
 import KnowledgeAPI, { type KnowledgeBase } from "@/api/module_ai/knowledge";
@@ -63,6 +77,8 @@ import FaSidebar from "./components/FaSidebar.vue";
 import FaChatNavbar from "./components/FaChatNavbar.vue";
 import FaChatMessages from "./components/FaChatMessages.vue";
 import FaChatInput from "./components/FaChatInput.vue";
+import FaAiProcessStatus from "@/views/module_ai/components/FaAiProcessStatus.vue";
+import FaCitationList from "@/views/module_ai/components/FaCitationList.vue";
 
 // 状态
 const messages = ref<ChatMessage[]>([]);
@@ -78,6 +94,17 @@ const selectedKnowledgeBaseIds = ref<number[]>([]);
 // Refs
 const chatMessagesRef = ref<{ scrollToBottom: () => void }>();
 const sidebarRef = ref<{ loadSessions: () => void }>();
+
+// 回答依据面板
+const activeCitations = ref<{ id: string; title: string; snippet?: string }[]>([]);
+const processStage = computed((): "idle" | "retrieving" | "reranking" | "generating" | "complete" | "error" => {
+  if (error.value) return "error";
+  if (sending.value) return "generating";
+  return "idle";
+});
+
+// 移动端抽屉
+const isMobileDrawerOpen = ref(false);
 
 // WebSocket
 let ws: WebSocket | null = null;
@@ -382,6 +409,26 @@ onUnmounted(disconnectWebSocket);
     padding: 0;
     background: linear-gradient(180deg, rgb(248 251 255 / 78%), rgb(238 244 251 / 96%));
     border-top: 1px solid rgb(23 32 51 / 7%);
+  }
+
+  .evidence-panel {
+    width: 240px;
+    background: rgb(255 255 255 / 60%);
+    border-left: 1px solid rgb(23 32 51 / 7%);
+    overflow-y: auto;
+    padding: 12px;
+  }
+
+  @media (max-width: 1024px) {
+    .evidence-panel {
+      display: none;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .sidebar-container {
+      display: none;
+    }
   }
 }
 </style>
