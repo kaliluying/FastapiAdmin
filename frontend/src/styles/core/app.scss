@@ -230,6 +230,16 @@
   background-color: var(--default-box-color);
 }
 
+// 管理页容器：作为 `.fa-full-height` 与 `.fa-table-card` 之间的 flex 中间层。
+// 缺失此定义时它默认 display:block，会截断 flex 链，使 `.fa-table-card` 的 flex:1 失效、表格区高度塌陷为 0。
+.fa-management-page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
 // 表格卡片：与 FaTableHeader + FaTable 组成纵向 flex，表格区 flex 填满、分页在表格正下方
 .fa-table-card {
   display: flex;

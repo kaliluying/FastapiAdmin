@@ -34,10 +34,6 @@ class MenuCreateSchema(BaseModel):
     parent_id: int | None = Field(default=None, ge=1, description="父菜单ID")
     status: int = Field(default=0, ge=0, le=1, description="状态(0:启动 1:停用)")
     description: str | None = Field(default=None, max_length=255, description="描述")
-    client: Literal["pc", "app"] = Field(
-        default="pc",
-        description="终端(pc:管理端桌面 app:移动端)",
-    )
     link: str | None = Field(default=None, max_length=500, description="外链地址(仅type=4)")
     is_iframe: bool = Field(default=False, description="是否嵌入iframe")
     is_hide_tab: bool = Field(default=False, description="是否隐藏标签页")
@@ -82,9 +78,6 @@ class MenuCreateSchema(BaseModel):
                 if k in values and isinstance(values[k], str):
                     stripped = values[k].strip()
                     values[k] = stripped or None
-            if "client" in values and isinstance(values["client"], str):
-                cv = values["client"].strip()
-                values["client"] = cv if cv in ("pc", "app") else "pc"
             if values.get("scope") == "tenant":
                 values["scope"] = "single_org"
             if "parent_id" in values and isinstance(values["parent_id"], str):
@@ -133,7 +126,6 @@ class MenuUpdateSchema(BaseModel):
     parent_id: int | None = Field(default=None, ge=1, description="父菜单ID")
     status: int | None = Field(default=None, ge=0, le=1, description="状态(0:启动 1:停用)")
     description: str | None = Field(default=None, max_length=255, description="描述")
-    client: Literal["pc", "app"] | None = Field(default=None, description="终端(pc:管理端桌面 app:移动端)")
     link: str | None = Field(default=None, max_length=500, description="外链地址(仅type=4)")
     is_iframe: bool | None = Field(default=None, description="是否嵌入iframe")
     is_hide_tab: bool | None = Field(default=None, description="是否隐藏标签页")
@@ -181,9 +173,6 @@ class MenuUpdateSchema(BaseModel):
                 if k in values and isinstance(values[k], str):
                     stripped = values[k].strip()
                     values[k] = stripped or None
-            if "client" in values and isinstance(values["client"], str):
-                cv = values["client"].strip()
-                values["client"] = cv if cv in ("pc", "app") else None
             if values.get("scope") == "tenant":
                 values["scope"] = "single_org"
             if "parent_id" in values and isinstance(values["parent_id"], str):
@@ -228,15 +217,10 @@ class MenuQueryParam(BaseQueryParam):
     permission: str | None = Query(None, description="权限标识")
     description: str | None = Query(None, description="描述")
     status: int | None = Query(None, description="是否启用")
-    menu_client: Literal["pc", "app"] | None = Query(
-        None,
-        description="管理端 Tab：pc=桌面端菜单 app=移动端菜单；不传则不过滤终端",
-    )
     scope: Literal["single_org"] | None = Query(
         None,
         description="菜单范围过滤：single_org=内部可用菜单",
     )
-    client: str | None = field(init=False, default=None)
 
     def __post_init__(self) -> None:
         if self.name:
@@ -251,9 +235,6 @@ class MenuQueryParam(BaseQueryParam):
             self.description = (QueueEnum.like.value, self.description)
         if self.status:
             self.status = (QueueEnum.eq.value, self.status)
-        if self.menu_client in ("pc", "app"):
-            self.client = (QueueEnum.eq.value, self.menu_client)
-        del self.menu_client
         if self.scope == "single_org":
             self.scope = (QueueEnum.eq.value, "single_org")
 

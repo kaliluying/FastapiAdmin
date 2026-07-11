@@ -55,7 +55,6 @@ export default MenuAPI;
 
 export interface MenuPageQuery extends BaseQueryParams {
   name?: string;
-  menu_client?: "pc" | "app";
   status?: number;
   type?: number;
   permission?: string;
@@ -84,7 +83,6 @@ export interface MenuTable extends BaseType {
   params?: { key: string; value: string }[];
   affix?: boolean;
   children?: MenuTable[];
-  client?: "pc" | "app";
   link?: string;
   is_iframe?: boolean;
   is_hide_tab?: boolean;
@@ -113,7 +111,6 @@ export interface MenuForm extends BaseFormType {
   title?: string;
   params?: KeyValue[];
   affix?: boolean;
-  client?: "pc" | "app";
   link?: string;
   is_iframe?: boolean;
   is_hide_tab?: boolean;

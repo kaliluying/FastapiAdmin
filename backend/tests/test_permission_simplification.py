@@ -51,7 +51,6 @@ def _menu(**overrides):
         "route_path": "user",
         "component_path": "module_system/user/index",
         "title": "用户管理",
-        "client": "pc",
         "scope": "single_org",
         "status": 0,
         "parent_id": None,

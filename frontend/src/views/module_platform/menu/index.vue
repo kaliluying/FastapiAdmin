@@ -20,11 +20,6 @@
       @reset="onResetSearch"
     />
 
-    <ElTabs v-model="menuClientTab" @tab-change="handleMenuClientTabChange">
-      <ElTabPane label="PC 桌面菜单管理" name="pc" />
-      <ElTabPane label="APP 移动端菜单管理" name="app" />
-    </ElTabs>
-
     <ElCard
       shadow="hover"
       class="fa-table-card"
@@ -90,15 +85,6 @@
             <FaStatusTag v-if="row?.type === MenuTypeEnum.MENU" type="success" label="菜单" />
             <FaStatusTag v-if="row?.type === MenuTypeEnum.BUTTON" type="danger" label="按钮" />
             <FaStatusTag v-if="row?.type === MenuTypeEnum.EXTLINK" type="info" label="外链" />
-          </template>
-          <template #client="{ row }">
-            <FaStatusTag v-if="row?.client === MenuClientEnum.PC" type="primary" label="PC" />
-            <FaStatusTag
-              v-else-if="row?.client === MenuClientEnum.APP"
-              type="success"
-              label="APP"
-            />
-            <FaStatusTag v-else type="info" :label="(row as unknown as MenuTable)?.client || '—'" />
           </template>
           <template #icon="{ row }">
             <template v-if="row?.icon">
@@ -170,17 +156,6 @@
                 外链
               </ElRadio>
             </ElRadioGroup>
-          </template>
-
-          <!-- 终端(禁用态+提示) -->
-          <template #client>
-            <ElRadioGroup v-model="formData.client" :disabled="createParentLocked">
-              <ElRadio :value="MenuClientEnum.PC">PC 桌面</ElRadio>
-              <ElRadio :value="MenuClientEnum.APP">APP 移动</ElRadio>
-            </ElRadioGroup>
-            <ElText v-if="createParentLocked" type="info" size="small" class="block mt-1">
-              子级终端与父菜单一致
-            </ElText>
           </template>
 
           <!-- 外链地址 -->
@@ -358,7 +333,7 @@ import MenuAPI, {
   type MenuPageQuery,
   type MenuTable,
 } from "@/api/module_platform/menu";
-import { MenuClientEnum, MenuTypeEnum } from "@/enums/system/menu.enum";
+import { MenuTypeEnum } from "@/enums/system/menu.enum";
 import { formatTree } from "@utils/common";
 import { useAuth } from "@/hooks/core/useAuth";
 import { renderTableOperationCell, type TableOperationAction, resolveStatusColumns } from "@utils";
@@ -440,7 +415,6 @@ function formatMenuOperationCell(row: MenuTable, ctx: Parameters<typeof buildMen
   });
 }
 
-const menuClientTab = ref<"pc" | "app">("pc");
 const searchForm = ref<MenuSearchForm>({
   name: undefined,
   status: undefined,
@@ -503,7 +477,6 @@ const menuDetailItems: import("@/components/others/fa-descriptions/index.vue").D
     { label: "编号", prop: "id" },
     { label: "菜单名称", prop: "name" },
     { label: "菜单类型", prop: "type", slot: "type" },
-    { label: "终端", prop: "client", slot: "client" },
     {
       label: "可见范围",
       prop: "scope",
@@ -660,7 +633,6 @@ const menuDialogFormItems = computed<FormItem[]>(() => {
       type: "input",
       hidden: t !== MenuTypeEnum.MENU,
     },
-    { key: "client", label: "终端", type: "input" },
     {
       key: "scope",
       label: "可见范围",
@@ -731,7 +703,6 @@ const formData = ref<MenuForm>({
   status: 0,
   scope: "single_org",
   description: undefined,
-  client: MenuClientEnum.PC,
 });
 
 const dialogVisible = reactive({
@@ -785,7 +756,6 @@ async function loadMenuData() {
   try {
     const res = await MenuAPI.listMenu({
       ...buildMenuListQuery(searchForm.value),
-      menu_client: menuClientTab.value,
     });
     const tree = res.data.data || [];
     fullMenuTree.value = tree;
@@ -796,11 +766,6 @@ async function loadMenuData() {
   } finally {
     loading.value = false;
   }
-}
-
-function handleMenuClientTabChange(name: string | number) {
-  menuClientTab.value = name === "app" ? "app" : "pc";
-  void loadMenuData();
 }
 
 async function handleSearchBarSearch(params: MenuSearchForm) {
@@ -897,16 +862,6 @@ const { columnChecks, columns } = useTableColumns<MenuTable>(
         2: { type: "success", text: "菜单" },
         3: { type: "danger", text: "按钮" },
         4: { type: "info", text: "外链" },
-      },
-    },
-    {
-      prop: "client",
-      label: "终端",
-      width: 88,
-      align: "center",
-      status: {
-        pc: { type: "primary", text: "PC" },
-        app: { type: "success", text: "APP" },
       },
     },
     {
@@ -1036,7 +991,6 @@ const rules = reactive({
   hidden: [{ required: true, message: "请选择是否隐藏", trigger: "change" }],
   always_show: [{ required: true, message: "请选择始终显示", trigger: "change" }],
   status: [{ required: true, message: "请选择状态", trigger: "change" }],
-  client: [{ required: true, message: "请选择终端", trigger: "change" }],
   redirect: [
     {
       validator: (_rule: unknown, value: string | undefined, callback: (e?: Error) => void) => {
@@ -1081,7 +1035,6 @@ const initialFormData: MenuForm = {
   show_text_badge: undefined,
   status: 0,
   description: undefined,
-  client: MenuClientEnum.PC,
   scope: "single_org",
 };
 
@@ -1146,15 +1099,12 @@ async function handleOpenDialog(
     menuFormRenderKey.value += 1;
     if (parentRow?.id != null) {
       formData.value.parent_id = parentRow.id;
-      formData.value.client = (parentRow.client as MenuClientEnum) || menuClientTab.value;
       if (parentRow.type === MenuTypeEnum.MENU) {
         createParentLocked.value = true;
         formData.value.type = MenuTypeEnum.BUTTON;
       } else if (parentRow.type === MenuTypeEnum.CATALOG) {
         formData.value.type = MenuTypeEnum.MENU;
       }
-    } else {
-      formData.value.client = menuClientTab.value;
     }
   }
   dialogVisible.visible = true;

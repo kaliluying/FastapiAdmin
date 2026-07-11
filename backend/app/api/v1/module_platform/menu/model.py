@@ -42,7 +42,6 @@ class MenuModel(ModelMixin):
     title: Mapped[str | None] = mapped_column(String(50), comment="菜单标题")
     params: Mapped[list[dict[str, str]] | None] = mapped_column(JSON, comment="路由参数(JSON对象)")
     affix: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, comment="是否固定标签页(True:是 False:否)")
-    client: Mapped[str] = mapped_column(String(20), nullable=False, default="pc", server_default="pc", comment="终端(pc:管理端桌面 app:移动端)")
     link: Mapped[str | None] = mapped_column(String(500), comment="外链地址(仅type=4)")
     is_iframe: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, comment="是否嵌入iframe(True:是 False:否)")
     is_hide_tab: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, comment="是否隐藏标签页(True:是 False:否)")

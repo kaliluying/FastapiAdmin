@@ -262,10 +262,6 @@ def menu_request_validator(data: Any) -> Any:
     if data.type == 4 and not getattr(data, "link", None):
         raise CustomException(code=RET.ERROR.code, msg="外链类型必须填写链接地址")
 
-    c = getattr(data, "client", None) or "pc"
-    if c not in ("pc", "app"):
-        raise CustomException(code=RET.ERROR.code, msg="终端 client 仅允许 pc 或 app")
-
     return data
 
 
