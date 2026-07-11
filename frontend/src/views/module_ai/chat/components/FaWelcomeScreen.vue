@@ -124,8 +124,8 @@ const handlePromptClick = (prompt: string) => {
   justify-content: center;
   width: 42px;
   height: 42px;
-  color: #4070d8;
-  background: rgb(255 255 255 / 86%);
+  color: var(--el-color-primary);
+  background: var(--default-box-color);
   border: 1px solid rgb(93 135 255 / 18%);
   box-shadow: 0 16px 42px rgb(93 135 255 / 20%);
 }
@@ -151,7 +151,7 @@ const handlePromptClick = (prompt: string) => {
   font-size: 28px;
   font-weight: 760;
   line-height: 1.2;
-  color: #172033;
+  color: var(--el-text-color-primary);
 }
 
 .welcome-heading p {
@@ -159,7 +159,7 @@ const handlePromptClick = (prompt: string) => {
   margin: 6px auto 0;
   font-size: 14px;
   line-height: 1.55;
-  color: #667085;
+  color: var(--el-text-color-secondary);
 }
 
 .example-prompts {
@@ -171,19 +171,19 @@ const handlePromptClick = (prompt: string) => {
 
 .prompt-card {
   position: relative;
+  box-sizing: border-box;
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr);
   gap: 12px;
-  box-sizing: border-box;
   min-height: 76px;
   padding: 14px 16px;
   overflow: visible;
   text-align: left;
   cursor: pointer;
-  background: rgb(255 255 255 / 88%);
-  border: 1px solid rgb(23 32 51 / 8%);
+  background: var(--default-box-color);
+  border: 1px solid var(--fa-card-border);
   border-radius: 8px;
-  box-shadow: 0 10px 26px rgb(23 32 51 / 6%);
+  box-shadow: var(--fa-soft-shadow);
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -217,7 +217,7 @@ const handlePromptClick = (prompt: string) => {
   height: 32px;
   font-size: 18px;
   color: var(--prompt-color);
-  background: color-mix(in srgb, var(--prompt-color) 12%, white);
+  background: color-mix(in srgb, var(--prompt-color) 12%, var(--default-box-color));
   border-radius: 8px;
 }
 
@@ -225,14 +225,14 @@ const handlePromptClick = (prompt: string) => {
   margin: 0 0 4px;
   font-size: 14px;
   font-weight: 720;
-  color: #172033;
+  color: var(--el-text-color-primary);
 }
 
 .prompt-card p {
   margin: 0;
   font-size: 12px;
   line-height: 1.4;
-  color: #667085;
+  color: var(--el-text-color-secondary);
 }
 
 .prompt-card--blue {

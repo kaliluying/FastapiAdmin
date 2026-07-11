@@ -27,6 +27,3 @@ export { useChart, useChartComponent, useChartOps } from "./core/useChart";
 
 // 布局高度
 export { useLayoutHeight, useAutoLayoutHeight } from "./core/useLayoutHeight";
-
-// AI 相关
-export { useAiAction } from "./ai/useAiAction";

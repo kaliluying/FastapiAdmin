@@ -39,6 +39,17 @@ class InterceptHandler(logging.Handler):
 
 def setup_logger() -> None:
     LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Windows 控制台默认 GBK，写入 emoji（如 ⏭ ✅ 🚀）会触发 UnicodeEncodeError。
+    # 将标准输出/错误流重配为 UTF-8（errors="replace" 兜底不可编码字符）。
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
     logger.remove()
     logger.configure(patcher=_context_patcher)
 

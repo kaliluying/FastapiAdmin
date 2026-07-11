@@ -121,36 +121,6 @@
           </template>
         </ElDropdown>
 
-        <!-- 聊天按钮 -->
-        <FaIconButton
-          v-if="shouldShowChat"
-          icon="ri:message-3-line"
-          class="chat-button relative"
-          @click="openChat"
-        >
-          <div class="breathing-dot absolute top-2 right-2 size-1.5 bg-success! rounded-full"></div>
-        </FaIconButton>
-
-        <!-- 设置按钮 -->
-        <div v-if="shouldShowSettings">
-          <ElPopover :visible="false" placement="bottom-start" :width="190" :offset="0">
-            <template #reference>
-              <div class="flex items-center justify-center">
-                <FaIconButton icon="ri:settings-line" class="setting-btn" @click="openSetting" />
-              </div>
-            </template>
-            <template #default>
-              <p>
-                {{ $t("topBar.guide.title") }}
-                <span :style="{ color: systemThemeColor }">{{ $t("topBar.guide.theme") }}</span>
-                、
-                <span :style="{ color: systemThemeColor }">{{ $t("topBar.guide.menu") }}</span>
-                {{ $t("topBar.guide.description") }}
-              </p>
-            </template>
-          </ElPopover>
-        </div>
-
         <!-- 主题切换按钮 -->
         <FaIconButton
           v-if="shouldShowThemeToggle"
@@ -215,14 +185,12 @@ const {
   shouldShowBreadcrumb,
   shouldShowGlobalSearch,
   shouldShowFullscreen,
-    shouldShowChat,
   shouldShowLanguage,
-  shouldShowSettings,
   shouldShowThemeToggle,
   shouldShowSizeSelect,
 } = useHeaderBar();
 
-const { menuOpen, systemThemeColor, showSettingGuide, menuType, isDark, tabStyle, showAppLogo } =
+const { menuOpen, menuType, isDark, tabStyle, showAppLogo } =
   storeToRefs(settingStore);
 
 const { language } = storeToRefs(userStore);
@@ -239,7 +207,6 @@ const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
 
 onMounted(() => {
   initLanguage();
-  settingStore.hideSettingGuide();
 });
 
 
@@ -296,30 +263,10 @@ const changeLanguage = (lang: LanguageEnum): void => {
 };
 
 /**
- * 打开设置面板
- */
-const openSetting = (): void => {
-  mittBus.emit("openSetting");
-
-  // 隐藏设置引导提示
-  if (showSettingGuide.value) {
-    settingStore.hideSettingGuide();
-  }
-};
-
-/**
  * 打开全局搜索对话框
  */
 const openSearchDialog = (): void => {
   mittBus.emit("openSearchDialog");
-};
-
-
-/**
- * 打开聊天窗口
- */
-const openChat = (): void => {
-  mittBus.emit("openChat");
 };
 </script>
 
@@ -361,28 +308,6 @@ html.dark .relative.box-border {
 
   100% {
     transform: rotate(180deg);
-  }
-}
-
-@keyframes shake {
-  0% {
-    transform: rotate(0);
-  }
-
-  25% {
-    transform: rotate(-5deg);
-  }
-
-  50% {
-    transform: rotate(5deg);
-  }
-
-  75% {
-    transform: rotate(-5deg);
-  }
-
-  100% {
-    transform: rotate(0);
   }
 }
 
@@ -428,23 +353,6 @@ html.dark .relative.box-border {
   }
 }
 
-@keyframes breathing {
-  0% {
-    opacity: 0.4;
-    transform: scale(0.9);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-
-  100% {
-    opacity: 0.4;
-    transform: scale(0.9);
-  }
-}
-
 /* Hover animation classes */
 .refresh-btn:hover :deep(.fa-svg-icon) {
   animation: rotate180 0.5s;
@@ -461,7 +369,7 @@ html.dark .relative.box-border {
 }
 
 #app-header-toolbar :deep(.fa-icon-button:hover) {
-  background: color-mix(in srgb, var(--theme-color) 8%, white);
+  background: color-mix(in srgb, var(--theme-color) 8%, var(--default-box-color));
   transform: translateY(-1px);
 }
 
@@ -471,18 +379,16 @@ html.dark .relative.box-border {
 }
 
 .language-btn,
-.setting-btn,
 .full-screen-btn,
-.exit-full-screen-btn,
-.chat-button {
+.exit-full-screen-btn {
   border: 1px solid transparent;
 }
 
 #app-header-toolbar .flex.items-center.justify-between {
-  background: color-mix(in srgb, white 84%, var(--default-bg-color));
-  border: 1px solid rgb(11 18 32 / 8%);
+  background: color-mix(in srgb, var(--default-box-color) 84%, var(--default-bg-color));
+  border: 1px solid var(--fa-card-border);
   border-radius: 8px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
 }
 
 #app-header-toolbar .flex.items-center.justify-between:hover {
@@ -491,10 +397,6 @@ html.dark .relative.box-border {
 
 .language-btn:hover :deep(.fa-svg-icon) {
   animation: moveUp 0.4s;
-}
-
-.setting-btn:hover :deep(.fa-svg-icon) {
-  animation: rotate180 0.5s;
 }
 
 .full-screen-btn:hover :deep(.fa-svg-icon) {
@@ -507,15 +409,6 @@ html.dark .relative.box-border {
 
 .exit-full-screen-btn:hover :deep(.fa-svg-icon) {
   animation: shrink 0.6s forwards;
-}
-
-.chat-button:hover :deep(.fa-svg-icon) {
-  animation: shake 0.5s ease-in-out;
-}
-
-/* Breathing animation for chat dot */
-.breathing-dot {
-  animation: breathing 1.5s ease-in-out infinite;
 }
 
 /* iPad breakpoint adjustments */

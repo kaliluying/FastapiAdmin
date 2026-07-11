@@ -250,9 +250,9 @@ const formatFileSize = (bytes: number): string => {
         width: 100%;
         max-width: 720px;
         margin-bottom: 10px;
+        background: var(--el-fill-color-light);
         border: 1px solid var(--el-border-color-lighter);
         border-radius: 6px;
-        background: rgb(23 32 51 / 3%);
       }
 
       .thinking-toggle {

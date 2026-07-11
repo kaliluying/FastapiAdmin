@@ -366,11 +366,11 @@ onUnmounted(disconnectWebSocket);
   height: 100%;
   overflow: hidden;
   background:
-    radial-gradient(circle at 55% 0%, rgb(93 135 255 / 10%), transparent 32%),
-    linear-gradient(180deg, #f8fbff, #eef4fb);
-  border: 1px solid rgb(23 32 51 / 8%);
+    radial-gradient(circle at 55% 0%, color-mix(in srgb, var(--theme-color) 10%, transparent), transparent 32%),
+    var(--default-box-color);
+  border: 1px solid var(--fa-card-border);
   border-radius: 8px;
-  box-shadow: 0 12px 32px rgb(23 32 51 / 8%);
+  box-shadow: var(--fa-panel-shadow);
 
   /* 与右侧同一表面色；与内容区的分界交给 Sidebar 的竖线即可 */
   .sidebar-container {
@@ -393,8 +393,8 @@ onUnmounted(disconnectWebSocket);
   .chat-header {
     height: auto;
     padding: 0;
-    background: rgb(255 255 255 / 78%);
-    border-bottom: 1px solid rgb(23 32 51 / 7%);
+    background: color-mix(in srgb, var(--default-box-color) 78%, transparent);
+    border-bottom: 1px solid var(--fa-card-border);
     backdrop-filter: blur(10px);
   }
 
@@ -407,25 +407,25 @@ onUnmounted(disconnectWebSocket);
     height: auto;
     min-height: 80px;
     padding: 0;
-    background: linear-gradient(180deg, rgb(248 251 255 / 78%), rgb(238 244 251 / 96%));
-    border-top: 1px solid rgb(23 32 51 / 7%);
+    background: color-mix(in srgb, var(--default-box-color) 88%, transparent);
+    border-top: 1px solid var(--fa-card-border);
   }
 
   .evidence-panel {
     width: 240px;
-    background: rgb(255 255 255 / 60%);
-    border-left: 1px solid rgb(23 32 51 / 7%);
-    overflow-y: auto;
     padding: 12px;
+    overflow-y: auto;
+    background: color-mix(in srgb, var(--default-box-color) 60%, transparent);
+    border-left: 1px solid var(--fa-card-border);
   }
 
-  @media (max-width: 1024px) {
+  @media (width <= 1024px) {
     .evidence-panel {
       display: none;
     }
   }
 
-  @media (max-width: 768px) {
+  @media (width <= 768px) {
     .sidebar-container {
       display: none;
     }

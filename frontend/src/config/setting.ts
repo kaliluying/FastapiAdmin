@@ -13,11 +13,8 @@
  *
  * ## 注意事项
  *
- * 1. 修改此文件的配置项时，需要同步更新以下文件：
- *    - src/components/layouts/fa-settings-panel/widgets/SettingActions.vue（复制配置和重置配置逻辑）
- *    - src/store/modules/setting.ts（Store 状态定义）
- * 2. 可以通过设置面板的"复制配置"按钮快速生成配置代码
- * 3. 枚举类型的值需要与 src/enums/appEnum.ts 中的定义保持一致
+ * 设置面板 UI 已移除。改默认值请改本文件或 setting.store 持久化项。
+ * 枚举类型的值需要与 src/enums/appEnum.ts 中的定义保持一致。
  */
 
 import AppConfig from "@/config";
@@ -36,8 +33,6 @@ export const SETTING_DEFAULT_CONFIG = {
   title: "FastAPI Admin",
   /** 系统版本 */
   version: pkg.version as string,
-  /** 是否显示设置按钮 */
-  showSettings: true,
   /** 是否显示菜单搜索 */
   showMenuSearch: true,
   /** 是否显示全屏按钮 */
@@ -72,8 +67,6 @@ export const SETTING_DEFAULT_CONFIG = {
   guideVisible: false,
   /** 是否启动引导 */
   showGuide: true,
-  /** 是否开启AI助手 */
-  aiEnabled: false,
   /** 是否开启灰色模式 */
   grayMode: false,
   /** 页面切换动画 */
@@ -106,8 +99,6 @@ export const SETTING_DEFAULT_CONFIG = {
   showLanguage: true,
   /** 是否显示进度条 */
   showNprogress: true,
-  /** 是否显示设置引导 */
-  showSettingGuide: false,
   /** 是否显示节日文本 */
   showFestivalText: false,
   /** 是否显示水印（新版本字段） */

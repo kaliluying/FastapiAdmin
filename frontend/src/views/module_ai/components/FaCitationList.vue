@@ -8,7 +8,7 @@
           <button
             type="button"
             class="fa-citation-item__expand"
-            :aria-expanded="String(expandedIds.has(citation.id))"
+            :aria-expanded="expandedIds.has(citation.id) ? 'true' : 'false'"
             :aria-label="`展开引用: ${citation.title}`"
             @click="toggleExpand(citation.id)"
           >

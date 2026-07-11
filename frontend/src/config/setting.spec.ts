@@ -62,6 +62,5 @@ describe("brand and setting defaults", () => {
     expect(SETTING_DEFAULT_CONFIG.menuThemeType).toBe(MenuThemeEnum.DARK);
     expect(SETTING_DEFAULT_CONFIG.showWatermark).toBe(false);
     expect(SETTING_DEFAULT_CONFIG.watermarkVisible).toBe(false);
-    expect(SETTING_DEFAULT_CONFIG.aiEnabled).toBe(false);
   });
 });

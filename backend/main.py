@@ -83,6 +83,80 @@ def run(
 
 
 @fastapiadmin_cli.command(
+    name="reset",
+    help="删除所有表并重建 + 写入种子数据（危险操作）, 运行 python main.py reset --env=dev",
+)
+def reset(
+    env: Annotated[
+        EnvironmentEnum, typer.Option("--env", help="运行环境 (dev, prod)")
+    ] = EnvironmentEnum.DEV,
+    yes: Annotated[
+        bool, typer.Option("--yes", "-y", help="跳过确认，直接执行")
+    ] = False,
+) -> None:
+    """
+    删除全部 ORM 表并重建结构，然后写入基础种子数据。
+
+    单进程内导入 initialize（注册全部模型到 metadata），依次执行
+    drop_all → create_all → 种子导入，避免分步执行时元数据不完整。
+
+    参数:
+    - env (EnvironmentEnum): 运行环境，对应 `--env`。
+    - yes (bool): 跳过交互式确认，对应 `--yes/-y`。
+
+    返回:
+    - None
+    """
+    os.environ["ENVIRONMENT"] = env.value
+    from app.config.setting import get_settings
+
+    get_settings.cache_clear()
+
+    if not yes:
+        confirm = typer.confirm(
+            f"⚠️  将删除 {env.value} 环境数据库的所有表并重建，数据不可恢复，确认继续？"
+        )
+        if not confirm:
+            typer.echo("已取消")
+            raise typer.Exit(code=1)
+
+    import asyncio
+
+    from sqlalchemy import text
+
+    # 导入 initialize 会注册全部模型到 metadata（create_all 依赖完整元数据）
+    from app.core.database import async_engine
+    from app.scripts.initialize import InitializeData
+
+    async def _reset() -> None:
+        # 表间存在循环外键（sys_dept 自引用、UserMixin 审计列指向 sys_user），
+        # SQLAlchemy 的 metadata.drop_all 在 Python 端拓扑排序阶段即失败，
+        # 无法到达 SQL 执行。改为关闭外键检查后，从 information_schema 读取
+        # 当前库的所有表名并逐个 DROP，彻底绕过排序。
+        async with async_engine.begin() as conn:
+            db_name = (await conn.execute(text("SELECT DATABASE()"))).scalar()
+            rows = await conn.execute(
+                text(
+                    "SELECT table_name FROM information_schema.tables "
+                    "WHERE table_schema = :db"
+                ),
+                {"db": db_name},
+            )
+            tables = [row[0] for row in rows]
+            await conn.execute(text("SET FOREIGN_KEY_CHECKS = 0"))
+            for table in tables:
+                await conn.execute(text(f"DROP TABLE IF EXISTS `{table}`"))
+            await conn.execute(text("SET FOREIGN_KEY_CHECKS = 1"))
+        await InitializeData().init_db()
+
+    asyncio.run(_reset())
+    typer.secho(
+        message="数据库已重置并写入种子数据",
+        fg=typer.colors.GREEN,
+    )
+
+
+@fastapiadmin_cli.command(
     name="revision",
     help="生成新的 Alembic 迁移脚本, 运行 python main.py revision --env=dev",
 )

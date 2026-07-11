@@ -584,9 +584,7 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
   position: relative;
   padding: 20px 20px 8px;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 96%) 0%, rgb(248 251 255 / 98%) 100%),
-    var(--default-box-color);
+  background: var(--default-box-color);
   border: 1px solid var(--fa-card-border);
   border-radius: 8px;
   box-shadow: var(--fa-panel-shadow) !important;
@@ -616,7 +614,7 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
 
   :deep(.el-input__wrapper),
   :deep(.el-select__wrapper) {
-    background: #fff !important;
+    background: var(--default-box-color) !important;
   }
 
   .action-column {
@@ -636,7 +634,7 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
       gap: 10px;
 
       .reset-button {
-        background: #fff;
+        background: var(--default-box-color);
         border-color: var(--fa-card-border);
       }
 
@@ -655,7 +653,7 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
       line-height: 32px;
       color: var(--el-text-color-secondary);
       cursor: pointer;
-      background: color-mix(in srgb, var(--theme-color) 6%, white);
+      background: color-mix(in srgb, var(--theme-color) 6%, var(--default-box-color));
       border: 1px solid color-mix(in srgb, var(--theme-color) 14%, var(--fa-card-border));
       border-radius: 8px;
       transition:
@@ -665,7 +663,7 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
 
       &:hover {
         color: var(--ElColor-primary);
-        background: color-mix(in srgb, var(--theme-color) 10%, white);
+        background: color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color));
         border-color: color-mix(in srgb, var(--theme-color) 32%, var(--fa-card-border));
       }
 

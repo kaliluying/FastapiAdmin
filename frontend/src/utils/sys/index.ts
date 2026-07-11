@@ -35,9 +35,7 @@ export function printConsoleBanner(): void {
 
 type SysEvents = {
   triggerFireworks: string | undefined;
-  openSetting: void;
   openSearchDialog: void;
-  openChat: void;
   openLockScreen: void;
 };
 

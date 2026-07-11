@@ -9,19 +9,14 @@
   >
     <div class="wh-full">
       <RouterView></RouterView>
-
-      <!-- AI 助手 -->
-      <AiAssistant v-if="enableAiAssistant" />
     </div>
   </ElConfigProvider>
 </template>
 
 <script setup lang="ts">
 import { computed, onBeforeMount, onMounted, onUnmounted } from "vue";
-import { useAppStore, useUserStore } from "./store";
-import { useSettingsStore } from "./store/modules/setting.store";
+import { useAppStore } from "./store";
 import { ComponentSize } from "./enums/settings/layout.enum";
-import AiAssistant from "./components/others/fa-ai-assistant/index.vue";
 import { toggleTransition } from "./utils/ui";
 import { initializeTheme } from "./hooks/core/useTheme";
 import { useAppBootstrap } from "@/hooks/core/useAppBootstrap";
@@ -30,8 +25,6 @@ import zhCn from "element-plus/es/locale/lang/zh-cn";
 import { router } from "@/router";
 
 const appStore = useAppStore();
-const settingsStore = useSettingsStore();
-const userStore = useUserStore();
 
 const size = computed(() => appStore.size as ComponentSize);
 
@@ -40,14 +33,8 @@ const locale = computed(() => {
   return appStore.language === "en" ? en : zhCn;
 });
 
-// 只有在启用 AI 助手且用户已登录时才显示
-const enableAiAssistant = computed(() => {
-  const isEnabled = settingsStore.userEnableAi;
-  const isLoggedIn = userStore.basicInfo && Object.keys(userStore.basicInfo).length > 0;
-  return isEnabled && isLoggedIn;
-});
-
 // 水印文字默认使用当前主题色（半透明），随主题色设置变化
+
 
 /**
  * 应用根组件生命周期：

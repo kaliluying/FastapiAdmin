@@ -171,12 +171,8 @@ export interface HeaderBarFeatureConfig {
   fullscreen: FeatureConfigItem;
   /** 通知功能 */
   notification: FeatureConfigItem;
-  /** 聊天功能 */
-  chat: FeatureConfigItem;
   /** 多语言切换 */
   language: FeatureConfigItem;
-  /** 设置面板 */
-  settings: FeatureConfigItem;
   /** 主题切换 */
   themeToggle: FeatureConfigItem;
   /** 组件尺寸（default / large / small） */

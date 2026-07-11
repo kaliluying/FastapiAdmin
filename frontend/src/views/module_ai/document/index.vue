@@ -19,7 +19,7 @@
         <ElButton type="primary" :icon="Upload" @click="openUploadDialog">上传文档</ElButton>
       </div>
 
-      <FaAsyncState v-if="loading || !rows.length" :state="loading ? 'loading' : 'empty'" />
+      <FaAsyncState v-if="loading || !rows.length" :state="docListState" />
       <ElTable v-else :data="rows" row-key="id" border>
         <ElTableColumn prop="file_name" label="文件名" min-width="220" show-overflow-tooltip />
         <ElTableColumn prop="file_type" label="类型" width="90" />
@@ -100,6 +100,7 @@ defineOptions({ name: "AiKnowledgeDocument" });
 
 const route = useRoute();
 const loading = ref(false);
+const docListState = computed<"loading" | "empty">(() => (loading.value ? "loading" : "empty"));
 const rows = ref<KnowledgeDocument[]>([]);
 const bases = ref<KnowledgeBase[]>([]);
 const total = ref(0);

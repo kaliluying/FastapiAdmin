@@ -22,14 +22,6 @@ import { defineAsyncComponent } from "vue";
  */
 export const globalComponentsConfig: GlobalComponentConfig[] = [
   {
-    name: "设置面板",
-    key: "settings-panel",
-    component: defineAsyncComponent(
-      () => import("@/components/layouts/fa-settings-panel/index.vue")
-    ),
-    enabled: true,
-  },
-  {
     name: "全局搜索",
     key: "global-search",
     component: defineAsyncComponent(
@@ -41,12 +33,6 @@ export const globalComponentsConfig: GlobalComponentConfig[] = [
     name: "锁屏",
     key: "screen-lock",
     component: defineAsyncComponent(() => import("@/components/layouts/fa-screen-lock/index.vue")),
-    enabled: true,
-  },
-  {
-    name: "聊天窗口",
-    key: "chat-window",
-    component: defineAsyncComponent(() => import("@/components/layouts/fa-chat-window/index.vue")),
     enabled: true,
   },
   {

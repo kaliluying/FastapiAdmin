@@ -46,7 +46,6 @@ export const useSettingsStore = defineStore(
     const showWorkTab = ref(SETTING_DEFAULT_CONFIG.showWorkTab);
     const showLanguage = ref(SETTING_DEFAULT_CONFIG.showLanguage);
     const showNprogress = ref(SETTING_DEFAULT_CONFIG.showNprogress);
-    const showSettingGuide = ref(SETTING_DEFAULT_CONFIG.showSettingGuide);
     const showFestivalText = ref(SETTING_DEFAULT_CONFIG.showFestivalText);
     const watermarkVisible = ref(SETTING_DEFAULT_CONFIG.watermarkVisible);
 
@@ -68,9 +67,6 @@ export const useSettingsStore = defineStore(
     // 节日
     const festivalDate = ref("");
 
-    // 面板开关（非持久化）
-    const settingsVisible = ref<boolean>(false);
-
     // 持久化（web-style：useStorage）
     const showTagsView = useStorage<boolean>(
       SETTINGS_KEYS.SHOW_TAGS_VIEW,
@@ -83,10 +79,6 @@ export const useSettingsStore = defineStore(
     const showWatermark = useStorage<boolean>(
       SETTINGS_KEYS.SHOW_WATERMARK,
       defaultSettings.showWatermark
-    );
-    const showSettings = useStorage<boolean>(
-      SETTINGS_KEYS.SHOW_SETTINGS,
-      defaultSettings.showSettings
     );
     const showGuide = useStorage<boolean>(SETTINGS_KEYS.SHOW_GUIDE, defaultSettings.showGuide);
 
@@ -126,7 +118,6 @@ export const useSettingsStore = defineStore(
 
     // 系统设置 - 持久化
     const grayMode = useStorage<boolean>(SETTINGS_KEYS.GRAY_MODE, defaultSettings.grayMode);
-    const userEnableAi = useStorage<boolean>(SETTINGS_KEYS.AI_ENABLED, defaultSettings.aiEnabled);
     const pageSwitchingAnimation = useStorage<string>(
       SETTINGS_KEYS.PAGE_SWITCHING_ANIMATION,
       defaultSettings.pageSwitchingAnimation
@@ -163,7 +154,6 @@ export const useSettingsStore = defineStore(
       showTagsView,
       showAppLogo,
       showWatermark,
-      showSettings,
       showGuide,
       showMenuSearch,
       showFullscreen,
@@ -173,7 +163,6 @@ export const useSettingsStore = defineStore(
       sidebarColorScheme,
       layout,
       grayMode,
-      userEnableAi,
     } as const;
 
     watch(
@@ -273,14 +262,6 @@ export const useSettingsStore = defineStore(
       colorWeak.value = !colorWeak.value;
     };
 
-    const hideSettingGuide = () => {
-      showSettingGuide.value = false;
-    };
-
-    const openSettingGuide = () => {
-      showSettingGuide.value = true;
-    };
-
     const setPageTransition = (transition: string) => {
       pageTransition.value = transition;
     };
@@ -351,22 +332,6 @@ export const useSettingsStore = defineStore(
       layout.value = newLayout;
     }
 
-    function toggleSettingsPanel(): void {
-      settingsVisible.value = !settingsVisible.value;
-    }
-
-    function showSettingsPanel(): void {
-      settingsVisible.value = true;
-    }
-
-    function hideSettingsPanel(): void {
-      settingsVisible.value = false;
-    }
-
-    function updateUserEnableAi(newValue: boolean): void {
-      userEnableAi.value = newValue;
-    }
-
     function updateGrayMode(newValue: boolean): void {
       grayMode.value = newValue;
     }
@@ -380,7 +345,6 @@ export const useSettingsStore = defineStore(
       showTagsView.value = defaultSettings.showTagsView;
       showAppLogo.value = defaultSettings.showAppLogo;
       showWatermark.value = defaultSettings.showWatermark;
-      showSettings.value = defaultSettings.showSettings;
       showGuide.value = defaultSettings.showGuide;
 
       // 桌面端工具设置
@@ -398,7 +362,6 @@ export const useSettingsStore = defineStore(
 
       // 系统设置
       grayMode.value = defaultSettings.grayMode;
-      userEnableAi.value = defaultSettings.aiEnabled;
       pageSwitchingAnimation.value = defaultSettings.pageSwitchingAnimation;
     }
 
@@ -422,7 +385,6 @@ export const useSettingsStore = defineStore(
       showWorkTab,
       showLanguage,
       showNprogress,
-      showSettingGuide,
       showFestivalText,
       watermarkVisible,
       autoClose,
@@ -438,11 +400,9 @@ export const useSettingsStore = defineStore(
       festivalDate,
 
       // 从 settings.store.ts 来的状态
-      settingsVisible,
       showTagsView,
       showAppLogo,
       showWatermark,
-      showSettings,
       showGuide,
       showMenuSearch,
       showFullscreen,
@@ -454,7 +414,6 @@ export const useSettingsStore = defineStore(
       themeColor,
       theme,
       grayMode,
-      userEnableAi,
       pageSwitchingAnimation,
 
       // 计算属性
@@ -481,8 +440,6 @@ export const useSettingsStore = defineStore(
       setLanguage,
       setNprogress,
       setColorWeak,
-      hideSettingGuide,
-      openSettingGuide,
       setPageTransition,
       setTabStyle,
       setMenuOpen,
@@ -500,10 +457,6 @@ export const useSettingsStore = defineStore(
       updateThemeColor,
       updateSidebarColorScheme,
       updateLayout,
-      toggleSettingsPanel,
-      showSettingsPanel,
-      hideSettingsPanel,
-      updateUserEnableAi,
       updateGrayMode,
       updatePageSwitchingAnimation,
       resetSettings,

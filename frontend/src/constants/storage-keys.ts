@@ -18,7 +18,6 @@ export const DICT_CACHE_KEY = "dict_cache";
 export const SHOW_TAGS_VIEW_KEY = "showTagsView";
 export const SHOW_APP_LOGO_KEY = "showAppLogo";
 export const SHOW_WATERMARK_KEY = "showWatermark";
-export const SHOW_SETTINGS_KEY = "showSettings";
 export const SHOW_MENU_SEARCH_KEY = "showMenuSearch";
 export const SHOW_FULLSCREEN_KEY = "showFullscreen";
 export const SHOW_SIZE_SELECT_KEY = "showSizeSelect";
@@ -30,7 +29,6 @@ export const SIDEBAR_COLOR_SCHEME_KEY = "sidebarColorScheme";
 export const THEME_KEY = "theme";
 export const THEME_COLOR_KEY = "themeColor";
 export const GRAY_MODE_KEY = "grayMode";
-export const AI_ENABLED_KEY = "aiEnabled";
 export const PAGE_SWITCHING_ANIMATION_KEY = "pageSwitchingAnimation";
 
 // 🎯 功能分组的键映射对象
@@ -52,7 +50,6 @@ export const SETTINGS_KEYS = {
   SHOW_TAGS_VIEW: SHOW_TAGS_VIEW_KEY,
   SHOW_APP_LOGO: SHOW_APP_LOGO_KEY,
   SHOW_WATERMARK: SHOW_WATERMARK_KEY,
-  SHOW_SETTINGS: SHOW_SETTINGS_KEY,
   SHOW_MENU_SEARCH: SHOW_MENU_SEARCH_KEY,
   SHOW_FULLSCREEN: SHOW_FULLSCREEN_KEY,
   SHOW_SIZE_SELECT: SHOW_SIZE_SELECT_KEY,
@@ -64,7 +61,6 @@ export const SETTINGS_KEYS = {
   THEME_COLOR: THEME_COLOR_KEY,
   THEME: THEME_KEY,
   GRAY_MODE: GRAY_MODE_KEY,
-  AI_ENABLED: AI_ENABLED_KEY,
   PAGE_SWITCHING_ANIMATION: PAGE_SWITCHING_ANIMATION_KEY,
 } as const;
 

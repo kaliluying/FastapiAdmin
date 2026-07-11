@@ -9,8 +9,6 @@ declare global {
     title: string;
     /** 系统版本 */
     version: string;
-    /** 是否显示设置按钮 */
-    showSettings: boolean;
     /** 是否显示菜单搜索 */
     showMenuSearch: boolean;
     /** 是否显示全屏切换 */
@@ -45,8 +43,6 @@ declare global {
     guideVisible: boolean;
     /** 是否启动引导 */
     showGuide: boolean;
-    /** 是否开启AI助手 */
-    aiEnabled: boolean;
     /** 是否开启灰色模式 */
     grayMode: boolean;
     /** 页面切换动画 */

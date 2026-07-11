@@ -209,12 +209,10 @@ defineExpose({
       gap: 12px;
       min-height: 112px;
       padding: 12px 16px 10px;
-      background:
-        linear-gradient(180deg, rgb(255 255 255 / 98%), rgb(249 251 255 / 96%)),
-        var(--el-bg-color-overlay);
-      border: 1px solid rgb(93 135 255 / 18%);
+      background: var(--el-bg-color-overlay);
+      border: 1px solid color-mix(in srgb, var(--theme-color) 18%, var(--fa-card-border));
       border-radius: 8px;
-      box-shadow: 0 16px 38px rgb(23 32 51 / 10%);
+      box-shadow: var(--fa-soft-shadow);
       transition:
         border-color 0.2s ease,
         box-shadow 0.2s ease;
@@ -299,7 +297,7 @@ defineExpose({
         align-items: center;
         justify-content: space-between;
         padding-top: 8px;
-        border-top: 1px solid rgb(23 32 51 / 7%);
+        border-top: 1px solid var(--fa-card-border);
 
         .input-actions {
           display: flex;
