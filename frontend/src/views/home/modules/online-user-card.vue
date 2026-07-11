@@ -48,7 +48,7 @@ const onlineStats: OnlineStat[] = [
 .home-card {
   position: relative;
   overflow: hidden;
-  border-color: rgb(11 18 32 / 8%);
+  border-color: var(--fa-color-border, rgb(11 18 32 / 8%));
   box-shadow: 0 18px 42px rgb(11 18 32 / 8%);
 
   :deep(.el-card__body) {
@@ -60,7 +60,7 @@ const onlineStats: OnlineStat[] = [
 .online-card {
   background:
     linear-gradient(180deg, rgb(255 255 255), rgb(247 251 255)),
-    var(--el-bg-color);
+    var(--fa-color-surface, var(--el-bg-color));
 }
 
 .online-signal {

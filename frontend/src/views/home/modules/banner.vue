@@ -115,7 +115,7 @@ const statusCards = [
     linear-gradient(135deg, rgb(255 255 255 / 96%), rgb(241 247 255 / 92%)),
     radial-gradient(circle at 18% 12%, rgb(59 130 246 / 17%), transparent 32%),
     radial-gradient(circle at 92% 12%, rgb(45 212 191 / 20%), transparent 30%);
-  border: 1px solid rgb(11 18 32 / 8%);
+  border: 1px solid var(--fa-color-border, rgb(11 18 32 / 8%));
   border-radius: 8px;
   box-shadow: 0 24px 60px rgb(11 18 32 / 10%);
 }

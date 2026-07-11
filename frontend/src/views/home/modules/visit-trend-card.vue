@@ -10,7 +10,7 @@
       </div>
     </template>
 
-    <FaECharts :options="chartOptions" height="320px" />
+    <FaECharts :options="chartOptions" height="320px" style="min-height: 220px" />
   </ElCard>
 </template>
 
@@ -81,5 +81,7 @@ const chartOptions = computed(() => ({
 .home-card {
   min-height: 420px;
   overflow: hidden;
+  border-color: var(--fa-color-border, var(--el-border-color));
+  background: var(--fa-color-surface, var(--el-bg-color));
 }
 </style>
