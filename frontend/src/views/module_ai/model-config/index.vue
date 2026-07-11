@@ -1,5 +1,7 @@
 <template>
   <div class="model-config-page">
+    <FaAiPageHeader title="模型配置" />
+
     <ElCard shadow="never">
       <template #header>
         <div class="card-header">
@@ -41,6 +43,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
 import { Refresh } from "@element-plus/icons-vue";
 import AiChatAPI, { type AiModelConfig } from "@/api/module_ai/chat";
 

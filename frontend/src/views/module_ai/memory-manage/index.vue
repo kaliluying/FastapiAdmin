@@ -1,6 +1,8 @@
 <!-- AI 记忆管理：对 user_preference / fact / work_rule 进行增删改查 -->
 <template>
   <div class="fa-full-height">
+    <FaAiPageHeader title="记忆管理" />
+
     <FaSearchBar
       v-show="showSearchBar"
       ref="searchBarRef"
@@ -114,6 +116,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from "vue";
+import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from "element-plus";
 import { AiMemoryAPI, type AiMemoryItem, type MemoryCreatePayload, type MemoryType } from "@/api/module_ai/memory";
 import type { SearchFormItem } from "@/components/forms/fa-search-bar/index.vue";

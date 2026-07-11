@@ -1,6 +1,8 @@
 <!-- AI 会话记录：Art + useTable -->
 <template>
   <div class="fa-full-height">
+    <FaAiPageHeader title="AI 记忆" />
+
     <FaSearchBar
       v-show="showSearchBar"
       ref="searchBarRef"
@@ -147,6 +149,7 @@ defineOptions({
 });
 
 import { ref, reactive, computed, nextTick } from "vue";
+import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
 import { Edit } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import AiChatAPI, { type ChatSession, type ChatSessionDetail } from "@/api/module_ai/chat";
