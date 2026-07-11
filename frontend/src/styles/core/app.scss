@@ -373,3 +373,9 @@
     -webkit-tap-highlight-color: transparent;
   }
 }
+
+// 键盘焦点可见性 — 使用语义色 token
+:focus-visible {
+  outline: 2px solid var(--fa-color-accent, var(--el-color-primary));
+  outline-offset: 2px;
+}

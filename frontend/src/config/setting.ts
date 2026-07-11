@@ -61,7 +61,7 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 语言 */
   language: LanguageEnum.ZH_CN,
   /** 主题颜色 */
-  themeColor: "#3B82F6",
+  themeColor: "#2d7d72",
   /** 是否显示水印 */
   showWatermark: false,
   /** 水印内容 */
@@ -164,7 +164,7 @@ export function resetToDefaults(currentSettings: Record<string, any>) {
 // 注意：修改默认主题色时，需要同步修改 src/styles/variables.scss 中的 primary.base 值
 export const themeColorPresets = [
   // === 精选常用颜色 - 多样化色系 ===
-  "#3B82F6", // 操作蓝 - 现代控制台
+  "#2d7d72", // Quiet Operations 青色 — 默认品牌色
   "#2DD4BF", // 信号青 - 在线与成功状态
   "#52C41A", // 成功绿 - 活力清新
   "#722ED1", // 优雅紫 - 高端大气

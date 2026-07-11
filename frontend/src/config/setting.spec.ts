@@ -56,7 +56,7 @@ describe("brand and setting defaults", () => {
     expect(SETTING_DEFAULT_CONFIG.title).toBe("FastAPI Admin");
     expect(SETTING_DEFAULT_CONFIG.layout).toBe(LayoutMode.LEFT);
     expect(SETTING_DEFAULT_CONFIG.theme).toBe(ThemeMode.LIGHT);
-    expect(SETTING_DEFAULT_CONFIG.themeColor).toBe("#3B82F6");
+    expect(SETTING_DEFAULT_CONFIG.themeColor).toBe("#2d7d72");
     expect(SETTING_DEFAULT_CONFIG.sidebarColorScheme).toBe(SidebarColor.CLASSIC_BLUE);
     expect(SETTING_DEFAULT_CONFIG.menuType).toBe(MenuTypeEnum.LEFT);
     expect(SETTING_DEFAULT_CONFIG.menuThemeType).toBe(MenuThemeEnum.DARK);

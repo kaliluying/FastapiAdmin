@@ -5,6 +5,12 @@
 @use "../core/fa-tokens" as *;
 
 :root {
+  // Quiet Operations — map El Plus structure tokens to semantic tokens
+  --el-border-radius-base: var(--fa-radius-control);
+  --el-component-custom-height: var(--fa-control-height);
+}
+
+:root {
   // 系统主色 fallback（setElementThemeColor 运行时动态覆盖）
   --el-color-primary: #{$fa-primary};
   // 固定业务色板（EP 组件内部 var(--el-color-*) 消费）
