@@ -4,6 +4,12 @@
  * - left / right：插画列与表单列横向排列（约 65% / 35%）
  * - center：全宽 + 视口级背景；登录卡居中、阴影高亮
  */
+
+/* 登录页根节点：语义化画布背景色 */
+.login-page-root {
+  background-color: var(--fa-color-canvas);
+}
+
 .login-auth-split {
   display: flex;
   min-width: 0;
@@ -308,7 +314,15 @@ html.dark .login-page-panel {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--el-color-primary) 16%, transparent) !important;
 }
 
+/* 可见焦点态：键盘导航无障碍 */
+.login-form-item :focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
 .login-submit-btn {
+  height: var(--fa-control-height, 42px);
   border-radius: 8px !important;
   box-shadow:
     0 1px 2px rgb(15 23 42 / 8%),
@@ -320,7 +334,7 @@ html.dark .login-page-panel {
 }
 
 .login-secondary-actions .login-secondary-btn {
-  height: 42px;
+  height: var(--fa-control-height, 42px);
   border-radius: 8px;
 }
 
@@ -371,7 +385,7 @@ html.dark {
   }
 
   .login-secondary-actions .login-secondary-btn {
-    height: 42px;
+    height: var(--fa-control-height, 42px);
   }
 }
 

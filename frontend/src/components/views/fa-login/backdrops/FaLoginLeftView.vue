@@ -145,7 +145,7 @@ $bg-mix-light-7: color-mix(in srgb, $primary-light-7 80%, $main-bg);
   height: 100%;
   padding: 15px;
   overflow: hidden;
-  background-color: $bg-mix-light-9;
+  background-color: var(--fa-color-accent, #{$bg-mix-light-9});
 
   .logo {
     position: relative;
