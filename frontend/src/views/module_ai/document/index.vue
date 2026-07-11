@@ -19,19 +19,26 @@
         <ElButton type="primary" :icon="Upload" @click="openUploadDialog">上传文档</ElButton>
       </div>
 
-      <ElTable v-loading="loading" :data="rows" row-key="id" border>
+      <FaAsyncState v-if="loading || !rows.length" :state="loading ? 'loading' : 'empty'" />
+      <ElTable v-else :data="rows" row-key="id" border>
         <ElTableColumn prop="file_name" label="文件名" min-width="220" show-overflow-tooltip />
         <ElTableColumn prop="file_type" label="类型" width="90" />
         <ElTableColumn prop="file_size" label="大小" width="110">
           <template #default="{ row }">{{ formatSize(row.file_size) }}</template>
         </ElTableColumn>
-        <ElTableColumn prop="parse_status" label="解析" width="100" />
-        <ElTableColumn prop="index_status" label="索引" width="100" />
+        <ElTableColumn label="状态" width="120">
+          <template #default="{ row }">
+            <ElTooltip v-if="row.error_message" :content="row.error_message" placement="top">
+              <ElTag :type="documentStatusMeta(row).type" size="small">{{ documentStatusMeta(row).label }}</ElTag>
+            </ElTooltip>
+            <ElTag v-else :type="documentStatusMeta(row).type" size="small">{{ documentStatusMeta(row).label }}</ElTag>
+          </template>
+        </ElTableColumn>
         <ElTableColumn prop="chunk_count" label="分块数" width="90" />
         <ElTableColumn prop="created_time" label="创建时间" width="180" show-overflow-tooltip />
-        <ElTableColumn label="操作" width="150" fixed="right">
+        <ElTableColumn label="操作" width="160" fixed="right">
           <template #default="{ row }">
-            <ElButton link type="primary" @click="reindex(row)">重建</ElButton>
+            <ElButton link type="primary" @click="reindex(row)">重新索引</ElButton>
             <ElButton link type="danger" @click="remove(row)">删除</ElButton>
           </template>
         </ElTableColumn>
@@ -82,11 +89,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox, type UploadRequestOptions } from "element-plus";
 import { Refresh, Search, Upload } from "@element-plus/icons-vue";
 import { useRoute } from "vue-router";
 import KnowledgeAPI, { type KnowledgeBase, type KnowledgeDocument } from "@/api/module_ai/knowledge";
+import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 
 defineOptions({ name: "AiKnowledgeDocument" });
 
@@ -197,6 +205,15 @@ const formatSize = (size: number) => {
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
   return `${(size / 1024 / 1024).toFixed(1)} MB`;
+};
+
+const documentStatusMeta = (row: KnowledgeDocument) => {
+  if (row.parse_status === "failed")   return { label: "解析失败",  type: "danger"  as const };
+  if (row.index_status === "failed")   return { label: "索引失败",  type: "danger"  as const };
+  if (row.index_status === "success")  return { label: "可检索",    type: "success" as const };
+  if (row.index_status === "indexing") return { label: "正在索引",  type: "warning" as const };
+  if (row.parse_status === "success")  return { label: "等待索引",  type: "info"    as const };
+  return { label: "等待处理", type: "info" as const };
 };
 
 onMounted(async () => {
