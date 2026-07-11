@@ -367,9 +367,7 @@ watch(menuOpen, (isMenuOpen: boolean) => {
   height: 100vh;
   user-select: none;
   scrollbar-width: none;
-  background:
-    linear-gradient(180deg, #0b1220 0%, #111827 54%, #0b1220 100%),
-    var(--default-box-color);
+  background: var(--fa-color-sidebar, var(--default-box-color));
   border-right: 1px solid rgb(255 255 255 / 8%);
   box-shadow: 18px 0 42px rgb(11 18 32 / 12%);
 
@@ -896,16 +894,14 @@ $popup-menu-radius: 6px;
 }
 
 /* 暗黑模式菜单样式 */
-.dark {
+  .dark {
   .el-menu--vertical,
   .el-menu--popup-container {
     @include popup-menu-base(var(--fa-gray-200), var(--fa-gray-900), #292a2e);
   }
 
   .layout-sidebar {
-    background:
-      linear-gradient(180deg, #0b1220 0%, #111827 54%, #0b1220 100%),
-      var(--default-box-color);
+    background: var(--fa-color-sidebar, #0b1220);
 
     /* 图标颜色、文字颜色 */
     .menu-icon .art-svg-icon,

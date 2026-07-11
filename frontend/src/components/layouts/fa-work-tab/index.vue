@@ -2,7 +2,7 @@
 <template>
   <div
     v-if="showWorkTab"
-    class="worktab-tags-shell box-border w-full select-none"
+    class="worktab-tags-shell fa-worktab-shell box-border w-full select-none"
     :class="[
       /** 三种模式统一底边线；谷歌模式底边与标签贴合，默认/卡片需要与底边留出间距（避免重合） */
       'border-b border-(--fa-card-border)',

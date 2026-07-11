@@ -4,22 +4,12 @@
   width: 100%;
   min-height: 100vh;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 12% 10%, rgb(45 212 191 / 10%), transparent 24%),
-    radial-gradient(circle at 88% 0%, rgb(59 130 246 / 11%), transparent 26%),
-    linear-gradient(180deg, #f7faff 0%, var(--default-bg-color) 45%, #eef4fb 100%);
+  background: var(--fa-color-canvas);
+
+  /* header track height reference: 48–60px via #app-header flex-shrink: 0 */
 
   &::before {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    content: "";
-    background-image:
-      linear-gradient(rgb(59 130 246 / 4%) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(59 130 246 / 4%) 1px, transparent 1px);
-    background-size: 32px 32px;
-    mask-image: linear-gradient(90deg, rgb(0 0 0 / 48%), transparent 78%);
+    display: none;
   }
 
   .skip-main-link {
@@ -72,47 +62,41 @@
       width: 100%;
     }
 
-    #app-content {
-      box-sizing: border-box;
-      display: flex;
-      flex: 1;
-      flex-direction: column;
-      min-height: 0;
-      padding: 22px;
-      overflow: auto;
-      background:
-        linear-gradient(180deg, rgb(255 255 255 / 72%) 0%, rgb(255 255 255 / 0%) 210px),
-        transparent;
-
-      :deep(.layout-content) {
+      #app-content {
         box-sizing: border-box;
-        width: 100%;
-        min-width: 0;
-        margin: auto;
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+        min-height: 0;
+        padding: 22px;
+        overflow: auto;
+        background: transparent;
 
-        // 子页面默认 style（勿用 overflow:hidden：在 flex 主区内会裁切长页导致无法滚动）
-        .page-content {
-          position: relative;
+        :deep(.layout-content) {
           box-sizing: border-box;
-          min-height: 0;
-          padding: 20px;
-          overflow: hidden auto;
-          background: rgb(255 255 255 / 74%);
-          border: 1px solid rgb(11 18 32 / 7%);
-          border-radius: 8px !important;
-          box-shadow: 0 20px 50px rgb(11 18 32 / 7%);
-          backdrop-filter: blur(12px);
+          width: 100%;
+          min-width: 0;
+          margin: auto;
+
+          // 子页面默认 style（勿用 overflow:hidden：在 flex 主区内会裁切长页导致无法滚动）
+          .page-content {
+            position: relative;
+            box-sizing: border-box;
+            min-height: 0;
+            padding: 20px;
+            overflow: hidden auto;
+            background: var(--fa-color-surface, var(--default-box-color));
+            border: 1px solid rgb(11 18 32 / 7%);
+            border-radius: 8px !important;
+            box-shadow: 0 20px 50px rgb(11 18 32 / 7%);
+          }
         }
       }
-    }
   }
 }
 
 html.dark .app-layout {
-  background:
-    radial-gradient(circle at 14% 10%, rgb(45 212 191 / 9%), transparent 24%),
-    radial-gradient(circle at 86% 0%, rgb(59 130 246 / 10%), transparent 26%),
-    linear-gradient(180deg, #090f1c 0%, var(--default-bg-color) 55%, #060a12 100%);
+  background: var(--fa-color-canvas, #090f1c);
 }
 
 @media only screen and (width <= 1180px) {

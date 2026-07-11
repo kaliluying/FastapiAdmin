@@ -1,13 +1,14 @@
 ﻿<!-- 顶部栏 -->
 <template>
   <div
-    class="w-full bg-(--default-bg-color)"
+    class="fa-header-shell w-full bg-(--default-bg-color)"
     :class="[
       tabStyle === 'tab-card' || tabStyle === 'tab-google' || tabStyle === 'tab-default'
         ? 'max-sm:mb-3 bg-box!'
         : '',
     ]"
   >
+    <div class="fa-header-main">
     <div
       class="relative box-border flex justify-between h-15 leading-15 select-none"
       :class="[
@@ -16,7 +17,7 @@
           : '',
       ]"
     >
-      <div class="flex items-center flex-1 min-w-0 leading-15" :style="{ display: 'flex' }">
+      <div class="fa-header-context flex items-center flex-1 min-w-0 leading-15" :style="{ display: 'flex' }">
         <!-- 系统信息：Logo + 标题一并受「显示应用 Logo」控制 -->
         <div
           class="flex items-center cursor-pointer"
@@ -63,7 +64,7 @@
         <FaMixedMenu v-if="isTopLeftMenu" :list="menuList" />
       </div>
 
-      <div id="app-header-toolbar" class="flex items-center gap-2.5">
+      <div id="app-header-toolbar" class="fa-header-tools flex items-center gap-2.5">
         <!-- 搜索 -->
         <div
           v-if="shouldShowGlobalSearch"
@@ -160,6 +161,7 @@
         <!-- 用户头像、菜单 -->
         <FaUserMenu />
       </div>
+    </div>
     </div>
 
     <!-- 标签页 -->
