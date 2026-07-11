@@ -1,27 +1,8 @@
-@use "sass:map";
-
-// === 变量区域 ===
-$transition: (
-  // 动画持续时间
-  duration: 0.25s,
-  // 滑动动画的移动距离
-  distance: 15px,
-  // 默认缓动函数
-  easing: cubic-bezier(0.25, 0.1, 0.25, 1),
-  // 淡入淡出专用的缓动函数
-  fade-easing: cubic-bezier(0.4, 0, 0.6, 1)
-);
-
-// 抽取配置值函数，提高可复用性
-@function transition-config($key) {
-  @return map.get($transition, $key);
-}
-
-// 变量简写
-$duration: transition-config("duration");
-$distance: transition-config("distance");
-$easing: transition-config("easing");
-$fade-easing: transition-config("fade-easing");
+// Quiet Operations keeps route changes brief and spatially restrained.
+$duration: var(--fa-motion-page);
+$distance: 6px;
+$easing: cubic-bezier(0.25, 0.1, 0.25, 1);
+$fade-easing: cubic-bezier(0.4, 0, 0.6, 1);
 
 // === 动画类 ===
 
@@ -68,8 +49,8 @@ $fade-easing: transition-config("fade-easing");
 
   &-leave-active {
     transition:
-      opacity calc($duration * 0.7) $easing,
-      transform calc($duration * 0.7) $easing;
+      opacity $duration $easing,
+      transform $duration $easing;
     will-change: opacity, transform;
   }
 
@@ -104,4 +85,15 @@ $fade-easing: transition-config("fade-easing");
 
 .slide-bottom {
   @include slide-transition("bottom");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

@@ -8,45 +8,45 @@
   // 系统主色 fallback（setElementThemeColor 运行时动态覆盖）
   --el-color-primary: #{$fa-primary};
   // 固定业务色板（EP 组件内部 var(--el-color-*) 消费）
-  --el-color-success: #{$fa-success};
-  --el-color-warning: #{$fa-warning};
-  --el-color-danger: #{$fa-danger};
-  --el-color-error: #{$fa-error};
-  --el-color-info: #{$fa-info};
+  --el-color-success: var(--fa-color-success);
+  --el-color-warning: var(--fa-color-warning);
+  --el-color-danger: var(--fa-color-danger);
+  --el-color-error: var(--fa-color-danger);
+  --el-color-info: var(--fa-color-info);
 
   // 系统主色
   --main-color: var(--el-color-primary);
-  --el-color-white: white !important;
-  --el-color-black: #0f172a !important;
-  --el-bg-color-page: var(--default-bg-color) !important;
-  --el-bg-color: var(--default-box-color) !important;
-  --el-bg-color-overlay: var(--default-box-color) !important;
-  --el-border-color: var(--default-border) !important;
-  --el-border-color-light: var(--fa-card-border) !important;
-  --el-border-color-lighter: color-mix(in srgb, var(--default-border) 70%, transparent) !important;
-  --el-fill-color: #f3f6fa !important;
-  --el-fill-color-light: #f7f9fc !important;
-  --el-fill-color-lighter: #fafbfe !important;
-  --el-fill-color-blank: var(--default-box-color) !important;
-  --el-text-color-primary: #0b1220 !important;
-  --el-text-color-regular: #475569 !important;
-  --el-text-color-secondary: #64748b !important;
+  --el-color-white: var(--fa-color-surface) !important;
+  --el-color-black: var(--fa-color-text) !important;
+  --el-bg-color-page: var(--fa-color-canvas) !important;
+  --el-bg-color: var(--fa-color-surface) !important;
+  --el-bg-color-overlay: var(--fa-color-surface-raised) !important;
+  --el-border-color: var(--fa-color-border) !important;
+  --el-border-color-light: var(--fa-color-border) !important;
+  --el-border-color-lighter: color-mix(in srgb, var(--fa-color-border) 70%, transparent) !important;
+  --el-fill-color: color-mix(in srgb, var(--fa-color-canvas) 72%, var(--fa-color-surface)) !important;
+  --el-fill-color-light: color-mix(in srgb, var(--fa-color-canvas) 48%, var(--fa-color-surface)) !important;
+  --el-fill-color-lighter: color-mix(in srgb, var(--fa-color-canvas) 28%, var(--fa-color-surface)) !important;
+  --el-fill-color-blank: var(--fa-color-surface) !important;
+  --el-text-color-primary: var(--fa-color-text) !important;
+  --el-text-color-regular: var(--fa-color-text) !important;
+  --el-text-color-secondary: var(--fa-color-text-muted) !important;
   // 按钮样式偏好
-  --el-button-hover-bg-color: color-mix(in srgb, var(--theme-color) 9%, white) !important;
+  --el-button-hover-bg-color: color-mix(in srgb, var(--theme-color) 9%, var(--fa-color-surface)) !important;
   --el-button-hover-border-color: var(--el-color-primary) !important;
   --el-button-border-color: var(--el-color-primary) !important;
   --el-button-text-color: var(--el-color-primary) !important;
   // 按钮粗度
   --el-font-weight-primary: 400 !important;
-  --el-component-custom-height: 36px !important;
+  --el-component-custom-height: var(--fa-control-height) !important;
   --el-component-size: var(--el-component-custom-height) !important;
 
   // 边框、按钮圆角...
-  --el-border-radius-base: 8px !important;
-  --el-border-radius-small: 6px !important;
+  --el-border-radius-base: var(--fa-radius-control) !important;
+  --el-border-radius-small: var(--fa-radius-control) !important;
   --el-border-radius-round: 999px !important;
-  --el-messagebox-border-radius: 10px !important;
-  --el-popover-border-radius: 8px !important;
+  --el-messagebox-border-radius: var(--fa-radius-overlay) !important;
+  --el-popover-border-radius: var(--fa-radius-overlay) !important;
 
   .region .el-radio-button__original-radio:checked + .el-radio-button__inner {
     color: var(--theme-color);
@@ -66,7 +66,7 @@
 
 // el-card 背景色跟系统背景色保持一致
 html.dark .el-card {
-  --el-card-bg-color: var(--default-box-color) !important;
+  --el-card-bg-color: var(--fa-color-surface) !important;
 }
 
 // 修改 el-pagination 大小
@@ -142,8 +142,7 @@ html.dark .el-card {
 
 .el-dialog {
   overflow: hidden;
-  border-radius: 100px !important;
-  border-radius: calc(var(--custom-radius) / 1.2 + 2px) !important;
+  border-radius: var(--fa-radius-overlay) !important;
 }
 
 .el-dialog__header {
@@ -168,7 +167,7 @@ html.dark .el-card {
       width: calc(100% + 32px);
       height: 1px;
       content: "";
-      background-color: var(--fa-gray-300);
+      background-color: var(--fa-color-border);
     }
 
     &::before {
@@ -193,12 +192,9 @@ html.dark .el-card {
 
 // el-message 样式优化
 .el-message {
-  background-color: var(--default-box-color) !important;
-  border: 0 !important;
-  box-shadow:
-    0 6px 16px 0 rgb(0 0 0 / 8%),
-    0 3px 6px -4px rgb(0 0 0 / 12%),
-    0 9px 28px 8px rgb(0 0 0 / 5%) !important;
+  background-color: var(--fa-color-surface-raised) !important;
+  border: 1px solid var(--fa-color-border) !important;
+  box-shadow: var(--fa-overlay-shadow) !important;
 
   p {
     font-size: 13px;
@@ -208,21 +204,21 @@ html.dark .el-card {
 // 修改 el-dropdown 样式
 .el-dropdown-menu {
   padding: 6px !important;
-  border: none !important;
-  border-radius: 10px !important;
+  border: 1px solid var(--fa-color-border) !important;
+  border-radius: var(--fa-radius-overlay) !important;
 
   .el-dropdown-menu__item {
     padding: 6px 16px !important;
-    border-radius: 6px !important;
+    border-radius: var(--fa-radius-control) !important;
 
     &:hover:not(.is-disabled) {
-      color: var(--fa-gray-900) !important;
+      color: var(--fa-color-text) !important;
       background-color: var(--fa-el-active-color) !important;
     }
 
     &:focus:not(.is-disabled) {
-      color: var(--fa-gray-900) !important;
-      background-color: var(--fa-gray-200) !important;
+      color: var(--fa-color-text) !important;
+      background-color: var(--fa-hover-color) !important;
     }
   }
 }
@@ -384,7 +380,8 @@ html.dark .el-card {
 
 // 去除 el-dropdown 鼠标放上去出现的边框
 .el-tooltip__trigger:focus-visible {
-  outline: unset;
+  outline: none;
+  box-shadow: var(--fa-focus-ring);
 }
 
 // ipad 表单右侧按钮优化
@@ -396,13 +393,13 @@ html.dark .el-card {
 
 .login-out-dialog {
   padding: 30px 20px !important;
-  border-radius: 10px !important;
+  border-radius: var(--fa-radius-overlay) !important;
 }
 
 // 修改 dialog 动画
 .dialog-fade-enter-active {
   .el-dialog:not(.is-draggable) {
-    animation: dialog-open 0.3s cubic-bezier(0.32, 0.14, 0.15, 0.86);
+    animation: dialog-open var(--fa-motion-page) cubic-bezier(0.32, 0.14, 0.15, 0.86);
 
     // 修复 el-dialog 动画后宽度不自适应问题
     .el-select__selected-item {
@@ -412,34 +409,34 @@ html.dark .el-card {
 }
 
 .dialog-fade-leave-active {
-  animation: fade-out 0.2s linear;
+  animation: fade-out var(--fa-motion-page) linear;
 
   .el-dialog:not(.is-draggable) {
-    animation: dialog-close 0.5s;
+    animation: dialog-close var(--fa-motion-page) ease;
   }
 }
 
 @keyframes dialog-open {
   0% {
     opacity: 0;
-    transform: scale(0.2);
+    transform: translateY(6px);
   }
 
   100% {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
 }
 
 @keyframes dialog-close {
   0% {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0);
   }
 
   100% {
     opacity: 0;
-    transform: scale(0.2);
+    transform: translateY(6px);
   }
 }
 
@@ -553,34 +550,28 @@ html.dark .el-card {
 
 /* 21st.dev Lite skin */
 .dark {
-  --el-bg-color-page: var(--default-bg-color) !important;
-  --el-bg-color: var(--default-box-color) !important;
-  --el-bg-color-overlay: #1b1b20 !important;
-  --el-border-color: rgb(255 255 255 / 11%) !important;
-  --el-border-color-light: rgb(255 255 255 / 9%) !important;
-  --el-border-color-lighter: rgb(255 255 255 / 7%) !important;
-  --el-fill-color: rgb(255 255 255 / 8%) !important;
-  --el-fill-color-light: rgb(255 255 255 / 6%) !important;
-  --el-fill-color-lighter: rgb(255 255 255 / 4%) !important;
-  --el-fill-color-blank: var(--default-box-color) !important;
-  --el-text-color-primary: rgb(255 255 255 / 90%) !important;
-  --el-text-color-regular: rgb(255 255 255 / 70%) !important;
-  --el-text-color-secondary: rgb(255 255 255 / 52%) !important;
+  --el-bg-color-page: var(--fa-color-canvas) !important;
+  --el-bg-color: var(--fa-color-surface) !important;
+  --el-bg-color-overlay: var(--fa-color-surface-raised) !important;
+  --el-border-color: var(--fa-color-border) !important;
+  --el-border-color-light: var(--fa-color-border) !important;
+  --el-border-color-lighter: color-mix(in srgb, var(--fa-color-border) 70%, transparent) !important;
+  --el-fill-color: color-mix(in srgb, var(--fa-color-surface-raised) 68%, var(--fa-color-surface)) !important;
+  --el-fill-color-light: color-mix(in srgb, var(--fa-color-surface-raised) 48%, var(--fa-color-surface)) !important;
+  --el-fill-color-lighter: color-mix(in srgb, var(--fa-color-surface-raised) 28%, var(--fa-color-surface)) !important;
+  --el-fill-color-blank: var(--fa-color-surface) !important;
+  --el-text-color-primary: var(--fa-color-text) !important;
+  --el-text-color-regular: var(--fa-color-text) !important;
+  --el-text-color-secondary: var(--fa-color-text-muted) !important;
 }
 
 .el-button {
-  border-radius: 8px !important;
+  border-radius: var(--fa-radius-control) !important;
   box-shadow: none !important;
   transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s ease;
-
-  &:hover:not(.is-disabled) {
-    transform: translateY(-1px);
-  }
+    background-color var(--fa-motion-control) ease,
+    border-color var(--fa-motion-control) ease,
+    color var(--fa-motion-control) ease;
 
   &:focus-visible {
     box-shadow: var(--fa-focus-ring) !important;
@@ -589,60 +580,50 @@ html.dark .el-card {
 
 .el-button--primary {
   border-color: var(--theme-color) !important;
-  box-shadow: var(--fa-soft-shadow) !important;
-
-  &:hover:not(.is-disabled) {
-    box-shadow:
-      var(--fa-soft-shadow),
-      0 6px 14px color-mix(in srgb, var(--theme-color) 14%, transparent) !important;
-  }
+  box-shadow: none !important;
 }
 
 .el-input__wrapper,
 .el-textarea__inner,
 .el-select__wrapper {
-  background-color: var(--default-box-color) !important;
-  border: 1px solid var(--default-border) !important;
-  border-radius: 8px !important;
+  background-color: var(--fa-color-surface) !important;
+  border: 1px solid var(--fa-color-border) !important;
+  border-radius: var(--fa-radius-control) !important;
   box-shadow: none !important;
   transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+    background-color var(--fa-motion-control) ease,
+    border-color var(--fa-motion-control) ease,
+    box-shadow var(--fa-motion-control) ease;
 
   &:hover {
-    border-color: color-mix(in srgb, var(--theme-color) 28%, var(--default-border)) !important;
+    border-color: color-mix(in srgb, var(--theme-color) 28%, var(--fa-color-border)) !important;
   }
 }
 
 .el-input__wrapper.is-focus,
 .el-select__wrapper.is-focused,
 .el-textarea__inner:focus {
-  border-color: color-mix(in srgb, var(--theme-color) 72%, var(--default-border)) !important;
+  border-color: color-mix(in srgb, var(--theme-color) 72%, var(--fa-color-border)) !important;
   box-shadow: var(--fa-focus-ring) !important;
 }
 
 .el-card {
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 98%), rgb(248 251 255 / 94%)),
-    var(--default-box-color) !important;
-  border: 1px solid var(--fa-card-border) !important;
-  border-radius: 8px !important;
-  box-shadow: var(--fa-panel-shadow) !important;
+  background: var(--fa-color-surface) !important;
+  border: 1px solid var(--fa-color-border) !important;
+  border-radius: var(--fa-radius-panel) !important;
+  box-shadow: none !important;
   transition:
-    border-color 0.16s ease,
-    box-shadow 0.16s ease,
-    transform 0.16s ease;
+    border-color var(--fa-motion-control) ease,
+    background-color var(--fa-motion-control) ease;
 }
 
 .el-card:hover {
-  border-color: color-mix(in srgb, var(--theme-color) 16%, var(--fa-card-border)) !important;
-  box-shadow: 0 22px 52px rgb(11 18 32 / 10%) !important;
+  border-color: color-mix(in srgb, var(--theme-color) 24%, var(--fa-color-border)) !important;
 }
 
 .el-card__header {
   padding: 14px 16px !important;
-  border-bottom-color: var(--fa-card-border) !important;
+  border-bottom-color: var(--fa-color-border) !important;
 }
 
 .el-card__body {
@@ -652,10 +633,10 @@ html.dark .el-card {
 .el-tabs {
   padding: 4px;
   margin: 14px 0;
-  background: color-mix(in srgb, var(--default-box-color) 72%, var(--default-bg-color));
-  border: 1px solid var(--fa-card-border);
-  border-radius: 8px;
-  box-shadow: var(--fa-soft-shadow);
+  background: var(--fa-color-surface-raised);
+  border: 1px solid var(--fa-color-border);
+  border-radius: var(--fa-radius-panel);
+  box-shadow: none;
 }
 
 .el-tabs__header {
@@ -682,7 +663,7 @@ html.dark .el-card {
   font-weight: 500;
   color: var(--el-text-color-secondary) !important;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--fa-radius-control);
   transition:
     background-color 0.15s ease,
     border-color 0.15s ease,
@@ -691,14 +672,14 @@ html.dark .el-card {
 
   &:hover {
     color: var(--el-text-color-primary) !important;
-    background: color-mix(in srgb, var(--theme-color) 6%, white);
+    background: color-mix(in srgb, var(--theme-color) 6%, var(--fa-color-surface));
   }
 
   &.is-active {
     color: var(--theme-color) !important;
-    background: #fff;
-    border-color: color-mix(in srgb, var(--theme-color) 24%, var(--fa-card-border));
-    box-shadow: var(--fa-soft-shadow);
+    background: var(--fa-color-surface);
+    border-color: color-mix(in srgb, var(--theme-color) 24%, var(--fa-color-border));
+    box-shadow: none;
   }
 }
 
@@ -709,9 +690,9 @@ html.dark .el-card {
 .el-pagination.is-background .btn-next,
 .el-pagination.is-background .btn-prev,
 .el-pagination.is-background .el-pager li {
-  background: var(--default-box-color) !important;
-  border: 1px solid var(--fa-card-border) !important;
-  border-radius: 8px !important;
+  background: var(--fa-color-surface) !important;
+  border: 1px solid var(--fa-color-border) !important;
+  border-radius: var(--fa-radius-control) !important;
   box-shadow: none !important;
 }
 
@@ -723,49 +704,51 @@ html.dark .el-card {
 .el-popover,
 .el-popper,
 .el-dropdown-menu {
-  border: 1px solid var(--fa-card-border) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 8px 24px rgb(15 23 42 / 8%) !important;
+  background: var(--fa-color-surface-raised) !important;
+  border: 1px solid var(--fa-color-border) !important;
+  border-radius: var(--fa-radius-overlay) !important;
+  box-shadow: var(--fa-overlay-shadow) !important;
 }
 
 .el-dialog,
 .el-message-box,
 .login-out-dialog {
-  border: 1px solid var(--fa-card-border) !important;
-  border-radius: 10px !important;
-  box-shadow: 0 24px 60px rgb(15 23 42 / 14%) !important;
+  background: var(--fa-color-surface-raised) !important;
+  border: 1px solid var(--fa-color-border) !important;
+  border-radius: var(--fa-radius-overlay) !important;
+  box-shadow: var(--fa-overlay-shadow) !important;
 }
 
 .el-message {
-  background-color: var(--default-box-color) !important;
-  border: 1px solid var(--fa-card-border) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 12px 28px rgb(15 23 42 / 10%) !important;
+  background-color: var(--fa-color-surface-raised) !important;
+  border: 1px solid var(--fa-color-border) !important;
+  border-radius: var(--fa-radius-overlay) !important;
+  box-shadow: var(--fa-overlay-shadow) !important;
 }
 
 .el-table {
-  --el-table-border-color: var(--fa-card-border) !important;
-  --el-table-current-row-bg-color: color-mix(in srgb, var(--theme-color) 8%, white) !important;
-  --el-table-header-bg-color: #f6f9fd !important;
-  --el-table-row-hover-bg-color: #eef6ff !important;
+  --el-table-border-color: var(--fa-color-border) !important;
+  --el-table-current-row-bg-color: color-mix(in srgb, var(--theme-color) 8%, var(--fa-color-surface)) !important;
+  --el-table-header-bg-color: var(--fa-color-surface-raised) !important;
+  --el-table-row-hover-bg-color: color-mix(in srgb, var(--theme-color) 6%, var(--fa-color-surface)) !important;
 
   overflow: hidden;
-  border: 1px solid var(--fa-card-border);
-  border-radius: 8px;
+  border: 1px solid var(--fa-color-border);
+  border-radius: var(--fa-radius-panel);
 }
 
 .el-table th.el-table__cell {
   font-weight: 600;
-  color: #1e293b;
-  background: #f6f9fd !important;
+  color: var(--fa-color-text);
+  background: var(--fa-color-surface-raised) !important;
 }
 
 .el-table .el-table__cell {
-  border-bottom-color: var(--fa-card-border) !important;
+  border-bottom-color: var(--fa-color-border) !important;
 }
 
 .el-table--border::after,
 .el-table--border::before,
 .el-table__inner-wrapper::before {
-  background-color: var(--fa-card-border) !important;
+  background-color: var(--fa-color-border) !important;
 }

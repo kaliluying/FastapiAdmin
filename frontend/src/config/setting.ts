@@ -164,6 +164,7 @@ export function resetToDefaults(currentSettings: Record<string, any>) {
 // 注意：修改默认主题色时，需要同步修改 src/styles/variables.scss 中的 primary.base 值
 export const themeColorPresets = [
   // === 精选常用颜色 - 多样化色系 ===
+  "#2d7d72", // Quiet Operations teal - 默认可选品牌色
   "#3B82F6", // 操作蓝 - 现代控制台
   "#2DD4BF", // 信号青 - 在线与成功状态
   "#52C41A", // 成功绿 - 活力清新

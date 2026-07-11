@@ -13,46 +13,52 @@
 // 引入主题色 token 单一来源（与 element-plus-theme.scss 共用）
 @use "../core/fa-tokens" as *;
 
-$font-color: rgba(#fff, 0.85);
-
 /* 覆盖element-plus默认深色背景色 */
 html.dark {
-  // element-plus 通用背景/文本
-  --el-bg-color: var(--default-box-color);
-  --el-text-color-regular: #{$font-color};
+  // Element Plus consumes the semantic dark hierarchy.
+  --el-bg-color-page: var(--fa-color-canvas);
+  --el-bg-color: var(--fa-color-surface);
+  --el-bg-color-overlay: var(--fa-color-surface-raised);
+  --el-border-color: var(--fa-color-border);
+  --el-border-color-light: var(--fa-color-border);
+  --el-fill-color: var(--fa-color-surface-raised);
+  --el-fill-color-blank: var(--fa-color-surface);
+  --el-text-color-primary: var(--fa-color-text);
+  --el-text-color-regular: var(--fa-color-text);
+  --el-text-color-secondary: var(--fa-color-text-muted);
 
   // element-plus 功能性色（与 light 模式一致 —— 用户未要求 dark 模式独立色板）
   // 用 SCSS 插值强制解析变量（避免被字面量输出）。
   // 注意：实际上 dark mode 下不需要这些覆写 —— element-plus 的 dark/css-vars.scss
   // 经 SCSS 注入后会用我们的 colors（含 dark 适配的 light-x/dark-2），
   // 见 html.dark#1 块。这里仅作为冗余防御，万一 EP dark/css-vars.scss 未走注入路径也能兜底。
-  --el-color-success: #{$fa-success};
-  --el-color-warning: #{$fa-warning};
-  --el-color-danger: #{$fa-danger};
-  --el-color-error: #{$fa-error};
-  --el-color-info: #{$fa-info};
+  --el-color-success: var(--fa-color-success);
+  --el-color-warning: var(--fa-color-warning);
+  --el-color-danger: var(--fa-color-danger);
+  --el-color-error: var(--fa-color-danger);
+  --el-color-info: var(--fa-color-info);
 
   // 富文本编辑器
   // 工具栏背景颜色
-  --w-e-toolbar-bg-color: #18191c;
+  --w-e-toolbar-bg-color: var(--fa-color-surface-raised);
   // 输入区域背景颜色
-  --w-e-textarea-bg-color: #090909;
+  --w-e-textarea-bg-color: var(--fa-color-surface);
   // 工具栏文字颜色
-  --w-e-toolbar-color: var(--fa-gray-600);
+  --w-e-toolbar-color: var(--fa-color-text-muted);
   // 选中菜单颜色
-  --w-e-toolbar-active-bg-color: #25262b;
+  --w-e-toolbar-active-bg-color: var(--fa-color-surface-raised);
   // 弹窗边框颜色
-  --w-e-toolbar-border-color: var(--default-border-dashed);
+  --w-e-toolbar-border-color: var(--fa-color-border);
   // 分割线颜色
-  --w-e-textarea-border-color: var(--default-border-dashed);
+  --w-e-textarea-border-color: var(--fa-color-border);
   // 链接输入框边框颜色
-  --w-e-modal-button-border-color: var(--default-border-dashed);
+  --w-e-modal-button-border-color: var(--fa-color-border);
   // 表格头颜色
-  --w-e-textarea-slight-bg-color: #090909;
+  --w-e-textarea-slight-bg-color: var(--fa-color-surface);
   // 按钮背景颜色
-  --w-e-modal-button-bg-color: #090909;
+  --w-e-modal-button-bg-color: var(--fa-color-surface);
   // hover toolbar 背景颜色
-  --w-e-toolbar-active-color: var(--fa-gray-800);
+  --w-e-toolbar-active-color: var(--fa-color-text);
 }
 
 .dark {
