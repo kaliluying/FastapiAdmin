@@ -8,7 +8,6 @@
 import pytest
 
 from app.plugin.module_ai.chat.entity_extractor import Entity, EntityRelationResult, Relation
-from app.plugin.module_ai.knowledge.kg_builder import DocumentKnowledgeGraphBuilder
 from app.plugin.module_ai.knowledge.knowledge_graph import KnowledgeGraph
 
 

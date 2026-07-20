@@ -6,7 +6,6 @@
 import pytest
 
 from app.plugin.module_ai.chat.hybrid_retriever import HybridKnowledgeRetriever
-from app.plugin.module_ai.chat.rag import RagDocument
 from app.plugin.module_ai.knowledge.bm25_index import BM25KnowledgeIndex
 
 
