@@ -111,8 +111,14 @@ class ChunkUsageTracker:
         try:
             records = []
             for rank, chunk in enumerate(chunks, 1):
+                # 验证chunk_id
+                chunk_id = chunk.get("chunk_id") or chunk.get("id")
+                if not chunk_id:
+                    logger.warning(f"跳过无效chunk（缺少chunk_id）: {chunk.get('content', '')[:50]}")
+                    continue
+
                 record = ChunkUsageModel(
-                    chunk_id=chunk.get("chunk_id") or chunk.get("id"),
+                    chunk_id=chunk_id,
                     document_id=chunk.get("document_id", 0),
                     knowledge_base_id=chunk.get("knowledge_base_id", 0),
                     query=query,

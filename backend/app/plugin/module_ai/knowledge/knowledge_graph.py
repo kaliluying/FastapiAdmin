@@ -169,6 +169,7 @@ class KnowledgeGraph:
         start_entity: str,
         max_hops: int = 2,
         relation_filter: list[str] | None = None,
+        max_results: int = 100,
     ) -> dict[str, Any]:
         """图遍历，获取关联实体
 
@@ -176,6 +177,7 @@ class KnowledgeGraph:
             start_entity: 起始实体
             max_hops: 最大跳数
             relation_filter: 关系类型过滤
+            max_results: 最大结果数量（防止大图遍历性能问题）
 
         Returns:
             遍历结果 {
@@ -192,6 +194,9 @@ class KnowledgeGraph:
         paths = []
 
         def dfs(entity: str, depth: int, path: list[str]):
+            # 添加结果数量限制，防止大图遍历性能问题
+            if len(visited_entities) >= max_results:
+                return
             if depth > max_hops or entity in visited_entities:
                 return
 
@@ -265,12 +270,15 @@ class KnowledgeGraph:
             return []
 
     def save(self) -> bool:
-        """保存图到文件
+        """保存图到文件（原子写入）
 
         Returns:
             是否成功
         """
         try:
+            import os
+            import tempfile
+
             # 转换为JSON可序列化格式
             data = {
                 "knowledge_base_id": self.knowledge_base_id,
@@ -289,11 +297,29 @@ class KnowledgeGraph:
                 ],
             }
 
-            with open(self._graph_file, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+            # 使用临时文件+原子重命名，避免并发写入问题
+            temp_fd, temp_path = tempfile.mkstemp(
+                suffix=".json",
+                dir=self.storage_dir,
+                text=True,
+            )
 
-            logger.info(f"知识图谱已保存: {len(self.graph.nodes)}个节点, {len(self.graph.edges)}条边")
-            return True
+            try:
+                with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+
+                # 原子性重命名（Windows和Unix都支持）
+                os.replace(temp_path, self._graph_file)
+
+                logger.info(f"知识图谱已保存: {len(self.graph.nodes)}个节点, {len(self.graph.edges)}条边")
+                return True
+
+            except Exception:
+                # 清理临时文件
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+                raise
+
         except Exception as e:
             logger.error(f"保存知识图谱失败: {e}")
             return False
