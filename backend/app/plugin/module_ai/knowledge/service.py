@@ -8,9 +8,12 @@ from typing import Any
 import aiofiles
 from fastapi import UploadFile
 
+from app.config.setting import settings
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
+from app.core.logger import logger
 
+from .bm25_index import BM25KnowledgeIndex
 from .chroma_store import ChromaKnowledgeStore
 from .crud import KnowledgeBaseCRUD, KnowledgeChunkCRUD, KnowledgeDocumentCRUD
 from .embedding import EmbeddingClient, create_embedding_client
@@ -61,10 +64,12 @@ class KnowledgeService:
         *,
         store: ChromaKnowledgeStore | None = None,
         embedding_client: EmbeddingClient | None = None,
+        bm25_index: BM25KnowledgeIndex | None = None,
     ) -> None:
         self.auth = auth
         self.store = store
         self.embedding_client = embedding_client
+        self.bm25_index = bm25_index
 
     async def page_knowledge_bases(
         self,
@@ -205,12 +210,38 @@ class KnowledgeService:
             await self._get_store().upsert_chunks(
                 ids=chroma_ids, embeddings=embeddings, documents=chunks, metadatas=metadatas
             )
-            await KnowledgeChunkCRUD(self.auth).replace_chunks(
-                knowledge_base_id=document.knowledge_base_id,
-                document_id=document.id,
-                chunks=chunks,
-                chroma_ids=chroma_ids,
-            )
+
+            # 同步写入BM25索引
+            retrieval_mode = getattr(settings, "RETRIEVAL_MODE", "vector")
+            if retrieval_mode in ("hybrid", "bm25"):
+                chunk_models = await KnowledgeChunkCRUD(self.auth).replace_chunks(
+                    knowledge_base_id=document.knowledge_base_id,
+                    document_id=document.id,
+                    chunks=chunks,
+                    chroma_ids=chroma_ids,
+                )
+                # 准备BM25索引数据
+                bm25_chunks = [
+                    {
+                        "id": chunk_model.id,
+                        "content": chunk_model.content,
+                        "knowledge_base_id": chunk_model.knowledge_base_id,
+                        "document_id": chunk_model.document_id,
+                        "chunk_index": chunk_model.chunk_index,
+                        "file_name": document.file_name,
+                    }
+                    for chunk_model in chunk_models
+                ]
+                await self._get_bm25_index().add_chunks(bm25_chunks)
+                logger.info(f"BM25索引同步完成: document_id={document.id}, chunks={len(bm25_chunks)}")
+            else:
+                await KnowledgeChunkCRUD(self.auth).replace_chunks(
+                    knowledge_base_id=document.knowledge_base_id,
+                    document_id=document.id,
+                    chunks=chunks,
+                    chroma_ids=chroma_ids,
+                )
+
             obj = await doc_crud.update_status(
                 document_id, index_status="success", error_message=None, indexed_at=datetime.now()
             )
@@ -227,6 +258,10 @@ class KnowledgeService:
             raise CustomException(msg="document ids cannot be empty")
         for document_id in ids:
             await self._get_store().delete_document(document_id)
+            # 同步删除BM25索引
+            retrieval_mode = getattr(settings, "RETRIEVAL_MODE", "vector")
+            if retrieval_mode in ("hybrid", "bm25"):
+                await self._get_bm25_index().delete_by_document(document_id)
         chunks = await KnowledgeChunkCRUD(self.auth).get_list(search={"document_id": ("in", ids)})
         chunk_ids = [chunk.id for chunk in chunks]
         if chunk_ids:
@@ -264,6 +299,11 @@ class KnowledgeService:
         if self.embedding_client is None:
             self.embedding_client = create_embedding_client()
         return self.embedding_client
+
+    def _get_bm25_index(self) -> BM25KnowledgeIndex:
+        if self.bm25_index is None:
+            self.bm25_index = BM25KnowledgeIndex()
+        return self.bm25_index
 
     @staticmethod
     def _format_chroma_results(raw: dict[str, Any]) -> list[dict[str, Any]]:

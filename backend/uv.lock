@@ -320,6 +320,7 @@ dependencies = [
     { name = "fastembed" },
     { name = "greenlet" },
     { name = "httpx" },
+    { name = "jieba" },
     { name = "jinja2" },
     { name = "langchain-anthropic" },
     { name = "langchain-core" },
@@ -344,6 +345,7 @@ dependencies = [
     { name = "starlette" },
     { name = "ua-parser" },
     { name = "uvicorn", extra = ["standard"] },
+    { name = "whoosh" },
 ]
 
 [package.dev-dependencies]
@@ -372,6 +374,7 @@ requires-dist = [
     { name = "fastembed", specifier = "==0.8.0" },
     { name = "greenlet", specifier = ">=3.5.2" },
     { name = "httpx", specifier = "==0.28.1" },
+    { name = "jieba", specifier = "==0.42.1" },
     { name = "jinja2", specifier = "==3.1.6" },
     { name = "langchain-anthropic", specifier = ">=1.4.8" },
     { name = "langchain-core", specifier = "==1.4.8" },
@@ -396,6 +399,7 @@ requires-dist = [
     { name = "starlette", specifier = "==0.40.0" },
     { name = "ua-parser", specifier = "==1.0.2" },
     { name = "uvicorn", extras = ["standard"], specifier = "==0.49.0" },
+    { name = "whoosh", specifier = "==2.7.4" },
 ]
 
 [package.metadata.requires-dev]
@@ -1310,6 +1314,12 @@ sdist = { url = "https://files.pythonhosted.org/packages/72/34/14ca021ce8e5dfedc
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cb/b1/3846dd7f199d53cb17f49cba7e651e9ce294d8497c8c150530ed11865bb8/iniconfig-2.3.0-py3-none-any.whl", hash = "sha256:f631c04d2c48c52b84d0d0549c99ff3859c98df65b3101406327ecc7d53fbf12", size = 7484, upload-time = "2025-10-18T21:55:41.639Z" },
 ]
+
+[[package]]
+name = "jieba"
+version = "0.42.1"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/c6/cb/18eeb235f833b726522d7ebed54f2278ce28ba9438e3135ab0278d9792a2/jieba-0.42.1.tar.gz", hash = "sha256:055ca12f62674fafed09427f176506079bc135638a14e23e25be909131928db2", size = 19214172, upload-time = "2020-01-20T14:27:23.5Z" }
 
 [[package]]
 name = "jinja2"
@@ -3760,6 +3770,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/c2/b6/b9afed2afadddaf5ebb2afa801abf4b0868f42f8539bfe4b071b5266c9fe/websockets-16.0-cp314-cp314t-win32.whl", hash = "sha256:5a4b4cc550cb665dd8a47f868c8d04c8230f857363ad3c9caf7a0c3bf8c61ca6", size = 178085, upload-time = "2026-01-10T09:23:33.816Z" },
     { url = "https://files.pythonhosted.org/packages/9f/3e/28135a24e384493fa804216b79a6a6759a38cc4ff59118787b9fb693df93/websockets-16.0-cp314-cp314t-win_amd64.whl", hash = "sha256:b14dc141ed6d2dde437cddb216004bcac6a1df0935d79656387bd41632ba0bbd", size = 178531, upload-time = "2026-01-10T09:23:35.016Z" },
     { url = "https://files.pythonhosted.org/packages/6f/28/258ebab549c2bf3e64d2b0217b973467394a9cea8c42f70418ca2c5d0d2e/websockets-16.0-py3-none-any.whl", hash = "sha256:1637db62fad1dc833276dded54215f2c7fa46912301a24bd94d45d46a011ceec", size = 171598, upload-time = "2026-01-10T09:23:45.395Z" },
+]
+
+[[package]]
+name = "whoosh"
+version = "2.7.4"
+source = { registry = "https://pypi.tuna.tsinghua.edu.cn/simple" }
+sdist = { url = "https://pypi.tuna.tsinghua.edu.cn/packages/25/2b/6beed2107b148edc1321da0d489afc4617b9ed317ef7b72d4993cad9b684/Whoosh-2.7.4.tar.gz", hash = "sha256:7ca5633dbfa9e0e0fa400d3151a8a0c4bec53bd2ecedc0a67705b17565c31a83", size = 968741, upload-time = "2016-04-04T01:19:32.327Z" }
+wheels = [
+    { url = "https://pypi.tuna.tsinghua.edu.cn/packages/ba/19/24d0f1f454a2c1eb689ca28d2f178db81e5024f42d82729a4ff6771155cf/Whoosh-2.7.4-py2.py3-none-any.whl", hash = "sha256:aa39c3c3426e3fd107dcb4bde64ca1e276a65a889d9085a6e4b54ba82420a852", size = 468790, upload-time = "2016-04-04T01:19:40.379Z" },
 ]
 
 [[package]]

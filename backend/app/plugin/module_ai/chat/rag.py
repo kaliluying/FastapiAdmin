@@ -537,9 +537,47 @@ def _extract_user_profile(user: Any | None) -> dict[str, Any]:
 
 
 def create_rag_chain(db: Any | None = None, auth: Any | None = None) -> RagChatChain:
+    """创建RAG链，根据配置选择检索器
+
+    RETRIEVAL_MODE配置项：
+    - vector: 纯向量检索（原有模式）
+    - bm25: 纯BM25关键词检索
+    - hybrid: 混合检索（推荐）
+    """
     user = getattr(auth, "user", None) if auth is not None else None
+    # 根据配置选择检索器
+    retrieval_mode = getattr(settings, "RETRIEVAL_MODE", "vector")
+
+    if retrieval_mode == "hybrid":
+        from app.plugin.module_ai.chat.hybrid_retriever import HybridKnowledgeRetriever
+
+        retriever = HybridKnowledgeRetriever(
+            alpha=getattr(settings, "HYBRID_ALPHA", 0.5),
+            top_k=getattr(settings, "RETRIEVAL_TOP_K", 5),
+            candidate_multiplier=getattr(settings, "RETRIEVAL_CANDIDATE_MULTIPLIER", 4),
+            auto_adjust_alpha=getattr(settings, "RETRIEVAL_AUTO_ADJUST_ALPHA", True),
+        )
+        logger.info(
+            f"使用混合检索模式: alpha={settings.HYBRID_ALPHA}, "
+            f"auto_adjust={getattr(settings, 'RETRIEVAL_AUTO_ADJUST_ALPHA', True)}"
+        )
+    elif retrieval_mode == "bm25":
+        from app.plugin.module_ai.chat.hybrid_retriever import HybridKnowledgeRetriever
+
+        retriever = HybridKnowledgeRetriever(
+            alpha=0.0,  # 纯BM25
+            top_k=getattr(settings, "RETRIEVAL_TOP_K", 5),
+        )
+        logger.info("使用纯BM25检索模式")
+    else:
+        # 默认：纯向量检索（向后兼容）
+        retriever = ChromaKnowledgeRetriever(
+            top_k=getattr(settings, "RETRIEVAL_TOP_K", 5),
+        )
+        logger.info("使用纯向量检索模式")
+
     return RagChatChain(
-        retriever=ChromaKnowledgeRetriever(),
+        retriever=retriever,
         prompt_builder=RagPromptBuilder(),
         chat_model=LangChainChatModel(),
         db=db,

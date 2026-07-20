@@ -223,6 +223,17 @@ class Settings(BaseSettings):
     CHROMA_COLLECTION_NAME: str = "knowledge_base"  # ChromaDB 集合名称
 
     # ================================================= #
+    # ******************* 混合检索配置 ****************** #
+    # ================================================= #
+    RETRIEVAL_MODE: Literal["vector", "bm25", "hybrid"] = "hybrid"  # 检索模式：vector(纯向量) | bm25(纯关键词) | hybrid(混合)
+    HYBRID_ALPHA: float = 0.5  # 混合检索中向量权重（0-1），1-alpha为BM25权重，0.5表示各占50%
+    BM25_INDEX_DIR: str = str(BASE_DIR / "data" / "bm25_index")  # BM25索引目录
+    BM25_TOKENIZER: Literal["char", "jieba"] = "jieba"  # BM25分词器：char(单字) | jieba(词组)
+    RETRIEVAL_TOP_K: int = 5  # 最终返回结果数
+    RETRIEVAL_CANDIDATE_MULTIPLIER: int = 4  # 粗召回倍数（候选数 = top_k * multiplier）
+    RETRIEVAL_AUTO_ADJUST_ALPHA: bool = True  # 是否根据查询类型自动调整alpha
+
+    # ================================================= #
     # ******************* 请求限制配置 ****************** #
     # ================================================= #
     REQUEST_LIMITER_REDIS_PREFIX: str = "fastapiadmin:request_limiter:"
