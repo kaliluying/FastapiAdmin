@@ -134,6 +134,50 @@ class TestKnowledgeGraph:
         assert kg.clear()
         assert kg.stats()["node_count"] == 0
 
+    def test_entity_merge_accumulates_sources(self, temp_storage_dir):
+        """同一实体多次添加时应合并属性并累积来源ID"""
+        kg = KnowledgeGraph(knowledge_base_id=1, storage_dir=temp_storage_dir)
+
+        kg.add_entity("张三", "person", {"source_chunk_id": "c1", "source_document_id": 100})
+        kg.add_entity("张三", "person", {"source_chunk_id": "c2", "source_document_id": 100})
+        kg.add_entity("张三", "person", {"source_chunk_id": "c3", "source_document_id": 200})
+
+        entity = kg.get_entity("张三")
+        assert set(entity["source_chunk_ids"]) == {"c1", "c2", "c3"}
+        assert set(entity["source_document_ids"]) == {100, 200}
+        # 仍是单一节点
+        assert kg.stats()["node_count"] == 1
+
+    def test_reverse_index_chunk_ids(self, temp_storage_dir):
+        """反向索引应根据实体返回去重后的chunk_id"""
+        kg = KnowledgeGraph(knowledge_base_id=1, storage_dir=temp_storage_dir)
+
+        kg.add_entity("实体A", "concept", {"source_chunk_id": "c1"})
+        kg.add_entity("实体A", "concept", {"source_chunk_id": "c2"})
+        kg.add_entity("实体B", "concept", {"source_chunk_id": "c2"})
+        kg.add_entity("实体B", "concept", {"source_chunk_id": "c3"})
+
+        chunk_ids = kg.get_chunk_ids_for_entities(["实体A", "实体B", "不存在"])
+        assert set(chunk_ids) == {"c1", "c2", "c3"}
+
+    def test_remove_document_entities(self, temp_storage_dir):
+        """删除文档时应移除独占实体、保留共享实体"""
+        kg = KnowledgeGraph(knowledge_base_id=1, storage_dir=temp_storage_dir)
+
+        # 仅属于文档100
+        kg.add_entity("独占实体", "concept", {"source_document_id": 100})
+        # 同时属于文档100和200
+        kg.add_entity("共享实体", "concept", {"source_document_id": 100})
+        kg.add_entity("共享实体", "concept", {"source_document_id": 200})
+
+        removed = kg.remove_document_entities(100)
+        assert removed == 1
+        assert kg.get_entity("独占实体") is None
+
+        shared = kg.get_entity("共享实体")
+        assert shared is not None
+        assert shared["source_document_ids"] == [200]
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])

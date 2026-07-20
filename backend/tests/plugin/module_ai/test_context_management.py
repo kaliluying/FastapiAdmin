@@ -120,6 +120,69 @@ class TestChunkTracking:
         assert hasattr(ChunkQualityStats, "citation_rate")
         assert hasattr(ChunkQualityStats, "quality_score")
 
+    def test_models_discoverable_for_table_creation(self):
+        """回归：模型必须能被建表发现机制扫描到（定义在 model.py）
+
+        建表/迁移机制 ImportUtil.find_models 只扫描 model.py/models.py，
+        若模型定义在 chunk_tracker.py 则表永远不会被创建。
+        """
+        from app.core.base_model import MappedBase
+        from app.utils.import_util import ImportUtil
+
+        table_names = {m.__tablename__ for m in ImportUtil.find_models(MappedBase)}
+        assert "ai_chunk_usage" in table_names
+        assert "ai_chunk_quality_stats" in table_names
+
+
+class TestChunkTrackingIntegration:
+    """在真实（SQLite）数据库上跑通追踪全流程，验证跨库 SQL 兼容性"""
+
+    @pytest.mark.asyncio
+    async def test_track_mark_and_update_stats(self, _api_client):
+        """track_retrieval → mark_cited → update_stats 全链路"""
+        from app.core.database import async_db_session
+        from app.plugin.module_ai.chat.chunk_tracker import ChunkQualityStats, ChunkUsageTracker
+
+        chunks = [
+            {"chunk_id": 9001, "document_id": 1, "knowledge_base_id": 1, "score": 0.9},
+            {"chunk_id": 9002, "document_id": 1, "knowledge_base_id": 1, "score": 0.7},
+        ]
+
+        async with async_db_session() as db:
+            usage_ids = await ChunkUsageTracker.track_retrieval(
+                session=db,
+                chunks=chunks,
+                query="劳动法相关规定",
+                retrieval_method="vector",
+                session_id="sess-test",
+                user_id="user-test",
+            )
+            assert len(usage_ids) == 2
+
+            marked = await ChunkUsageTracker.mark_cited(
+                session=db,
+                usage_ids=usage_ids,
+                cited_chunk_ids=[9001],
+            )
+            assert marked == 1
+
+            ok = await ChunkUsageTracker.update_stats(session=db, chunk_id=9001)
+            assert ok is True
+
+            from sqlalchemy import select
+
+            stat = (
+                await db.execute(select(ChunkQualityStats).where(ChunkQualityStats.chunk_id == 9001))
+            ).scalar_one()
+            assert stat.retrieval_count == 1
+            assert stat.citation_count == 1
+            assert stat.citation_rate == 1.0
+
+            # 再次调用 update_stats 应走 upsert 更新分支，不报错
+            ok2 = await ChunkUsageTracker.update_stats(session=db, chunk_id=9001)
+            assert ok2 is True
+            await db.commit()
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v", "-s"])

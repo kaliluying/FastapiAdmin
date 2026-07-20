@@ -174,7 +174,7 @@ class ConversationSummarizer:
                 try:
                     data = json.loads(text[start : end + 1])
                     return ConversationSummary(**data)
-                except (json.JSONDecodeError, Exception):
+                except Exception:
                     pass
 
         logger.warning(f"无法解析对话总结结果: {raw[:200]}")

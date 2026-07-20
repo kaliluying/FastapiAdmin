@@ -193,7 +193,7 @@ class EntityRelationExtractor:
                 try:
                     data = json.loads(text[start : end + 1])
                     return EntityRelationResult(**data)
-                except (json.JSONDecodeError, Exception):
+                except Exception:
                     pass
 
         logger.warning(f"无法解析实体关系提取结果: {raw[:200]}")

@@ -56,5 +56,12 @@ class ChromaKnowledgeStore:
             )
         )
 
+    async def get_by_ids(self, ids: list[str]) -> dict[str, Any]:
+        if not ids:
+            return {"ids": [], "documents": [], "metadatas": []}
+        return await anyio.to_thread.run_sync(
+            lambda: self.collection.get(ids=ids, include=["documents", "metadatas"])
+        )
+
     async def delete_document(self, document_id: int) -> None:
         await anyio.to_thread.run_sync(lambda: self.collection.delete(where={"document_id": document_id}))

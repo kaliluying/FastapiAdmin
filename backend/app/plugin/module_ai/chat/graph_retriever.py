@@ -49,6 +49,10 @@ class GraphEnhancedRetriever:
         self.vector_top_k = vector_top_k
         self.graph_max_hops = graph_max_hops
         self.enable_graph_expansion = enable_graph_expansion
+        # 图节点集合缓存（按节点数版本失效）
+        self._node_set_version: int | None = None
+        self._node_set_cache: set[str] = set()
+        self._long_nodes_cache: list[str] = []
 
     def _get_chroma_store(self) -> ChromaKnowledgeStore:
         """延迟初始化ChromaStore"""
@@ -139,7 +143,7 @@ class GraphEnhancedRetriever:
         logger.debug(f"识别到{len(all_entities)}个实体用于图遍历")
 
         # 图遍历获取关联实体
-        expanded_entity_names = set()
+        expanded_entity_names: set[str] = set()
         graph_relations = []
 
         for entity in all_entities:
@@ -158,14 +162,19 @@ class GraphEnhancedRetriever:
 
         logger.debug(f"图遍历扩展到{len(expanded_entity_names)}个实体, {len(graph_relations)}个关系")
 
-        # 根据扩展的实体，找到相关的chunks
-        # TODO: 这里需要一个反向索引：entity_name -> chunk_ids
-        # 目前简化处理：返回初始chunks + 图结构信息
+        # 通过反向索引，将扩展实体映射回真实关联chunk
+        existing_ids = {c.get("id") for c in initial_chunks}
+        expanded_chunk_ids = self.kg.get_chunk_ids_for_entities(list(expanded_entity_names))
+        new_chunk_ids = [cid for cid in expanded_chunk_ids if cid not in existing_ids]
 
-        # 将图关系作为额外的context
+        if new_chunk_ids:
+            related_chunks = await self._fetch_chunks_by_ids(new_chunk_ids)
+            initial_chunks.extend(related_chunks)
+            logger.debug(f"反向索引新增{len(related_chunks)}个关联chunk")
+
+        # 将图关系作为额外的结构化context
         if graph_relations:
             graph_context = self._format_graph_relations(graph_relations)
-            # 添加图结构作为虚拟chunk
             initial_chunks.append({
                 "id": "graph_context",
                 "content": graph_context,
@@ -174,31 +183,97 @@ class GraphEnhancedRetriever:
 
         return initial_chunks
 
-    def _extract_entity_names_from_chunks(self, chunks: list[dict[str, Any]]) -> list[str]:
-        """从chunks中提取实体名称（简化版）
+    async def _fetch_chunks_by_ids(self, chunk_ids: list[str]) -> list[dict[str, Any]]:
+        """根据chunk_id从向量库回取chunk内容
 
-        实际应该：
-        1. 查询chunk的metadata中的entities
-        2. 或者重新对chunk内容做NER
+        Args:
+            chunk_ids: chunk ID列表
 
-        当前简化：查找图中已存在的实体
+        Returns:
+            chunk字典列表
         """
-        entities = []
+        if not chunk_ids:
+            return []
+        try:
+            raw = await self._get_chroma_store().get_by_ids(chunk_ids)
+        except Exception as e:
+            logger.warning(f"按ID回取chunk失败: {e}")
+            return []
+
+        chunks: list[dict[str, Any]] = []
+        ids = raw.get("ids", []) or []
+        documents = raw.get("documents", []) or []
+        metadatas = raw.get("metadatas", []) or []
+        for i, cid in enumerate(ids):
+            chunks.append({
+                "id": cid,
+                "content": documents[i] if i < len(documents) else "",
+                "metadata": metadatas[i] if i < len(metadatas) else {},
+            })
+        return chunks
+
+    def _match_entities(self, text: str) -> list[str]:
+        """在文本中匹配图中已存在的实体
+
+        通过jieba分词得到候选词，再与图节点集合做O(1)集合查询，
+        避免O(nodes)的逐节点子串扫描，同时利用词边界减少误匹配
+        （如"AI"不会命中"MAIN"）。对多字实体，额外做一次子串兜底，
+        以覆盖分词无法切出的长实体名。
+
+        Args:
+            text: 待匹配文本
+
+        Returns:
+            命中的实体名称列表（去重）
+        """
+        if not text:
+            return []
+
+        node_set = self._get_node_set()
+        if not node_set:
+            return []
+
+        matched: set[str] = set()
+
+        try:
+            import jieba
+
+            tokens = {t.strip() for t in jieba.cut(text, cut_all=False) if t.strip()}
+            matched.update(tokens & node_set)
+        except ImportError:
+            logger.debug("jieba不可用，回退到子串匹配")
+
+        # 长实体（>=3字/词，分词难切）做一次子串兜底
+        for node in self._get_long_nodes():
+            if node not in matched and node in text:
+                matched.add(node)
+
+        return list(matched)
+
+    def _get_node_set(self) -> set[str]:
+        """缓存图节点集合，用于O(1)成员判断"""
+        version = self.kg.graph.number_of_nodes()
+        if getattr(self, "_node_set_version", None) != version:
+            self._node_set_cache = set(self.kg.graph.nodes())
+            self._long_nodes_cache = [n for n in self._node_set_cache if len(n) >= 3]
+            self._node_set_version = version
+        return self._node_set_cache
+
+    def _get_long_nodes(self) -> list[str]:
+        """长实体列表（子串兜底用），与节点集合共用版本缓存"""
+        self._get_node_set()
+        return self._long_nodes_cache
+
+    def _extract_entity_names_from_chunks(self, chunks: list[dict[str, Any]]) -> list[str]:
+        """从初始chunks中匹配图实体"""
+        entities: set[str] = set()
         for chunk in chunks:
-            content = chunk.get("content", "")
-            # 简单匹配：查找内容中是否包含图中的实体
-            for node in self.kg.graph.nodes():
-                if node in content:
-                    entities.append(node)
-        return list(set(entities))
+            entities.update(self._match_entities(chunk.get("content", "")))
+        return list(entities)
 
     def _extract_entities_from_query(self, query: str) -> list[str]:
-        """从查询中提取实体（简化版）"""
-        entities = []
-        for node in self.kg.graph.nodes():
-            if node in query:
-                entities.append(node)
-        return entities
+        """从查询中匹配图实体"""
+        return self._match_entities(query)
 
     def _format_graph_relations(self, relations: list[dict[str, Any]]) -> str:
         """格式化图关系为文本"""

@@ -95,11 +95,9 @@ class DocumentKnowledgeGraphBuilder:
 
                     processed += 1
 
-                # 批次完成，保存
-                self.graph.save()
                 logger.info(f"已处理 {processed}/{total_chunks} chunks")
 
-            # 最终保存
+            # 全部处理完成后统一保存一次，避免每批次全量重写JSON
             self.graph.save()
 
             stats = self.graph.stats()
@@ -142,8 +140,14 @@ class DocumentKnowledgeGraphBuilder:
         """
         logger.info(f"更新文档{document_id}的知识图谱")
 
-        # 删除该文档的旧实体（通过source_document_id识别）
-        # TODO: 实现删除逻辑
+        # 删除该文档的旧实体（通过source_document_id识别），
+        # 仅来源于该文档的实体整体删除，多来源实体仅剥离该文档来源
+        removed = self.graph.remove_document_entities(document_id)
+        logger.info(f"文档{document_id}旧实体清理完成: 删除{removed}个")
+
+        # 确保新chunks携带document_id，供后续增量删除识别
+        for chunk in chunks:
+            chunk.setdefault("document_id", document_id)
 
         # 重新构建
         return await self.build_from_chunks(chunks)

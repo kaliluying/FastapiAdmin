@@ -10,6 +10,9 @@
 from __future__ import annotations
 
 import json
+import os
+import tempfile
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +20,20 @@ import networkx as nx
 
 from app.config.setting import settings
 from app.core.logger import logger
+
+# 进程内按知识库ID共享的锁，保证同一图的写入串行化
+_GRAPH_LOCKS: dict[int, threading.RLock] = {}
+_GRAPH_LOCKS_GUARD = threading.Lock()
+
+
+def _get_graph_lock(knowledge_base_id: int) -> threading.RLock:
+    """获取指定知识库的进程内可重入锁"""
+    with _GRAPH_LOCKS_GUARD:
+        lock = _GRAPH_LOCKS.get(knowledge_base_id)
+        if lock is None:
+            lock = threading.RLock()
+            _GRAPH_LOCKS[knowledge_base_id] = lock
+        return lock
 
 
 class KnowledgeGraph:
@@ -35,6 +52,7 @@ class KnowledgeGraph:
 
         self.graph = nx.MultiDiGraph()  # 有向多重图（支持同一对节点间多条边）
         self._graph_file = self.storage_dir / f"kg_{knowledge_base_id}.json"
+        self._lock = _get_graph_lock(knowledge_base_id)
 
         # 加载已有图
         self._load()
@@ -46,6 +64,9 @@ class KnowledgeGraph:
         properties: dict[str, Any] | None = None,
     ) -> bool:
         """添加实体节点
+
+        同一实体多次出现时，合并属性并累积来源chunk/document ID，
+        用于构建反向索引（entity -> chunk_ids）和文档级删除。
 
         Args:
             entity_name: 实体名称（唯一标识）
@@ -59,11 +80,34 @@ class KnowledgeGraph:
             if properties is None:
                 properties = {}
 
-            self.graph.add_node(
-                entity_name,
-                type=entity_type,
-                **properties,
-            )
+            # 分离出来源ID，单独累积到列表；其余属性合并
+            source_chunk_id = properties.pop("source_chunk_id", None)
+            source_document_id = properties.pop("source_document_id", None)
+
+            with self._lock:
+                if entity_name in self.graph:
+                    node = self.graph.nodes[entity_name]
+                    node.update(properties)
+                    if entity_type and entity_type != "unknown":
+                        node["type"] = entity_type
+                else:
+                    self.graph.add_node(
+                        entity_name,
+                        type=entity_type,
+                        **properties,
+                    )
+                    node = self.graph.nodes[entity_name]
+
+                if source_chunk_id is not None:
+                    chunk_ids = set(node.get("source_chunk_ids", []))
+                    chunk_ids.add(source_chunk_id)
+                    node["source_chunk_ids"] = list(chunk_ids)
+
+                if source_document_id is not None:
+                    doc_ids = set(node.get("source_document_ids", []))
+                    doc_ids.add(source_document_id)
+                    node["source_document_ids"] = list(doc_ids)
+
             logger.debug(f"添加实体: {entity_name} ({entity_type})")
             return True
         except Exception as e:
@@ -92,18 +136,19 @@ class KnowledgeGraph:
             if properties is None:
                 properties = {}
 
-            # 确保节点存在
-            if source not in self.graph:
-                self.add_entity(source, "unknown", {})
-            if target not in self.graph:
-                self.add_entity(target, "unknown", {})
+            with self._lock:
+                # 确保节点存在
+                if source not in self.graph:
+                    self.add_entity(source, "unknown", {})
+                if target not in self.graph:
+                    self.add_entity(target, "unknown", {})
 
-            self.graph.add_edge(
-                source,
-                target,
-                relation_type=relation_type,
-                **properties,
-            )
+                self.graph.add_edge(
+                    source,
+                    target,
+                    relation_type=relation_type,
+                    **properties,
+                )
             logger.debug(f"添加关系: {source} -[{relation_type}]-> {target}")
             return True
         except Exception as e:
@@ -163,6 +208,59 @@ class KnowledgeGraph:
             logger.warning(f"获取邻居节点失败: {e}")
 
         return neighbors
+
+    def get_chunk_ids_for_entities(self, entity_names: list[str]) -> list[str]:
+        """反向索引：根据实体名称集合，返回其来源chunk_id列表（去重）
+
+        Args:
+            entity_names: 实体名称列表
+
+        Returns:
+            关联的chunk_id列表（去重，保持稳定顺序）
+        """
+        chunk_ids: list[str] = []
+        seen: set[str] = set()
+        for name in entity_names:
+            if name not in self.graph:
+                continue
+            for cid in self.graph.nodes[name].get("source_chunk_ids", []):
+                if cid is not None and cid not in seen:
+                    seen.add(cid)
+                    chunk_ids.append(cid)
+        return chunk_ids
+
+    def remove_document_entities(self, document_id: Any) -> int:
+        """删除仅来源于指定文档的实体，并从其余实体中剥离该文档来源
+
+        规则：
+        - 若实体的 source_document_ids 仅含该文档，则整体删除该节点及其边；
+        - 若实体还来源于其他文档，则仅从其来源列表中移除该文档ID。
+
+        Args:
+            document_id: 文档ID
+
+        Returns:
+            被删除的实体数量
+        """
+        removed = 0
+        with self._lock:
+            to_remove: list[str] = []
+            for node in list(self.graph.nodes()):
+                doc_ids = self.graph.nodes[node].get("source_document_ids", [])
+                if document_id not in doc_ids:
+                    continue
+                remaining = [d for d in doc_ids if d != document_id]
+                if remaining:
+                    self.graph.nodes[node]["source_document_ids"] = remaining
+                else:
+                    to_remove.append(node)
+
+            for node in to_remove:
+                self.graph.remove_node(node)
+                removed += 1
+
+        logger.info(f"文档{document_id}关联实体清理: 删除{removed}个实体")
+        return removed
 
     def traverse(
         self,
@@ -276,49 +374,47 @@ class KnowledgeGraph:
             是否成功
         """
         try:
-            import os
-            import tempfile
+            with self._lock:
+                # 转换为JSON可序列化格式
+                data = {
+                    "knowledge_base_id": self.knowledge_base_id,
+                    "nodes": [
+                        {"id": node, **self.graph.nodes[node]}
+                        for node in self.graph.nodes()
+                    ],
+                    "edges": [
+                        {
+                            "source": u,
+                            "target": v,
+                            "key": k,
+                            **edge_data,
+                        }
+                        for u, v, k, edge_data in self.graph.edges(keys=True, data=True)
+                    ],
+                }
 
-            # 转换为JSON可序列化格式
-            data = {
-                "knowledge_base_id": self.knowledge_base_id,
-                "nodes": [
-                    {"id": node, **self.graph.nodes[node]}
-                    for node in self.graph.nodes()
-                ],
-                "edges": [
-                    {
-                        "source": u,
-                        "target": v,
-                        "key": k,
-                        **edge_data,
-                    }
-                    for u, v, k, edge_data in self.graph.edges(keys=True, data=True)
-                ],
-            }
+                # 使用临时文件+原子重命名，避免并发写入问题
+                temp_fd, temp_path = tempfile.mkstemp(
+                    suffix=".json",
+                    dir=self.storage_dir,
+                    text=True,
+                )
 
-            # 使用临时文件+原子重命名，避免并发写入问题
-            temp_fd, temp_path = tempfile.mkstemp(
-                suffix=".json",
-                dir=self.storage_dir,
-                text=True,
-            )
+                try:
+                    with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
+                        json.dump(data, f, ensure_ascii=False, indent=2)
 
-            try:
-                with os.fdopen(temp_fd, "w", encoding="utf-8") as f:
-                    json.dump(data, f, ensure_ascii=False, indent=2)
+                    # 原子性重命名（Windows和Unix都支持）
+                    os.replace(temp_path, self._graph_file)
 
-                # 原子性重命名（Windows和Unix都支持）
-                os.replace(temp_path, self._graph_file)
+                    logger.info(f"知识图谱已保存: {len(self.graph.nodes)}个节点, {len(self.graph.edges)}条边")
+                    return True
 
-                logger.info(f"知识图谱已保存: {len(self.graph.nodes)}个节点, {len(self.graph.edges)}条边")
-                return True
-
-            except Exception:
-                # 清理临时文件
-                if os.path.exists(temp_path):
-                    os.unlink(temp_path)
-                raise
+                except Exception:
+                    # 清理临时文件
+                    if os.path.exists(temp_path):
+                        os.unlink(temp_path)
+                    raise
 
         except Exception as e:
             logger.error(f"保存知识图谱失败: {e}")
@@ -363,9 +459,10 @@ class KnowledgeGraph:
             是否成功
         """
         try:
-            self.graph.clear()
-            if self._graph_file.exists():
-                self._graph_file.unlink()
+            with self._lock:
+                self.graph.clear()
+                if self._graph_file.exists():
+                    self._graph_file.unlink()
             logger.info("知识图谱已清空")
             return True
         except Exception as e:

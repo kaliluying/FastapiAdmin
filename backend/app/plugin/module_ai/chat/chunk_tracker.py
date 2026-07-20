@@ -5,6 +5,8 @@
 2. 统计chunk命中率和质量指标
 3. 识别低质量chunk
 4. 为优化文档分块策略提供数据支持
+
+模型定义位于 chat/model.py（建表发现机制只扫描 model.py/models.py）。
 """
 
 from __future__ import annotations
@@ -12,71 +14,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, Float, Integer, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Integer
 
-from app.core.base_model import ModelMixin
 from app.core.logger import logger
+from app.plugin.module_ai.chat.model import ChunkQualityStats, ChunkUsageModel
 
-
-class ChunkUsageModel(ModelMixin):
-    """Chunk使用记录"""
-
-    __tablename__ = "ai_chunk_usage"
-    __table_args__ = {"comment": "AI检索chunk使用追踪"}
-
-    chunk_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True, comment="chunk ID")
-    document_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True, comment="文档ID")
-    knowledge_base_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True, comment="知识库ID")
-
-    # 检索信息
-    query: Mapped[str] = mapped_column(Text, nullable=False, comment="用户查询")
-    retrieval_rank: Mapped[int] = mapped_column(Integer, nullable=False, comment="检索排名（1-based）")
-    retrieval_score: Mapped[float] = mapped_column(Float, nullable=False, comment="检索得分")
-    retrieval_method: Mapped[str] = mapped_column(String(32), nullable=False, comment="检索方法: vector/bm25/hybrid")
-
-    # 使用情况
-    was_cited: Mapped[bool] = mapped_column(default=False, nullable=False, comment="是否被LLM引用")
-    citation_confidence: Mapped[float | None] = mapped_column(Float, nullable=True, comment="引用置信度(0-1)")
-
-    # 用户反馈
-    user_feedback: Mapped[str | None] = mapped_column(String(32), nullable=True, comment="用户反馈: helpful/not_helpful")
-
-    # 会话信息
-    session_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True, comment="会话ID")
-    user_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True, comment="用户ID")
-
-    # 元数据
-    extra_data: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False, comment="额外元数据")
-    tracked_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, comment="追踪时间")
-
-
-class ChunkQualityStats(ModelMixin):
-    """Chunk质量统计（聚合表）"""
-
-    __tablename__ = "ai_chunk_quality_stats"
-    __table_args__ = {"comment": "Chunk质量统计"}
-
-    chunk_id: Mapped[int] = mapped_column(Integer, nullable=False, unique=True, index=True, comment="chunk ID")
-    document_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True, comment="文档ID")
-    knowledge_base_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True, comment="知识库ID")
-
-    # 检索统计
-    retrieval_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False, comment="被检索次数")
-    citation_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False, comment="被引用次数")
-    avg_retrieval_rank: Mapped[float] = mapped_column(Float, default=0.0, nullable=False, comment="平均检索排名")
-    avg_retrieval_score: Mapped[float] = mapped_column(Float, default=0.0, nullable=False, comment="平均检索得分")
-
-    # 质量指标
-    citation_rate: Mapped[float] = mapped_column(Float, default=0.0, nullable=False, comment="引用率（citation/retrieval）")
-    helpful_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False, comment="有帮助反馈数")
-    not_helpful_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False, comment="无帮助反馈数")
-
-    # 质量评分（综合指标）
-    quality_score: Mapped[float] = mapped_column(Float, default=0.0, nullable=False, comment="质量评分(0-100)")
-
-    # 更新时间
-    last_updated: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, comment="最后更新时间")
+__all__ = ["ChunkQualityStats", "ChunkUsageModel", "ChunkUsageTracker"]
 
 
 class ChunkUsageTracker:
@@ -190,16 +133,16 @@ class ChunkUsageTracker:
             是否成功
         """
         try:
-            from sqlalchemy import func, select
+            from sqlalchemy import case, cast, func, select
 
             # 查询该chunk的使用统计
             stmt = select(
                 func.count(ChunkUsageModel.id).label("retrieval_count"),
-                func.sum(func.cast(ChunkUsageModel.was_cited, Integer)).label("citation_count"),
+                func.sum(cast(ChunkUsageModel.was_cited, Integer)).label("citation_count"),
                 func.avg(ChunkUsageModel.retrieval_rank).label("avg_rank"),
                 func.avg(ChunkUsageModel.retrieval_score).label("avg_score"),
-                func.sum(func.case((ChunkUsageModel.user_feedback == "helpful", 1), else_=0)).label("helpful"),
-                func.sum(func.case((ChunkUsageModel.user_feedback == "not_helpful", 1), else_=0)).label("not_helpful"),
+                func.sum(case((ChunkUsageModel.user_feedback == "helpful", 1), else_=0)).label("helpful"),
+                func.sum(case((ChunkUsageModel.user_feedback == "not_helpful", 1), else_=0)).label("not_helpful"),
             ).where(ChunkUsageModel.chunk_id == chunk_id)
 
             result = await session.execute(stmt)
@@ -219,9 +162,6 @@ class ChunkUsageTracker:
             feedback_score = ((helpful - not_helpful) / retrieval_count * 50) if retrieval_count > 0 else 0.0
             quality_score = citation_rate * 50 + feedback_score
 
-            # 更新或创建统计记录
-            from sqlalchemy.dialects.mysql import insert as mysql_insert
-
             # 获取chunk的document_id和knowledge_base_id
             chunk_stmt = select(ChunkUsageModel.document_id, ChunkUsageModel.knowledge_base_id).where(ChunkUsageModel.chunk_id == chunk_id).limit(1)
             chunk_info = await session.execute(chunk_stmt)
@@ -230,23 +170,7 @@ class ChunkUsageTracker:
             if not chunk_row:
                 return False
 
-            # MySQL/MariaDB使用ON DUPLICATE KEY UPDATE
-            insert_stmt = mysql_insert(ChunkQualityStats).values(
-                chunk_id=chunk_id,
-                document_id=chunk_row.document_id,
-                knowledge_base_id=chunk_row.knowledge_base_id,
-                retrieval_count=retrieval_count,
-                citation_count=citation_count,
-                avg_retrieval_rank=row.avg_rank or 0.0,
-                avg_retrieval_score=row.avg_score or 0.0,
-                citation_rate=citation_rate,
-                helpful_count=helpful,
-                not_helpful_count=not_helpful,
-                quality_score=quality_score,
-                last_updated=datetime.utcnow(),
-            )
-
-            update_dict = {
+            values = {
                 "retrieval_count": retrieval_count,
                 "citation_count": citation_count,
                 "avg_retrieval_rank": row.avg_rank or 0.0,
@@ -255,11 +179,26 @@ class ChunkUsageTracker:
                 "helpful_count": helpful,
                 "not_helpful_count": not_helpful,
                 "quality_score": quality_score,
-                "last_updated": datetime.utcnow(),
+                "last_updated": datetime.now(),
             }
 
-            stmt = insert_stmt.on_duplicate_key_update(**update_dict)
-            await session.execute(stmt)
+            # 跨数据库兼容的 upsert：先查是否存在，再更新或插入
+            existing_stmt = select(ChunkQualityStats).where(ChunkQualityStats.chunk_id == chunk_id).limit(1)
+            existing = (await session.execute(existing_stmt)).scalar_one_or_none()
+
+            if existing is not None:
+                for key, val in values.items():
+                    setattr(existing, key, val)
+            else:
+                session.add(
+                    ChunkQualityStats(
+                        chunk_id=chunk_id,
+                        document_id=chunk_row.document_id,
+                        knowledge_base_id=chunk_row.knowledge_base_id,
+                        **values,
+                    )
+                )
+
             await session.flush()
 
             logger.debug(f"更新chunk统计: chunk_id={chunk_id}, quality_score={quality_score:.2f}")
