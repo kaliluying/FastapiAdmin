@@ -8,13 +8,6 @@ import { ROUTE_COMPONENT_LAYOUT } from "./staticRoutes";
  * 菜单 → `AppRouteRecord`：仅将后端授权菜单转换为动态路由。
  */
 
-function joinAbsolutePath(parentAbs: string, segmentPath: string): string {
-  const seg = segmentPath.replace(/^\/+/, "");
-  const base = parentAbs.replace(/\/$/, "");
-  if (!seg) return base;
-  return `${base}/${seg}`;
-}
-
 export class MenuProcessor {
   async getMenuList(): Promise<AppRouteRecord[]> {
     return this.normalizeMenuPaths(await this.processBackendMenu());

@@ -12,16 +12,32 @@
             class="base-select"
             placeholder="选择知识库"
           >
-            <ElOption v-for="item in bases" :key="item.id" :label="item.name" :value="item.id || 0" />
+            <ElOption
+              v-for="item in bases"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id || 0"
+            />
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="问题">
-          <ElInput v-model="form.query" type="textarea" :rows="4" maxlength="1000" show-word-limit />
+          <ElInput
+            v-model="form.query"
+            type="textarea"
+            :rows="4"
+            maxlength="1000"
+            show-word-limit
+          />
         </ElFormItem>
 
         <!-- 高级设置 -->
         <ElFormItem>
-          <ElButton link type="primary" class="advanced-toggle" @click="showAdvanced = !showAdvanced">
+          <ElButton
+            link
+            type="primary"
+            class="advanced-toggle"
+            @click="showAdvanced = !showAdvanced"
+          >
             高级设置
             <span class="toggle-icon">{{ showAdvanced ? "▲" : "▼" }}</span>
           </ElButton>
@@ -33,7 +49,13 @@
         </div>
 
         <ElFormItem>
-          <ElButton type="primary" :icon="Search" :loading="asyncState === 'loading'" @click="testRetrieval">检索</ElButton>
+          <ElButton
+            type="primary"
+            :icon="Search"
+            :loading="asyncState === 'loading'"
+            @click="testRetrieval"
+            >检索</ElButton
+          >
         </ElFormItem>
       </ElForm>
 
@@ -44,8 +66,8 @@
         <p class="results-title">检索结果</p>
 
         <FaAsyncState
-          v-if="asyncState === 'loading' || asyncState === 'empty' || asyncState === 'error'"
-          :state="(asyncState as 'loading' | 'empty' | 'error')"
+          v-if="asyncStateForDisplay"
+          :state="asyncStateForDisplay"
           :title="asyncState === 'error' ? '检索失败，请重试' : undefined"
         />
 
@@ -57,7 +79,9 @@
                 <span>知识库 {{ item.metadata.knowledge_base_id ?? "-" }}</span>
                 <span>文档 {{ item.metadata.document_id ?? "-" }}</span>
                 <span>分块 {{ item.metadata.chunk_index ?? "-" }}</span>
-                <span v-if="item.distance != null">距离 {{ Number(item.distance).toFixed(4) }}</span>
+                <span v-if="item.distance != null"
+                  >距离 {{ Number(item.distance).toFixed(4) }}</span
+                >
               </div>
               <p class="result-content">{{ item.content }}</p>
             </ElCard>
@@ -69,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref } from "vue";
 import { ElMessage } from "element-plus";
 import { Search } from "@element-plus/icons-vue";
 import { useRoute } from "vue-router";
@@ -83,6 +107,14 @@ const bases = ref<KnowledgeBase[]>([]);
 const results = ref<RetrievalHit[]>([]);
 const showAdvanced = ref(false);
 const asyncState = ref<"idle" | "loading" | "empty" | "error" | "done">("idle");
+
+const asyncStateForDisplay = computed(() => {
+  const state = asyncState.value;
+  if (state === "loading" || state === "empty" || state === "error") {
+    return state;
+  }
+  return null;
+});
 
 const form = reactive({
   query: "",
@@ -148,15 +180,15 @@ onMounted(async () => {
 
 .advanced-panel {
   padding-left: 8px;
-  border-left: 2px solid var(--el-border-color-light);
   margin-bottom: 8px;
+  border-left: 2px solid var(--el-border-color-light);
 }
 
 .results-title {
+  margin: 0 0 12px;
   font-size: 14px;
   font-weight: 500;
   color: var(--el-text-color-primary);
-  margin: 0 0 12px;
 }
 
 .result-list {

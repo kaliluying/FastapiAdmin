@@ -75,25 +75,42 @@
           background: getMenuTheme.background,
         }"
       >
-        <FaLogo v-if="!isDualMenu" class="logo" :src="sidebarLogoSrc" />
-
-        <p
-          :class="{ 'is-dual-menu-name': isDualMenu }"
-          :style="{
-            color: getMenuTheme.systemNameColor,
-            opacity: !menuOpen ? 0 : 1,
-          }"
+        <div class="header-brand">
+          <div class="header-brand__logo">
+            <FaLogo v-if="!isDualMenu" class="logo" :src="sidebarLogoSrc" />
+          </div>
+          <div class="header-brand__text">
+            <p
+              :class="{ 'is-dual-menu-name': isDualMenu }"
+              :style="{
+                color: getMenuTheme.systemNameColor,
+                opacity: !menuOpen ? 0 : 1,
+              }"
+            >
+              {{ sidebarTitle }}
+            </p>
+            <span class="header-brand__subtitle">OPERATIONS</span>
+          </div>
+        </div>
+        <!-- 主动折叠/展开按钮（仅在非双列菜单下显示） -->
+        <button
+          v-if="!isDualMenu"
+          class="header-collapse-btn"
+          :aria-label="menuOpen ? '收起侧边栏' : '展开侧边栏'"
+          :title="menuOpen ? '收起侧边栏' : '展开侧边栏'"
+          @click.stop="toggleMenuVisibility"
         >
-          {{ sidebarTitle }}
-        </p>
+          <FaSvgIcon :icon="menuOpen ? 'ri:menu-fold-3-line' : 'ri:menu-unfold-3-line'" />
+        </button>
       </div>
       <ElScrollbar :style="scrollbarStyle">
         <ElMenu
+          ref="elMenuRef"
           :class="'el-menu-' + getMenuTheme.theme"
           :collapse="!menuOpen"
           :default-active="routerPath"
           :text-color="getMenuTheme.textColor"
-          :unique-opened="uniqueOpened"
+          :unique-opened="false"
           :background-color="getMenuTheme.background"
           :default-openeds="defaultOpenedMenus"
           :popper-class="`menu-left-popper menu-left-${getMenuTheme.theme}-popper`"
@@ -131,6 +148,7 @@
 
 <script setup lang="ts">
 import AppConfig from "@/config";
+import type { AppRouteRecord } from "@/types/router";
 import { useConfigStore, useSettingsStore, useMenuStore } from "@stores";
 import { MenuTypeEnum, MenuWidth } from "@/enums/appEnum";
 import { isIframe, handleMenuJump } from "@utils";
@@ -161,18 +179,12 @@ const sidebarTitle = computed(() => {
   return AppConfig.systemInfo.name;
 });
 
-const {
-  getMenuOpenWidth,
-  menuType,
-  uniqueOpened,
-  dualMenuShowText,
-  menuOpen,
-  getMenuTheme,
-  showAppLogo,
-} = storeToRefs(settingStore);
+const { getMenuOpenWidth, menuType, dualMenuShowText, menuOpen, getMenuTheme, showAppLogo } =
+  storeToRefs(settingStore);
 
-// 组件内部状态
-const defaultOpenedMenus = ref<string[]>([]);
+// ElMenu 组件引用
+const elMenuRef = ref();
+
 const isMobileMode = ref(false);
 const showMobileModal = ref(false);
 
@@ -199,12 +211,35 @@ const routerPath = computed(() => String(route.meta.activePath || route.path));
 
 // 菜单数据
 const firstLevelMenus = computed(() => {
-  return useMenuStore().menuList.filter((menu) => !menu.meta.isHide);
+  return injectMenuGroup(useMenuStore().menuList).filter((menu) => !menu.meta.isHide);
 });
+
+/**
+ * 临时：按一级路径为菜单注入 meta.group，用于前端展示分组标题。
+ * 后续建议由后端菜单接口直接返回 meta.group，届时可移除此 helper。
+ */
+function injectMenuGroup(menus: AppRouteRecord[]): AppRouteRecord[] {
+  const groupMap: Record<string, string> = {
+    home: "总览",
+    monitor: "总览",
+    dashboard: "总览",
+    system: "系统",
+    ai: "AI 中枢",
+  };
+
+  return menus.map((menu) => {
+    const key = menu.path?.replace(/^\//, "").split("/")[0];
+    if (!key || !groupMap[key]) return menu;
+    return {
+      ...menu,
+      meta: { ...menu.meta, group: groupMap[key] },
+    };
+  });
+}
 
 const menuList = computed(() => {
   const menuStore = useMenuStore();
-  const allMenus = menuStore.menuList;
+  const allMenus = injectMenuGroup(menuStore.menuList);
 
   // 如果不是顶部左侧菜单或双列菜单，直接返回完整菜单列表
   if (!isTopLeftMenu.value && !isDualMenu.value) {
@@ -235,6 +270,38 @@ const menuList = computed(() => {
   }
   return sub;
 });
+
+/** 收集所有含子菜单的菜单项 index，用于强制全部展开（消除下拉折叠行为） */
+const allSubmenuIndexes = computed(() => {
+  const indexes: string[] = [];
+  const collect = (items: AppRouteRecord[]) => {
+    items.forEach((item) => {
+      if (item.children && item.children.length > 0) {
+        indexes.push(item.path || item.meta.title);
+        collect(item.children);
+      }
+    });
+  };
+  collect(menuList.value);
+  return indexes;
+});
+
+/** 默认展开所有子菜单 */
+const defaultOpenedMenus = computed(() => allSubmenuIndexes.value);
+
+/** 展开模式下强制保持所有子菜单打开，禁止折叠 */
+watch(
+  [allSubmenuIndexes, menuOpen],
+  () => {
+    if (!menuOpen.value) return;
+    nextTick(() => {
+      allSubmenuIndexes.value.forEach((idx) => {
+        elMenuRef.value?.open(idx);
+      });
+    });
+  },
+  { immediate: true }
+);
 
 // 双列菜单收起时的滚动条样式
 const scrollbarStyle = computed(() => {
@@ -454,8 +521,11 @@ watch(menuOpen, (isMenuOpen: boolean) => {
   .menu-left {
     position: relative;
     box-sizing: border-box;
+    flex: 0 0 auto;
+    min-width: 0;
     height: 100vh;
     border-right: 1px solid rgb(255 255 255 / 7%);
+    transition: width 0.25s ease;
 
     &::before {
       position: absolute;
@@ -464,8 +534,12 @@ watch(menuOpen, (isMenuOpen: boolean) => {
       pointer-events: none;
       content: "";
       background:
-        radial-gradient(circle at 20% 4%, rgb(45 212 191 / 16%), transparent 24%),
-        linear-gradient(180deg, rgb(255 255 255 / 4%), transparent 26%);
+        radial-gradient(
+          circle at 20% 4%,
+          color-mix(in srgb, var(--theme-color) 10%, transparent),
+          transparent 24%
+        ),
+        linear-gradient(180deg, rgb(255 255 255 / 2%), transparent 26%);
     }
 
     > * {
@@ -525,32 +599,118 @@ watch(menuOpen, (isMenuOpen: boolean) => {
     display: flex;
     align-items: center;
     width: 100%;
-    height: 60px;
-    padding: 0 10px;
+    height: 68px;
+    padding: 0 14px;
     overflow: hidden;
-    line-height: 60px;
+    line-height: 1.2;
     cursor: pointer;
-    border-bottom: 1px solid rgb(255 255 255 / 7%);
+    border-bottom: 1px solid rgb(11 18 32 / 6%);
 
-    .logo {
-      margin-left: 22px;
+    .header-brand {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      width: calc(100% - 34px);
+      min-width: 0;
+
+      &__logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: var(--theme-color);
+        border-radius: 9px;
+        box-shadow: 0 4px 10px color-mix(in srgb, var(--theme-color) 24%, transparent);
+
+        .logo {
+          width: 20px;
+          height: 20px;
+          margin: 0;
+          color: #fff;
+        }
+      }
+
+      &__text {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        min-width: 0;
+        overflow: hidden;
+        transition: opacity 0.25s ease;
+
+        p {
+          position: static;
+          top: auto;
+          bottom: auto;
+          left: auto;
+          margin: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          font-size: 17px;
+          font-weight: 760;
+          line-height: 1.2;
+          letter-spacing: -0.01em;
+          white-space: nowrap;
+
+          &.is-dual-menu-name {
+            left: auto;
+            margin: auto;
+          }
+        }
+      }
+
+      &__subtitle {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--fa-gray-500);
+        letter-spacing: 0.12em;
+      }
     }
 
-    p {
+    .header-collapse-btn {
       position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 58px;
-      box-sizing: border-box;
-      margin-left: 10px;
-      font-size: 18px;
-      font-weight: 780;
-      letter-spacing: 0;
+      top: 50%;
+      right: 10px;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      margin: 0;
+      font-size: 16px;
+      color: var(--fa-gray-500);
+      cursor: pointer;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      transform: translateY(-50%);
+      transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        border-color 0.18s ease;
 
-      &.is-dual-menu-name {
-        left: 25px;
-        margin: auto;
+      &:hover {
+        color: var(--theme-color);
+        background: color-mix(in srgb, var(--theme-color) 8%, transparent);
+        border-color: color-mix(in srgb, var(--theme-color) 18%, transparent);
       }
+
+      &:focus-visible {
+        outline: none;
+        box-shadow: var(--fa-focus-ring);
+      }
+
+      .fa-svg-icon {
+        transition: color 0.18s ease;
+      }
+    }
+
+    .menu-left-close .header-collapse-btn {
+      right: 50%;
+      transform: translate(50%, -50%);
     }
   }
 
@@ -641,6 +801,20 @@ watch(menuOpen, (isMenuOpen: boolean) => {
 <style lang="scss">
 @use "@styles/core/mixin.scss" as *;
 
+/* 一级菜单分组标题 */
+.fa-menu-group-title {
+  display: flex;
+  align-items: center;
+  padding: 18px 14px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--fa-gray-500);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  user-select: none;
+}
+
 /* 菜单样式变量 */
 $menu-height: 40px;
 $menu-icon-size: 20px;
@@ -653,21 +827,27 @@ $popup-menu-radius: 6px;
 
 /* 通用菜单项样式 */
 @mixin menu-item-base {
-  width: calc(100% - 16px);
-  margin-left: 8px;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  width: 100%;
+  padding: 0 12px 0 14px;
+  margin: 0;
+  border: none;
+  border-radius: 0;
 
   .menu-icon {
-    margin-left: -7px;
+    margin-right: 10px;
+    margin-left: 0;
   }
 }
 
 /* 通用 hover 样式 */
-@mixin menu-hover($bg-color) {
+@mixin menu-hover($bg-color, $icon-bg-color: transparent) {
   .el-sub-menu__title:hover,
   .el-menu-item:not(.is-active):hover {
     background: $bg-color !important;
+
+    .menu-icon {
+      background: $icon-bg-color;
+    }
   }
 }
 
@@ -676,26 +856,36 @@ $popup-menu-radius: 6px;
   .el-menu-item.is-active {
     position: relative;
     color: $color !important;
-    background-color: $bg-color;
-    border-color: color-mix(in srgb, var(--theme-color) 20%, transparent);
-    box-shadow: 0 10px 24px rgb(0 0 0 / 12%);
+    background: $bg-color !important;
+    border-color: transparent;
+    border-radius: 0;
+    box-shadow: none;
 
     &::before {
       position: absolute;
-      top: 9px;
-      bottom: 9px;
+      top: 0;
+      bottom: 0;
       left: 0;
       width: 3px;
       content: "";
-      background: #2dd4bf;
-      border-radius: 0 999px 999px 0;
-      box-shadow: 0 0 18px rgb(45 212 191 / 70%);
+      background: var(--theme-color);
+      border-radius: 0 3px 3px 0;
     }
 
     .menu-icon {
+      color: $icon-color !important;
+      background: color-mix(in srgb, var(--theme-color) 14%, transparent);
+      box-shadow: none;
+
       .art-svg-icon {
         color: $icon-color !important;
       }
+    }
+
+    span,
+    .menu-name {
+      font-weight: 600;
+      color: $color !important;
     }
   }
 }
@@ -770,9 +960,26 @@ $popup-menu-radius: 6px;
 
   /* 菜单图标 */
   .menu-icon {
-    margin-right: 8px;
-    font-size: $menu-icon-size;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin-right: 10px;
+    margin-left: 0;
+    font-size: 17px;
     color: var(--fa-gray-600);
+    background: transparent;
+    border-radius: 7px;
+    transition:
+      background 0.2s ease,
+      box-shadow 0.2s ease,
+      color 0.2s ease;
+
+    .art-svg-icon {
+      transition: color 0.2s ease;
+    }
   }
 
   /* 菜单高度 */
@@ -804,8 +1011,41 @@ $popup-menu-radius: 6px;
     font-size: 13px !important;
   }
 
+  /* 展开模式：隐藏折叠箭头，禁止子菜单标题点击，消除下拉感 */
+  .el-menu:not(.el-menu--collapse) {
+    .el-sub-menu__icon-arrow {
+      display: none !important;
+    }
+
+    .el-sub-menu__title {
+      pointer-events: none !important;
+      cursor: default !important;
+
+      &:hover,
+      &:focus {
+        background-color: transparent !important;
+      }
+
+      .menu-name {
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        color: var(--fa-gray-500) !important;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .menu-icon {
+        opacity: 0.45;
+      }
+    }
+  }
+
   /* 菜单折叠 */
   .el-menu--collapse {
+    .fa-menu-group-title {
+      display: none;
+    }
+
     .el-sub-menu.is-active {
       .el-sub-menu__title {
         .menu-icon {
@@ -814,6 +1054,16 @@ $popup-menu-radius: 6px;
             color: var(--theme-color) !important;
           }
         }
+      }
+    }
+
+    .el-menu-item,
+    .el-sub-menu__title {
+      justify-content: center;
+      padding: 0;
+
+      .menu-icon {
+        margin-right: 0;
       }
     }
   }
@@ -825,7 +1075,7 @@ $popup-menu-radius: 6px;
       var(--theme-color),
       color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color))
     );
-    @include menu-hover($hover-bg-color);
+    @include menu-hover($hover-bg-color, var(--fa-gray-200));
 
     .el-sub-menu__icon-arrow {
       color: var(--fa-gray-600);
@@ -839,7 +1089,7 @@ $popup-menu-radius: 6px;
       var(--theme-color),
       color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color))
     );
-    @include menu-hover(rgb(255 255 255 / 8%));
+    @include menu-hover(rgb(255 255 255 / 8%), rgb(255 255 255 / 10%));
 
     .el-sub-menu__icon-arrow {
       color: rgb(203 213 225 / 72%);
@@ -848,24 +1098,37 @@ $popup-menu-radius: 6px;
 
   /* ---------------------- Light theme menu ---------------------- */
   .el-menu-light {
-    .el-sub-menu__title,
-    .el-menu-item {
-      .menu-icon {
-        margin-left: 1px;
-      }
-    }
-
     .el-menu-item.is-active {
-      background-color: color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color));
-      border: 1px solid color-mix(in srgb, var(--theme-color) 20%, transparent);
-      border-radius: 8px;
+      color: var(--theme-color) !important;
+      background: color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color)) !important;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
 
-      .art-svg-icon {
+      &::before {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 3px;
+        content: "";
+        background: var(--theme-color);
+        border-radius: 0 3px 3px 0;
+      }
+
+      .menu-icon {
+        color: var(--theme-color) !important;
+        background: color-mix(in srgb, var(--theme-color) 14%, transparent);
+        box-shadow: none;
+      }
+
+      .art-svg-icon,
+      .menu-name {
         color: var(--theme-color) !important;
       }
     }
 
-    @include menu-hover($hover-bg-color);
+    @include menu-hover($hover-bg-color, var(--fa-gray-200));
 
     .el-sub-menu__icon-arrow {
       color: var(--fa-gray-600);
@@ -894,7 +1157,15 @@ $popup-menu-radius: 6px;
 }
 
 /* 暗黑模式菜单样式 */
-  .dark {
+.dark {
+  .fa-menu-group-title {
+    color: rgb(148 163 184 / 72%);
+  }
+
+  .layout-sidebar .el-menu:not(.el-menu--collapse) .el-sub-menu__title .menu-name {
+    color: rgb(148 163 184 / 72%) !important;
+  }
+
   .el-menu--vertical,
   .el-menu--popup-container {
     @include popup-menu-base(var(--fa-gray-200), var(--fa-gray-900), #292a2e);
@@ -915,11 +1186,16 @@ $popup-menu-radius: 6px;
       .menu-icon .art-svg-icon {
         color: var(--theme-color) !important;
       }
+
+      .menu-icon {
+        background: color-mix(in srgb, var(--theme-color) 16%, transparent);
+        box-shadow: none;
+      }
     }
 
     /* 右侧箭头颜色 */
     .el-sub-menu__icon-arrow {
-      color: #fff;
+      color: rgb(203 213 225 / 72%);
     }
   }
 }
@@ -938,21 +1214,61 @@ $popup-menu-radius: 6px;
     }
 
     .el-menu-item.is-active {
-      color: #fff !important;
-      background:
-        linear-gradient(90deg, rgb(45 212 191 / 16%), rgb(59 130 246 / 10%)),
-        rgb(255 255 255 / 6%) !important;
-      border-color: rgb(45 212 191 / 22%) !important;
+      color: var(--theme-color) !important;
+      background: color-mix(in srgb, var(--theme-color) 14%, transparent) !important;
+      border-color: transparent !important;
+      border-radius: 0;
+      box-shadow: none;
+
+      &::before {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 3px;
+        content: "";
+        background: var(--theme-color);
+        border-radius: 0 3px 3px 0;
+      }
+
+      .menu-icon {
+        color: var(--theme-color) !important;
+        background: color-mix(in srgb, var(--theme-color) 16%, transparent);
+        box-shadow: none;
+      }
 
       span,
-      .menu-icon .art-svg-icon {
-        color: #fff !important;
+      .menu-icon .art-svg-icon,
+      .menu-name {
+        color: var(--theme-color) !important;
       }
     }
   }
 }
 
 .layout-sidebar {
+  .menu-left-open {
+    width: v-bind(menuopenwidth);
+  }
+
+  .menu-left-close {
+    width: v-bind(menuclosewidth);
+
+    .header {
+      padding-right: 0;
+      padding-left: 0;
+    }
+
+    .header-brand {
+      width: 36px;
+    }
+
+    .header-brand__text {
+      width: 0;
+      opacity: 0;
+    }
+  }
+
   /* 展开的宽度 */
   .el-menu:not(.el-menu--collapse) {
     width: v-bind(menuopenwidth);
@@ -963,6 +1279,11 @@ $popup-menu-radius: 6px;
     width: v-bind(menuclosewidth);
   }
 }
+
+/* 中等视口（800-1200px）下进一步收紧 sidebar 宽度，释放主区域空间 */
+@media (width >= 801px) and (width <= 1200px) {
+  .layout-sidebar .el-menu:not(.el-menu--collapse) {
+    width: 200px !important;
+  }
+}
 </style>
-
-

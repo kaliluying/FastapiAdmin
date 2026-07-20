@@ -88,7 +88,7 @@ export const useUserStore = defineStore(
     const setUserInfo = (newInfo: UserInfo | UserInfo) => {
       info.value = newInfo;
       // 用户信息变更后刷新权限。
-      setPermissions([]);
+      setPermissions();
     };
 
     /**
@@ -205,13 +205,13 @@ export const useUserStore = defineStore(
     function setRoute(routers: MenuTable[]) {
       routeList.value = routers;
       hasGetRoute.value = true;
-      setPermissions(routers);
+      setPermissions();
     }
 
     /**
      * 设置权限。
      */
-    function setPermissions(_menus: MenuTable[]) {
+    function setPermissions() {
       const permissions = info.value.permissions ?? [];
       prems.value = Array.from(new Set(permissions.filter(Boolean)));
     }

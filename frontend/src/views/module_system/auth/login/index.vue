@@ -103,15 +103,8 @@
               >
                 条款
               </a>
-              <span
-                v-if="footerKeepRecord"
-                class="login-page-footer__sep"
-                >|</span
-              >
-              <span
-                v-if="footerKeepRecord"
-                class="login-page-footer__record"
-              >
+              <span v-if="footerKeepRecord" class="login-page-footer__sep">|</span>
+              <span v-if="footerKeepRecord" class="login-page-footer__record">
                 {{ footerKeepRecord }}
               </span>
             </div>
@@ -124,10 +117,10 @@
 
 <script setup lang="ts">
 import type { LocationQuery, RouteLocationRaw } from "vue-router";
-import AuthAPI, { type LoginFormData } from "@/api/module_system/auth";
+import type { LoginFormData } from "@/api/module_system/auth";
 import { useConfigStore, useAppStore, useSettingsStore, useUserStore } from "@stores";
 import { getConfigValue, HttpError } from "@utils";
-import { ElMessage, ElNotification, type FormRules } from "element-plus";
+import { ElNotification, type FormRules } from "element-plus";
 import type { Account, AccountKey } from "./types";
 import FaLoginAccountForm from "@/components/views/fa-login/forms/FaLoginAccountForm.vue";
 import FaAuthTopBar from "@/components/views/fa-login/widgets/FaAuthTopBar.vue";
@@ -147,22 +140,22 @@ const panelTitle = computed(() => t("login.title"));
 const panelSubTitle = computed(() => t("login.subTitle"));
 
 const footerCopyright = computed(() =>
-  getConfigValue(configStore.configData, ["copyright", "sys_web_copyright"]),
+  getConfigValue(configStore.configData, ["copyright", "sys_web_copyright"])
 );
 const footerGitCode = computed(() =>
-  getConfigValue(configStore.configData, ["git_code", "sys_git_code"], "#"),
+  getConfigValue(configStore.configData, ["git_code", "sys_git_code"], "#")
 );
 const footerHelpDoc = computed(() =>
-  getConfigValue(configStore.configData, ["help_doc", "sys_help_doc"], "#"),
+  getConfigValue(configStore.configData, ["help_doc", "sys_help_doc"], "#")
 );
 const footerPrivacy = computed(() =>
-  getConfigValue(configStore.configData, ["privacy", "sys_web_privacy"], "#"),
+  getConfigValue(configStore.configData, ["privacy", "sys_web_privacy"], "#")
 );
 const footerClause = computed(() =>
-  getConfigValue(configStore.configData, ["clause", "sys_web_clause"], "#"),
+  getConfigValue(configStore.configData, ["clause", "sys_web_clause"], "#")
 );
 const footerKeepRecord = computed(() =>
-  getConfigValue(configStore.configData, ["keep_record", "sys_keep_record"]),
+  getConfigValue(configStore.configData, ["keep_record", "sys_keep_record"])
 );
 const formKey = ref(0);
 
@@ -324,7 +317,6 @@ const handleSubmit = async () => {
     loading.value = false;
   }
 };
-
 </script>
 
 <style scoped lang="scss">
