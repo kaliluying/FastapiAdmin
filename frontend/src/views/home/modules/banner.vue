@@ -20,7 +20,7 @@
         </div>
         <div class="operator-meta">
           <strong>{{ currentUser.name }}</strong>
-          <span>{{ currentUser.dept_name }} / {{ currentUser.description }}</span>
+          <span>{{ currentUser.description }}</span>
         </div>
         <div class="operator-login">上次登录：{{ currentUser.last_login }}</div>
       </div>
@@ -58,7 +58,6 @@ type HomeUser = {
   avatar: string;
   name: string;
   username: string;
-  dept_name: string;
   description: string;
   last_login: string;
 };
@@ -67,7 +66,6 @@ const fallbackUser: HomeUser = {
   avatar: "",
   name: "超级管理员",
   username: "super",
-  dept_name: "集团总公司",
   description: "系统超级管理员",
   last_login: "-",
 };
@@ -82,7 +80,6 @@ const currentUser = computed<HomeUser>(() => {
     avatar: userInfo.avatar || fallbackUser.avatar,
     name: userInfo.name || fallbackUser.name,
     username: userInfo.username || fallbackUser.username,
-    dept_name: userInfo.dept_name || fallbackUser.dept_name,
     description: userInfo.description || fallbackUser.description,
     last_login: userInfo.last_login || fallbackUser.last_login,
   };

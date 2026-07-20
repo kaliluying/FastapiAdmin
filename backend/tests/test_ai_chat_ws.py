@@ -81,7 +81,7 @@ async def test_websocket_chat_rejects_invalid_token(monkeypatch) -> None:
 async def test_websocket_chat_uses_authenticated_service_instance(monkeypatch) -> None:
     from app.plugin.module_ai.chat import ws
 
-    auth = SimpleNamespace(user=SimpleNamespace(username="admin", dept_id=1, is_superuser=True))
+    auth = SimpleNamespace(user=SimpleNamespace(username="admin", is_superuser=True))
 
     class FakeTransaction:
         async def __aenter__(self):
@@ -172,7 +172,7 @@ async def test_websocket_chat_commits_message_history_per_received_message(monke
             return FakeTransaction(self)
 
     fake_db = FakeDb()
-    auth = SimpleNamespace(user=SimpleNamespace(username="admin", dept_id=1, is_superuser=True), db=fake_db)
+    auth = SimpleNamespace(user=SimpleNamespace(username="admin", is_superuser=True), db=fake_db)
 
     @asynccontextmanager
     async def fake_db_session():

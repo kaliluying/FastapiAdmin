@@ -27,7 +27,7 @@ class Retriever(Protocol):
         *,
         query: str,
         user_id: str,
-        dept_id: str,
+        scope_id: str,
         session_id: str | None,
         knowledge_base_ids: list[int] | None = None,
         files: list[dict[str, Any]] | None = None,
@@ -60,7 +60,7 @@ class KeywordKnowledgeRetriever:
         *,
         query: str,
         user_id: str,
-        dept_id: str,
+        scope_id: str,
         session_id: str | None,
         knowledge_base_ids: list[int] | None = None,
         files: list[dict[str, Any]] | None = None,
@@ -95,10 +95,6 @@ class KeywordKnowledgeRetriever:
                 metadata={"source": "system-menu", "name": "菜单管理"},
             ),
             RagDocument(
-                content="部门管理页面用于维护组织架构，路由路径是 /system/dept。",
-                metadata={"source": "system-menu", "name": "部门管理"},
-            ),
-            RagDocument(
                 content="字典管理页面用于维护系统字典类型和字典数据，路由路径是 /system/dict。",
                 metadata={"source": "system-menu", "name": "字典管理"},
             ),
@@ -128,7 +124,7 @@ class KeywordKnowledgeRetriever:
     def _tokenize(text: str) -> set[str]:
         normalized = text.lower()
         tokens = {part for part in normalized.replace("/", " ").replace("_", " ").split() if part}
-        for keyword in ("用户", "角色", "菜单", "部门", "字典", "日志", "权限", "路由", "路径"):
+        for keyword in ("用户", "角色", "菜单", "字典", "日志", "权限", "路由", "路径"):
             if keyword in text:
                 tokens.add(keyword)
         return tokens
@@ -163,7 +159,7 @@ class ChromaKnowledgeRetriever:
         *,
         query: str,
         user_id: str,
-        dept_id: str,
+        scope_id: str,
         session_id: str | None,
         knowledge_base_ids: list[int] | None = None,
         files: list[dict[str, Any]] | None = None,
@@ -172,7 +168,7 @@ class ChromaKnowledgeRetriever:
             return await self.file_retriever.retrieve(
                 query=query,
                 user_id=user_id,
-                dept_id=dept_id,
+                scope_id=scope_id,
                 session_id=session_id,
                 files=files,
             )
@@ -216,7 +212,7 @@ class RagPromptBuilder:
         message: str,
         documents: list[RagDocument],
         user_id: str,
-        dept_id: str,
+        scope_id: str,
         session_id: str | None,
         session_history: list[dict[str, Any]] | None = None,
         memories: list[dict[str, Any]] | None = None,
@@ -259,7 +255,7 @@ class RagPromptBuilder:
 
         prompt_parts.extend([
             f"用户: {user_id}\n"
-            f"部门: {dept_id}\n"
+            f"用户范围: {scope_id}\n"
             f"会话: {session_id or 'new'}\n\n"
             "检索上下文:\n"
             f"{context}\n\n"
@@ -382,7 +378,7 @@ class RagChatChain:
         *,
         message: str,
         user_id: str,
-        dept_id: str,
+        scope_id: str,
         session_id: str | None,
         knowledge_base_ids: list[int] | None = None,
         files: list[dict[str, Any]] | None = None,
@@ -390,7 +386,7 @@ class RagChatChain:
         prompt = await self._build_prompt(
             message=message,
             user_id=user_id,
-            dept_id=dept_id,
+            scope_id=scope_id,
             session_id=session_id,
             knowledge_base_ids=knowledge_base_ids,
             files=files,
@@ -402,7 +398,7 @@ class RagChatChain:
         *,
         message: str,
         user_id: str,
-        dept_id: str,
+        scope_id: str,
         session_id: str | None,
         knowledge_base_ids: list[int] | None = None,
         files: list[dict[str, Any]] | None = None,
@@ -410,7 +406,7 @@ class RagChatChain:
         prompt = await self._build_prompt(
             message=message,
             user_id=user_id,
-            dept_id=dept_id,
+            scope_id=scope_id,
             session_id=session_id,
             knowledge_base_ids=knowledge_base_ids,
             files=files,
@@ -423,7 +419,7 @@ class RagChatChain:
         *,
         message: str,
         user_id: str,
-        dept_id: str,
+        scope_id: str,
         session_id: str | None,
         knowledge_base_ids: list[int] | None,
         files: list[dict[str, Any]] | None,
@@ -431,7 +427,7 @@ class RagChatChain:
         documents = await self.retriever.retrieve(
             query=message,
             user_id=user_id,
-            dept_id=dept_id,
+            scope_id=scope_id,
             session_id=session_id,
             knowledge_base_ids=knowledge_base_ids,
             files=files,
@@ -451,7 +447,7 @@ class RagChatChain:
             message=message,
             documents=documents,
             user_id=user_id,
-            dept_id=dept_id,
+            scope_id=scope_id,
             session_id=session_id,
             session_history=session_history,
             memories=memories,
@@ -492,7 +488,7 @@ class RagChatChain:
             return []
 
     async def _fetch_memories(self) -> list[dict[str, Any]]:
-        """Fetch active memories for the current user/dept."""
+        """Fetch active memories for the current user."""
         try:
             from app.core.base_schema import AuthSchema
             from app.plugin.module_ai.memory.crud import MemoryCRUD
@@ -500,7 +496,6 @@ class RagChatChain:
             # Build a minimal auth object for MemoryCRUD
             class _FakeUser:
                 username = self.user_id
-                dept_id = int(self.team_id) if self.team_id and self.team_id.isdigit() else None
 
             auth = AuthSchema(user=_FakeUser(), db=self.db)
             crud = MemoryCRUD(auth)
@@ -522,13 +517,12 @@ def _extract_user_profile(user: Any | None) -> dict[str, Any]:
 
 def create_rag_chain(db: Any | None = None, auth: Any | None = None) -> RagChatChain:
     user = getattr(auth, "user", None) if auth is not None else None
-    dept_id = getattr(user, "dept_id", None)
     return RagChatChain(
         retriever=ChromaKnowledgeRetriever(),
         prompt_builder=RagPromptBuilder(),
         chat_model=LangChainChatModel(),
         db=db,
         user_id=getattr(user, "username", None) or "",
-        team_id=str(dept_id) if dept_id else None,
+        team_id=None,
         user_profile=_extract_user_profile(user),
     )

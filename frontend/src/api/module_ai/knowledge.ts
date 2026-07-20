@@ -94,7 +94,6 @@ export interface KnowledgeBaseForm {
   name: string;
   description?: string | null;
   is_enabled: boolean;
-  owner_dept_id?: number | null;
 }
 
 export interface KnowledgeBase extends BaseType, KnowledgeBaseForm {

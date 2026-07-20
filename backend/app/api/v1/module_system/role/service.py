@@ -153,17 +153,13 @@ class RoleService:
         返回:
         - None
         """
-        # 设置角色菜单权限
-        await RoleCRUD(self.auth).set_role_menus_crud(role_ids=data.role_ids, menu_ids=data.menu_ids)
+        roles = await RoleCRUD(self.auth).get_list(search={"id": ("in", data.role_ids)})
+        if len(roles) != len(data.role_ids):
+            raise CustomException(msg="授权失败，部分角色不存在或无权操作")
 
-        # 设置数据权限范围
-        await RoleCRUD(self.auth).set(ids=data.role_ids, data_scope=data.data_scope)
-
-        # 设置自定义数据权限部门
-        if data.data_scope == 5 and data.dept_ids:
-            await RoleCRUD(self.auth).set_role_depts_crud(role_ids=data.role_ids, dept_ids=data.dept_ids)
-        else:
-            await RoleCRUD(self.auth).set_role_depts_crud(role_ids=data.role_ids, dept_ids=[])
+        role_ids = [role.id for role in roles]
+        await RoleCRUD(self.auth).set_role_menus_crud(role_ids=role_ids, menu_ids=data.menu_ids)
+        await RoleCRUD(self.auth).set(ids=role_ids, data_scope=data.data_scope)
 
     async def set_available(self, data: BatchSetAvailable) -> None:
         """
@@ -208,13 +204,7 @@ class RoleService:
         }
 
         # 数据权限映射
-        data_scope_map = {
-            1: "仅本人数据权限",
-            2: "本部门数据权限",
-            3: "本部门及以下数据权限",
-            4: "全部数据权限",
-            5: "自定义数据权限",
-        }
+        data_scope_map = {1: "仅本人数据权限", 4: "全部数据权限"}
 
         # 处理数据
         data = role_list.copy()
@@ -223,4 +213,3 @@ class RoleService:
             item["data_scope"] = data_scope_map.get(item.get("data_scope", 1), "")
 
         return ExcelUtil.export_list2excel(list_data=data, mapping_dict=mapping_dict)
-

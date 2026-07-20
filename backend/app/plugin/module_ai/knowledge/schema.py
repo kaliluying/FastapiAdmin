@@ -8,7 +8,6 @@ class KnowledgeBaseCreateSchema(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     description: str | None = None
     is_enabled: bool = True
-    owner_dept_id: int | None = None
 
 
 class KnowledgeBaseUpdateSchema(KnowledgeBaseCreateSchema):

@@ -110,7 +110,7 @@ async def _try_sliding_refresh(redis: Redis, session_id: str) -> None:
         )
 
 async def _load_user_from_db(db: AsyncSession, username: str):
-    """从数据库加载用户（含角色、菜单、部门、职位全量预加载）
+    """从数据库加载用户（含角色、菜单等关联的全量预加载）
 
     使用原始查询以绕过 CRUDBase 的权限过滤，确保用户认证阶段不受数据权限影响。
     所有关系链均 eager-loaded，调用方可在会话关闭后安全访问对象属性。
@@ -128,7 +128,6 @@ async def _load_user_from_db(db: AsyncSession, username: str):
     stmt = (
         select(UserModel)
         .options(
-            selectinload(UserModel.dept),
             selectinload(UserModel.roles).selectinload(RoleModel.menus),
             selectinload(UserModel.created_by),
         )

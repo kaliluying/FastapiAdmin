@@ -34,4 +34,4 @@ export { HOME_ROUTE_NAME, ROOT_LAYOUT_ROUTE_NAME };
 export { RouteRegistry, ComponentLoader, RouteTransformer, RouteValidator } from "./core";
 export type { ValidationResult } from "./core";
 export { IframeRouteManager } from "./staticRoutes";
-export { MenuProcessor, builtinFrontendRoutes } from "./MenuProcessor";
+export { MenuProcessor } from "./MenuProcessor";

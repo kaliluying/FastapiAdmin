@@ -21,14 +21,12 @@ depends_on: str | Sequence[str] | None = None
 
 BASELINE_TABLES = {
     "platform_menu",
-    "sys_dept",
     "sys_dict_data",
     "sys_dict_type",
     "sys_login_log",
     "sys_operation_log",
     "sys_param",
     "sys_role",
-    "sys_role_depts",
     "sys_role_menus",
     "sys_user",
     "sys_user_roles",

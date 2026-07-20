@@ -44,22 +44,6 @@ export const UserAPI = {
     });
   },
 
-  registerUser(body: RegisterForm) {
-    return request<ApiResponse<UserInfo>>({
-      url: `${API_PATH}/register`,
-      method: "post",
-      data: body,
-    });
-  },
-
-  forgetPassword(body: ForgetPasswordForm) {
-    return request<ApiResponse>({
-      url: `${API_PATH}/password/forget`,
-      method: "post",
-      data: body,
-    });
-  },
-
   listUser(query: UserPageQuery) {
     return request<ApiResponse<PageResult<UserInfo>>>({
       url: `${API_PATH}/list`,
@@ -138,26 +122,11 @@ export const UserAPI = {
 
 export default UserAPI;
 
-export interface ForgetPasswordForm {
-  username: string;
-  new_password: string;
-  mobile?: string;
-  confirmPassword: string;
-}
-
-export interface RegisterForm {
-  username: string;
-  password: string;
-  confirmPassword: string;
-  email?: string;
-}
-
 export interface UserPageQuery extends PageQuery, UserByQueryParams {
   username?: string;
   name?: string;
   mobile?: string;
   email?: string;
-  dept_id?: number;
 }
 
 export interface searchSelectDataType {
@@ -175,9 +144,6 @@ export interface UserInfo extends BaseType {
   password?: string;
   menus?: MenuTable[];
   permissions?: string[];
-  dept?: deptTreeType;
-  dept_id?: deptTreeType["id"];
-  dept_name?: deptTreeType["name"];
   roles?: roleSelectorType[];
   role_names?: roleSelectorType["name"][];
   role_ids?: roleSelectorType["id"][];
@@ -192,13 +158,6 @@ export interface UserInfo extends BaseType {
   qq_login?: string;
   status?: number;
   description?: string;
-}
-
-export interface deptTreeType {
-  id?: number;
-  name?: string;
-  parent_id?: number;
-  children?: deptTreeType[];
 }
 
 export interface roleSelectorType {
@@ -217,8 +176,6 @@ export interface InfoFormState {
   mobile?: string;
   email?: string;
   username?: string;
-  dept_name?: string;
-  dept?: deptTreeType;
   roles?: roleSelectorType[];
   avatar?: string;
   created_time?: string;
@@ -238,8 +195,6 @@ export interface ResetPasswordForm {
 export interface UserForm extends BaseFormType {
   username?: string;
   name?: string;
-  dept_id?: number;
-  dept_name?: string;
   role_ids?: number[];
   role_names?: string[];
   password?: string;

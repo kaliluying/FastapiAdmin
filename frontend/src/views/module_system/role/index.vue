@@ -81,32 +81,7 @@
         >
           <template #data_scope="{ row }">
             <FaStatusTag v-if="row?.data_scope === 1" type="primary" label="仅本人数据权限" />
-            <FaStatusTag v-else-if="row?.data_scope === 2" type="info" label="本部门数据权限" />
-            <FaStatusTag
-              v-else-if="row?.data_scope === 3"
-              type="warning"
-              label="本部门及以下数据权限"
-            />
             <FaStatusTag v-else-if="row?.data_scope === 4" type="success" label="全部数据权限" />
-            <FaStatusTag v-else type="danger" label="自定义数据权限" />
-          </template>
-          <template #depts="{ row }">
-            <template
-              v-if="
-                (row as unknown as RoleTable)?.depts &&
-                (row as unknown as RoleTable).depts!.length > 0
-              "
-            >
-              <ElTag
-                v-for="dept in (row as unknown as RoleTable).depts!"
-                :key="dept.id"
-                type="info"
-                :style="'margin-right: 4px; margin-bottom: 4px'"
-              >
-                {{ dept.name }}
-              </ElTag>
-            </template>
-            <span v-else :style="'color: var(--el-text-color-placeholder)'">-</span>
           </template>
         </FaDescriptions>
       </template>
@@ -159,7 +134,6 @@
 
 <script setup lang="ts">
 import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
-import { h } from "vue";
 import { useTable } from "@/hooks/core/useTable";
 import { useImportExport } from "@/hooks/core/useImportExport";
 import { useCrudDialog } from "@/hooks/core/useCrudDialog";
@@ -181,7 +155,6 @@ import type { SearchFormItem } from "@/components/forms/fa-search-bar/index.vue"
 import type FaSearchBar from "@/components/forms/fa-search-bar/index.vue";
 import type { FormItem } from "@/components/forms/fa-form/index.vue";
 import type FaForm from "@/components/forms/fa-form/index.vue";
-import StatusTag from "@/components/others/fa-status-tag/index.vue";
 import { ElMessage } from "element-plus";
 import FaPermissonDrawer from "./components/FaPermissonDrawer.vue";
 
@@ -210,27 +183,6 @@ function buildRoleReplaceParams(p: RoleSearchForm): Record<string, unknown> {
     created_time:
       Array.isArray(p.created_time) && p.created_time.length === 2 ? p.created_time : undefined,
   };
-}
-
-function deptsCell(row: RoleTable) {
-  const list = row.depts;
-  if (!list?.length) {
-    return h("span", { style: { color: "var(--el-text-color-placeholder)" } }, "-");
-  }
-  const tags = list.slice(0, 3).map((dept) =>
-    h(StatusTag, {
-      key: dept.id,
-      type: "info",
-      label: dept.name ?? "",
-      style: { marginRight: "4px", marginBottom: "4px" },
-    })
-  );
-  if (list.length > 3) {
-    tags.push(
-      h(StatusTag, { type: "info", label: `+${list.length - 3}`, style: { marginBottom: "4px" } })
-    );
-  }
-  return h("span", { class: "inline-flex flex-wrap items-center" }, tags);
 }
 
 function buildRoleRowActions(
@@ -387,7 +339,6 @@ const roleDetailItems: import("@/components/others/fa-descriptions/index.vue").D
     { label: "排序", prop: "order" },
     { label: "角色编码", prop: "code" },
     { label: "数据权限", prop: "data_scope", slot: "data_scope" },
-    { label: "所属部门", prop: "depts", slot: "depts" },
     {
       label: "状态",
       prop: "status",
@@ -563,17 +514,8 @@ const {
         minWidth: 200,
         status: {
           1: { type: "primary", text: "仅本人数据权限" },
-          2: { type: "info", text: "本部门数据权限" },
-          3: { type: "warning", text: "本部门及以下数据权限" },
           4: { type: "success", text: "全部数据权限" },
-          5: { type: "danger", text: "自定义数据权限" },
         },
-      },
-      {
-        prop: "depts",
-        label: "所属部门",
-        minWidth: 200,
-        formatter: (row: RoleTable) => deptsCell(row),
       },
       { prop: "order", label: "排序", width: 80, showOverflowTooltip: true },
       {

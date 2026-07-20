@@ -1,11 +1,10 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 const pages = [
   "views/module_system/user/index.vue",
   "views/module_system/role/index.vue",
-  "views/module_system/dept/index.vue",
   "views/module_system/dict/index.vue",
   "views/module_system/params/index.vue",
   "views/module_system/log/index.vue",
@@ -20,4 +19,9 @@ describe("management page contract", () => {
       expect(source).toContain("fa-management-page");
     });
   }
+
+  it("does not retain the removed department page or API client", () => {
+    expect(existsSync(resolve(__dirname, "..", "views/module_system/dept/index.vue"))).toBe(false);
+    expect(existsSync(resolve(__dirname, "..", "api/module_system/dept.ts"))).toBe(false);
+  });
 });

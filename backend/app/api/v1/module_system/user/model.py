@@ -7,7 +7,6 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.base_model import MappedBase, ModelMixin, UserMixin
 
 if TYPE_CHECKING:
-    from app.api.v1.module_system.dept.model import DeptModel
     from app.api.v1.module_system.role.model import RoleModel
 
 
@@ -42,7 +41,7 @@ class UserModel(ModelMixin, UserMixin):
 
     __tablename__: str = "sys_user"
     __table_args__ = (UniqueConstraint("username"), {"comment": "用户表"})
-    __loader_options__: list[str] = ["dept", "roles", "created_by", "updated_by", "deleted_by"]
+    __loader_options__: list[str] = ["roles", "created_by", "updated_by", "deleted_by"]
 
     username: Mapped[str] = mapped_column(String(64), nullable=False, comment="用户名/登录账号")
     password: Mapped[str] = mapped_column(String(255), nullable=False, comment="密码哈希")
@@ -60,9 +59,6 @@ class UserModel(ModelMixin, UserMixin):
     status: Mapped[int] = mapped_column(Integer, default=0, nullable=False, comment="状态(0:启动 1:停用)", index=True)
     description: Mapped[str | None] = mapped_column(Text, default=None, nullable=True, comment="备注")
 
-    dept_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("sys_dept.id", ondelete="SET NULL", onupdate="CASCADE"), nullable=True, index=True, comment="部门ID")
-    dept: Mapped["DeptModel | None"] = relationship(back_populates="users", foreign_keys=[dept_id], lazy="selectin")
     roles: Mapped[list["RoleModel"]] = relationship(secondary="sys_user_roles", back_populates="users", lazy="selectin")
     created_by: Mapped["UserModel | None"] = relationship("UserModel", foreign_keys="UserModel.created_id", remote_side="UserModel.id", lazy="selectin", uselist=False, viewonly=True)
     updated_by: Mapped["UserModel | None"] = relationship("UserModel", foreign_keys="UserModel.updated_id", remote_side="UserModel.id", lazy="selectin", uselist=False, viewonly=True)
-

@@ -477,15 +477,6 @@ const menuDetailItems: import("@/components/others/fa-descriptions/index.vue").D
     { label: "编号", prop: "id" },
     { label: "菜单名称", prop: "name" },
     { label: "菜单类型", prop: "type", slot: "type" },
-    {
-      label: "可见范围",
-      prop: "scope",
-      tag: {
-        map: {
-          single_org: { type: "success", text: "内部可用" },
-        },
-      },
-    },
     { label: "图标", prop: "icon", slot: "icon" },
     { label: "权限标识", prop: "permission" },
     { label: "路由名称", prop: "route_name" },
@@ -633,17 +624,6 @@ const menuDialogFormItems = computed<FormItem[]>(() => {
       type: "input",
       hidden: t !== MenuTypeEnum.MENU,
     },
-    {
-      key: "scope",
-      label: "可见范围",
-      type: "radiogroup",
-      props: {
-        options: [
-          { label: "内部可用", value: "single_org" },
-        ],
-      },
-      hidden: t === MenuTypeEnum.BUTTON,
-    },
     { key: "affix", label: "常驻标签栏", type: "input", hidden: t === MenuTypeEnum.BUTTON },
     { key: "is_hide_tab", label: "隐藏标签页", type: "input", hidden: t === MenuTypeEnum.BUTTON },
     { key: "show_badge", label: "显示红点角标", type: "input", hidden: t === MenuTypeEnum.BUTTON },
@@ -701,7 +681,6 @@ const formData = ref<MenuForm>({
   show_badge: false,
   show_text_badge: undefined,
   status: 0,
-  scope: "single_org",
   description: undefined,
 });
 
@@ -862,15 +841,6 @@ const { columnChecks, columns } = useTableColumns<MenuTable>(
         2: { type: "success", text: "菜单" },
         3: { type: "danger", text: "按钮" },
         4: { type: "info", text: "外链" },
-      },
-    },
-    {
-      prop: "scope",
-      label: "可见范围",
-      width: 96,
-      align: "center",
-      status: {
-        single_org: { type: "success", text: "内部可用" },
       },
     },
     { prop: "order", label: "排序", width: 80 },
@@ -1035,7 +1005,6 @@ const initialFormData: MenuForm = {
   show_text_badge: undefined,
   status: 0,
   description: undefined,
-  scope: "single_org",
 };
 
 const dataFormRef = ref<InstanceType<typeof FaForm> | null>(null);
@@ -1209,4 +1178,3 @@ onMounted(() => {
   vertical-align: middle;
 }
 </style>
-

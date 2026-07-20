@@ -48,10 +48,7 @@ class ModelMixin(MappedBase):
     数据权限 (created_id/updated_id):
         - 配合角色的data_scope字段实现精细化权限控制
         - 1:仅本人
-        - 2:本部门
-        - 3:本部门及以下
         - 4:全部数据
-        - 5:自定义
 
     SQLAlchemy加载策略说明:
     - select(默认): 延迟加载,访问时单独查询
@@ -194,4 +191,3 @@ class UserMixin(MappedBase):
             foreign_keys=lambda: self.deleted_id,  # pyright: ignore[reportArgumentType]
             uselist=False,
         )
-

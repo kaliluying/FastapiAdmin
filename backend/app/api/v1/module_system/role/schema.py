@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Literal
 
 from fastapi import Query
 from pydantic import (
@@ -6,18 +7,13 @@ from pydantic import (
     ConfigDict,
     Field,
     field_validator,
-    model_validator,
 )
 
 from app.api.v1.module_platform.menu.schema import MenuOutSchema
-from app.api.v1.module_system.dept.schema import DeptOutSchema
 from app.common.enums import QueueEnum
 from app.core.base_params import BaseQueryParam, UserByQueryParam
 from app.core.base_schema import BaseSchema, UserBySchema
-from app.core.validator import (
-    role_permission_request_validator,
-    validate_required_code,
-)
+from app.core.validator import validate_required_code
 
 
 class RoleCreateSchema(BaseModel):
@@ -28,11 +24,9 @@ class RoleCreateSchema(BaseModel):
     name: str = Field(..., min_length=1, max_length=64, description="角色名称")
     code: str = Field(..., min_length=2, max_length=64, description="角色编码")
     order: int | None = Field(default=1, ge=0, description="显示排序")
-    data_scope: int | None = Field(
+    data_scope: Literal[1, 4] | None = Field(
         default=1,
-        ge=1,
-        le=5,
-        description="数据权限范围(1:仅本人 2:本部门 3:本部门及以下 4:全部 5:自定义)",
+        description="数据权限范围(1:仅本人 4:全部)",
     )
     status: int = Field(default=0, ge=0, le=1, description="状态(0:启动 1:停用)")
     description: str | None = Field(default=None, max_length=255, description="描述")
@@ -66,27 +60,12 @@ class RolePermissionSettingSchema(BaseModel):
     角色权限配置模型
     """
 
-    data_scope: int = Field(
+    data_scope: Literal[1, 4] = Field(
         default=1,
-        ge=1,
-        le=5,
-        description="数据权限范围(1:仅本人 2:本部门 3:本部门及以下 4:全部 5:自定义)",
+        description="数据权限范围(1:仅本人 4:全部)",
     )
-    role_ids: list[int] = Field(default_factory=list, description="角色ID列表")
+    role_ids: list[int] = Field(min_length=1, description="角色ID列表")
     menu_ids: list[int] = Field(default_factory=list, description="菜单ID列表")
-    dept_ids: list[int] = Field(default_factory=list, description="部门ID列表")
-
-    @model_validator(mode="after")
-    def validate_fields(self):
-        """
-        校验角色权限配置字段（数据范围与关联 ID 等）。
-
-        返回:
-        - RolePermissionSettingSchema: 通过 `role_permission_request_validator` 校验后的同一实例。
-        """
-        return role_permission_request_validator(self)
-
-
 class RoleUpdateSchema(RoleCreateSchema):
     """
     角色更新模型
@@ -101,7 +80,6 @@ class RoleOutSchema(RoleCreateSchema, BaseSchema, UserBySchema):
     model_config = ConfigDict(from_attributes=True)
 
     menus: list[MenuOutSchema] = Field(default_factory=list, description="角色菜单列表")
-    depts: list[DeptOutSchema] = Field(default_factory=list, description="角色部门列表")
 
 
 @dataclass

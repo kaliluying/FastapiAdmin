@@ -36,15 +36,6 @@
     "description": "更新用户信息"
   },
   {
-    "request_path": "/api/v1/system/dept/create",
-    "request_method": "POST",
-    "request_payload": "{\"name\": \"测试部门\", \"parent_id\": 1}",
-    "response_code": 400,
-    "response_json": "{\"code\": 400, \"msg\": \"部门编码已存在\"}",
-    "process_time": "8ms",
-    "description": "创建部门（失败）"
-  },
-  {
     "request_path": "/api/v1/system/role/delete",
     "request_method": "DELETE",
     "request_payload": "{\"ids\": [5]}",

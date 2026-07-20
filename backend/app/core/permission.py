@@ -1,11 +1,9 @@
 from typing import Any
 
-from sqlalchemy import select
 from sqlalchemy.sql.elements import ColumnElement
 
 from app.common.enums import PermissionFilterStrategy
 from app.core.base_schema import AuthSchema
-from app.utils.common_util import get_child_id_map, get_child_recursion
 
 
 class Permission:
@@ -17,10 +15,7 @@ class Permission:
 
     # 数据权限常量定义，提高代码可读性
     DATA_SCOPE_SELF = 1  # 仅本人数据
-    DATA_SCOPE_DEPT = 2  # 本部门数据
-    DATA_SCOPE_DEPT_AND_CHILD = 3  # 本部门及以下数据
     DATA_SCOPE_ALL = 4  # 全部数据
-    DATA_SCOPE_CUSTOM = 5  # 自定义数据
 
     def __init__(self, model: Any, auth: AuthSchema) -> None:
         """
@@ -75,8 +70,6 @@ class Permission:
         # 根据策略选择过滤方法
         if strategy == PermissionFilterStrategy.MENU_AUTH:
             return await self.__filter_by_menu_auth()
-        elif strategy == PermissionFilterStrategy.DEPT_RELATION:
-            return await self.__filter_by_dept_relation()
         elif strategy == PermissionFilterStrategy.OWN:
             return await self.__filter_by_own()
         elif strategy == PermissionFilterStrategy.USER_BINDING:
@@ -90,7 +83,7 @@ class Permission:
 
         只显示用户角色授权的菜单，不再叠加额外运营级约束。
         """
-        roles = getattr(self.auth.user, "roles", []) or []
+        roles = [role for role in (getattr(self.auth.user, "roles", []) or []) if role.status == 0]
         if not roles:
             id_attr = getattr(self.model, "id", None)
             if id_attr is not None:
@@ -118,7 +111,7 @@ class Permission:
 
         只显示当前用户绑定的角色
         """
-        roles = getattr(self.auth.user, "roles", []) or []
+        roles = [role for role in (getattr(self.auth.user, "roles", []) or []) if role.status == 0]
         if not roles:
             id_attr = getattr(self.model, "id", None)
             if id_attr is not None:
@@ -131,46 +124,6 @@ class Permission:
             return id_attr.in_(role_ids)
         return None
 
-    async def __filter_by_dept_relation(self) -> ColumnElement | None:
-        """
-        基于部门关联的过滤（适用于部门模型、角色模型）
-
-        根据用户的部门权限范围过滤数据
-        """
-        # 如果用户没有角色,则只能查看自己部门的数据
-        roles = getattr(self.auth.user, "roles", []) or []
-        if not roles:
-            user_dept_id = getattr(self.auth.user, "dept_id", None)
-            if user_dept_id is not None and hasattr(self.model, "id"):
-                id_attr = getattr(self.model, "id", None)
-                if id_attr is not None:
-                    return id_attr == user_dept_id
-            return None
-
-        # 获取用户所有角色的权限范围
-        data_scopes = set()
-        custom_dept_ids = set()
-
-        for role in roles:
-            data_scopes.add(role.data_scope)
-            if role.data_scope == self.DATA_SCOPE_CUSTOM and hasattr(role, "depts") and role.depts:
-                custom_dept_ids.update(dept.id for dept in role.depts)
-
-        # 全部数据权限最高优先级
-        if self.DATA_SCOPE_ALL in data_scopes:
-            return None
-
-        # 收集所有可访问的部门ID
-        accessible_dept_ids = await self.__get_accessible_dept_ids(data_scopes, custom_dept_ids)
-
-        # 根据模型类型过滤
-        if self.model.__name__ == "DeptModel":
-            return self.__filter_dept_model(accessible_dept_ids)
-        elif self.model.__name__ == "UserModel":
-            return self.__filter_user_model(accessible_dept_ids)
-        else:
-            return None
-
     async def __filter_by_own(self) -> ColumnElement | None:
         """
         仅本人数据过滤
@@ -182,148 +135,18 @@ class Permission:
 
     async def __filter_by_data_scope(self) -> ColumnElement | None:
         """
-        基于数据范围权限的通用过滤（默认策略）
+        根据角色的数据范围过滤创建人维度的数据。
 
-        适用于大多数业务模型
+        单组织版本只保留“仅本人”和“全部”两种范围。
         """
-        from app.api.v1.module_system.user.model import UserModel
-
-        # 如果模型没有创建人created_id字段,则不限制
         if not hasattr(self.model, "created_id"):
             return None
 
-        # 如果用户没有角色,则只能查看自己的数据
-        roles = getattr(self.auth.user, "roles", []) or []
-        if not roles:
-            created_id_attr = getattr(self.model, "created_id", None)
-            if created_id_attr is not None and self.auth.user:
-                return created_id_attr == self.auth.user.id
+        roles = [role for role in (getattr(self.auth.user, "roles", []) or []) if role.status == 0]
+        if any(role.data_scope == self.DATA_SCOPE_ALL for role in roles):
             return None
 
-        # 获取用户所有角色的权限范围
-        data_scopes = set()
-        custom_dept_ids = set()
-
-        for role in roles:
-            data_scopes.add(role.data_scope)
-            if role.data_scope == self.DATA_SCOPE_CUSTOM and hasattr(role, "depts") and role.depts:
-                custom_dept_ids.update(dept.id for dept in role.depts)
-
-        # 全部数据权限最高优先级
-        if self.DATA_SCOPE_ALL in data_scopes:
-            return None
-
-        # 收集所有可访问的部门ID
-        accessible_dept_ids = await self.__get_accessible_dept_ids(data_scopes, custom_dept_ids)
-
-        # 如果有部门权限，使用部门过滤
-        if accessible_dept_ids:
-            # 特殊处理：如果模型本身就是UserModel，直接过滤用户的dept_id
-            if self.model.__name__ == "UserModel" and hasattr(self.model, "dept_id"):
-                dept_id_attr = getattr(self.model, "dept_id", None)
-                if dept_id_attr is not None:
-                    return dept_id_attr.in_(list(accessible_dept_ids))
-
-            # 其他模型：通过created_by关系过滤创建人的部门
-            creator_rel = getattr(self.model, "created_by", None)
-            if creator_rel is not None and hasattr(UserModel, "dept_id"):
-                return creator_rel.has(UserModel.dept_id.in_(list(accessible_dept_ids)))
-
-            # 降级方案：只能查看自己的数据
-            created_id_attr = getattr(self.model, "created_id", None)
-            if created_id_attr is not None and self.auth.user:
-                return created_id_attr == self.auth.user.id
-            return None
-
-        # 处理仅本人数据权限
-        if self.DATA_SCOPE_SELF in data_scopes:
-            created_id_attr = getattr(self.model, "created_id", None)
-            if created_id_attr is not None and self.auth.user:
-                return created_id_attr == self.auth.user.id
-            return None
-
-        # 默认情况：只能查看自己的数据
         created_id_attr = getattr(self.model, "created_id", None)
         if created_id_attr is not None and self.auth.user:
             return created_id_attr == self.auth.user.id
-        return None
-
-    async def __get_accessible_dept_ids(self, data_scopes: set, custom_dept_ids: set) -> set[int]:
-        """
-        获取用户可访问的所有部门ID
-
-        Args:
-            data_scopes: 用户角色的数据权限范围集合
-            custom_dept_ids: 自定义权限关联的部门ID集合
-
-        Returns:
-            可访问的部门ID集合
-        """
-        accessible_dept_ids = set()
-        user_dept_id = getattr(self.auth.user, "dept_id", None)
-
-        # 处理自定义数据权限（5）
-        if self.DATA_SCOPE_CUSTOM in data_scopes:
-            accessible_dept_ids.update(custom_dept_ids)
-
-        # 处理本部门数据权限（2）
-        if self.DATA_SCOPE_DEPT in data_scopes and user_dept_id is not None:
-            accessible_dept_ids.add(user_dept_id)
-
-        # 处理本部门及以下数据权限（3）
-        if self.DATA_SCOPE_DEPT_AND_CHILD in data_scopes and user_dept_id is not None:
-            try:
-                id_map = await self.__get_dept_id_map()
-                dept_with_children_ids = get_child_recursion(id=user_dept_id, id_map=id_map)
-                accessible_dept_ids.update(dept_with_children_ids)
-            except Exception:
-                accessible_dept_ids.add(user_dept_id)
-
-        return accessible_dept_ids
-
-    async def __get_dept_id_map(self) -> dict[int, list[int]]:
-        """
-        获取部门父子关系映射（{dept_id: [直接子部门 id, ...]}）。
-
-        同一次请求（同一个 AuthSchema 实例）内缓存查询结果：DATA_SCOPE_DEPT_AND_CHILD
-        策略在一次请求中可能被多次调用（例如分页列表逐条统计、批量接口），
-        没有缓存会导致 sys_dept 全表被反复扫描。缓存整体重新赋值，不做原地修改，
-        避免 AuthSchema.model_copy() 的浅拷贝在派生实例间产生意外共享。
-        """
-        cached = self.auth._dept_id_map_cache
-        if cached is not None:
-            return cached
-
-        from app.api.v1.module_system.dept.model import DeptModel
-
-        dept_sql = select(DeptModel)
-        dept_result = await self.auth.db.execute(dept_sql)
-        dept_objs = dept_result.scalars().all()
-        id_map = get_child_id_map(dept_objs)
-        self.auth._dept_id_map_cache = id_map
-        return id_map
-
-    def __filter_dept_model(self, accessible_dept_ids: set[int]) -> ColumnElement | None:
-        """
-        过滤部门模型
-        """
-        if accessible_dept_ids:
-            id_attr = getattr(self.model, "id", None)
-            if id_attr is not None:
-                return id_attr.in_(list(accessible_dept_ids))
-        user_dept_id = getattr(self.auth.user, "dept_id", None)
-        if user_dept_id is not None:
-            id_attr = getattr(self.model, "id", None)
-            if id_attr is not None:
-                return id_attr == user_dept_id
-        return None
-
-    def __filter_user_model(self, accessible_dept_ids: set[int]) -> ColumnElement | None:
-        """
-        过滤用户模型
-        """
-        if accessible_dept_ids:
-            dept_id_attr = getattr(self.model, "dept_id", None)
-            if dept_id_attr is not None:
-                return dept_id_attr.in_(list(accessible_dept_ids))
         return None

@@ -15,7 +15,7 @@ from app.api.v1.module_platform.menu.schema import MenuOutSchema
 from app.api.v1.module_system.role.schema import RoleOutSchema
 from app.common.enums import QueueEnum
 from app.core.base_params import BaseQueryParam, UserByQueryParam
-from app.core.base_schema import BaseSchema, CommonSchema, UserBySchema
+from app.core.base_schema import BaseSchema, UserBySchema
 from app.core.validator import email_validator, mobile_validator
 
 
@@ -69,95 +69,6 @@ class CurrentUserUpdateSchema(BaseModel):
         return self
 
 
-class UserRegisterSchema(BaseModel):
-    """注册"""
-
-    name: str | None = Field(default=None, max_length=32, description="姓名")
-    mobile: str | None = Field(default=None, max_length=11, description="手机号")
-    username: str = Field(..., min_length=3, max_length=32, description="账号")
-    password: str = Field(..., min_length=6, max_length=128, description="密码")
-    role_ids: list[int] | None = Field(default=[3], description="角色ID列表")
-    created_id: int | None = Field(default=1, description="创建人ID")
-    description: str | None = Field(default=None, max_length=255, description="备注")
-
-    @field_validator("mobile")
-    @classmethod
-    def validate_mobile(cls, value: str | None):
-        """校验手机号格式"""
-        return mobile_validator(value)
-
-    @field_validator("username")
-    @classmethod
-    def validate_username(cls, value: str):
-        """校验账号：字母开头，3-32 位，仅含字母/数字/_ . -"""
-        v = value.strip()
-        if not v:
-            raise ValueError("账号不能为空")
-        import re
-
-        if not re.match(r"^[A-Za-z][A-Za-z0-9_.-]{2,31}$", v):
-            raise ValueError("账号需以字母开头，3-32 位，仅允许字母、数字、_ . -")
-        return v
-
-    @field_validator("password")
-    @classmethod
-    def validate_password(cls, value: str):
-        """校验密码：6-128 位"""
-        if len(value) < 6:
-            raise ValueError("密码长度不能少于 6 位")
-        if len(value) > 128:
-            raise ValueError("密码长度不能超过 128 位")
-        return value
-
-    @model_validator(mode="after")
-    def check_model(self):
-        """校验注册信息长度约束"""
-        if self.name and len(self.name) > 32:
-            raise ValueError("姓名长度不能超过 32 个字符")
-        if self.username and len(self.username) > 32:
-            raise ValueError("账号长度不能超过 32 个字符")
-        if self.description and len(self.description) > 255:
-            raise ValueError("备注长度不能超过 255 个字符")
-        return self
-
-
-class UserForgetPasswordSchema(BaseModel):
-    """忘记密码"""
-
-    username: str = Field(..., min_length=3, max_length=32, description="用户名")
-    new_password: str = Field(..., min_length=6, max_length=128, description="新密码")
-    mobile: str | None = Field(default=None, max_length=11, description="手机号")
-
-    @field_validator("username")
-    @classmethod
-    def validate_username(cls, value: str):
-        """校验账号：字母开头，3-32 位"""
-        v = value.strip()
-        if not v:
-            raise ValueError("账号不能为空")
-        import re
-
-        if not re.match(r"^[A-Za-z][A-Za-z0-9_.-]{2,31}$", v):
-            raise ValueError("账号需以字母开头，3-32 位，仅允许字母、数字、_ . -")
-        return v
-
-    @field_validator("new_password")
-    @classmethod
-    def validate_new_password(cls, value: str):
-        """校验密码：6-128 位"""
-        if len(value) < 6:
-            raise ValueError("密码长度不能少于 6 位")
-        if len(value) > 128:
-            raise ValueError("密码长度不能超过 128 位")
-        return value
-
-    @field_validator("mobile")
-    @classmethod
-    def validate_mobile(cls, value: str | None):
-        """校验手机号格式"""
-        return mobile_validator(value)
-
-
 class UserChangePasswordSchema(BaseModel):
     """修改密码"""
 
@@ -202,7 +113,6 @@ class UserCreateSchema(CurrentUserUpdateSchema):
     status: int = Field(default=0, ge=0, le=1, description="状态(0:启动 1:停用)")
     description: str | None = Field(default=None, max_length=255, description="备注")
     is_superuser: bool | None = Field(default=False, description="是否超管")
-    dept_id: int | None = Field(default=None, description="部门ID")
     role_ids: list[int] | None = Field(default=[], description="角色ID列表")
 
     @field_validator("status")
@@ -245,7 +155,6 @@ class UserUpdateSchema(CurrentUserUpdateSchema):
     username: str | None = Field(default=None, max_length=32, description="用户名")
     status: int | None = Field(default=None, ge=0, le=1, description="状态(0:启动 1:停用)")
     description: str | None = Field(default=None, max_length=255, description="备注")
-    dept_id: int | None = Field(default=None, description="部门ID")
     role_ids: list[int] | None = Field(default=[], description="角色ID列表")
 
     @field_validator("status")
@@ -281,8 +190,6 @@ class UserOutSchema(UserUpdateSchema, BaseSchema, UserBySchema):
     github_login: str | None = Field(default=None, max_length=32, description="Github登录")
     wx_login: str | None = Field(default=None, max_length=32, description="微信登录")
     qq_login: str | None = Field(default=None, max_length=32, description="QQ登录")
-    dept_name: str | None = Field(default=None, description="部门名称")
-    dept: CommonSchema | None = Field(default=None, description="部门")
     roles: list[RoleOutSchema] | None = Field(default=[], description="角色")
     menus: list[MenuOutSchema] | None = Field(default=[], description="菜单")
     permissions: list[str] = Field(default_factory=list, description="权限标识列表")
@@ -296,7 +203,7 @@ class UserQueryParam(BaseQueryParam, UserByQueryParam):
     支持：
     - 时间范围（BaseQueryParam）
     - 创建人/更新人筛选（UserByQueryParam）
-    - 业务字段：用户名、名称、手机号、邮箱、部门、状态
+    - 业务字段：用户名、名称、手机号、邮箱、状态
     """
 
     username: str | None = Query(None, description="用户名")
@@ -307,7 +214,6 @@ class UserQueryParam(BaseQueryParam, UserByQueryParam):
         description="邮箱",
         pattern=r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$",
     )
-    dept_id: int | None = Query(None, description="部门ID")
     status: int | None = Query(None, description="是否可用")
 
     def __post_init__(self) -> None:
@@ -317,7 +223,5 @@ class UserQueryParam(BaseQueryParam, UserByQueryParam):
             self.mobile = (QueueEnum.like.value, self.mobile)
         if self.email:
             self.email = (QueueEnum.like.value, self.email)
-        if self.dept_id:
-            self.dept_id = (QueueEnum.eq.value, self.dept_id)
         if self.status:
             self.status = (QueueEnum.eq.value, self.status)

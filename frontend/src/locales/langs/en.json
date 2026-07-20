@@ -392,11 +392,7 @@
                   "sliderText":  "Please slide to verify",
                   "sliderSuccessText":  "Verification successful",
                   "rememberPwd":  "Remember password",
-                  "forgetPwd":  "Forgot password",
                   "btnText":  "Login",
-                  "backLoginBtnText":  "Back to Login",
-                  "noAccount":  "No account yet?",
-                  "register":  "Register",
                   "success":  {
                                   "title":  "Login successful",
                                   "message":  "Welcome back"
@@ -406,7 +402,6 @@
                   "dark":  "Dark",
                   "light":  "Light",
                   "auto":  "Auto",
-                  "newPassword":  "Please enter new Password",
                   "captchaCode":  "Please enter Verify Code",
                   "captchaClickHint":  "Click to refresh captcha",
                   "capsLock":  "Caps Lock is On",
@@ -450,16 +445,9 @@
                                        "gitee":  "Gitee"
                                    },
                   "otherLoginMethods":  "Other",
-                  "resetPassword":  "Reset password",
-                  "thinkOfPasswd":  "Remember your password?",
-                  "agree":  "I have read and agree to the",
-                  "userAgreement":  "User Agreement",
-                  "haveAccount":  "Already have an account?",
-                  "noAccountText":  "Don\u0027t have an account?",
                   "quickFill":  "Quick fill",
                   "quickLoginTip":  "Click user avatar to login quickly",
                   "selectUser":  "Select a user",
-                  "reg":  "Register",
                   "panelAlign":  {
                                      "label":  "Column layout",
                                      "left":  "Wide illustration",
@@ -470,35 +458,6 @@
     "loginForm":  {
                       "remember":  "Remember me"
                   },
-    "forgetPassword":  {
-                           "title":  "Forgot password?",
-                           "subTitle":  "Enter your username and set a new password",
-                           "placeholder":  "Please enter your email",
-                           "submitBtnText":  "Submit",
-                           "backBtnText":  "Back"
-                       },
-    "register":  {
-                     "title":  "Create account",
-                     "subTitle":  "Welcome to join us, please fill in the following information to complete the registration",
-                     "placeholder":  {
-                                         "username":  "Please enter account",
-                                         "password":  "Please enter password",
-                                         "confirmPassword":  "Please enter password again",
-                                         "email":  "Please enter email"
-                                     },
-                     "rule":  {
-                                  "confirmPasswordRequired":  "Please enter your password again",
-                                  "passwordMismatch":  "The two passwords are inconsistent!",
-                                  "usernameLength":  "Length is 3 to 20 characters",
-                                  "passwordLength":  "Password length cannot be less than 6 digits",
-                                  "agreementRequired":  "Please agree to privacy policy"
-                              },
-                     "agreeText":  "I agree",
-                     "privacyPolicy":  "Privacy policy",
-                     "submitBtnText":  "Register",
-                     "hasAccount":  "Already have an account?",
-                     "toLogin":  "To login"
-                 },
     "lock":  {
                  "unlock":  "Click to unlock",
                  "placeholder":  "Please enter lock screen password",
@@ -549,12 +508,6 @@
                   "login":  {
                                 "title":  "Login"
                             },
-                  "register":  {
-                                   "title":  "Register"
-                               },
-                  "forgetPassword":  {
-                                         "title":  "Forget Password"
-                                     },
                   "outside":  {
                                   "title":  "Outside"
                               },

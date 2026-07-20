@@ -3,13 +3,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends, Path, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.response import ResponseSchema, StreamResponse, SuccessResponse
 from app.core.base_params import PaginationQueryParam
 from app.core.base_schema import AuthSchema, BatchSetAvailable, PageResultSchema
-from app.core.dependencies import AuthPermission, db_getter, get_current_user
-from app.core.logger import logger
+from app.core.dependencies import AuthPermission, get_current_user
 from app.core.router_class import OperationLogRoute
 from app.utils.common_util import bytes2file_response
 
@@ -18,10 +16,8 @@ from .schema import (
     ResetPasswordSchema,
     UserChangePasswordSchema,
     UserCreateSchema,
-    UserForgetPasswordSchema,
     UserOutSchema,
     UserQueryParam,
-    UserRegisterSchema,
     UserUpdateSchema,
 )
 from .service import UserService
@@ -76,34 +72,6 @@ async def reset_password_controller(
     data.id = id
     result_dict = await UserService(auth).reset_password(data=data)
     return SuccessResponse(data=result_dict, msg="重置密码成功")
-
-@UserRouter.post(
-    "/register",
-    summary="注册用户",
-    response_model=ResponseSchema[UserOutSchema],
-)
-async def register_user_controller(
-    data: UserRegisterSchema,
-    db: Annotated[AsyncSession, Depends(db_getter)],
-) -> JSONResponse:
-    auth = AuthSchema(db=db, check_data_scope=False)
-    user_register_result = await UserService(auth).register(data=data)
-    logger.info(f"{data.username} 注册用户成功: {user_register_result}")
-    return SuccessResponse(data=user_register_result, msg="注册用户成功")
-
-@UserRouter.post(
-    "/password/forget",
-    summary="忘记密码",
-    response_model=ResponseSchema[UserOutSchema],
-)
-async def forget_password_controller(
-    data: UserForgetPasswordSchema,
-    db: Annotated[AsyncSession, Depends(db_getter)],
-) -> JSONResponse:
-    auth = AuthSchema(db=db, check_data_scope=False)
-    user_forget_password_result = await UserService(auth).forget_password(data=data)
-    logger.info(f"{data.username} 重置密码成功: {user_forget_password_result}")
-    return SuccessResponse(data=user_forget_password_result, msg="重置密码成功")
 
 @UserRouter.get(
     "/list",

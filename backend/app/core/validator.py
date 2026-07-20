@@ -263,36 +263,3 @@ def menu_request_validator(data: Any) -> Any:
         raise CustomException(code=RET.ERROR.code, msg="外链类型必须填写链接地址")
 
     return data
-
-
-def role_permission_request_validator(data: Any) -> Any:
-    """
-    角色权限设置数据验证器。
-
-    参数:
-    - data (Any): 请求数据。
-
-    返回:
-    - Any: 验证后的请求数据。
-
-    异常:
-    - CustomException: 请求数据无效时抛出。
-    """
-    data_scopes = {
-        1: "仅本人数据权限",
-        2: "本部门数据权限",
-        3: "本部门及以下数据权限",
-        4: "全部数据权限",
-        5: "自定义数据权限",
-    }
-
-    if data.data_scope not in data_scopes:
-        raise CustomException(
-            code=RET.ERROR.code,
-            msg=f"数据权限范围必须为: {','.join(map(str, data_scopes.keys()))}",
-        )
-
-    if not data.role_ids:
-        raise CustomException(code=RET.ERROR.code, msg="角色不能为空")
-
-    return data

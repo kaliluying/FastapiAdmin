@@ -23,7 +23,6 @@ def test_knowledge_base_output_exposes_index_status_counts():
         name="产品资料",
         description=None,
         is_enabled=True,
-        owner_dept_id=None,
         document_count=4,
         indexed_document_count=2,
         indexing_document_count=1,

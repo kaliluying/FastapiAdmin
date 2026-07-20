@@ -61,20 +61,9 @@
       </ElTooltip>
 
       <div class="login-form-tail flex flex-col gap-[1.1rem]">
-        <div class="login-options-row flex items-center justify-between text-sm">
-          <ElCheckbox v-model="loginForm.remember" class="login-remember">
-            {{ $t("login.rememberPwd") }}
-          </ElCheckbox>
-          <ElLink
-            type="primary"
-            underline="never"
-            class="inline-flex items-center text-sm leading-[inherit]!"
-            @click="$emit('forget')"
-          >
-            {{ $t("login.forgetPwd") }}
-          </ElLink>
-        </div>
-
+        <ElCheckbox v-model="loginForm.remember" class="login-remember self-start text-sm">
+          {{ $t("login.rememberPwd") }}
+        </ElCheckbox>
         <div>
           <ElButton
             class="login-submit-btn h-11 w-full text-base font-medium"
@@ -89,11 +78,6 @@
       </div>
     </ElForm>
 
-    <FaLoginAuthLinkRow
-      :hint="$t('login.noAccount')"
-      :link-text="$t('login.register')"
-      @link="$emit('register')"
-    />
   </div>
 </template>
 
@@ -120,8 +104,6 @@ withDefaults(defineProps<Props>(), {});
 interface Emits {
   submit: [];
   setupAccount: [key: AccountKey];
-  forget: [];
-  register: [];
 }
 
 const emit = defineEmits<Emits>();

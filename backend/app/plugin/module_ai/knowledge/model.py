@@ -16,7 +16,6 @@ class KnowledgeBaseModel(ModelMixin, UserMixin):
     name: Mapped[str] = mapped_column(String(100), nullable=False, index=True, comment="Knowledge base name")
     description: Mapped[str | None] = mapped_column(Text, default=None, nullable=True, comment="Description")
     is_enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("1"), nullable=False, index=True)
-    owner_dept_id: Mapped[int | None] = mapped_column(Integer, default=None, nullable=True, index=True)
 
     documents: Mapped[list["KnowledgeDocumentModel"]] = relationship(
         "KnowledgeDocumentModel",

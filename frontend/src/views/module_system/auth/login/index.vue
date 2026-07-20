@@ -42,45 +42,16 @@
                       <p class="sub-title">{{ panelSubTitle }}</p>
                     </div>
 
-                    <template v-if="authPanel === 'login'">
-                      <FaLoginAccountForm
-                        ref="accountFormRef"
-                        v-model:login-form="loginForm"
-                        :rules="rules"
-                        :demo-account-key="demoAccountKey"
-                        :accounts="accounts"
-                        :form-key="formKey"
-                        :loading="loading"
-                        @submit="handleSubmit"
-                        @setup-account="setupAccount"
-                        @forget="setAuthPanel('forget')"
-                        @register="setAuthPanel('register')"
-                      />
-                    </template>
-
-                    <FaLoginRegisterPanel
-                      v-else-if="authPanel === 'register'"
-                      ref="registerPanelRef"
-                      v-model:register-agreement-read="registerAgreementRead"
-                      v-model:register-form="registerForm"
-                      :register-rules="registerRules"
+                    <FaLoginAccountForm
+                      ref="accountFormRef"
+                      v-model:login-form="loginForm"
+                      :rules="rules"
+                      :demo-account-key="demoAccountKey"
+                      :accounts="accounts"
                       :form-key="formKey"
-                      :register-loading="registerLoading"
-                      :show-email="true"
-                      :user-agreement-href="userAgreementHref"
-                      @submit="submitRegister"
-                      @to-login="setAuthPanel('login')"
-                    />
-
-                    <FaLoginForgetPanel
-                      v-else
-                      ref="forgetPanelRef"
-                      v-model:forget-form="forgetForm"
-                      :forget-rules="forgetRules"
-                      :form-key="formKey"
-                      :forget-loading="forgetLoading"
-                      @submit="submitForget"
-                      @to-login="setAuthPanel('login')"
+                      :loading="loading"
+                      @submit="handleSubmit"
+                      @setup-account="setupAccount"
                     />
                   </div>
                 </div>
@@ -154,21 +125,16 @@
 <script setup lang="ts">
 import type { LocationQuery, RouteLocationRaw } from "vue-router";
 import AuthAPI, { type LoginFormData } from "@/api/module_system/auth";
-import UserAPI, { type ForgetPasswordForm, type RegisterForm } from "@/api/module_system/user";
 import { useConfigStore, useAppStore, useSettingsStore, useUserStore } from "@stores";
 import { getConfigValue, HttpError } from "@utils";
 import { ElMessage, ElNotification, type FormRules } from "element-plus";
 import type { Account, AccountKey } from "./types";
 import FaLoginAccountForm from "@/components/views/fa-login/forms/FaLoginAccountForm.vue";
-import FaLoginForgetPanel from "@/components/views/fa-login/panels/FaLoginForgetPanel.vue";
-import FaLoginRegisterPanel from "@/components/views/fa-login/panels/FaLoginRegisterPanel.vue";
 import FaAuthTopBar from "@/components/views/fa-login/widgets/FaAuthTopBar.vue";
 import FaEnterpriseIntro from "@/components/views/fa-login/widgets/FaEnterpriseIntro.vue";
 import { useLoginPanelAlign } from "@/components/views/fa-login/composables/useLoginPanelAlign";
 
 defineOptions({ name: "Login" });
-
-type AuthPanel = "login" | "register" | "forget";
 
 const configStore = useConfigStore();
 const settingStore = useSettingsStore();
@@ -177,19 +143,8 @@ const { t, locale } = useI18n();
 
 const { panelAlign } = useLoginPanelAlign();
 
-const authPanel = ref<AuthPanel>("login");
-
-const panelTitle = computed(() => {
-  if (authPanel.value === "register") return t("login.reg");
-  if (authPanel.value === "forget") return t("login.resetPassword");
-  return t("login.title");
-});
-
-const panelSubTitle = computed(() => {
-  if (authPanel.value === "register") return t("register.subTitle");
-  if (authPanel.value === "forget") return t("forgetPassword.subTitle");
-  return t("login.subTitle");
-});
+const panelTitle = computed(() => t("login.title"));
+const panelSubTitle = computed(() => t("login.subTitle"));
 
 const footerCopyright = computed(() =>
   getConfigValue(configStore.configData, ["copyright", "sys_web_copyright"]),
@@ -209,17 +164,6 @@ const footerClause = computed(() =>
 const footerKeepRecord = computed(() =>
   getConfigValue(configStore.configData, ["keep_record", "sys_keep_record"]),
 );
-const userAgreementHref = computed(() => footerClause.value);
-
-function setAuthPanel(panel: AuthPanel) {
-  authPanel.value = panel;
-  nextTick(() => {
-    accountFormRef.value?.clearValidate?.();
-    registerPanelRef.value?.clearValidate?.();
-    forgetPanelRef.value?.clearValidate?.();
-  });
-}
-
 const formKey = ref(0);
 
 watch(locale, () => {
@@ -256,96 +200,7 @@ const router = useRouter();
 const route = useRoute();
 
 const accountFormRef = ref<InstanceType<typeof FaLoginAccountForm> | null>(null);
-const registerPanelRef = ref<InstanceType<typeof FaLoginRegisterPanel> | null>(null);
-const forgetPanelRef = ref<InstanceType<typeof FaLoginForgetPanel> | null>(null);
-
 const loading = ref(false);
-const registerLoading = ref(false);
-const forgetLoading = ref(false);
-
-const registerAgreementRead = ref(false);
-
-const registerForm = reactive<RegisterForm & { email: string }>({
-  username: "",
-  password: "",
-  confirmPassword: "",
-  email: "",
-});
-
-const forgetForm = reactive<ForgetPasswordForm>({
-  username: "",
-  new_password: "",
-  confirmPassword: "",
-});
-
-const validateRegisterPassword = (_rule: unknown, value: string, callback: (e?: Error) => void) => {
-  if (!value) {
-    callback(new Error(t("login.message.password.required")));
-    return;
-  }
-  if (registerForm.confirmPassword) {
-    registerPanelRef.value?.validateField?.("confirmPassword");
-  }
-  callback();
-};
-
-const validateRegisterConfirm = (_rule: unknown, value: string, callback: (e?: Error) => void) => {
-  if (!value) {
-    callback(new Error(t("login.message.password.required")));
-    return;
-  }
-  if (value !== registerForm.password) {
-    callback(new Error(t("login.message.password.inconformity")));
-    return;
-  }
-  callback();
-};
-
-const registerRules = computed<FormRules<RegisterForm & { email: string }>>(() => ({
-  username: [{ required: true, message: t("login.message.username.required"), trigger: "blur" }],
-  password: [
-    { required: true, validator: validateRegisterPassword, trigger: "blur" },
-    { min: 6, message: t("login.message.password.min"), trigger: "blur" },
-  ],
-  confirmPassword: [
-    { required: true, message: t("login.message.password.required"), trigger: "blur" },
-    { min: 6, message: t("login.message.password.min"), trigger: "blur" },
-    { validator: validateRegisterConfirm, trigger: "blur" },
-  ],
-  email: [
-    { required: true, message: t("login.email.required"), trigger: "blur" },
-    {
-      type: "email",
-      message: t("login.email.invalid"),
-      trigger: "blur",
-    },
-  ],
-}));
-
-const validateForgetConfirm = (_rule: unknown, value: string, callback: (e?: Error) => void) => {
-  if (!value) {
-    callback(new Error(t("login.message.password.required")));
-    return;
-  }
-  if (value !== forgetForm.new_password) {
-    callback(new Error(t("login.message.password.inconformity")));
-    return;
-  }
-  callback();
-};
-
-const forgetRules = computed<FormRules<ForgetPasswordForm>>(() => ({
-  username: [{ required: true, message: t("login.message.username.required"), trigger: "blur" }],
-  new_password: [
-    { required: true, message: t("login.message.password.required"), trigger: "blur" },
-    { min: 6, message: t("login.message.password.min"), trigger: "blur" },
-  ],
-  confirmPassword: [
-    { required: true, message: t("login.message.password.required"), trigger: "blur" },
-    { min: 6, message: t("login.message.password.min"), trigger: "blur" },
-    { validator: validateForgetConfirm, trigger: "blur" },
-  ],
-}));
 
 const loginForm = reactive<LoginFormData>({
   username: "",
@@ -470,48 +325,6 @@ const handleSubmit = async () => {
   }
 };
 
-async function submitRegister() {
-  if (!registerAgreementRead.value) {
-    ElMessage.warning(t("login.message.agree.required"));
-    return;
-  }
-  if (!registerPanelRef.value) return;
-  try {
-    await registerPanelRef.value.validate?.();
-    registerLoading.value = true;
-    ElMessage.info("内部系统账号请联系管理员创建");
-    loginForm.username = registerForm.username;
-    registerForm.username = "";
-    registerForm.password = "";
-    registerForm.confirmPassword = "";
-    registerForm.email = "";
-    registerAgreementRead.value = false;
-    setAuthPanel("login");
-  } catch (error) {
-    console.error("[Login] register:", error);
-  } finally {
-    registerLoading.value = false;
-  }
-}
-
-async function submitForget() {
-  if (!forgetPanelRef.value) return;
-  try {
-    await forgetPanelRef.value.validate?.();
-    forgetLoading.value = true;
-    await UserAPI.forgetPassword(forgetForm);
-    loginForm.username = forgetForm.username;
-    loginForm.password = forgetForm.new_password;
-    forgetForm.username = "";
-    forgetForm.new_password = "";
-    forgetForm.confirmPassword = "";
-    setAuthPanel("login");
-  } catch (error) {
-    console.error("[Login] forget password:", error);
-  } finally {
-    forgetLoading.value = false;
-  }
-}
 </script>
 
 <style scoped lang="scss">

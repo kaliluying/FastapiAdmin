@@ -1,0 +1,42 @@
+[
+  {
+    "role_code": "USER",
+    "route_name": "AI"
+  },
+  {
+    "role_code": "USER",
+    "permission": "module_ai:chat:query"
+  },
+  {
+    "role_code": "USER",
+    "permission": "module_ai:chat:create"
+  },
+  {
+    "role_code": "USER",
+    "permission": "module_ai:chat:update"
+  },
+  {
+    "role_code": "USER",
+    "permission": "module_ai:chat:delete"
+  },
+  {
+    "role_code": "USER",
+    "permission": "module_ai:chat:detail"
+  },
+  {
+    "role_code": "USER",
+    "permission": "module_ai:chat:ws"
+  },
+  {
+    "role_code": "USER",
+    "permission": "module_ai:session:query"
+  },
+  {
+    "role_code": "USER",
+    "permission": "module_ai:session:detail"
+  },
+  {
+    "role_code": "USER",
+    "permission": "module_ai:session:delete"
+  }
+]

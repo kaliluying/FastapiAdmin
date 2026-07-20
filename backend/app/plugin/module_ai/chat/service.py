@@ -7,7 +7,6 @@ from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
-from app.api.v1.module_system.dept.service import DeptService
 from app.common.request import paginate
 from app.config.setting import settings
 from app.core.base_schema import AuthSchema
@@ -52,22 +51,11 @@ async def _format_session_data(session: ChatSession, auth: AuthSchema | None = N
         "messages": messages,
     }
 
-    result["team_name"] = await _get_team_name(session_dict.get("team_id"), auth)
+    result["team_name"] = None
     summary = session_dict.get("summary")
     if summary:
         result["summary"] = summary.get("summary") if isinstance(summary, dict) else str(summary)
     return result
-
-
-async def _get_team_name(team_id: Any, auth: AuthSchema | None) -> str | None:
-    if not auth or not team_id:
-        return None
-    try:
-        dept_id = int(team_id)
-        dept = await DeptService(auth).detail(id=dept_id)
-        return dept.get("name")
-    except Exception:
-        return None
 
 
 def _unix_to_datetime(timestamp: int | None) -> str | None:
@@ -125,7 +113,7 @@ class ChatService:
             async for chunk in chain.astream(
                 message=query.message,
                 user_id=self._get_user_id(),
-                dept_id=self._get_dept_id(),
+                scope_id=self._get_scope_id(),
                 session_id=active_session_id,
                 files=query.files,
                 knowledge_base_ids=query.knowledge_base_ids,
@@ -179,7 +167,7 @@ class ChatService:
             response_text = await chain.ainvoke(
                 message=message,
                 user_id=self._get_user_id(),
-                dept_id=self._get_dept_id(),
+                scope_id=self._get_scope_id(),
                 session_id=active_session_id,
                 knowledge_base_ids=knowledge_base_ids or [],
             )
@@ -278,9 +266,8 @@ class ChatService:
         username = getattr(getattr(self.auth, "user", None), "username", None)
         return str(username) if username else "anonymous"
 
-    def _get_dept_id(self) -> str:
-        dept_id = getattr(getattr(self.auth, "user", None), "dept_id", None)
-        return str(dept_id) if dept_id else "anonymous"
+    def _get_scope_id(self) -> str:
+        return self._get_user_id()
 
     @staticmethod
     def get_model_config() -> AiModelConfigOutSchema:
@@ -317,7 +304,6 @@ class ChatService:
             "用户管理": {"path": "/system/user", "name": "用户管理"},
             "角色管理": {"path": "/system/role", "name": "角色管理"},
             "菜单管理": {"path": "/system/menu", "name": "菜单管理"},
-            "部门管理": {"path": "/system/dept", "name": "部门管理"},
             "字典管理": {"path": "/system/dict", "name": "字典管理"},
             "系统日志": {"path": "/system/log", "name": "系统日志"},
         }
@@ -331,7 +317,6 @@ class ChatService:
             "用户": route_config["用户管理"],
             "角色": route_config["角色管理"],
             "菜单": route_config["菜单管理"],
-            "部门": route_config["部门管理"],
             "字典": route_config["字典管理"],
             "日志": route_config["系统日志"],
         }

@@ -132,7 +132,6 @@ const form = reactive<KnowledgeBaseForm>({
   name: "",
   description: "",
   is_enabled: true,
-  owner_dept_id: null,
 });
 
 const rules: FormRules = {
@@ -163,7 +162,7 @@ const resetQuery = () => {
 
 const openCreate = () => {
   editingId.value = null;
-  Object.assign(form, { name: "", description: "", is_enabled: true, owner_dept_id: null });
+  Object.assign(form, { name: "", description: "", is_enabled: true });
   dialogVisible.value = true;
 };
 
@@ -173,7 +172,6 @@ const openUpdate = (row: KnowledgeBase) => {
     name: row.name,
     description: row.description || "",
     is_enabled: row.is_enabled,
-    owner_dept_id: row.owner_dept_id || null,
   });
   dialogVisible.value = true;
 };

@@ -1,7 +1,7 @@
 """
 module_system API route tests.
 
-The single-organization build keeps auth, user, role, dept, dict, params, and log routes.
+The single-organization build keeps auth, user, role, dict, params, and log routes.
 """
 
 from conftest import assert_route
@@ -43,14 +43,12 @@ class TestSystemRoutes:
         assert_route(test_client, "GET", "/system/user/current/info", auth=auth_headers)
         assert_route(test_client, "GET", "/system/user/list", auth=auth_headers)
         assert_route(test_client, "GET", "/system/user/detail/1", auth=auth_headers)
+        assert_route(test_client, "POST", "/system/user/register", expected_status=404)
+        assert_route(test_client, "POST", "/system/user/password/forget", expected_status=404)
 
     def test_role_routes(self, test_client: TestClient, auth_headers: dict) -> None:
         assert_route(test_client, "GET", "/system/role/list", auth=auth_headers)
         assert_route(test_client, "GET", "/system/role/detail/1", auth=auth_headers)
-
-    def test_dept_routes(self, test_client: TestClient, auth_headers: dict) -> None:
-        assert_route(test_client, "GET", "/system/dept/tree", auth=auth_headers)
-        assert_route(test_client, "GET", "/system/dept/detail/1", auth=auth_headers)
 
     def test_dict_routes(self, test_client: TestClient, auth_headers: dict) -> None:
         assert_route(test_client, "GET", "/system/dict/type/list", auth=auth_headers)
@@ -72,3 +70,5 @@ class TestRemovedSystemRoutes:
         assert_route(test_client, "GET", "/system/notice/list", expected_status=404, auth=auth_headers)
         assert_route(test_client, "GET", "/system/position/list", expected_status=404, auth=auth_headers)
         assert_route(test_client, "GET", "/system/ticket/list", expected_status=404, auth=auth_headers)
+        assert_route(test_client, "GET", "/system/dept/tree", expected_status=404, auth=auth_headers)
+        assert_route(test_client, "GET", "/system/dept/detail/1", expected_status=404, auth=auth_headers)

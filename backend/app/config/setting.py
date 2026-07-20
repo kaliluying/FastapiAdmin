@@ -119,8 +119,6 @@ class Settings(BaseSettings):
     # ================================================= #
     # ***************** 第三方 OAuth 登录（可选）********* #
     # ================================================= #
-    # 自动注册用户的默认角色 ID 列表（须与库中角色主键一致）
-    OAUTH_DEFAULT_ROLE_IDS: list[int] = [2]
     # 回调异常时回跳的前端地址（与前端实际 /login 一致，含协议与端口）
     OAUTH_FRONTEND_FALLBACK: str = "http://127.0.0.1:5173/login"
     # OAuth 回调地址白名单（scheme://host[:port] 格式），空时仅允许 OAUTH_FRONTEND_FALLBACK 同源

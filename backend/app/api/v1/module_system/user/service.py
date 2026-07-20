@@ -6,8 +6,6 @@ from fastapi import UploadFile
 
 from app.api.v1.module_platform.menu.crud import MenuCRUD
 from app.api.v1.module_platform.menu.schema import MenuOutSchema
-from app.api.v1.module_system.dept.crud import DeptCRUD
-from app.api.v1.module_system.role.crud import RoleCRUD
 from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.exceptions import CustomException
 from app.core.logger import logger
@@ -21,10 +19,8 @@ from .schema import (
     ResetPasswordSchema,
     UserChangePasswordSchema,
     UserCreateSchema,
-    UserForgetPasswordSchema,
     UserOutSchema,
     UserQueryParam,
-    UserRegisterSchema,
     UserUpdateSchema,
 )
 
@@ -37,11 +33,7 @@ class UserService:
 
     async def detail(self, id: int) -> UserOutSchema:
         user = await UserCRUD(self.auth).get_or_404(id=id)
-        result = UserOutSchema.model_validate(user)
-        if user.dept_id:
-            dept = await DeptCRUD(self.auth).get(id=user.dept_id)
-            result.dept_name = dept.name if dept else None
-        return result
+        return UserOutSchema.model_validate(user)
 
     async def get_list(
         self,
@@ -76,11 +68,6 @@ class UserService:
         if user:
             raise CustomException(msg="已存在相同用户名称的账号")
 
-        if data.dept_id:
-            dept = await DeptCRUD(self.auth).get(id=data.dept_id)
-            if not dept:
-                raise CustomException(msg="该数据不存在")
-
         if data.password:
             data.password = PwdUtil.hash_password(password=data.password)
         user_dict = data.model_dump(exclude_unset=True, exclude={"role_ids"})
@@ -108,22 +95,10 @@ class UserService:
             exist_email_user = await UserCRUD(self.auth).get(email=data.email)
             if exist_email_user and exist_email_user.id != id:
                 raise CustomException(msg="该数据已存在")
-        if data.dept_id:
-            dept = await DeptCRUD(self.auth).get(id=data.dept_id)
-            if not dept:
-                raise CustomException(msg="该数据不存在")
-            if dept.status == 1:
-                raise CustomException(msg="部门已被禁用")
-
         new_user = await UserCRUD(self.auth).update(id=id, data=data)
 
-        if data.role_ids and len(data.role_ids) > 0:
-            roles = await RoleCRUD(self.auth).get_list(search={"id": ("in", data.role_ids)})
-            if len(roles) != len(data.role_ids):
-                raise CustomException(msg="更新失败，部分角色不存在")
-            if not all(role.status == 0 for role in roles):
-                raise CustomException(msg="更新失败，部分角色已被禁用")
-            await UserCRUD(self.auth).set_user_roles(user_ids=[id], role_ids=data.role_ids)
+        if "role_ids" in data.model_fields_set:
+            await UserCRUD(self.auth).set_user_roles(user_ids=[id], role_ids=data.role_ids or [])
 
         return UserOutSchema.model_validate(new_user)
 
@@ -151,13 +126,9 @@ class UserService:
             raise CustomException(msg="该数据不存在")
         user = await UserCRUD(self.auth).get(id=self.auth.user.id)
         user_dict = UserOutSchema.model_validate(user)
-        if user and user.dept:
-            user_dict.dept_name = user.dept.name
-
-        _internal_pc_only = {"client": "pc", "scope": "single_org"}
         if self.auth.user and self.auth.user.is_superuser:
             menu_all = await MenuCRUD(self.auth).tree_list(
-                search={"type": ("in", [1, 2, 3, 4]), "status": 0, **_internal_pc_only},
+                search={"type": ("in", [1, 2, 3, 4]), "status": 0},
                 order_by=[{"order": "asc"}],
             )
             menus = [MenuOutSchema.model_validate(menu) for menu in menu_all]
@@ -165,17 +136,16 @@ class UserService:
             menu_ids = {
                 menu.id
                 for role in self.auth.user.roles or []
+                if role.status == 0
                 for menu in role.menus
                 if menu.status == 0
-                and getattr(menu, "client", "pc") == "pc"
-                and getattr(menu, "scope", "single_org") == "single_org"
             }
 
             menus = (
                 [
                     MenuOutSchema.model_validate(menu)
                     for menu in await MenuCRUD(self.auth).tree_list(
-                        search={"id": ("in", list(menu_ids)), **_internal_pc_only},
+                        search={"id": ("in", list(menu_ids))},
                         order_by=[{"order": "asc"}],
                     )
                 ]
@@ -185,10 +155,6 @@ class UserService:
         user_dict.permissions = self._collect_permissions()
         user_dict.menus = traversal_to_tree([menu.model_dump() for menu in menus])
         return user_dict
-
-    @staticmethod
-    def _is_builtin_menu(_menu: Any) -> bool:
-        return True
 
     def _collect_permissions(self) -> list[str]:
         if self.auth.user and self.auth.user.is_superuser:
@@ -201,8 +167,6 @@ class UserService:
             for menu in role.menus or []:
                 if (
                     menu.status == 0
-                    and getattr(menu, "client", "pc") == "pc"
-                    and getattr(menu, "scope", "single_org") == "single_org"
                     and menu.permission
                 ):
                     permissions.add(menu.permission)
@@ -266,43 +230,8 @@ class UserService:
         new_user = await UserCRUD(self.auth).change_password(id=data.id, password_hash=new_password_hash)
         return UserOutSchema.model_validate(new_user)
 
-    async def register(self, data: UserRegisterSchema) -> UserOutSchema:
-        username_ok = await UserCRUD(self.auth).get(username=data.username)
-        if username_ok:
-            raise CustomException(msg="该数据已存在")
-
-        data.password = PwdUtil.hash_password(password=data.password)
-        data.name = data.username
-        create_dict = data.model_dump(exclude_unset=True, exclude={"role_ids"})
-
-        if self.auth.user and self.auth.user.id:
-            create_dict["created_id"] = self.auth.user.id
-
-        result = await UserCRUD(self.auth).create(data=create_dict)
-        if data.role_ids:
-            await UserCRUD(self.auth).set_user_roles(user_ids=[result.id], role_ids=data.role_ids)
-        return UserOutSchema.model_validate(result)
-
-    async def forget_password(self, data: UserForgetPasswordSchema) -> UserOutSchema:
-        user = await UserCRUD(self.auth).get(username=data.username)
-        if not user:
-            raise CustomException(msg="该数据不存在")
-        if user.status == 1:
-            raise CustomException(msg="用户已停用")
-
-        if user.is_superuser:
-            raise CustomException(msg="超级管理员密码不能重置")
-
-        if data.mobile and user.mobile != data.mobile:
-            raise CustomException(msg="手机号不匹配")
-
-        new_password_hash = PwdUtil.hash_password(password=data.new_password)
-        new_user = await UserCRUD(self.auth).forget_password(id=user.id, password_hash=new_password_hash)
-        return UserOutSchema.model_validate(new_user)
-
     async def batch_import(self, file: UploadFile, update_support: bool = False) -> str:
         header_dict = {
-            "部门编号": "dept_id",
             "账号": "username",
             "昵称": "name",
             "邮箱": "email",
@@ -325,7 +254,7 @@ class UserService:
 
             df.rename(columns=header_dict, inplace=True)
 
-            required_fields = ["username", "name", "dept_id"]
+            required_fields = ["username", "name"]
             errors = []
             for field in required_fields:
                 if df[field].isnull().any():
@@ -356,7 +285,6 @@ class UserService:
                         "mobile": str(row["mobile"]).strip() if pd.notna(row["mobile"]) else None,
                         "gender": str(row["gender"]).strip() if pd.notna(row["gender"]) else "1",
                         "status": 0 if str(row["status"]).strip() == "正常" else 1,
-                        "dept_id": int(row["dept_id"]),
                         "password": PwdUtil.hash_password(password="123456"),
                     }
 
@@ -395,7 +323,6 @@ class UserService:
     @staticmethod
     def get_import_template() -> bytes:
         header_list = [
-            "部门编号",
             "账号",
             "昵称",
             "邮箱",
@@ -424,7 +351,6 @@ class UserService:
             "avatar": "头像",
             "username": "用户名称",
             "name": "用户昵称",
-            "dept_name": "部门",
             "email": "邮箱",
             "mobile": "手机号",
             "gender": "性别",

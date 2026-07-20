@@ -61,7 +61,6 @@ export interface MenuPageQuery extends BaseQueryParams {
   route_path?: string;
   component_path?: string;
   description?: string;
-  scope?: "single_org";
 }
 
 export interface MenuTable extends BaseType {
@@ -89,7 +88,6 @@ export interface MenuTable extends BaseType {
   active_path?: string;
   show_badge?: boolean;
   show_text_badge?: string;
-  scope?: "single_org";
   status?: number;
   description?: string;
 }
@@ -117,7 +115,6 @@ export interface MenuForm extends BaseFormType {
   active_path?: string;
   show_badge?: boolean;
   show_text_badge?: string;
-  scope?: "single_org";
   status?: number;
   description?: string;
 }
@@ -126,4 +123,3 @@ export interface KeyValue {
   key: string;
   value: string;
 }
-

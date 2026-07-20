@@ -15,11 +15,10 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.module_platform.menu.model import MenuModel
-from app.api.v1.module_system.dept.model import DeptModel
 from app.api.v1.module_system.dict.model import DictDataModel, DictTypeModel
 from app.api.v1.module_system.log.model import LoginLogModel, OperationLogModel
 from app.api.v1.module_system.params.model import ParamsModel
-from app.api.v1.module_system.role.model import RoleModel
+from app.api.v1.module_system.role.model import RoleMenusModel, RoleModel
 from app.api.v1.module_system.user.model import UserModel, UserRolesModel
 from app.config.path_conf import SCRIPT_DIR
 from app.core.database import async_db_session, create_tables
@@ -41,12 +40,12 @@ class InitializeData:
         MenuModel,
         # ── 系统管理：基础表 ──
         ParamsModel,
-        DeptModel,
         RoleModel,
         DictTypeModel,
         DictDataModel,
         UserModel,
         # ── 关联表 ──
+        RoleMenusModel,
         UserRolesModel,
         # ── 其他系统/业务表 ──
         # ── 日志表（追加写入） ──
@@ -59,7 +58,7 @@ class InitializeData:
     ]
 
     # 树形模型：JSON 含嵌套 children，需递归创建对象
-    _RECURSIVE_TABLES: set[str] = {"platform_menu", "sys_dept"}
+    _RECURSIVE_TABLES: set[str] = {"platform_menu"}
 
     async def init_db(self) -> None:
         """建表并导入种子数据"""
@@ -86,7 +85,7 @@ class InitializeData:
                 continue
 
             try:
-                # 树形表（platform_menu / sys_dept）：递归创建含 children 的对象
+                # 树形菜单表：递归创建含 children 的对象
                 if table_name in self._RECURSIVE_TABLES:
                     count = await db.execute(select(func.count()).select_from(model))
                     if count.scalar():
@@ -131,6 +130,34 @@ class InitializeData:
                     db.add_all(objs)
                     await db.flush()
                     logger.info(f"✅️ 已向 {table_name} 写入初始化数据")
+                    continue
+
+                if table_name == "sys_role_menus":
+                    count = await db.execute(select(func.count()).select_from(model))
+                    if count.scalar():
+                        logger.info(f"⏭️  跳过 {table_name} 表数据初始化（表已有数据）")
+                        continue
+
+                    roles = (await db.execute(select(RoleModel))).scalars().all()
+                    roles_by_code = {role.code: role for role in roles}
+                    links = []
+                    for item in data:
+                        role = roles_by_code.get(item["role_code"])
+                        if not role:
+                            raise ValueError(f"角色菜单种子引用了不存在的角色: {item['role_code']}")
+
+                        if "permission" in item:
+                            menu_stmt = select(MenuModel).where(MenuModel.permission == item["permission"])
+                        else:
+                            menu_stmt = select(MenuModel).where(MenuModel.route_name == item["route_name"])
+                        menus = (await db.execute(menu_stmt)).scalars().all()
+                        if not menus:
+                            raise ValueError(f"角色菜单种子未匹配菜单: {item}")
+                        links.extend(RoleMenusModel(role_id=role.id, menu_id=menu.id) for menu in menus)
+
+                    db.add_all(links)
+                    await db.flush()
+                    logger.info(f"✅️ 已向 {table_name} 写入 {len(links)} 条")
                     continue
 
                 # 日志表：追加写入，已有数据跳过

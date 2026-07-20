@@ -3,6 +3,7 @@
 from app.api.v1.module_system.role.crud import RoleCRUD
 from app.core.base_crud import CRUDBase
 from app.core.base_schema import AuthSchema
+from app.core.exceptions import CustomException
 
 from .model import UserModel
 from .schema import (
@@ -37,9 +38,18 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         返回:
         - None
         """
-        user_objs = await self.get_list(search={"id": ("in", user_ids)})
-        if role_ids:
-            role_objs = await RoleCRUD(self.auth).get_list(search={"id": ("in", role_ids)})
+        requested_user_ids = set(user_ids)
+        user_objs = await self.get_list(search={"id": ("in", list(requested_user_ids))})
+        if len(user_objs) != len(requested_user_ids):
+            raise CustomException(msg="设置用户角色失败，部分用户不存在或无权操作")
+
+        requested_role_ids = set(role_ids)
+        if requested_role_ids:
+            role_objs = await RoleCRUD(self.auth).get_list(search={"id": ("in", list(requested_role_ids))})
+            if len(role_objs) != len(requested_role_ids):
+                raise CustomException(msg="设置用户角色失败，部分角色不存在或无权操作")
+            if any(role.status != 0 for role in role_objs):
+                raise CustomException(msg="设置用户角色失败，不能分配已禁用角色")
         else:
             role_objs = []
 
@@ -60,8 +70,10 @@ class UserCRUD(CRUDBase[UserModel, UserCreateSchema, UserUpdateSchema]):
         返回:
         - UserModel: 更新后的用户信息
         """
-        return await self.update(id=id, data=UserUpdateSchema(password=password_hash))
-
-    async def forget_password(self, id: int, password_hash: str) -> UserModel:
-        """重置密码（与 change_password 逻辑相同）"""
-        return await self.change_password(id=id, password_hash=password_hash)
+        user = await self.get_or_404(id=id)
+        user.password = password_hash
+        if self.auth.user:
+            user.updated_id = self.auth.user.id
+        await self.auth.db.flush()
+        await self.auth.db.refresh(user)
+        return user

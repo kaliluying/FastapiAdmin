@@ -301,12 +301,6 @@ const {
         visible: false,
       },
       {
-        prop: "team_name",
-        label: "部门名称",
-        minWidth: 120,
-        showOverflowTooltip: true,
-      },
-      {
         prop: "agent_id",
         label: "Agent ID",
         minWidth: 120,
@@ -365,7 +359,6 @@ const memoryDetailItems: import("@/components/others/fa-descriptions/index.vue")
     { label: "标题", prop: "title" },
     { label: "用户ID", prop: "user_id", span: 1 },
     { label: "团队ID", prop: "team_id", span: 1 },
-    { label: "部门名称", prop: "team_name", span: 1 },
     { label: "Agent ID", prop: "agent_id", span: 1 },
     { label: "创建时间", prop: "created_time", span: 1 },
     { label: "更新时间", prop: "updated_time", span: 1 },

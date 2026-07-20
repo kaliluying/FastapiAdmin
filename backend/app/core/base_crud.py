@@ -408,7 +408,8 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
                 await self.db.execute(sql)
             else:
                 sql = delete(self.model).where(pk.in_(ids))
-                await self.db.execute(sql)
+            sql = await self.__filter_permissions(sql)
+            await self.db.execute(sql)
             await self.db.flush()
         except CustomException:
             raise
@@ -435,6 +436,7 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
         try:
             pk = self._get_pk_col()
             sql = update(self.model).where(pk.in_(ids)).values(**kwargs)
+            sql = await self.__filter_permissions(sql)
             await self.db.execute(sql)
             await self.db.flush()
         except CustomException:

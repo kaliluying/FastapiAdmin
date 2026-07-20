@@ -57,8 +57,7 @@ class ChatSessionCRUD:
         self.auth = auth
         self.db = auth.db
         self.user_id = auth.user.username if auth and auth.user else "user"
-        dept_id = getattr(auth.user, "dept_id", None) if auth and auth.user else None
-        self.team_id = str(dept_id) if dept_id else None
+        self.team_id = None
 
     async def get_by_id_crud(self, session_id: str) -> ChatSession | None:
         try:

@@ -9,7 +9,6 @@
 """
 
 import json
-import secrets
 from typing import Any, Literal
 from urllib.parse import quote, urlencode, urlparse
 
@@ -20,8 +19,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.module_system.user.crud import UserCRUD
 from app.api.v1.module_system.user.model import UserModel
-from app.api.v1.module_system.user.schema import UserRegisterSchema
-from app.api.v1.module_system.user.service import UserService
 from app.config.setting import settings
 from app.core.base_schema import AuthSchema, JWTOutSchema
 from app.core.exceptions import CustomException
@@ -335,25 +332,7 @@ async def ensure_oauth_user(
     if existing:
         return existing
 
-    reg = UserRegisterSchema(
-        username=username,
-        password=secrets.token_urlsafe(24),
-        name=(display_name or username)[:32],
-        role_ids=list(settings.OAUTH_DEFAULT_ROLE_IDS),
-    )
-    try:
-        await UserService(auth).register(data=reg)
-    except Exception:
-        # 并发创建可能触发唯一约束冲突，回退到再次查询
-        existing = await UserCRUD(auth).get(username=username)
-        if existing:
-            return existing
-        raise CustomException(msg="OAuth 注册失败")
-    user = await UserCRUD(auth).get(username=username)
-    if not user:
-        raise CustomException(msg="OAuth 注册失败")
-    logger.info(f"OAuth 自动注册用户: {username} ({provider})")
-    return user
+    raise CustomException(msg="OAuth 账号未绑定，请由管理员先创建内部账号")
 
 
 async def complete_oauth_login(

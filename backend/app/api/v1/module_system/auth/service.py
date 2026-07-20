@@ -109,8 +109,7 @@ class LoginService:
         referer = request.headers.get("referer", "")
         request_from_docs = referer.endswith(("docs", "redoc"))
 
-        captcha_verification_enabled = False
-        if captcha_verification_enabled and settings.CAPTCHA_ENABLE and not request_from_docs:
+        if settings.CAPTCHA_ENABLE and not request_from_docs:
             if not login_form.captcha_key or not login_form.captcha:
                 raise CustomException(msg="验证码不能为空")
             await CaptchaService.check_captcha(
@@ -534,4 +533,3 @@ class AutoLoginService:
         logger.info(f"用户{user.username}免登录成功")
 
         return jwt_token
-
