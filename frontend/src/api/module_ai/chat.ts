@@ -63,6 +63,14 @@ export const AiChatAPI = {
       method: "get",
     });
   },
+
+  updateModelConfig(body: AiModelConfigUpdate) {
+    return request<ApiResponse<AiModelConfig>>({
+      url: `${API_PATH}/model-config`,
+      method: "put",
+      data: body,
+    });
+  },
 };
 
 export default AiChatAPI;
@@ -149,6 +157,7 @@ export interface ChatSessionDetail {
 }
 
 export interface AiModelConfig {
+  chat_protocol: ChatProtocol;
   openai_base_url: string;
   openai_model: string;
   openai_embedding_model: string;
@@ -157,4 +166,13 @@ export interface AiModelConfig {
   openai_api_key_configured: boolean;
   chroma_persist_dir: string;
   chroma_collection_name: string;
+}
+
+export type ChatProtocol = "openai" | "anthropic";
+
+export interface AiModelConfigUpdate {
+  chat_protocol: ChatProtocol;
+  openai_base_url: string;
+  openai_model: string;
+  openai_api_key?: string;
 }

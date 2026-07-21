@@ -76,7 +76,7 @@ def test_ai_chat_stack_uses_langchain_not_legacy_agent_framework() -> None:
 
 
 async def test_langchain_chat_model_invokes_and_streams_messages(monkeypatch) -> None:
-    from app.plugin.module_ai.chat import rag
+    from app.plugin.module_ai.chat import model_config_service, rag
 
     captured: dict[str, object] = {}
 
@@ -99,9 +99,10 @@ async def test_langchain_chat_model_invokes_and_streams_messages(monkeypatch) ->
             yield FakeMessage("")
 
     monkeypatch.setattr(rag, "ChatOpenAI", FakeChatOpenAI)
-    monkeypatch.setattr(rag.settings, "OPENAI_API_KEY", "test_key")
-    monkeypatch.setattr(rag.settings, "OPENAI_BASE_URL", "https://example.test/v1")
-    monkeypatch.setattr(rag.settings, "OPENAI_MODEL", "test-model")
+    monkeypatch.setattr(model_config_service, "_active_config", None)
+    monkeypatch.setattr(model_config_service.settings, "OPENAI_API_KEY", "test_key")
+    monkeypatch.setattr(model_config_service.settings, "OPENAI_BASE_URL", "https://example.test/v1")
+    monkeypatch.setattr(model_config_service.settings, "OPENAI_MODEL", "test-model")
 
     model = rag.LangChainChatModel()
 
@@ -115,6 +116,52 @@ async def test_langchain_chat_model_invokes_and_streams_messages(monkeypatch) ->
     }
     assert captured["invoke_messages"][0].content == "hello"
     assert captured["stream_messages"][0].content == "hello"
+
+
+async def test_langchain_chat_model_uses_anthropic_protocol(monkeypatch) -> None:
+    from app.plugin.module_ai.chat import model_config_service, rag
+
+    captured: dict[str, object] = {}
+
+    class FakeMessage:
+        def __init__(self, content) -> None:
+            self.content = content
+
+    class FakeChatAnthropic:
+        def __init__(self, **kwargs) -> None:
+            captured["init"] = kwargs
+
+        async def ainvoke(self, messages):
+            captured["invoke_messages"] = messages
+            return FakeMessage([{"type": "text", "text": "Claude answer"}])
+
+        async def astream(self, messages):
+            captured["stream_messages"] = messages
+            yield FakeMessage([{"type": "text", "text": "Claude "}])
+            yield FakeMessage([{"type": "text", "text": "stream"}])
+
+    monkeypatch.setattr(rag, "ChatAnthropic", FakeChatAnthropic)
+    monkeypatch.setattr(
+        model_config_service,
+        "_active_config",
+        model_config_service.ChatModelRuntimeConfig(
+            protocol="anthropic",
+            base_url="https://api.anthropic.com",
+            model="claude-sonnet-4-6",
+            api_key="test_claude_key",
+        ),
+    )
+
+    model = rag.LangChainChatModel()
+
+    assert await model.complete("hello") == "Claude answer"
+    assert [chunk async for chunk in model.stream("hello")] == ["Claude ", "stream"]
+    assert captured["init"] == {
+        "api_key": "test_claude_key",
+        "base_url": "https://api.anthropic.com",
+        "model_name": "claude-sonnet-4-6",
+        "temperature": 0.7,
+    }
 
 
 async def test_chat_session_crud_persists_session_messages_with_sqlalchemy() -> None:
@@ -163,11 +210,12 @@ async def test_chat_session_crud_persists_session_messages_with_sqlalchemy() -> 
 
 
 async def test_chat_query_returns_config_message_for_placeholder_api_key(monkeypatch) -> None:
-    from app.plugin.module_ai.chat import service
+    from app.plugin.module_ai.chat import model_config_service
 
-    monkeypatch.setattr(service.settings, "OPENAI_API_KEY", "your_api_key")
-    monkeypatch.setattr(service.settings, "OPENAI_MODEL", "MiniMax-M3")
-    monkeypatch.setattr(service.settings, "OPENAI_BASE_URL", "https://api.minimaxi.com/v1")
+    monkeypatch.setattr(model_config_service, "_active_config", None)
+    monkeypatch.setattr(model_config_service.settings, "OPENAI_API_KEY", "your_api_key")
+    monkeypatch.setattr(model_config_service.settings, "OPENAI_MODEL", "MiniMax-M3")
+    monkeypatch.setattr(model_config_service.settings, "OPENAI_BASE_URL", "https://api.minimaxi.com/v1")
 
     auth = SimpleNamespace(user=SimpleNamespace(username="admin"))
     chunks = [
@@ -178,11 +226,11 @@ async def test_chat_query_returns_config_message_for_placeholder_api_key(monkeyp
     ]
 
     assert len(chunks) == 1
-    assert "OPENAI_API_KEY" in chunks[0]
+    assert "API Key" in chunks[0]
 
 
 async def test_chat_query_returns_message_when_stream_has_no_content(monkeypatch) -> None:
-    from app.plugin.module_ai.chat import service
+    from app.plugin.module_ai.chat import model_config_service, service
 
     class FakeCrud:
         db = object()
@@ -198,9 +246,10 @@ async def test_chat_query_returns_message_when_stream_has_no_content(monkeypatch
     def fake_create_rag_chain(db=None, auth=None):
         return FakeChain()
 
-    monkeypatch.setattr(service.settings, "OPENAI_API_KEY", "test_key")
-    monkeypatch.setattr(service.settings, "OPENAI_MODEL", "MiniMax-M3")
-    monkeypatch.setattr(service.settings, "OPENAI_BASE_URL", "https://api.minimaxi.com/v1")
+    monkeypatch.setattr(model_config_service, "_active_config", None)
+    monkeypatch.setattr(model_config_service.settings, "OPENAI_API_KEY", "test_key")
+    monkeypatch.setattr(model_config_service.settings, "OPENAI_MODEL", "MiniMax-M3")
+    monkeypatch.setattr(model_config_service.settings, "OPENAI_BASE_URL", "https://api.minimaxi.com/v1")
     monkeypatch.setattr(service, "ChatSessionCRUD", FakeCrud)
     monkeypatch.setattr(service, "create_rag_chain", fake_create_rag_chain)
 
@@ -217,7 +266,7 @@ async def test_chat_query_returns_message_when_stream_has_no_content(monkeypatch
 
 
 async def test_chat_query_passes_context_to_rag_chain(monkeypatch) -> None:
-    from app.plugin.module_ai.chat import service
+    from app.plugin.module_ai.chat import model_config_service, service
 
     captured: dict[str, object] = {}
     stored_runs: list[tuple[str, str]] = []
@@ -245,9 +294,10 @@ async def test_chat_query_passes_context_to_rag_chain(monkeypatch) -> None:
         async def commit(self) -> None:
             captured["committed"] = True
 
-    monkeypatch.setattr(service.settings, "OPENAI_API_KEY", "test_key")
-    monkeypatch.setattr(service.settings, "OPENAI_MODEL", "MiniMax-M3")
-    monkeypatch.setattr(service.settings, "OPENAI_BASE_URL", "https://api.minimaxi.com/v1")
+    monkeypatch.setattr(model_config_service, "_active_config", None)
+    monkeypatch.setattr(model_config_service.settings, "OPENAI_API_KEY", "test_key")
+    monkeypatch.setattr(model_config_service.settings, "OPENAI_MODEL", "MiniMax-M3")
+    monkeypatch.setattr(model_config_service.settings, "OPENAI_BASE_URL", "https://api.minimaxi.com/v1")
     monkeypatch.setattr(service, "ChatSessionCRUD", FakeCrud)
     monkeypatch.setattr(service, "create_rag_chain", fake_create_rag_chain)
 

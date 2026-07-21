@@ -30,6 +30,7 @@ def test_initial_baseline_creates_current_core_and_ai_tables() -> None:
         "sys_role_menus",
         "platform_menu",
         "ai_chat_session",
+        "ai_model_config",
         "ai_knowledge_base",
         "ai_memory",
     ]:

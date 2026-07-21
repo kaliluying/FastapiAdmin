@@ -24,10 +24,13 @@ from .utils.console import console_end, console_start
 async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
     from app.api.v1.module_system.dict.service import DictDataService
     from app.api.v1.module_system.params.service import ParamsService
+    from app.plugin.module_ai.chat.model_config_service import initialize_runtime_chat_model_config
 
     try:
         await InitializeData().init_db()
         logger.info("✅ {}数据库初始化完成", settings.DATABASE_TYPE)
+        await initialize_runtime_chat_model_config()
+        logger.info("✅ AI 对话模型配置已加载")
         await import_modules_async(modules=settings.EVENT_LIST, desc="全局事件", app=app, status=True)
         logger.info("✅ 全局事件模块加载完成")
         await ParamsService.init_cache(redis=app.state.redis)

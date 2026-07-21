@@ -8,16 +8,26 @@ from typing import Any
 from uuid import uuid4
 
 from app.common.request import paginate
-from app.config.setting import settings
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
 from app.core.logger import logger
 
 from .crud import ChatSession, ChatSessionCRUD
 from .memory_extractor import MemoryExtractor
+from .model_config_service import (
+    get_active_chat_model_config,
+    load_runtime_chat_model_config,
+)
+from .model_config_service import (
+    get_model_config as get_runtime_model_config,
+)
+from .model_config_service import (
+    update_model_config as update_runtime_model_config,
+)
 from .rag import create_rag_chain
 from .schema import (
     AiModelConfigOutSchema,
+    AiModelConfigUpdateSchema,
     ChatQuerySchema,
     ChatSessionCreateSchema,
     ChatSessionQueryParam,
@@ -94,6 +104,7 @@ class ChatService:
 
     async def chat_query(self, query: ChatQuerySchema) -> AsyncGenerator[str, None]:
         try:
+            await load_runtime_chat_model_config(self.auth)
             config_error = self._validate_ai_config()
             if config_error:
                 yield config_error
@@ -156,6 +167,7 @@ class ChatService:
         knowledge_base_ids: list[int] | None = None,
     ) -> dict[str, Any]:
         try:
+            await load_runtime_chat_model_config(self.auth)
             config_error = self._validate_ai_config()
             if config_error:
                 return {"response": config_error, "session_id": session_id or "", "function_calls": None, "action": None}
@@ -251,15 +263,16 @@ class ChatService:
 
     @staticmethod
     def _validate_ai_config() -> str | None:
-        api_key = settings.OPENAI_API_KEY.strip()
-        model = settings.OPENAI_MODEL.strip()
-        base_url = settings.OPENAI_BASE_URL.strip()
+        config = get_active_chat_model_config()
+        api_key = config.api_key.strip()
+        model = config.model.strip()
+        base_url = config.base_url.strip()
         if not api_key or api_key == "your_api_key":
-            return "AI 服务未配置有效 OPENAI_API_KEY，请先在后端环境配置中填写真实 API Key。"
+            return "AI 服务未配置有效 API Key，请先在模型配置中填写。"
         if not model:
-            return "AI 服务未配置 OPENAI_MODEL，请先在后端环境配置中填写模型名称。"
+            return "AI 服务未配置对话模型，请先在模型配置中填写模型名称。"
         if not base_url:
-            return "AI 服务未配置 OPENAI_BASE_URL，请先在后端环境配置中填写 OpenAI 兼容接口地址。"
+            return "AI 服务未配置接口地址，请先在模型配置中填写。"
         return None
 
     def _get_user_id(self) -> str:
@@ -269,19 +282,11 @@ class ChatService:
     def _get_scope_id(self) -> str:
         return self._get_user_id()
 
-    @staticmethod
-    def get_model_config() -> AiModelConfigOutSchema:
-        api_key = settings.OPENAI_API_KEY.strip()
-        return AiModelConfigOutSchema(
-            openai_base_url=settings.OPENAI_BASE_URL,
-            openai_model=settings.OPENAI_MODEL,
-            openai_embedding_model=settings.OPENAI_EMBEDDING_MODEL,
-            embedding_provider=settings.EMBEDDING_PROVIDER,
-            local_embedding_model=settings.LOCAL_EMBEDDING_MODEL,
-            openai_api_key_configured=bool(api_key and api_key != "your_api_key"),
-            chroma_persist_dir=settings.CHROMA_PERSIST_DIR,
-            chroma_collection_name=settings.CHROMA_COLLECTION_NAME,
-        )
+    async def get_model_config(self) -> AiModelConfigOutSchema:
+        return await get_runtime_model_config(self.auth)
+
+    async def update_model_config(self, data: AiModelConfigUpdateSchema) -> AiModelConfigOutSchema:
+        return await update_runtime_model_config(self.auth, data)
 
     @staticmethod
     def _extract_action(response_text: str) -> dict[str, Any] | None:

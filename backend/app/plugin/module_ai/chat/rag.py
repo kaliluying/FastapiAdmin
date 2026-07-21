@@ -4,13 +4,15 @@ from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 
-from app.config.setting import settings
 from app.core.logger import logger
 from app.plugin.module_ai.knowledge.chroma_store import ChromaKnowledgeStore
 from app.plugin.module_ai.knowledge.embedding import EmbeddingClient, create_embedding_client
+
+from .model_config_service import get_active_chat_model_config
 
 
 @dataclass(slots=True)
@@ -328,29 +330,48 @@ class RagPromptBuilder:
 
 class LangChainChatModel:
     def __init__(self) -> None:
-        self.llm = ChatOpenAI(
-            api_key=settings.OPENAI_API_KEY,
-            base_url=settings.OPENAI_BASE_URL,
-            model=settings.OPENAI_MODEL,
-            temperature=0.7,
-        )
+        self.config = get_active_chat_model_config()
+        self.llm: ChatOpenAI | ChatAnthropic
+        if self.config.protocol == "anthropic":
+            self.llm = ChatAnthropic(
+                api_key=self.config.api_key,
+                base_url=self.config.base_url,
+                model_name=self.config.model,
+                temperature=0.7,
+            )
+        else:
+            self.llm = ChatOpenAI(
+                api_key=self.config.api_key,
+                base_url=self.config.base_url,
+                model=self.config.model,
+                temperature=0.7,
+            )
+
+    @staticmethod
+    def _content_to_text(content: Any) -> str:
+        if isinstance(content, str):
+            return content
+        if not isinstance(content, list):
+            return ""
+        parts: list[str] = []
+        for part in content:
+            if isinstance(part, str):
+                parts.append(part)
+            elif isinstance(part, dict) and isinstance(part.get("text"), str):
+                parts.append(part["text"])
+            else:
+                parts.append(str(part))
+        return "".join(parts)
 
     async def complete(self, prompt: str) -> str:
         response = await self.llm.ainvoke([HumanMessage(content=prompt)])
-        content = response.content
-        if isinstance(content, str):
-            return content
-        return "".join(str(part) for part in content)
+        return self._content_to_text(response.content)
 
     async def stream(self, prompt: str) -> AsyncGenerator[str, None]:
         async for chunk in self.llm.astream([HumanMessage(content=prompt)]):
-            content = chunk.content
-            if isinstance(content, str) and content:
-                yield content
-            elif isinstance(content, list):
-                text = "".join(str(part) for part in content)
-                if text:
-                    yield text
+            text = self._content_to_text(chunk.content)
+            if text:
+                yield text
 
 
 class RagChatChain:

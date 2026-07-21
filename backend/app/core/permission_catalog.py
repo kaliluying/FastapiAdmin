@@ -25,6 +25,7 @@ PERMISSION_CODES: frozenset[str] = frozenset(
         "module_ai:memory:query",
         "module_ai:memory:update",
         "module_ai:model_config:query",
+        "module_ai:model_config:update",
         "module_ai:retrieval:test",
         "module_ai:session:delete",
         "module_ai:session:detail",

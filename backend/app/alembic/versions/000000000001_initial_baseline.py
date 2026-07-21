@@ -31,6 +31,7 @@ BASELINE_TABLES = {
     "sys_user",
     "sys_user_roles",
     "ai_chat_session",
+    "ai_model_config",
     "ai_knowledge_base",
     "ai_knowledge_document",
     "ai_knowledge_chunk",

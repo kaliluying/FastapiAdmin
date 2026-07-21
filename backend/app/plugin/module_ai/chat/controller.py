@@ -13,6 +13,7 @@ from .schema import (
     AiChatRequestSchema,
     AiChatResponseSchema,
     AiModelConfigOutSchema,
+    AiModelConfigUpdateSchema,
     ChatSessionCreateSchema,
     ChatSessionQueryParam,
     ChatSessionUpdateSchema,
@@ -127,6 +128,18 @@ async def ai_chat_controller(
 async def model_config_controller(
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:model_config:query"]))],
 ) -> JSONResponse:
-    _ = auth
-    result = ChatService.get_model_config()
+    result = await ChatService(auth).get_model_config()
     return SuccessResponse(data=result, msg="query AI model configuration success")
+
+
+@ChatRouter.put(
+    "/model-config",
+    summary="Update AI model configuration",
+    response_model=ResponseSchema[AiModelConfigOutSchema],
+)
+async def update_model_config_controller(
+    data: AiModelConfigUpdateSchema,
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:model_config:update"]))],
+) -> JSONResponse:
+    result = await ChatService(auth).update_model_config(data)
+    return SuccessResponse(data=result, msg="update AI model configuration success")

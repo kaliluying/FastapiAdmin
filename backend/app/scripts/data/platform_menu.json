@@ -500,7 +500,16 @@
         "route_name": "ModelConfig",
         "route_path": "model-config",
         "component_path": "module_ai/model-config/index",
-        "title": "模型配置"
+        "title": "模型配置",
+        "children": [
+          {
+            "name": "保存",
+            "title": "保存",
+            "type": 3,
+            "order": 1,
+            "permission": "module_ai:model_config:update"
+          }
+        ]
       },
       {
         "name": "检索测试",

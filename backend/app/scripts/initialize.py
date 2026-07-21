@@ -23,7 +23,7 @@ from app.api.v1.module_system.user.model import UserModel, UserRolesModel
 from app.config.path_conf import SCRIPT_DIR
 from app.core.database import async_db_session, create_tables
 from app.core.logger import logger
-from app.plugin.module_ai.chat.model import ChatSessionModel
+from app.plugin.module_ai.chat.model import AiModelConfigModel, ChatSessionModel
 from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeChunkModel, KnowledgeDocumentModel
 
 
@@ -52,6 +52,7 @@ class InitializeData:
         LoginLogModel,
         OperationLogModel,
         ChatSessionModel,
+        AiModelConfigModel,
         KnowledgeBaseModel,
         KnowledgeDocumentModel,
         KnowledgeChunkModel,

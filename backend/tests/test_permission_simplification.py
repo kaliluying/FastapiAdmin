@@ -469,5 +469,6 @@ def test_chat_http_routes_use_explicit_permission_dependencies():
         "module_ai:session:delete",
         "module_ai:chat:ws",
         "module_ai:model_config:query",
+        "module_ai:model_config:update",
     ]:
         assert permission in controller

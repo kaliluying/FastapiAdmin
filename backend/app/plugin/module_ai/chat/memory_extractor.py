@@ -8,13 +8,11 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from langchain_core.messages import HumanMessage
-from langchain_openai import ChatOpenAI
-
-from app.config.setting import settings
 from app.core.logger import logger
 from app.plugin.module_ai.memory.crud import MemoryCRUD
 from app.plugin.module_ai.memory.schema import MemoryExtractAction, MemoryExtractResult
+
+from .rag import LangChainChatModel
 
 # ── 配置 ──
 
@@ -165,17 +163,12 @@ class MemoryExtractor:
 
     def __init__(self, confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD) -> None:
         self.confidence_threshold = confidence_threshold
-        self._llm: ChatOpenAI | None = None
+        self._llm: LangChainChatModel | None = None
 
     @property
-    def llm(self) -> ChatOpenAI:
+    def llm(self) -> LangChainChatModel:
         if self._llm is None:
-            self._llm = ChatOpenAI(
-                api_key=settings.OPENAI_API_KEY,
-                base_url=settings.OPENAI_BASE_URL,
-                model=settings.OPENAI_MODEL,
-                temperature=0.3,  # 低温度让输出更稳定
-            )
+            self._llm = LangChainChatModel()
         return self._llm
 
     async def extract_and_save(
@@ -204,10 +197,7 @@ class MemoryExtractor:
                 assistant_response=assistant_response,
                 existing_memories=existing_dicts,
             )
-            response = await self.llm.ainvoke([HumanMessage(content=prompt)])
-            raw_text = response.content
-            if isinstance(raw_text, list):
-                raw_text = "".join(str(part) for part in raw_text)
+            raw_text = await self.llm.complete(prompt)
             if not isinstance(raw_text, str) or not raw_text.strip():
                 logger.info("记忆提取: LLM 返回空内容，跳过")
                 return 0
