@@ -1,6 +1,9 @@
 <template>
   <div class="home-workspace">
-    <FaPageHeader title="系统总览" description="基于当前登录用户的菜单、权限和账号状态。" />
+    <FaPageHeader
+      title="系统总览"
+      description="基于当前登录用户的菜单、权限、账号和基础依赖状态。"
+    />
 
     <Banner class="mb-5" />
 
@@ -34,7 +37,11 @@
         </template>
 
         <div v-if="rootMenus.length" class="module-list">
-          <div v-for="menu in rootMenus" :key="menu.id ?? menu.route_name ?? menu.name" class="module-row">
+          <div
+            v-for="menu in rootMenus"
+            :key="menu.id ?? menu.route_name ?? menu.name"
+            class="module-row"
+          >
             <span class="module-row__icon">
               <FaSvgIcon :icon="menu.icon || 'ri:menu-line'" />
             </span>
@@ -86,16 +93,37 @@
       <div class="section-heading">
         <div>
           <h2 id="session-check-title">会话检查</h2>
-          <p>快速确认当前后台是否完成认证、菜单和权限加载。</p>
+          <p>快速确认当前后台是否完成认证、菜单、权限和基础依赖检查。</p>
         </div>
-        <span class="check-summary" :class="allChecksPassed ? 'check-summary--success' : 'check-summary--warning'">
-          {{ allChecksPassed ? "状态正常" : "需要检查" }}
-        </span>
+        <div class="section-actions">
+          <span
+            class="check-summary"
+            :class="allChecksPassed ? 'check-summary--success' : 'check-summary--warning'"
+          >
+            {{ allChecksPassed ? "状态正常" : "需要检查" }}
+          </span>
+          <ElTooltip content="重新检查系统健康" placement="top">
+            <ElButton
+              class="health-refresh-button"
+              size="small"
+              plain
+              circle
+              :loading="healthLoading"
+              aria-label="重新检查系统健康"
+              @click="loadHealthStatus"
+            >
+              <FaSvgIcon icon="ri:refresh-line" />
+            </ElButton>
+          </ElTooltip>
+        </div>
       </div>
 
       <ul class="check-list">
         <li v-for="item in checks" :key="item.label" class="check-item">
-          <span class="check-item__icon" :class="item.passed ? 'check-item__icon--success' : 'check-item__icon--warning'">
+          <span
+            class="check-item__icon"
+            :class="item.passed ? 'check-item__icon--success' : 'check-item__icon--warning'"
+          >
             <FaSvgIcon :icon="item.passed ? 'ri:check-line' : 'ri:error-warning-line'" />
           </span>
           <span class="check-item__content">
@@ -110,9 +138,12 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
+import HealthAPI, { type HealthReadiness } from "@/api/module_common/health";
 import type { MenuTable } from "@/api/module_platform/menu";
 import { MenuTypeEnum } from "@/enums/system/menu.enum";
 import { useUserStore } from "@stores";
+import { HttpError } from "@utils";
 import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
 import Banner from "./modules/banner.vue";
 
@@ -133,15 +164,81 @@ type CheckItem = {
   passed: boolean;
 };
 
+type HealthState = "loading" | "healthy" | "degraded" | "unavailable";
+
+const HEALTH_REFRESH_INTERVAL = 30_000;
+const dependencyLabels: Record<keyof HealthReadiness["dependencies"], string> = {
+  database: "数据库",
+  redis: "Redis",
+};
+
 const userStore = useUserStore();
+const healthState = ref<HealthState>("loading");
+const healthData = ref<HealthReadiness | null>(null);
+const healthError = ref("");
+const healthLoading = ref(false);
 const currentUser = computed(() => userStore.basicInfo);
-const rootMenus = computed(() => userStore.getRouteList.filter((menu) => menu.type !== MenuTypeEnum.BUTTON));
+const rootMenus = computed(() =>
+  userStore.getRouteList.filter((menu) => menu.type !== MenuTypeEnum.BUTTON)
+);
 const permissionCount = computed(() => userStore.getPerms.length);
 const roleCount = computed(() => currentUser.value.roles?.length ?? 0);
 const menuCount = computed(() => countMenuEntries(userStore.getRouteList));
 const roleLabel = computed(() => {
   if (currentUser.value.is_superuser) return "超级管理员";
   return currentUser.value.role_names?.filter(Boolean).join("、") || `${roleCount.value} 个角色`;
+});
+const healthDescription = computed(() => {
+  if (healthState.value === "loading") return "正在检查数据库、Redis 和磁盘使用率";
+  if (!healthData.value) return healthError.value || "系统健康检查暂不可用";
+
+  const dependencySummary = Object.entries(healthData.value.dependencies)
+    .map(([name, dependency]) => {
+      const label = dependencyLabels[name as keyof HealthReadiness["dependencies"]] || name;
+      if (dependency.status !== 1) return `${label} 异常`;
+      return `${label} ${dependency.latency_ms === null ? "正常" : `${dependency.latency_ms}ms`}`;
+    })
+    .join(" · ");
+  const diskSummary =
+    healthData.value.disk_usage >= 0 ? `磁盘 ${healthData.value.disk_usage}%` : "磁盘数据不可用";
+  return `${dependencySummary} · ${diskSummary}`;
+});
+const healthMetric = computed<DashboardMetric>(() => {
+  const healthMetrics: Record<HealthState, DashboardMetric> = {
+    loading: {
+      label: "系统健康",
+      value: "检查中",
+      unit: "",
+      description: healthDescription.value,
+      icon: "ri:heart-pulse-line",
+      tone: "info",
+    },
+    healthy: {
+      label: "系统健康",
+      value: "正常",
+      unit: "",
+      description: healthDescription.value,
+      icon: "ri:heart-pulse-line",
+      tone: "success",
+    },
+    degraded: {
+      label: "系统健康",
+      value: "需处理",
+      unit: "",
+      description: healthDescription.value,
+      icon: "ri:error-warning-line",
+      tone: "warning",
+    },
+    unavailable: {
+      label: "系统健康",
+      value: "不可用",
+      unit: "",
+      description: healthDescription.value,
+      icon: "ri:error-warning-line",
+      tone: "warning",
+    },
+  };
+  return healthMetrics[healthState.value];
 });
 
 const metrics = computed<DashboardMetric[]>(() => [
@@ -169,14 +266,7 @@ const metrics = computed<DashboardMetric[]>(() => [
     icon: "ri:user-settings-line",
     tone: "warning",
   },
-  {
-    label: "会话状态",
-    value: userStore.isLogin && userStore.getHasGetRoute ? "已就绪" : "加载中",
-    unit: "",
-    description: "认证、用户资料和动态路由",
-    icon: "ri:checkbox-circle-line",
-    tone: userStore.isLogin && userStore.getHasGetRoute ? "success" : "info",
-  },
+  healthMetric.value,
 ]);
 
 const checks = computed<CheckItem[]>(() => [
@@ -192,13 +282,22 @@ const checks = computed<CheckItem[]>(() => [
   },
   {
     label: "动态菜单",
-    detail: userStore.getHasGetRoute ? `${rootMenus.value.length} 个一级模块已注册` : "动态菜单尚未注册",
+    detail: userStore.getHasGetRoute
+      ? `${rootMenus.value.length} 个一级模块已注册`
+      : "动态菜单尚未注册",
     passed: userStore.getHasGetRoute,
   },
   {
     label: "权限集",
-    detail: currentUser.value.is_superuser ? "超级管理员权限已生效" : `${permissionCount.value} 个权限点已加载`,
+    detail: currentUser.value.is_superuser
+      ? "超级管理员权限已生效"
+      : `${permissionCount.value} 个权限点已加载`,
     passed: Boolean(currentUser.value.is_superuser || permissionCount.value),
+  },
+  {
+    label: "基础依赖",
+    detail: healthDescription.value,
+    passed: healthState.value === "healthy",
   },
 ]);
 
@@ -216,6 +315,88 @@ function countMenuEntries(menus: MenuTable[]): number {
     return total + 1 + countMenuEntries(menu.children ?? []);
   }, 0);
 }
+
+/**
+ * Validates a readiness payload before it is rendered on the dashboard.
+ *
+ * @param value Untrusted response payload from the health endpoint.
+ * @returns Whether the payload has the required dependency metrics.
+ */
+function isHealthReadiness(value: unknown): value is HealthReadiness {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Record<string, unknown>;
+  if (
+    (candidate.status !== 0 && candidate.status !== 1) ||
+    typeof candidate.disk_usage !== "number"
+  )
+    return false;
+  if (!candidate.dependencies || typeof candidate.dependencies !== "object") return false;
+
+  return ["database", "redis"].every((name) => {
+    const dependency = (candidate.dependencies as Record<string, unknown>)[name];
+    if (!dependency || typeof dependency !== "object") return false;
+
+    const status = (dependency as Record<string, unknown>).status;
+    return status === 0 || status === 1;
+  });
+}
+
+/**
+ * Extracts a degraded readiness payload from a failed health probe.
+ *
+ * @param error Request error raised by the HTTP client.
+ * @returns Readiness metrics when the server returned a structured 503 response.
+ */
+function extractReadinessPayload(error: unknown): HealthReadiness | null {
+  if (!(error instanceof HttpError) || !error.data || typeof error.data !== "object") return null;
+
+  const payload = (error.data as Record<string, unknown>).data;
+  return isHealthReadiness(payload) ? payload : null;
+}
+
+/**
+ * Refreshes dashboard health metrics without displaying global error notifications.
+ *
+ * @returns Promise resolved after the latest health result is recorded.
+ */
+async function loadHealthStatus(): Promise<void> {
+  if (healthLoading.value) return;
+
+  healthLoading.value = true;
+  try {
+    const response = await HealthAPI.getReadiness();
+    const readiness = response.data.data;
+    healthData.value = readiness;
+    healthState.value = readiness.status === 1 ? "healthy" : "degraded";
+    healthError.value = "";
+  } catch (error: unknown) {
+    const readiness = extractReadinessPayload(error);
+    if (readiness) {
+      healthData.value = readiness;
+      healthState.value = "degraded";
+      healthError.value = "";
+      return;
+    }
+
+    healthData.value = null;
+    healthState.value = "unavailable";
+    healthError.value = error instanceof Error ? error.message : "健康检查请求失败";
+  } finally {
+    healthLoading.value = false;
+  }
+}
+
+let healthRefreshTimer: number | undefined;
+
+onMounted(() => {
+  void loadHealthStatus();
+  healthRefreshTimer = window.setInterval(() => void loadHealthStatus(), HEALTH_REFRESH_INTERVAL);
+});
+
+onUnmounted(() => {
+  if (healthRefreshTimer !== undefined) window.clearInterval(healthRefreshTimer);
+});
 </script>
 
 <style scoped lang="scss">
@@ -249,6 +430,16 @@ function countMenuEntries(menus: MenuTable[]): number {
   gap: 14px;
   align-items: flex-start;
   justify-content: space-between;
+}
+
+.section-actions {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.health-refresh-button {
+  flex: 0 0 auto;
 }
 
 .metric-card__label {
