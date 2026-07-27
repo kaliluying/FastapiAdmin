@@ -1,35 +1,30 @@
 <template>
-  <section class="home-command-hero">
+  <section class="home-command-hero" aria-label="当前账号和系统状态">
     <div class="hero-copy">
       <div class="hero-kicker">
         <span class="signal-dot"></span>
-        Knowledge Ops Console
+        系统运营台
       </div>
       <h1>{{ bannerTitle }}</h1>
       <p>{{ bannerSubtitle }}</p>
 
       <div class="operator-card">
-        <ElAvatar
-          v-if="currentUser.avatar"
-          :size="54"
-          :src="currentUser.avatar"
-          class="operator-avatar"
-        />
+        <ElAvatar v-if="currentUser.avatar" :size="48" :src="currentUser.avatar" class="operator-avatar" />
         <div v-else class="operator-avatar operator-avatar--fallback">
-          <ElIcon :size="28"><UserFilled /></ElIcon>
+          <ElIcon :size="24"><UserFilled /></ElIcon>
         </div>
         <div class="operator-meta">
           <strong>{{ currentUser.name }}</strong>
           <span>{{ currentUser.description }}</span>
         </div>
-        <div class="operator-login">上次登录：{{ currentUser.last_login }}</div>
+        <div class="operator-login">最近登录：{{ currentUser.last_login || "暂无记录" }}</div>
       </div>
     </div>
 
-    <div class="hero-status-panel" aria-label="系统运行状态">
+    <div class="hero-status-panel" aria-label="当前系统状态">
       <div class="status-panel-head">
         <span class="panel-dot"></span>
-        运行状态
+        当前状态
       </div>
       <div class="hero-status-grid">
         <article v-for="item in statusCards" :key="item.label" class="status-chip">
@@ -49,6 +44,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { UserFilled } from "@element-plus/icons-vue";
+import { MenuTypeEnum } from "@/enums/system/menu.enum";
 import { useUserStore } from "@stores";
 import { greetings } from "@utils";
 
@@ -64,10 +60,10 @@ type HomeUser = {
 
 const fallbackUser: HomeUser = {
   avatar: "",
-  name: "超级管理员",
-  username: "super",
-  description: "系统超级管理员",
-  last_login: "-",
+  name: "当前用户",
+  username: "-",
+  description: "系统后台用户",
+  last_login: "",
 };
 
 const userStore = useUserStore();
@@ -85,95 +81,76 @@ const currentUser = computed<HomeUser>(() => {
   };
 });
 
-const bannerTitle = computed(
-  () => `${currentUser.value.name}（${currentUser.value.username}）${timefix}`
-);
+const bannerTitle = computed(() => `${currentUser.value.name}（${currentUser.value.username}）${timefix}`);
+const bannerSubtitle = "查看当前账号可用范围、授权状态和后台运行边界。";
+const rootMenuCount = computed(() => userStore.getRouteList.filter((menu) => menu.type !== MenuTypeEnum.BUTTON).length);
+const permissionCount = computed(() => userStore.getPerms.length);
 
-const bannerSubtitle = "单组织后台已接入 AI 对话、知识库检索与系统管理，先看状态，再处理任务。";
+const statusCards = computed(() => [
+  {
+    label: "认证会话",
+    value: userStore.isLogin ? "已登录" : "未登录",
+    icon: "ri:shield-user-line",
+    tone: userStore.isLogin ? "cyan" : "amber",
+  },
+  {
+    label: "可用模块",
+    value: `${rootMenuCount.value} 个`,
+    icon: "ri:layout-grid-line",
+    tone: "blue",
+  },
+  {
+    label: "权限点",
+    value: `${permissionCount.value} 项`,
+    icon: "ri:key-2-line",
+    tone: "green",
+  },
+]);
 
-const statusCards = [
-  { label: "知识库连接", value: "正常", icon: "ri:database-2-line", tone: "cyan" },
-  { label: "检索服务", value: "在线", icon: "ri:radar-line", tone: "blue" },
-  { label: "待处理动态", value: "4 条", icon: "ri:flashlight-line", tone: "amber" },
-];
 </script>
 
 <style scoped lang="scss">
 .home-command-hero {
-  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
   gap: 24px;
-  min-height: 214px;
-  padding: 30px 34px;
-  overflow: hidden;
-  color: #0b1220;
-  background:
-    linear-gradient(135deg, rgb(255 255 255 / 96%), rgb(241 247 255 / 92%)),
-    radial-gradient(circle at 18% 12%, rgb(59 130 246 / 17%), transparent 32%),
-    radial-gradient(circle at 92% 12%, rgb(45 212 191 / 20%), transparent 30%);
-  border: 1px solid var(--fa-color-border, rgb(11 18 32 / 8%));
+  min-height: 204px;
+  padding: 28px 32px;
+  color: var(--el-text-color-primary);
+  background: var(--fa-color-surface, var(--el-bg-color));
+  border: 1px solid var(--fa-color-border, var(--el-border-color));
   border-radius: 8px;
-  box-shadow: 0 24px 60px rgb(11 18 32 / 10%);
-}
-
-.home-command-hero::before {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  content: "";
-  background-image:
-    linear-gradient(rgb(59 130 246 / 7%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(59 130 246 / 7%) 1px, transparent 1px);
-  background-size: 28px 28px;
-  mask-image: linear-gradient(90deg, rgb(0 0 0 / 75%), transparent 78%);
-}
-
-.home-command-hero::after {
-  position: absolute;
-  right: 28px;
-  bottom: 22px;
-  width: 170px;
-  height: 2px;
-  pointer-events: none;
-  content: "";
-  background: linear-gradient(90deg, transparent, #2dd4bf, #3b82f6);
-  border-radius: 999px;
-  box-shadow: 0 0 24px rgb(45 212 191 / 45%);
 }
 
 .hero-copy,
 .hero-status-panel {
-  position: relative;
-  z-index: 1;
+  min-width: 0;
 }
 
 .hero-kicker {
   display: inline-flex;
   gap: 8px;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
   font-size: 12px;
   font-weight: 700;
-  color: #2563eb;
-  text-transform: uppercase;
+  color: var(--el-color-primary);
 }
 
-.signal-dot {
+.signal-dot,
+.panel-dot {
   width: 8px;
   height: 8px;
-  background: #2dd4bf;
-  border-radius: 999px;
-  box-shadow: 0 0 0 5px rgb(45 212 191 / 14%);
+  background: var(--el-color-success);
+  border-radius: 50%;
 }
 
 h1 {
-  max-width: 760px;
   margin: 0;
-  font-size: 30px;
+  font-size: 28px;
   font-weight: 760;
-  line-height: 1.22;
-  color: #0b1220;
+  line-height: 1.25;
+  color: var(--el-text-color-primary);
 }
 
 p {
@@ -181,19 +158,18 @@ p {
   margin: 10px 0 0;
   font-size: 14px;
   line-height: 1.7;
-  color: #64748b;
+  color: var(--el-text-color-secondary);
 }
 
 .operator-card {
   display: flex;
-  gap: 14px;
+  gap: 12px;
   align-items: center;
-  max-width: 720px;
-  margin-top: 28px;
+  margin-top: 24px;
 }
 
 .operator-avatar {
-  flex: 0 0 54px;
+  flex: 0 0 48px;
   background: transparent;
 }
 
@@ -201,9 +177,9 @@ p {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #2563eb;
-  background: rgb(59 130 246 / 10%);
-  border: 1px solid rgb(59 130 246 / 18%);
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+  border: 1px solid var(--el-color-primary-light-7);
   border-radius: 8px;
 }
 
@@ -213,15 +189,14 @@ p {
 }
 
 .operator-meta strong {
-  font-size: 16px;
-  color: #0b1220;
+  color: var(--el-text-color-primary);
 }
 
 .operator-meta span,
 .operator-login {
   margin-top: 4px;
   font-size: 13px;
-  color: #64748b;
+  color: var(--el-text-color-secondary);
 }
 
 .operator-login {
@@ -231,105 +206,92 @@ p {
 
 .hero-status-panel {
   align-self: center;
-  padding: 12px;
-  background: rgb(255 255 255 / 58%);
-  border: 1px solid rgb(11 18 32 / 7%);
+  padding: 14px;
+  border: 1px solid var(--el-border-color-lighter);
   border-radius: 8px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 70%);
-  backdrop-filter: blur(10px);
+  background: var(--el-fill-color-lighter);
 }
 
 .status-panel-head {
   display: inline-flex;
   gap: 8px;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   font-size: 12px;
-  font-weight: 740;
-  color: #2563eb;
-}
-
-.panel-dot {
-  width: 7px;
-  height: 7px;
-  background: #2dd4bf;
-  border-radius: 999px;
-  box-shadow: 0 0 0 5px rgb(45 212 191 / 12%);
+  font-weight: 700;
+  color: var(--el-text-color-primary);
 }
 
 .hero-status-grid {
   display: grid;
-  gap: 7px;
+  gap: 8px;
 }
 
 .status-chip {
-  display: grid;
-  grid-template-columns: 28px minmax(0, 1fr);
-  gap: 9px;
+  display: flex;
+  gap: 10px;
   align-items: center;
-  min-height: 50px;
+  min-height: 46px;
   padding: 8px 10px;
-  background: rgb(255 255 255 / 68%);
-  border: 1px solid rgb(11 18 32 / 6%);
-  border-radius: 8px;
+  background: var(--fa-color-surface, var(--el-bg-color));
+  border: 1px solid var(--el-border-color-lighter);
+  border-radius: 7px;
 }
 
 .status-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  font-size: 15px;
-  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
 }
 
-.status-icon--cyan {
-  color: #0f9f8f;
-  background: rgb(45 212 191 / 13%);
+.status-icon--cyan,
+.status-icon--green {
+  color: var(--el-color-success);
+  background: var(--el-color-success-light-9);
 }
 
 .status-icon--blue {
-  color: #2563eb;
-  background: rgb(59 130 246 / 13%);
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
 }
 
 .status-icon--amber {
-  color: #b7791f;
-  background: rgb(245 158 11 / 14%);
+  color: var(--el-color-warning);
+  background: var(--el-color-warning-light-9);
 }
 
-.status-chip strong,
-.status-chip span {
-  display: block;
+.status-chip div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
 .status-chip strong {
-  font-size: 15px;
-  line-height: 1.15;
-  color: #0b1220;
+  color: var(--el-text-color-primary);
 }
 
-.status-chip span {
-  margin-top: 2px;
-  font-size: 11px;
-  line-height: 1.2;
-  color: #64748b;
+.status-chip span:last-child {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
-@media (width <= 1024px) {
+@media (max-width: 900px) {
   .home-command-hero {
     grid-template-columns: 1fr;
+    padding: 24px;
   }
 
-  .hero-status-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .operator-login {
+    margin-left: 0;
   }
 }
 
-@media (width <= 640px) {
+@media (max-width: 560px) {
   .home-command-hero {
-    padding: 22px 18px;
+    padding: 20px;
   }
 
   h1 {
@@ -338,14 +300,12 @@ p {
 
   .operator-card {
     align-items: flex-start;
+    flex-wrap: wrap;
   }
 
   .operator-login {
-    display: none;
-  }
-
-  .hero-status-grid {
-    grid-template-columns: 1fr;
+    flex-basis: 100%;
+    margin-left: 60px;
   }
 }
 </style>
