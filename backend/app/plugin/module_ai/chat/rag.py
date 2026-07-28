@@ -8,6 +8,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 
+from app.config.setting import settings
 from app.core.logger import logger
 from app.plugin.module_ai.knowledge.chroma_store import ChromaKnowledgeStore
 from app.plugin.module_ai.knowledge.embedding import EmbeddingClient, create_embedding_client

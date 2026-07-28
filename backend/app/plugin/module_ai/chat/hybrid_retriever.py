@@ -7,7 +7,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.config.setting import settings
 from app.core.logger import logger
 from app.plugin.module_ai.knowledge.bm25_index import BM25KnowledgeIndex
 from app.plugin.module_ai.knowledge.chroma_store import ChromaKnowledgeStore
