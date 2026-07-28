@@ -1,7 +1,44 @@
 <template>
-  <template v-for="(item, index) in filteredMenuItems" :key="getUniqueKey(item, index)">
-    <ElSubMenu v-if="hasChildren(item)" :index="item.path || item.meta.title" :level="level">
-      <template #title>
+  <template
+    v-for="(group, gIndex) in groupedMenuItems"
+    :key="`${group.name || 'ungrouped'}-${gIndex}`"
+  >
+    <!-- 一级分组标题 -->
+    <li v-if="level === 0 && group.name" class="fa-menu-group-title">
+      {{ group.name }}
+    </li>
+
+    <template v-for="(item, index) in group.items" :key="getUniqueKey(item, index)">
+      <ElSubMenu v-if="hasChildren(item)" :index="item.path || item.meta.title" :level="level">
+        <template #title>
+          <div class="menu-icon flex items-center justify-center">
+            <FaMenuRouteIcon
+              :icon="item.meta.icon"
+              :color="theme?.iconColor"
+              :style="{ color: theme.iconColor }"
+            />
+          </div>
+          <span class="menu-name">
+            {{ formatMenuTitle(item.meta.title) }}
+          </span>
+          <div v-if="item.meta.showBadge" class="fa-badge" :style="'right: 10px'" />
+        </template>
+
+        <FaSidebarSubmenu
+          :list="item.children"
+          :is-mobile="isMobile"
+          :level="level + 1"
+          :theme="theme"
+          @close="closeMenu"
+        />
+      </ElSubMenu>
+
+      <ElMenuItem
+        v-else
+        :index="isExternalLink(item) ? '' : item.path || item.meta.title"
+        :level-item="level + 1"
+        @click="goPage(item)"
+      >
         <div class="menu-icon flex items-center justify-center">
           <FaMenuRouteIcon
             :icon="item.meta.icon"
@@ -9,50 +46,23 @@
             :style="{ color: theme.iconColor }"
           />
         </div>
-        <span class="menu-name">
-          {{ formatMenuTitle(item.meta.title) }}
-        </span>
-        <div v-if="item.meta.showBadge" class="fa-badge" :style="'right: 10px'" />
-      </template>
-
-      <FaSidebarSubmenu
-        :list="item.children"
-        :is-mobile="isMobile"
-        :level="level + 1"
-        :theme="theme"
-        @close="closeMenu"
-      />
-    </ElSubMenu>
-
-    <ElMenuItem
-      v-else
-      :index="isExternalLink(item) ? '' : item.path || item.meta.title"
-      :level-item="level + 1"
-      @click="goPage(item)"
-    >
-      <div class="menu-icon flex items-center justify-center">
-        <FaMenuRouteIcon
-          :icon="item.meta.icon"
-          :color="theme?.iconColor"
-          :style="{ color: theme.iconColor }"
+        <div
+          v-show="item.meta.showBadge && level === 0 && !menuOpen"
+          class="fa-badge"
+          :style="'right: 5px'"
         />
-      </div>
-      <div
-        v-show="item.meta.showBadge && level === 0 && !menuOpen"
-        class="fa-badge"
-        :style="'right: 5px'"
-      />
 
-      <template #title>
-        <span class="menu-name">
-          {{ formatMenuTitle(item.meta.title) }}
-        </span>
-        <div v-if="item.meta.showBadge" class="fa-badge" />
-        <div v-if="item.meta.showTextBadge && (level > 0 || menuOpen)" class="fa-text-badge">
-          {{ item.meta.showTextBadge }}
-        </div>
-      </template>
-    </ElMenuItem>
+        <template #title>
+          <span class="menu-name">
+            {{ formatMenuTitle(item.meta.title) }}
+          </span>
+          <div v-if="item.meta.showBadge" class="fa-badge" />
+          <div v-if="item.meta.showTextBadge && (level > 0 || menuOpen)" class="fa-text-badge">
+            {{ item.meta.showTextBadge }}
+          </div>
+        </template>
+      </ElMenuItem>
+    </template>
   </template>
 </template>
 
@@ -94,6 +104,8 @@ const props = withDefaults(defineProps<Props>(), {
   level: 0,
 });
 
+const level = props.level;
+
 const emit = defineEmits<Emits>();
 
 const settingStore = useSettingsStore();
@@ -105,6 +117,45 @@ const { menuOpen } = storeToRefs(settingStore);
  * 只显示未隐藏的菜单项
  */
 const filteredMenuItems = computed(() => filterRoutes(props.list));
+
+/**
+ * 按 meta.group 分组后的菜单项（仅在一级菜单生效）
+ * 若一级项带 group 且含可见子菜单，则只展平子项到分组下，不渲染自身
+ * （避免分组标题与父项名重复造成视觉冗余）
+ */
+const groupedMenuItems = computed(() => {
+  if (level !== 0) {
+    return [{ name: "", items: filteredMenuItems.value }];
+  }
+
+  const map: Record<string, AppRouteRecord[]> = {};
+  const groups: { name: string; items: AppRouteRecord[] }[] = [];
+  const noGroup: AppRouteRecord[] = [];
+
+  filteredMenuItems.value.forEach((item) => {
+    const groupName = item.meta?.group;
+    if (typeof groupName === "string" && groupName.trim()) {
+      if (!map[groupName]) {
+        map[groupName] = [];
+        groups.push({ name: groupName, items: map[groupName] });
+      }
+      // 分组锚点：带 group 且有子菜单时，只展平子项，不渲染自身
+      if (item.children && item.children.length > 0) {
+        map[groupName].push(...item.children);
+      } else {
+        map[groupName].push(item);
+      }
+    } else {
+      noGroup.push(item);
+    }
+  });
+
+  if (noGroup.length > 0) {
+    groups.push({ name: "", items: noGroup });
+  }
+
+  return groups.length > 0 ? groups : [{ name: "", items: filteredMenuItems.value }];
+});
 
 /**
  * 跳转到指定页面

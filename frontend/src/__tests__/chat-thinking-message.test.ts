@@ -4,8 +4,14 @@ import { resolve } from "node:path";
 
 describe("AI chat thinking messages", () => {
   it("renders thinking content with its own fold state instead of folding the whole answer", () => {
-    const itemSource = readFileSync(resolve(__dirname, "../views/module_ai/chat/components/FaMessageItem.vue"), "utf-8");
-    const chatSource = readFileSync(resolve(__dirname, "../views/module_ai/chat/index.vue"), "utf-8");
+    const itemSource = readFileSync(
+      resolve(__dirname, "../views/module_ai/chat/components/FaMessageItem.vue"),
+      "utf-8"
+    );
+    const chatSource = readFileSync(
+      resolve(__dirname, "../views/module_ai/chat/index.vue"),
+      "utf-8"
+    );
 
     expect(itemSource).toContain("parseThinkingContent");
     expect(itemSource).toContain("thinkingCollapsed");

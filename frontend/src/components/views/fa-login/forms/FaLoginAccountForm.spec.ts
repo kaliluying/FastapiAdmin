@@ -6,7 +6,7 @@ describe("FaLoginAccountForm", () => {
   it("renders only account/password login entry points", () => {
     const source = readFileSync(
       join(process.cwd(), "src/components/views/fa-login/forms/FaLoginAccountForm.vue"),
-      "utf-8",
+      "utf-8"
     );
 
     expect(source).not.toContain("FaLoginThirdPartySection");
@@ -25,7 +25,7 @@ describe("FaLoginAccountForm", () => {
   it("keeps the login card height content-driven", () => {
     const source = readFileSync(
       join(process.cwd(), "src/components/views/fa-login/_fa-login.scss"),
-      "utf-8",
+      "utf-8"
     );
 
     expect(source).not.toContain("height: 670px");

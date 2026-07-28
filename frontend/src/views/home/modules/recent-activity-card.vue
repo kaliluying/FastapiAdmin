@@ -73,7 +73,7 @@ const activities: Activity[] = [
 
 .home-card {
   min-height: 420px;
-  border-color: var(--fa-color-border, var(--el-border-color));
   background: var(--fa-color-surface, var(--el-bg-color));
+  border-color: var(--fa-color-border, var(--el-border-color));
 }
 </style>

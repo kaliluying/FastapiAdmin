@@ -111,5 +111,7 @@ export function getAuditSearchFormItems(
   if (showCreatedTime) fieldOrder.push("created_time");
   if (showUpdatedTime) fieldOrder.push("updated_time");
 
-  return fieldOrder.map((key) => fieldMap[key]).filter((item): item is SearchFormItem => Boolean(item));
+  return fieldOrder
+    .map((key) => fieldMap[key])
+    .filter((item): item is SearchFormItem => Boolean(item));
 }

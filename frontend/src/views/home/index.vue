@@ -13,7 +13,7 @@
       </div>
     </div>
 
-    <ElRow :gutter="20">
+    <ElRow :gutter="16">
       <ElCol :xs="24" :sm="24" :lg="8" class="mb-5">
         <OnlineUserCard />
       </ElCol>
@@ -25,7 +25,7 @@
       </ElCol>
     </ElRow>
 
-    <ElRow :gutter="20">
+    <ElRow :gutter="16">
       <ElCol :xs="24" :lg="16" class="mb-5">
         <VisitTrendCard />
       </ElCol>
@@ -39,7 +39,9 @@
       <div class="pending-section__title">待处理事项</div>
       <ul class="pending-list">
         <li v-for="item in pendingItems" :key="item.id" class="pending-item">
-          <span class="pending-item__tag" :class="`pending-item__tag--${item.level}`">{{ item.tag }}</span>
+          <span class="pending-item__tag" :class="`pending-item__tag--${item.level}`">{{
+            item.tag
+          }}</span>
           <span class="pending-item__text">{{ item.title }}</span>
         </li>
       </ul>
@@ -108,10 +110,21 @@ const retrievalCard = {
 
 .demo-metric-card {
   position: relative;
-  padding: 16px 18px;
-  background: var(--fa-color-surface, var(--el-bg-color));
-  border: 1px solid var(--fa-color-border, var(--el-border-color));
-  border-radius: 8px;
+  padding: var(--fa-space-4) var(--fa-space-5);
+  background:
+    linear-gradient(180deg, var(--fa-surface-sheen-top), var(--fa-surface-sheen-bottom)),
+    var(--default-box-color);
+  border: 1px solid var(--fa-card-border);
+  border-radius: 12px;
+  box-shadow: var(--fa-elevation-1);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+
+  &:hover {
+    box-shadow: var(--fa-elevation-3);
+    transform: translateY(-2px);
+  }
 }
 
 .demo-badge {
@@ -128,22 +141,26 @@ const retrievalCard = {
 
 .demo-metric-value {
   margin-bottom: 4px;
-  font-size: 26px;
-  font-weight: 720;
+  font-size: var(--fa-text-2xl);
+  font-weight: var(--fa-weight-bold);
+  font-variant-numeric: tabular-nums;
   line-height: 1;
-  color: var(--el-text-color-primary);
+  color: var(--fa-gray-900);
 }
 
 .demo-metric-label {
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
+  font-size: var(--fa-text-sm);
+  color: var(--fa-gray-600);
 }
 
 .pending-section {
-  padding: 16px 18px;
-  background: var(--fa-color-surface, var(--el-bg-color));
-  border: 1px solid var(--fa-color-border, var(--el-border-color));
-  border-radius: 8px;
+  padding: var(--fa-space-4) var(--fa-space-5);
+  background:
+    linear-gradient(180deg, var(--fa-surface-sheen-top), var(--fa-surface-sheen-bottom)),
+    var(--default-box-color);
+  border: 1px solid var(--fa-card-border);
+  border-radius: 12px;
+  box-shadow: var(--fa-elevation-1);
 
   &__title {
     margin-bottom: 12px;
@@ -156,8 +173,8 @@ const retrievalCard = {
 .pending-list {
   display: grid;
   gap: 8px;
-  margin: 0;
   padding: 0;
+  margin: 0;
   list-style: none;
 }
 

@@ -136,7 +136,7 @@
 
 @mixin fa-card-base($border-color, $shadow: var(--fa-panel-shadow), $radius: 8px) {
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 96%), rgb(248 251 255 / 92%)),
+    linear-gradient(180deg, var(--fa-surface-sheen-top), var(--fa-surface-sheen-bottom)),
     var(--default-box-color);
   border: 1px solid #{$border-color} !important;
   border-radius: #{$radius} !important;
@@ -248,11 +248,11 @@
   min-width: 0;
   min-height: 0;
   margin-top: 12px;
-  border-radius: 8px !important;
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgb(255 255 255 / 96%), rgb(248 251 255 / 94%)),
+    linear-gradient(180deg, var(--fa-surface-sheen-top), var(--fa-surface-sheen-bottom)),
     var(--default-box-color);
+  border-radius: 8px !important;
   box-shadow: var(--fa-panel-shadow);
 
   .el-card__body {

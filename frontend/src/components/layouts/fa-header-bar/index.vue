@@ -9,129 +9,134 @@
     ]"
   >
     <div class="fa-header-main">
-    <div
-      class="relative box-border flex justify-between h-15 leading-15 select-none"
-      :class="[
-        tabStyle === 'tab-card' || tabStyle === 'tab-google' || tabStyle === 'tab-default'
-          ? 'border-b border-(--fa-card-border)'
-          : '',
-      ]"
-    >
-      <div class="fa-header-context flex items-center flex-1 min-w-0 leading-15" :style="{ display: 'flex' }">
-        <!-- 系统信息：Logo + 标题一并受「显示应用 Logo」控制 -->
+      <div
+        class="relative box-border flex justify-between h-15 leading-15 select-none"
+        :class="[
+          tabStyle === 'tab-card' || tabStyle === 'tab-google' || tabStyle === 'tab-default'
+            ? 'border-b border-(--fa-card-border)'
+            : '',
+        ]"
+      >
         <div
-          class="flex items-center cursor-pointer"
-          @click="toHome"
-          v-if="isTopMenu && showAppLogo"
+          class="fa-header-context flex items-center flex-1 min-w-0 leading-15"
+          :style="{ display: 'flex' }"
         >
-          <FaLogo class="pl-4.5" :src="headerLogoSrc" />
-          <p v-if="width >= 1400" class="my-0 mx-2 ml-2 text-lg">{{ headerSystemName }}</p>
-        </div>
-
-        <FaLogo
-          v-if="showAppLogo"
-          class="hidden! pl-3.5 overflow-hidden align-[-0.15em] fill-current"
-          :src="headerLogoSrc"
-          @click="toHome"
-        />
-
-        <!-- 菜单按钮 -->
-        <FaIconButton
-          v-if="isLeftMenu && shouldShowMenuButton"
-          icon="ri:menu-2-fill"
-          class="ml-3 max-sm:ml-[7px]"
-          @click="visibleMenu"
-        />
-
-        <!-- 刷新按钮 -->
-        <FaIconButton
-          v-if="shouldShowRefreshButton"
-          icon="ri:refresh-line"
-          class="ml-3! refresh-btn max-sm:hidden!"
-          :style="{ marginLeft: !isLeftMenu ? '10px' : '0' }"
-          @click="reload"
-        />
-
-        <!-- 面包屑 -->
-        <FaBreadcrumb
-          v-if="(shouldShowBreadcrumb && isLeftMenu) || (shouldShowBreadcrumb && isDualMenu)"
-        />
-
-        <!-- 顶部菜单 -->
-        <FaHorizontalMenu v-if="isTopMenu" :list="menuList" />
-
-        <!-- 混合菜单-顶部 -->
-        <FaMixedMenu v-if="isTopLeftMenu" :list="menuList" />
-      </div>
-
-      <div id="app-header-toolbar" class="fa-header-tools flex items-center gap-2.5">
-        <!-- 搜索 -->
-        <div
-          v-if="shouldShowGlobalSearch"
-          class="flex items-center justify-between w-40 h-9 px-2.5 cursor-pointer border border-g-400 rounded-custom-sm max-md:hidden! transition duration-300 hover:-translate-y-0.5 hover:shadow-md"
-          @click="openSearchDialog"
-        >
-          <div class="flex items-center">
-            <FaSvgIcon icon="ri:search-line" class="text-sm text-g-500" />
-            <span class="ml-1 text-xs font-normal text-g-500">{{ $t("topBar.search.title") }}</span>
+          <!-- 系统信息：Logo + 标题一并受「显示应用 Logo」控制 -->
+          <div
+            class="flex items-center cursor-pointer"
+            @click="toHome"
+            v-if="isTopMenu && showAppLogo"
+          >
+            <FaLogo class="pl-4.5" :src="headerLogoSrc" />
+            <p v-if="width >= 1400" class="my-0 mx-2 ml-2 text-lg">{{ headerSystemName }}</p>
           </div>
-          <div class="flex items-center h-5 px-1.5 text-g-500/80 border border-g-400 rounded">
-            <FaSvgIcon v-if="isWindows" icon="vaadin:ctrl-a" class="text-sm" />
-            <FaSvgIcon v-else icon="ri:command-fill" class="text-xs" />
-            <span class="ml-0.5 text-xs">k</span>
+
+          <FaLogo
+            v-if="showAppLogo"
+            class="hidden! pl-3.5 overflow-hidden align-[-0.15em] fill-current"
+            :src="headerLogoSrc"
+            @click="toHome"
+          />
+
+          <!-- 菜单按钮 -->
+          <FaIconButton
+            v-if="isLeftMenu && shouldShowMenuButton"
+            icon="ri:menu-2-fill"
+            class="ml-3 max-sm:ml-[7px]"
+            @click="visibleMenu"
+          />
+
+          <!-- 刷新按钮 -->
+          <FaIconButton
+            v-if="shouldShowRefreshButton"
+            icon="ri:refresh-line"
+            class="ml-3! refresh-btn max-sm:hidden!"
+            :style="{ marginLeft: !isLeftMenu ? '10px' : '0' }"
+            @click="reload"
+          />
+
+          <!-- 面包屑 -->
+          <FaBreadcrumb
+            v-if="(shouldShowBreadcrumb && isLeftMenu) || (shouldShowBreadcrumb && isDualMenu)"
+          />
+
+          <!-- 顶部菜单 -->
+          <FaHorizontalMenu v-if="isTopMenu" :list="menuList" />
+
+          <!-- 混合菜单-顶部 -->
+          <FaMixedMenu v-if="isTopLeftMenu" :list="menuList" />
+        </div>
+
+        <div id="app-header-toolbar" class="fa-header-tools flex items-center gap-2.5">
+          <!-- 搜索 -->
+          <div
+            v-if="shouldShowGlobalSearch"
+            class="flex items-center justify-between w-40 h-9 px-2.5 cursor-pointer border border-g-400 rounded-custom-sm max-md:hidden! transition duration-300 hover:-translate-y-0.5 hover:shadow-md"
+            @click="openSearchDialog"
+          >
+            <div class="flex items-center">
+              <FaSvgIcon icon="ri:search-line" class="text-sm text-g-500" />
+              <span class="ml-1 text-xs font-normal text-g-500">{{
+                $t("topBar.search.title")
+              }}</span>
+            </div>
+            <div class="flex items-center h-5 px-1.5 text-g-500/80 border border-g-400 rounded">
+              <FaSvgIcon v-if="isWindows" icon="vaadin:ctrl-a" class="text-sm" />
+              <FaSvgIcon v-else icon="ri:command-fill" class="text-xs" />
+              <span class="ml-0.5 text-xs">k</span>
+            </div>
           </div>
+
+          <!-- 全屏按钮 -->
+          <FaIconButton
+            v-if="shouldShowFullscreen"
+            :icon="isFullscreen ? 'ri:fullscreen-exit-line' : 'ri:fullscreen-fill'"
+            :class="[!isFullscreen ? 'full-screen-btn' : 'exit-full-screen-btn', 'ml-3']"
+            class="max-md:hidden!"
+            @click="toggleFullScreen"
+          />
+
+          <!-- 组件尺寸 default/large/small（沿用旧版持久化开关 showSizeSelect） -->
+          <div
+            v-if="shouldShowSizeSelect"
+            class="flex items-center justify-center ml-1 max-md:hidden!"
+          >
+            <FaSizeSelect />
+          </div>
+
+          <!-- 国际化按钮 -->
+          <ElDropdown
+            @command="changeLanguage"
+            popper-class="langDropDownStyle"
+            v-if="shouldShowLanguage"
+          >
+            <FaIconButton icon="ri:translate-2" class="language-btn text-[19px]" />
+            <template #dropdown>
+              <ElDropdownMenu>
+                <div v-for="item in languageOptions" :key="item.value" class="lang-btn-item">
+                  <ElDropdownItem
+                    :command="item.value"
+                    :class="{ 'is-selected': locale === item.value }"
+                  >
+                    <span class="menu-txt">{{ item.label }}</span>
+                    <FaSvgIcon icon="ri:check-fill" v-if="locale === item.value" />
+                  </ElDropdownItem>
+                </div>
+              </ElDropdownMenu>
+            </template>
+          </ElDropdown>
+
+          <!-- 主题切换按钮 -->
+          <FaIconButton
+            v-if="shouldShowThemeToggle"
+            @click="themeAnimation"
+            :icon="isDark ? 'ri:sun-fill' : 'ri:moon-line'"
+          />
+
+          <!-- 用户头像、菜单 -->
+          <FaUserMenu />
         </div>
-
-        <!-- 全屏按钮 -->
-        <FaIconButton
-          v-if="shouldShowFullscreen"
-          :icon="isFullscreen ? 'ri:fullscreen-exit-line' : 'ri:fullscreen-fill'"
-          :class="[!isFullscreen ? 'full-screen-btn' : 'exit-full-screen-btn', 'ml-3']"
-          class="max-md:hidden!"
-          @click="toggleFullScreen"
-        />
-
-        <!-- 组件尺寸 default/large/small（沿用旧版持久化开关 showSizeSelect） -->
-        <div
-          v-if="shouldShowSizeSelect"
-          class="flex items-center justify-center ml-1 max-md:hidden!"
-        >
-          <FaSizeSelect />
-        </div>
-
-        <!-- 国际化按钮 -->
-        <ElDropdown
-          @command="changeLanguage"
-          popper-class="langDropDownStyle"
-          v-if="shouldShowLanguage"
-        >
-          <FaIconButton icon="ri:translate-2" class="language-btn text-[19px]" />
-          <template #dropdown>
-            <ElDropdownMenu>
-              <div v-for="item in languageOptions" :key="item.value" class="lang-btn-item">
-                <ElDropdownItem
-                  :command="item.value"
-                  :class="{ 'is-selected': locale === item.value }"
-                >
-                  <span class="menu-txt">{{ item.label }}</span>
-                  <FaSvgIcon icon="ri:check-fill" v-if="locale === item.value" />
-                </ElDropdownItem>
-              </div>
-            </ElDropdownMenu>
-          </template>
-        </ElDropdown>
-
-        <!-- 主题切换按钮 -->
-        <FaIconButton
-          v-if="shouldShowThemeToggle"
-          @click="themeAnimation"
-          :icon="isDark ? 'ri:sun-fill' : 'ri:moon-line'"
-        />
-
-        <!-- 用户头像、菜单 -->
-        <FaUserMenu />
       </div>
-    </div>
     </div>
 
     <!-- 标签页 -->
@@ -190,12 +195,10 @@ const {
   shouldShowSizeSelect,
 } = useHeaderBar();
 
-const { menuOpen, menuType, isDark, tabStyle, showAppLogo } =
-  storeToRefs(settingStore);
+const { menuOpen, menuType, isDark, tabStyle, showAppLogo } = storeToRefs(settingStore);
 
 const { language } = storeToRefs(userStore);
 const { menuList } = storeToRefs(menuStore);
-
 
 // 菜单类型判断
 const isLeftMenu = computed(() => menuType.value === MenuTypeEnum.LEFT);
@@ -208,7 +211,6 @@ const { isFullscreen, toggle: toggleFullscreen } = useFullscreen();
 onMounted(() => {
   initLanguage();
 });
-
 
 /**
  * 切换全屏状态
@@ -424,5 +426,3 @@ html.dark .relative.box-border {
   }
 }
 </style>
-
-

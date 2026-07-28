@@ -5,7 +5,7 @@ export type ConfigValueMap = Record<string, { config_value?: ConfigValue } | und
 export function getConfigValue(
   configData: ConfigValueMap | undefined | null,
   keys: string[],
-  fallback = "",
+  fallback = ""
 ): string {
   for (const key of keys) {
     const value = configData?.[key]?.config_value;

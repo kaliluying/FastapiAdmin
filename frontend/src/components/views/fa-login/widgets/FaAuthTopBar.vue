@@ -328,5 +328,3 @@ const changeThemeColor = (color: string) => {
   color: v-bind("themeColorForCss");
 }
 </style>
-
-

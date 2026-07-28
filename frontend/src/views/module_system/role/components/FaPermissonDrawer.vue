@@ -39,7 +39,6 @@
                   </ElSelect>
                 </ElFormItem>
               </ElForm>
-
             </div>
           </div>
         </ElAside>
@@ -142,7 +141,6 @@ const init = async () => {
     };
 
     menuCheckedIds.value = savedMenuIds;
-
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     ElMessage.error("获取权限数据失败: " + msg);

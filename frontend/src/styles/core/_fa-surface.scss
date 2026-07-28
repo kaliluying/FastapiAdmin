@@ -1,0 +1,9 @@
+// 表面质感工具类 — Quiet Luxury Operations
+// elevation token 定义见 tailwind.css（--fa-elevation-1/2/3，浅色/深色各一套）
+
+.fa-surface-raised {
+  background: var(--default-box-color);
+  border: 1px solid var(--fa-card-border);
+  border-radius: 10px;
+  box-shadow: var(--fa-elevation-2);
+}

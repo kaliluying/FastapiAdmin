@@ -5,7 +5,12 @@
       <div class="toolbar">
         <ElForm :inline="true" :model="query" class="query-form">
           <ElFormItem label="名称">
-            <ElInput v-model="query.name" clearable placeholder="知识库名称" @keyup.enter="loadData" />
+            <ElInput
+              v-model="query.name"
+              clearable
+              placeholder="知识库名称"
+              @keyup.enter="loadData"
+            />
           </ElFormItem>
           <ElFormItem label="状态">
             <ElSelect v-model="query.is_enabled" clearable placeholder="全部" class="status-select">
@@ -34,7 +39,9 @@
             <template #default="{ row }">
               <div class="index-status">
                 <ElTag type="success" effect="plain">成功 {{ row.indexed_document_count }}</ElTag>
-                <ElTag type="warning" effect="plain">处理中 {{ row.indexing_document_count }}</ElTag>
+                <ElTag type="warning" effect="plain"
+                  >处理中 {{ row.indexing_document_count }}</ElTag
+                >
                 <ElTag type="danger" effect="plain">失败 {{ row.failed_document_count }}</ElTag>
               </div>
             </template>
@@ -50,17 +57,48 @@
           <ElTableColumn label="操作" width="360" fixed="right">
             <template #default="{ row }">
               <div class="action-buttons">
-                <ElButton class="action-button action-button-primary" type="primary" plain :icon="Upload" @click="goUploadDocuments(row)">
+                <ElButton
+                  class="action-button action-button-primary"
+                  type="primary"
+                  plain
+                  :icon="Upload"
+                  @click="goUploadDocuments(row)"
+                >
                   上传文档
                 </ElButton>
-                <ElButton class="action-button action-button-primary" type="primary" plain :icon="Document" @click="goViewDocuments(row)">
+                <ElButton
+                  class="action-button action-button-primary"
+                  type="primary"
+                  plain
+                  :icon="Document"
+                  @click="goViewDocuments(row)"
+                >
                   查看文档
                 </ElButton>
-                <ElButton class="action-button action-button-primary" type="primary" plain :icon="Search" @click="goRetrievalTest(row)">
+                <ElButton
+                  class="action-button action-button-primary"
+                  type="primary"
+                  plain
+                  :icon="Search"
+                  @click="goRetrievalTest(row)"
+                >
                   检索测试
                 </ElButton>
-                <ElButton class="action-button" type="primary" plain :icon="EditPen" @click="openUpdate(row)">编辑</ElButton>
-                <ElButton class="action-button action-button-danger" type="danger" plain :icon="Delete" @click="remove(row)">
+                <ElButton
+                  class="action-button"
+                  type="primary"
+                  plain
+                  :icon="EditPen"
+                  @click="openUpdate(row)"
+                  >编辑</ElButton
+                >
+                <ElButton
+                  class="action-button action-button-danger"
+                  type="danger"
+                  plain
+                  :icon="Delete"
+                  @click="remove(row)"
+                >
                   删除
                 </ElButton>
               </div>
@@ -80,13 +118,23 @@
       </template>
     </ElCard>
 
-    <ElDialog v-model="dialogVisible" :title="editingId ? '编辑知识库' : '新建知识库'" width="560px">
+    <ElDialog
+      v-model="dialogVisible"
+      :title="editingId ? '编辑知识库' : '新建知识库'"
+      width="560px"
+    >
       <ElForm ref="formRef" :model="form" :rules="rules" label-width="92px">
         <ElFormItem label="名称" prop="name">
           <ElInput v-model="form.name" maxlength="100" show-word-limit />
         </ElFormItem>
         <ElFormItem label="描述">
-          <ElInput v-model="form.description" type="textarea" :rows="4" maxlength="500" show-word-limit />
+          <ElInput
+            v-model="form.description"
+            type="textarea"
+            :rows="4"
+            maxlength="500"
+            show-word-limit
+          />
         </ElFormItem>
         <ElFormItem label="状态">
           <ElSwitch v-model="form.is_enabled" />
@@ -105,7 +153,10 @@ import { onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from "element-plus";
 import { Delete, Document, EditPen, Plus, Refresh, Search, Upload } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
-import KnowledgeAPI, { type KnowledgeBase, type KnowledgeBaseForm } from "@/api/module_ai/knowledge";
+import KnowledgeAPI, {
+  type KnowledgeBase,
+  type KnowledgeBaseForm,
+} from "@/api/module_ai/knowledge";
 import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
 import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 

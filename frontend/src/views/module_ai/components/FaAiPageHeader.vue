@@ -10,6 +10,9 @@
 <script setup lang="ts">
 import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
 defineOptions({ name: "FaAiPageHeader" });
-interface Props { title: string; description?: string; }
+interface Props {
+  title: string;
+  description?: string;
+}
 defineProps<Props>();
 </script>

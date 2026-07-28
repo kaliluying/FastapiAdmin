@@ -31,8 +31,8 @@ defineProps<Props>();
   align-items: flex-start;
   justify-content: space-between;
   padding: 16px 0 12px;
-  border-bottom: 1px solid var(--fa-color-border, var(--el-border-color));
   margin-bottom: 16px;
+  border-bottom: 1px solid var(--fa-color-border, var(--el-border-color));
 
   &__main {
     flex: 1;
@@ -41,16 +41,16 @@ defineProps<Props>();
 
   &__title-row {
     display: flex;
-    align-items: center;
     gap: 8px;
+    align-items: center;
   }
 
   &__title {
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: var(--fa-color-text, var(--el-text-color-primary));
     line-height: 1.4;
+    color: var(--fa-color-text, var(--el-text-color-primary));
   }
 
   &__description {
@@ -61,9 +61,9 @@ defineProps<Props>();
 
   &__actions {
     display: flex;
-    align-items: center;
-    gap: 8px;
     flex-shrink: 0;
+    gap: 8px;
+    align-items: center;
     margin-left: 16px;
   }
 }

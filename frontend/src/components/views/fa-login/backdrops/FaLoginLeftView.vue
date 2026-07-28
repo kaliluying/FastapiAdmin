@@ -688,5 +688,3 @@ $bg-mix-light-7: color-mix(in srgb, $primary-light-7 80%, $main-bg);
   }
 }
 </style>
-
-

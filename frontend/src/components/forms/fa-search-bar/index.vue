@@ -594,11 +594,7 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
     inset: 0 0 auto;
     height: 3px;
     content: "";
-    background: linear-gradient(
-      90deg,
-      color-mix(in srgb, var(--theme-color) 82%, white),
-      #10b981
-    );
+    background: linear-gradient(90deg, color-mix(in srgb, var(--theme-color) 82%, white), #10b981);
   }
 
   :deep(.el-form-item) {

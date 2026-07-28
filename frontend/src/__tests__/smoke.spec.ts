@@ -19,4 +19,3 @@ describe("MenuTypeEnum — 菜单类型", () => {
     expect(MenuTypeEnum.EXTLINK).toBe(4);
   });
 });
-

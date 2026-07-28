@@ -3,130 +3,130 @@
   <div class="fa-full-height">
     <FaPageHeader title="字典管理" />
     <div class="fa-management-page">
-    <FaSearchBar
-      v-show="showSearchBar"
-      ref="searchBarRef"
-      v-model="searchForm"
-      :items="dictTypeSearchItems"
-      :rules="searchBarRules"
-      :is-expand="false"
-      :show-expand="true"
-      :show-reset="true"
-      :show-search="true"
-      :disabled-search="false"
-      :default-expanded="false"
-      include-audit
-      @search="handleSearchBarSearch"
-      @reset="onResetSearch"
-    />
-
-    <ElCard
-      shadow="hover"
-      class="fa-table-card"
-      :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
-    >
-      <FaTableHeader
-        v-model:columns="columnChecks"
-        v-model:showSearchBar="showSearchBar"
-        :loading="loading"
-        @refresh="refreshData"
-      >
-        <template #left>
-          <FaTableHeaderLeft
-            :remove-ids="selectedIds"
-            :perm-create="['module_system:dict_type:create']"
-            :perm-export="['module_system:dict_type:export']"
-            :perm-delete="['module_system:dict_type:delete']"
-            :perm-patch="['module_system:dict_type:patch']"
-            :delete-loading="batchDeleting"
-            :create-loading="createLoading"
-            :more-loading="moreLoading"
-            @add="handleAdd"
-            @export="openExport"
-            @delete="handleBatchDelete"
-            @more="handleMoreClick"
-          />
-        </template>
-      </FaTableHeader>
-
-      <FaTable
-        ref="faTableRef"
-        :loading="loading"
-        :data="data"
-        :columns="columns"
-        :pagination="pagination"
-        @selection-change="onTableSelectionChange"
-        @pagination:size-change="handleSizeChange"
-        @pagination:current-change="handleCurrentChange"
+      <FaSearchBar
+        v-show="showSearchBar"
+        ref="searchBarRef"
+        v-model="searchForm"
+        :items="dictTypeSearchItems"
+        :rules="searchBarRules"
+        :is-expand="false"
+        :show-expand="true"
+        :show-reset="true"
+        :show-search="true"
+        :disabled-search="false"
+        :default-expanded="false"
+        include-audit
+        @search="handleSearchBarSearch"
+        @reset="onResetSearch"
       />
-    </ElCard>
 
-    <FaDialog
-      v-model="dialogVisible.visible"
-      :title="dialogVisible.title"
-      width="640px"
-      dialog-class="crud-embed-dialog"
-      modal-class="crud-embed-dialog"
-      :form-mode="dialogVisible.type"
-      :confirm-loading="submitLoading"
-      @cancel="handleCloseDialog"
-      @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
-    >
-      <template v-if="dialogVisible.type === 'detail'">
-        <FaDescriptions
-          :column="2"
-          :data="detailFormData"
-          :items="dictDetailItems"
-          max-height="70vh"
+      <ElCard
+        shadow="hover"
+        class="fa-table-card"
+        :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
+      >
+        <FaTableHeader
+          v-model:columns="columnChecks"
+          v-model:showSearchBar="showSearchBar"
+          :loading="loading"
+          @refresh="refreshData"
         >
-          <template #dict_type="{ row }">
-            <FaStatusTag type="primary" :label="(row as unknown as DictTable)?.dict_type" />
+          <template #left>
+            <FaTableHeaderLeft
+              :remove-ids="selectedIds"
+              :perm-create="['module_system:dict_type:create']"
+              :perm-export="['module_system:dict_type:export']"
+              :perm-delete="['module_system:dict_type:delete']"
+              :perm-patch="['module_system:dict_type:patch']"
+              :delete-loading="batchDeleting"
+              :create-loading="createLoading"
+              :more-loading="moreLoading"
+              @add="handleAdd"
+              @export="openExport"
+              @delete="handleBatchDelete"
+              @more="handleMoreClick"
+            />
           </template>
-        </FaDescriptions>
-      </template>
-      <template v-else>
-        <FaForm
-          :key="dictFormRenderKey"
-          scrollbar
-          max-height="70vh"
-          ref="dataFormRef"
-          v-model="formData"
-          :items="dictDialogFormItems"
-          :rules="rules"
-          label-suffix=":"
-          :label-width="100"
-          label-position="right"
-          :span="24"
-          :gutter="16"
-          :show-reset="false"
-          :show-submit="false"
-          class="crud-dialog-art-form"
-        >
-          <template #status>
-            <ElRadioGroup v-model="formData.status">
-              <ElRadio :value="0">启用</ElRadio>
-              <ElRadio :value="1">停用</ElRadio>
-            </ElRadioGroup>
-          </template>
-        </FaForm>
-      </template>
-    </FaDialog>
+        </FaTableHeader>
 
-    <FaExportDialog
-      v-model="exportVisible"
-      :content-config="dictTypeExportContentConfig"
-      :query-params="exportQueryParams"
-      :page-data="data"
-      :selection-data="selectedRows"
-    />
+        <FaTable
+          ref="faTableRef"
+          :loading="loading"
+          :data="data"
+          :columns="columns"
+          :pagination="pagination"
+          @selection-change="onTableSelectionChange"
+          @pagination:size-change="handleSizeChange"
+          @pagination:current-change="handleCurrentChange"
+        />
+      </ElCard>
 
-    <DataDrawer
-      v-if="drawerVisible"
-      v-model="drawerVisible"
-      :dict-type="currentDictType"
-      :dict-label="currentDictLabel"
-      :dict-type-id="currentDictTypeId"
-    />
+      <FaDialog
+        v-model="dialogVisible.visible"
+        :title="dialogVisible.title"
+        width="640px"
+        dialog-class="crud-embed-dialog"
+        modal-class="crud-embed-dialog"
+        :form-mode="dialogVisible.type"
+        :confirm-loading="submitLoading"
+        @cancel="handleCloseDialog"
+        @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
+      >
+        <template v-if="dialogVisible.type === 'detail'">
+          <FaDescriptions
+            :column="2"
+            :data="detailFormData"
+            :items="dictDetailItems"
+            max-height="70vh"
+          >
+            <template #dict_type="{ row }">
+              <FaStatusTag type="primary" :label="(row as unknown as DictTable)?.dict_type" />
+            </template>
+          </FaDescriptions>
+        </template>
+        <template v-else>
+          <FaForm
+            :key="dictFormRenderKey"
+            scrollbar
+            max-height="70vh"
+            ref="dataFormRef"
+            v-model="formData"
+            :items="dictDialogFormItems"
+            :rules="rules"
+            label-suffix=":"
+            :label-width="100"
+            label-position="right"
+            :span="24"
+            :gutter="16"
+            :show-reset="false"
+            :show-submit="false"
+            class="crud-dialog-art-form"
+          >
+            <template #status>
+              <ElRadioGroup v-model="formData.status">
+                <ElRadio :value="0">启用</ElRadio>
+                <ElRadio :value="1">停用</ElRadio>
+              </ElRadioGroup>
+            </template>
+          </FaForm>
+        </template>
+      </FaDialog>
+
+      <FaExportDialog
+        v-model="exportVisible"
+        :content-config="dictTypeExportContentConfig"
+        :query-params="exportQueryParams"
+        :page-data="data"
+        :selection-data="selectedRows"
+      />
+
+      <DataDrawer
+        v-if="drawerVisible"
+        v-model="drawerVisible"
+        :dict-type="currentDictType"
+        :dict-label="currentDictLabel"
+        :dict-type-id="currentDictTypeId"
+      />
     </div>
   </div>
 </template>

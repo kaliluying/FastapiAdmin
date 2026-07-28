@@ -3,115 +3,115 @@
   <div class="fa-full-height">
     <FaPageHeader title="参数配置" />
     <div class="fa-management-page">
-    <FaSearchBar
-      v-show="showSearchBar"
-      ref="searchBarRef"
-      v-model="searchForm"
-      :items="paramSearchItems"
-      :rules="searchBarRules"
-      :is-expand="false"
-      :show-expand="true"
-      :show-reset="true"
-      :show-search="true"
-      :disabled-search="false"
-      :default-expanded="false"
-      include-audit
-      @search="handleSearchBarSearch"
-      @reset="onResetSearch"
-    />
+      <FaSearchBar
+        v-show="showSearchBar"
+        ref="searchBarRef"
+        v-model="searchForm"
+        :items="paramSearchItems"
+        :rules="searchBarRules"
+        :is-expand="false"
+        :show-expand="true"
+        :show-reset="true"
+        :show-search="true"
+        :disabled-search="false"
+        :default-expanded="false"
+        include-audit
+        @search="handleSearchBarSearch"
+        @reset="onResetSearch"
+      />
 
-    <ElCard
-      shadow="hover"
-      class="fa-table-card"
-      :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
-    >
-      <FaTableHeader
-        v-model:columns="columnChecks"
-        v-model:showSearchBar="showSearchBar"
-        :loading="loading"
-        @refresh="refreshData"
+      <ElCard
+        shadow="hover"
+        class="fa-table-card"
+        :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
       >
-        <template #left>
-          <FaTableHeaderLeft
-            :remove-ids="selectedIds"
-            :perm-create="['module_system:param:create']"
-            :perm-export="['module_system:param:export']"
-            :perm-delete="['module_system:param:delete']"
-            :delete-loading="batchDeleting"
-            :create-loading="createLoading"
-            @add="handleAdd"
-            @export="openExport"
-            @delete="handleBatchDelete"
+        <FaTableHeader
+          v-model:columns="columnChecks"
+          v-model:showSearchBar="showSearchBar"
+          :loading="loading"
+          @refresh="refreshData"
+        >
+          <template #left>
+            <FaTableHeaderLeft
+              :remove-ids="selectedIds"
+              :perm-create="['module_system:param:create']"
+              :perm-export="['module_system:param:export']"
+              :perm-delete="['module_system:param:delete']"
+              :delete-loading="batchDeleting"
+              :create-loading="createLoading"
+              @add="handleAdd"
+              @export="openExport"
+              @delete="handleBatchDelete"
+            />
+          </template>
+        </FaTableHeader>
+
+        <FaTable
+          ref="faTableRef"
+          :loading="loading"
+          :data="data"
+          :columns="columns"
+          :pagination="pagination"
+          @selection-change="onTableSelectionChange"
+          @pagination:size-change="handleSizeChange"
+          @pagination:current-change="handleCurrentChange"
+        />
+      </ElCard>
+
+      <FaDialog
+        v-model="dialogVisible.visible"
+        :title="dialogVisible.title"
+        width="640px"
+        dialog-class="crud-embed-dialog"
+        modal-class="crud-embed-dialog"
+        :form-mode="dialogVisible.type"
+        :confirm-loading="submitLoading"
+        @cancel="handleCloseDialog"
+        @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
+      >
+        <template v-if="dialogVisible.type === 'detail'">
+          <FaDescriptions
+            :column="4"
+            :data="detailFormData"
+            :items="paramDetailItems"
+            max-height="75vh"
           />
         </template>
-      </FaTableHeader>
+        <template v-else>
+          <FaForm
+            :key="paramFormRenderKey"
+            scrollbar
+            max-height="75vh"
+            ref="dataFormRef"
+            v-model="formData"
+            :items="paramDialogFormItems"
+            :rules="rules"
+            label-suffix=":"
+            :label-width="100"
+            label-position="right"
+            :span="24"
+            :gutter="16"
+            :show-reset="false"
+            :show-submit="false"
+            class="crud-dialog-art-form"
+          >
+            <template #config_type>
+              <ElRadioGroup v-model="formData.config_type">
+                <ElRadio :value="true">是</ElRadio>
+                <ElRadio :value="false">否</ElRadio>
+              </ElRadioGroup>
+            </template>
+          </FaForm>
+        </template>
+      </FaDialog>
 
-      <FaTable
-        ref="faTableRef"
-        :loading="loading"
-        :data="data"
-        :columns="columns"
-        :pagination="pagination"
-        @selection-change="onTableSelectionChange"
-        @pagination:size-change="handleSizeChange"
-        @pagination:current-change="handleCurrentChange"
+      <FaExportDialog
+        v-model="exportVisible"
+        :content-config="paramExportContentConfig"
+        :query-params="exportQueryParams"
+        :page-data="data"
+        :selection-data="selectedRows"
       />
-    </ElCard>
-
-    <FaDialog
-      v-model="dialogVisible.visible"
-      :title="dialogVisible.title"
-      width="640px"
-      dialog-class="crud-embed-dialog"
-      modal-class="crud-embed-dialog"
-      :form-mode="dialogVisible.type"
-      :confirm-loading="submitLoading"
-      @cancel="handleCloseDialog"
-      @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
-    >
-      <template v-if="dialogVisible.type === 'detail'">
-        <FaDescriptions
-          :column="4"
-          :data="detailFormData"
-          :items="paramDetailItems"
-          max-height="75vh"
-        />
-      </template>
-      <template v-else>
-        <FaForm
-          :key="paramFormRenderKey"
-          scrollbar
-          max-height="75vh"
-          ref="dataFormRef"
-          v-model="formData"
-          :items="paramDialogFormItems"
-          :rules="rules"
-          label-suffix=":"
-          :label-width="100"
-          label-position="right"
-          :span="24"
-          :gutter="16"
-          :show-reset="false"
-          :show-submit="false"
-          class="crud-dialog-art-form"
-        >
-          <template #config_type>
-            <ElRadioGroup v-model="formData.config_type">
-              <ElRadio :value="true">是</ElRadio>
-              <ElRadio :value="false">否</ElRadio>
-            </ElRadioGroup>
-          </template>
-        </FaForm>
-      </template>
-    </FaDialog>
-
-    <FaExportDialog
-      v-model="exportVisible"
-      :content-config="paramExportContentConfig"
-      :query-params="exportQueryParams"
-      :page-data="data"
-      :selection-data="selectedRows"
-    />
     </div>
   </div>
 </template>

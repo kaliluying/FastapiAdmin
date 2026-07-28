@@ -132,8 +132,13 @@ const handlePromptClick = (prompt: string) => {
 
 .ai-mark__pulse {
   inset: 0;
-  background:
-    conic-gradient(from 140deg, rgb(93 135 255 / 0%), rgb(93 135 255 / 35%), rgb(45 212 191 / 34%), rgb(93 135 255 / 0%));
+  background: conic-gradient(
+    from 140deg,
+    rgb(93 135 255 / 0%),
+    rgb(93 135 255 / 35%),
+    rgb(45 212 191 / 34%),
+    rgb(93 135 255 / 0%)
+  );
   opacity: 0.72;
 }
 

@@ -45,9 +45,7 @@
           </div>
         </div>
         <div v-if="parsedContent.answer" class="message-text">
-          <FaMarkdownRenderer
-            :content="parsedContent.answer"
-          />
+          <FaMarkdownRenderer :content="parsedContent.answer" />
         </div>
         <div
           v-if="message.type === 'assistant' && message.loading && !message.content"

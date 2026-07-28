@@ -1,7 +1,11 @@
 <template>
   <div class="fa-full-height">
     <ElContainer class="main-chat">
-      <ElAside aria-label="会话列表" class="sidebar-container" :class="{ collapsed: isSidebarCollapsed }">
+      <ElAside
+        aria-label="会话列表"
+        class="sidebar-container"
+        :class="{ collapsed: isSidebarCollapsed }"
+      >
         <FaSidebar
           ref="sidebarRef"
           :current-session-id="currentSessionId"
@@ -97,11 +101,13 @@ const sidebarRef = ref<{ loadSessions: () => void }>();
 
 // 回答依据面板
 const activeCitations = ref<{ id: string; title: string; snippet?: string }[]>([]);
-const processStage = computed((): "idle" | "retrieving" | "reranking" | "generating" | "complete" | "error" => {
-  if (error.value) return "error";
-  if (sending.value) return "generating";
-  return "idle";
-});
+const processStage = computed(
+  (): "idle" | "retrieving" | "reranking" | "generating" | "complete" | "error" => {
+    if (error.value) return "error";
+    if (sending.value) return "generating";
+    return "idle";
+  }
+);
 
 // 移动端抽屉
 const isMobileDrawerOpen = ref(false);
@@ -366,7 +372,11 @@ onUnmounted(disconnectWebSocket);
   height: 100%;
   overflow: hidden;
   background:
-    radial-gradient(circle at 55% 0%, color-mix(in srgb, var(--theme-color) 10%, transparent), transparent 32%),
+    radial-gradient(
+      circle at 55% 0%,
+      color-mix(in srgb, var(--theme-color) 10%, transparent),
+      transparent 32%
+    ),
     var(--default-box-color);
   border: 1px solid var(--fa-card-border);
   border-radius: 8px;

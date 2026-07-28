@@ -85,4 +85,3 @@ export interface RefreshToekenBody {
 export interface LogoutBody {
   token: string;
 }
-

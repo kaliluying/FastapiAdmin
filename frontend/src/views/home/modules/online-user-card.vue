@@ -48,8 +48,18 @@ const onlineStats: OnlineStat[] = [
 .home-card {
   position: relative;
   overflow: hidden;
-  border-color: var(--fa-color-border, rgb(11 18 32 / 8%));
-  box-shadow: 0 18px 42px rgb(11 18 32 / 8%);
+  border-color: var(--fa-card-border);
+  box-shadow: var(--fa-elevation-1);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--theme-color) 18%, var(--fa-card-border));
+    box-shadow: var(--fa-elevation-3);
+    transform: translateY(-3px);
+  }
 
   :deep(.el-card__body) {
     height: 100%;
@@ -59,8 +69,8 @@ const onlineStats: OnlineStat[] = [
 
 .online-card {
   background:
-    linear-gradient(180deg, rgb(255 255 255), rgb(247 251 255)),
-    var(--fa-color-surface, var(--el-bg-color));
+    linear-gradient(180deg, var(--fa-surface-sheen-top), var(--fa-surface-sheen-bottom)),
+    var(--default-box-color);
 }
 
 .online-signal {
@@ -86,33 +96,34 @@ const onlineStats: OnlineStat[] = [
   margin: 0;
   font-size: 13px;
   font-weight: 650;
-  color: #64748b;
+  color: var(--fa-gray-600);
 }
 
 .metric-value {
-  font-size: 32px;
-  font-weight: 760;
+  font-size: var(--fa-text-3xl);
+  font-weight: var(--fa-weight-bold);
+  font-variant-numeric: tabular-nums;
   line-height: 1;
-  color: #0b1220;
+  color: var(--fa-gray-900);
 }
 
 .icon-box {
-  width: 44px;
-  height: 44px;
   display: flex;
+  flex: 0 0 44px;
   align-items: center;
   justify-content: center;
-  flex: 0 0 44px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
   font-size: 22px;
+  border-radius: 8px;
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 58%);
 }
 
 .stat-box {
   min-width: 0;
   padding: 10px 8px;
+  background: var(--fa-gray-200);
+  border: 1px solid var(--fa-card-border);
   border-radius: 8px;
-  background: #f7f9fc;
-  border: 1px solid rgb(11 18 32 / 5%);
 }
 </style>

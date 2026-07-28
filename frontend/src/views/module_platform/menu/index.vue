@@ -3,315 +3,316 @@
   <div class="fa-full-height">
     <FaPageHeader title="菜单管理" />
     <div class="fa-management-page">
-    <FaSearchBar
-      v-show="showSearchBar"
-      ref="searchBarRef"
-      v-model="searchForm"
-      :items="menuSearchItems"
-      :rules="searchBarRules"
-      :is-expand="false"
-      :show-expand="true"
-      :show-reset="true"
-      :show-search="true"
-      :disabled-search="false"
-      :default-expanded="false"
-      include-audit
-      @search="handleSearchBarSearch"
-      @reset="onResetSearch"
-    />
-
-    <ElCard
-      shadow="hover"
-      class="fa-table-card"
-      :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
-    >
-      <FaTableHeader
-        v-model:columns="columnChecks"
-        v-model:showSearchBar="showSearchBar"
-        :loading="loading"
-        @refresh="loadMenuData"
-      >
-        <template #left>
-          <div class="inline-flex flex-wrap items-center gap-2">
-            <FaTableHeaderLeft
-              :remove-ids="selectedIds"
-              :perm-create="['module_platform:menu:create']"
-              :perm-delete="['module_platform:menu:delete']"
-              :perm-patch="['module_platform:menu:patch']"
-              :delete-loading="batchDeleting"
-              :create-loading="createLoading"
-              :more-loading="moreLoading"
-              @add="handleAdd"
-              @delete="handleBatchDelete"
-              @more="handleMoreClick"
-            />
-            <ElButton @click="toggleExpand" v-ripple>{{ isExpanded ? "收起" : "展开" }}</ElButton>
-          </div>
-        </template>
-      </FaTableHeader>
-
-      <FaTable
-        ref="tableRef"
-        row-key="id"
-        :loading="loading"
-        :columns="columns"
-        :data="tableData"
-        :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
-        :default-expand-all="false"
-        @selection-change="onTableSelectionChange"
-        @row-click="handleRowClick"
+      <FaSearchBar
+        v-show="showSearchBar"
+        ref="searchBarRef"
+        v-model="searchForm"
+        :items="menuSearchItems"
+        :rules="searchBarRules"
+        :is-expand="false"
+        :show-expand="true"
+        :show-reset="true"
+        :show-search="true"
+        :disabled-search="false"
+        :default-expanded="false"
+        include-audit
+        @search="handleSearchBarSearch"
+        @reset="onResetSearch"
       />
-    </ElCard>
 
-    <FaDrawer
-      v-model="dialogVisible.visible"
-      :title="dialogVisible.title"
-      :size="drawerSize"
-      :form-mode="dialogVisible.type"
-      :confirm-loading="submitLoading"
-      @cancel="handleCloseDialog"
-      @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
-    >
-      <!-- 详情 -->
-      <template v-if="dialogVisible.type === 'detail'">
-        <FaDescriptions
-          :column="4"
-          :data="detailFormData"
-          :items="menuDetailItems"
-          :scrollbar="false"
+      <ElCard
+        shadow="hover"
+        class="fa-table-card"
+        :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
+      >
+        <FaTableHeader
+          v-model:columns="columnChecks"
+          v-model:showSearchBar="showSearchBar"
+          :loading="loading"
+          @refresh="loadMenuData"
         >
-          <template #type="{ row }">
-            <FaStatusTag v-if="row?.type === MenuTypeEnum.CATALOG" type="warning" label="目录" />
-            <FaStatusTag v-if="row?.type === MenuTypeEnum.MENU" type="success" label="菜单" />
-            <FaStatusTag v-if="row?.type === MenuTypeEnum.BUTTON" type="danger" label="按钮" />
-            <FaStatusTag v-if="row?.type === MenuTypeEnum.EXTLINK" type="info" label="外链" />
+          <template #left>
+            <div class="inline-flex flex-wrap items-center gap-2">
+              <FaTableHeaderLeft
+                :remove-ids="selectedIds"
+                :perm-create="['module_platform:menu:create']"
+                :perm-delete="['module_platform:menu:delete']"
+                :perm-patch="['module_platform:menu:patch']"
+                :delete-loading="batchDeleting"
+                :create-loading="createLoading"
+                :more-loading="moreLoading"
+                @add="handleAdd"
+                @delete="handleBatchDelete"
+                @more="handleMoreClick"
+              />
+              <ElButton @click="toggleExpand" v-ripple>{{ isExpanded ? "收起" : "展开" }}</ElButton>
+            </div>
           </template>
-          <template #icon="{ row }">
-            <template v-if="row?.icon">
-              <FaMenuRouteIcon :icon="row?.icon as string" :style="'vertical-align: -0.15em'" />
+        </FaTableHeader>
+
+        <FaTable
+          ref="tableRef"
+          row-key="id"
+          :loading="loading"
+          :columns="columns"
+          :data="tableData"
+          :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
+          :default-expand-all="false"
+          @selection-change="onTableSelectionChange"
+          @row-click="handleRowClick"
+        />
+      </ElCard>
+
+      <FaDrawer
+        v-model="dialogVisible.visible"
+        :title="dialogVisible.title"
+        :size="drawerSize"
+        :form-mode="dialogVisible.type"
+        :confirm-loading="submitLoading"
+        @cancel="handleCloseDialog"
+        @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
+      >
+        <!-- 详情 -->
+        <template v-if="dialogVisible.type === 'detail'">
+          <FaDescriptions
+            :column="4"
+            :data="detailFormData"
+            :items="menuDetailItems"
+            :scrollbar="false"
+          >
+            <template #type="{ row }">
+              <FaStatusTag v-if="row?.type === MenuTypeEnum.CATALOG" type="warning" label="目录" />
+              <FaStatusTag v-if="row?.type === MenuTypeEnum.MENU" type="success" label="菜单" />
+              <FaStatusTag v-if="row?.type === MenuTypeEnum.BUTTON" type="danger" label="按钮" />
+              <FaStatusTag v-if="row?.type === MenuTypeEnum.EXTLINK" type="info" label="外链" />
             </template>
-          </template>
-        </FaDescriptions>
-      </template>
-
-      <!-- 新增、编辑表单 -->
-      <template v-else>
-        <FaForm
-          :key="menuFormRenderKey"
-          ref="dataFormRef"
-          v-model="formData"
-          :items="menuDialogFormItems"
-          :rules="rules"
-          label-suffix=":"
-          :label-width="100"
-          label-position="right"
-          :span="12"
-          :gutter="16"
-          :show-reset="false"
-          :show-submit="false"
-          class="crud-dialog-art-form"
-        >
-          <!-- 父级菜单(条件显示) -->
-          <template #parent_id>
-            <ElTreeSelect
-              v-model="formData.parent_id"
-              placeholder="选择上级菜单"
-              :data="menuOptions"
-              node-key="value"
-              filterable
-              check-strictly
-              :render-after-expand="false"
-              :disabled="createParentLocked"
-            />
-            <ElText v-if="createParentLocked" type="info" size="small" class="block mt-1">
-              在菜单下仅可新增按钮，父级已固定
-            </ElText>
-          </template>
-
-          <!-- 菜单类型(动态枚举按钮组) -->
-          <template #type>
-            <ElRadioGroup v-model="formData.type" @change="handleMenuTypeChange">
-              <ElRadio
-                v-if="allowedMenuTypeValues.includes(MenuTypeEnum.CATALOG)"
-                :value="MenuTypeEnum.CATALOG"
-              >
-                目录
-              </ElRadio>
-              <ElRadio
-                v-if="allowedMenuTypeValues.includes(MenuTypeEnum.MENU)"
-                :value="MenuTypeEnum.MENU"
-              >
-                菜单
-              </ElRadio>
-              <ElRadio
-                v-if="allowedMenuTypeValues.includes(MenuTypeEnum.BUTTON)"
-                :value="MenuTypeEnum.BUTTON"
-              >
-                按钮
-              </ElRadio>
-              <ElRadio
-                v-if="allowedMenuTypeValues.includes(MenuTypeEnum.EXTLINK)"
-                :value="MenuTypeEnum.EXTLINK"
-              >
-                外链
-              </ElRadio>
-            </ElRadioGroup>
-          </template>
-
-          <!-- 外链地址 -->
-          <template #link>
-            <ElInput v-model="formData.link" placeholder="请输入外链完整路径" />
-          </template>
-
-          <!-- 嵌入iframe -->
-          <template #is_iframe>
-            <ElRadioGroup v-model="formData.is_iframe">
-              <ElRadio :value="true">是</ElRadio>
-              <ElRadio :value="false">否</ElRadio>
-            </ElRadioGroup>
-          </template>
-
-          <!-- 路由名称 -->
-          <template #route_name>
-            <ElInput v-model="formData.route_name" placeholder="请输入路由名称" />
-          </template>
-
-          <!-- 路由路径 -->
-          <template #route_path>
-            <ElInput v-model="formData.route_path" placeholder="请输入路由路径，如 system" />
-          </template>
-
-          <!-- 组件路径 -->
-          <template #component_path>
-            <ElInput
-              v-model="formData.component_path"
-              placeholder="请输入组件路径，如system/user/index"
-              :style="'width: 95%'"
-            >
-              <template #prepend>src/views/</template>
-              <template #append>.vue</template>
-            </ElInput>
-          </template>
-
-          <!-- 激活菜单路径 -->
-          <template #active_path>
-            <ElInput
-              v-model="formData.active_path"
-              placeholder="请输入激活菜单路径，用于高亮父级菜单"
-            />
-          </template>
-
-          <!-- 路由参数(动态键值编辑器) -->
-          <template #params>
-            <template
-              v-if="
-                !formData.params || (Array.isArray(formData.params) && formData.params.length === 0)
-              "
-            >
-              <ElButton type="success" plain @click="formData.params = [{ key: '', value: '' }]">
-                添加路由参数
-              </ElButton>
+            <template #icon="{ row }">
+              <template v-if="row?.icon">
+                <FaMenuRouteIcon :icon="row?.icon as string" :style="'vertical-align: -0.15em'" />
+              </template>
             </template>
-            <template v-else>
-              <div v-for="(item, index) in formData.params" :key="index">
-                <ElInput v-model="item.key" placeholder="参数名" :style="'width: 100px'" />
-                <span class="mx-1">=</span>
-                <ElInput v-model="item.value" placeholder="参数值" :style="'width: 100px'" />
-                <ElIcon
-                  v-if="formData.params.indexOf(item) === formData.params.length - 1"
-                  class="ml-2 cursor-pointer color-[var(--el-color-success)]"
-                  :style="'vertical-align: -0.15em'"
-                  @click="formData.params.push({ key: '', value: '' })"
+          </FaDescriptions>
+        </template>
+
+        <!-- 新增、编辑表单 -->
+        <template v-else>
+          <FaForm
+            :key="menuFormRenderKey"
+            ref="dataFormRef"
+            v-model="formData"
+            :items="menuDialogFormItems"
+            :rules="rules"
+            label-suffix=":"
+            :label-width="100"
+            label-position="right"
+            :span="12"
+            :gutter="16"
+            :show-reset="false"
+            :show-submit="false"
+            class="crud-dialog-art-form"
+          >
+            <!-- 父级菜单(条件显示) -->
+            <template #parent_id>
+              <ElTreeSelect
+                v-model="formData.parent_id"
+                placeholder="选择上级菜单"
+                :data="menuOptions"
+                node-key="value"
+                filterable
+                check-strictly
+                :render-after-expand="false"
+                :disabled="createParentLocked"
+              />
+              <ElText v-if="createParentLocked" type="info" size="small" class="block mt-1">
+                在菜单下仅可新增按钮，父级已固定
+              </ElText>
+            </template>
+
+            <!-- 菜单类型(动态枚举按钮组) -->
+            <template #type>
+              <ElRadioGroup v-model="formData.type" @change="handleMenuTypeChange">
+                <ElRadio
+                  v-if="allowedMenuTypeValues.includes(MenuTypeEnum.CATALOG)"
+                  :value="MenuTypeEnum.CATALOG"
                 >
-                  <CirclePlusFilled />
-                </ElIcon>
-                <ElIcon
-                  class="ml-2 cursor-pointer color-[var(--el-color-danger)]"
-                  :style="'vertical-align: -0.15em'"
-                  @click="formData.params.splice(formData.params.indexOf(item), 1)"
+                  目录
+                </ElRadio>
+                <ElRadio
+                  v-if="allowedMenuTypeValues.includes(MenuTypeEnum.MENU)"
+                  :value="MenuTypeEnum.MENU"
                 >
-                  <DeleteFilled />
-                </ElIcon>
-              </div>
+                  菜单
+                </ElRadio>
+                <ElRadio
+                  v-if="allowedMenuTypeValues.includes(MenuTypeEnum.BUTTON)"
+                  :value="MenuTypeEnum.BUTTON"
+                >
+                  按钮
+                </ElRadio>
+                <ElRadio
+                  v-if="allowedMenuTypeValues.includes(MenuTypeEnum.EXTLINK)"
+                  :value="MenuTypeEnum.EXTLINK"
+                >
+                  外链
+                </ElRadio>
+              </ElRadioGroup>
             </template>
-          </template>
-          <!-- 是否隐藏 -->
-          <template #hidden>
-            <ElRadioGroup v-model="formData.hidden">
-              <ElRadio :value="true">是</ElRadio>
-              <ElRadio :value="false">否</ElRadio>
-            </ElRadioGroup>
-          </template>
 
-          <!-- 始终显示 -->
-          <template #always_show>
-            <ElRadioGroup v-model="formData.always_show">
-              <ElRadio :value="true">是</ElRadio>
-              <ElRadio :value="false">否</ElRadio>
-            </ElRadioGroup>
-          </template>
+            <!-- 外链地址 -->
+            <template #link>
+              <ElInput v-model="formData.link" placeholder="请输入外链完整路径" />
+            </template>
 
-          <!-- 缓存页面 -->
-          <template #keep_alive>
-            <ElRadioGroup v-model="formData.keep_alive">
-              <ElRadio :value="true">开启</ElRadio>
-              <ElRadio :value="false">关闭</ElRadio>
-            </ElRadioGroup>
-          </template>
+            <!-- 嵌入iframe -->
+            <template #is_iframe>
+              <ElRadioGroup v-model="formData.is_iframe">
+                <ElRadio :value="true">是</ElRadio>
+                <ElRadio :value="false">否</ElRadio>
+              </ElRadioGroup>
+            </template>
 
-          <!-- 权限标识 -->
-          <template #permission>
-            <ElInput v-model="formData.permission" placeholder="请输入权限标识，如sys:user:add" />
-          </template>
+            <!-- 路由名称 -->
+            <template #route_name>
+              <ElInput v-model="formData.route_name" placeholder="请输入路由名称" />
+            </template>
 
-          <!-- 图标 -->
-          <template #icon>
-            <FaIconSelect v-model="formData.icon" />
-          </template>
+            <!-- 路由路径 -->
+            <template #route_path>
+              <ElInput v-model="formData.route_path" placeholder="请输入路由路径，如 system" />
+            </template>
 
-          <!-- 重定向(动态placeholder) -->
-          <template #redirect>
-            <ElInput
-              v-model="formData.redirect"
-              :placeholder="
-                formData.type === MenuTypeEnum.CATALOG
-                  ? '目录必填，一般为默认子路由 path，如 /system/user'
-                  : '可选，请输入重定向路由'
-              "
-            />
-          </template>
+            <!-- 组件路径 -->
+            <template #component_path>
+              <ElInput
+                v-model="formData.component_path"
+                placeholder="请输入组件路径，如system/user/index"
+                :style="'width: 95%'"
+              >
+                <template #prepend>src/views/</template>
+                <template #append>.vue</template>
+              </ElInput>
+            </template>
 
-          <!-- 常驻标签栏 -->
-          <template #affix>
-            <ElRadioGroup v-model="formData.affix">
-              <ElRadio :value="true">是</ElRadio>
-              <ElRadio :value="false">否</ElRadio>
-            </ElRadioGroup>
-          </template>
+            <!-- 激活菜单路径 -->
+            <template #active_path>
+              <ElInput
+                v-model="formData.active_path"
+                placeholder="请输入激活菜单路径，用于高亮父级菜单"
+              />
+            </template>
 
-          <!-- 隐藏标签页 -->
-          <template #is_hide_tab>
-            <ElRadioGroup v-model="formData.is_hide_tab">
-              <ElRadio :value="true">是</ElRadio>
-              <ElRadio :value="false">否</ElRadio>
-            </ElRadioGroup>
-          </template>
+            <!-- 路由参数(动态键值编辑器) -->
+            <template #params>
+              <template
+                v-if="
+                  !formData.params ||
+                  (Array.isArray(formData.params) && formData.params.length === 0)
+                "
+              >
+                <ElButton type="success" plain @click="formData.params = [{ key: '', value: '' }]">
+                  添加路由参数
+                </ElButton>
+              </template>
+              <template v-else>
+                <div v-for="(item, index) in formData.params" :key="index">
+                  <ElInput v-model="item.key" placeholder="参数名" :style="'width: 100px'" />
+                  <span class="mx-1">=</span>
+                  <ElInput v-model="item.value" placeholder="参数值" :style="'width: 100px'" />
+                  <ElIcon
+                    v-if="formData.params.indexOf(item) === formData.params.length - 1"
+                    class="ml-2 cursor-pointer color-[var(--el-color-success)]"
+                    :style="'vertical-align: -0.15em'"
+                    @click="formData.params.push({ key: '', value: '' })"
+                  >
+                    <CirclePlusFilled />
+                  </ElIcon>
+                  <ElIcon
+                    class="ml-2 cursor-pointer color-[var(--el-color-danger)]"
+                    :style="'vertical-align: -0.15em'"
+                    @click="formData.params.splice(formData.params.indexOf(item), 1)"
+                  >
+                    <DeleteFilled />
+                  </ElIcon>
+                </div>
+              </template>
+            </template>
+            <!-- 是否隐藏 -->
+            <template #hidden>
+              <ElRadioGroup v-model="formData.hidden">
+                <ElRadio :value="true">是</ElRadio>
+                <ElRadio :value="false">否</ElRadio>
+              </ElRadioGroup>
+            </template>
 
-          <!-- 显示红点角标 -->
-          <template #show_badge>
-            <ElRadioGroup v-model="formData.show_badge">
-              <ElRadio :value="true">是</ElRadio>
-              <ElRadio :value="false">否</ElRadio>
-            </ElRadioGroup>
-          </template>
+            <!-- 始终显示 -->
+            <template #always_show>
+              <ElRadioGroup v-model="formData.always_show">
+                <ElRadio :value="true">是</ElRadio>
+                <ElRadio :value="false">否</ElRadio>
+              </ElRadioGroup>
+            </template>
 
-          <!-- 文字角标内容 -->
-          <template #show_text_badge>
-            <ElInput v-model="formData.show_text_badge" placeholder="请输入文字角标内容" />
-          </template>
-        </FaForm>
-      </template>
-    </FaDrawer>
+            <!-- 缓存页面 -->
+            <template #keep_alive>
+              <ElRadioGroup v-model="formData.keep_alive">
+                <ElRadio :value="true">开启</ElRadio>
+                <ElRadio :value="false">关闭</ElRadio>
+              </ElRadioGroup>
+            </template>
+
+            <!-- 权限标识 -->
+            <template #permission>
+              <ElInput v-model="formData.permission" placeholder="请输入权限标识，如sys:user:add" />
+            </template>
+
+            <!-- 图标 -->
+            <template #icon>
+              <FaIconSelect v-model="formData.icon" />
+            </template>
+
+            <!-- 重定向(动态placeholder) -->
+            <template #redirect>
+              <ElInput
+                v-model="formData.redirect"
+                :placeholder="
+                  formData.type === MenuTypeEnum.CATALOG
+                    ? '目录必填，一般为默认子路由 path，如 /system/user'
+                    : '可选，请输入重定向路由'
+                "
+              />
+            </template>
+
+            <!-- 常驻标签栏 -->
+            <template #affix>
+              <ElRadioGroup v-model="formData.affix">
+                <ElRadio :value="true">是</ElRadio>
+                <ElRadio :value="false">否</ElRadio>
+              </ElRadioGroup>
+            </template>
+
+            <!-- 隐藏标签页 -->
+            <template #is_hide_tab>
+              <ElRadioGroup v-model="formData.is_hide_tab">
+                <ElRadio :value="true">是</ElRadio>
+                <ElRadio :value="false">否</ElRadio>
+              </ElRadioGroup>
+            </template>
+
+            <!-- 显示红点角标 -->
+            <template #show_badge>
+              <ElRadioGroup v-model="formData.show_badge">
+                <ElRadio :value="true">是</ElRadio>
+                <ElRadio :value="false">否</ElRadio>
+              </ElRadioGroup>
+            </template>
+
+            <!-- 文字角标内容 -->
+            <template #show_text_badge>
+              <ElInput v-model="formData.show_text_badge" placeholder="请输入文字角标内容" />
+            </template>
+          </FaForm>
+        </template>
+      </FaDrawer>
     </div>
   </div>
 </template>

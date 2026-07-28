@@ -5,11 +5,21 @@
         <ElForm :inline="true" :model="query">
           <ElFormItem label="知识库">
             <ElSelect v-model="query.knowledge_base_id" clearable filterable class="base-select">
-              <ElOption v-for="item in bases" :key="item.id" :label="item.name" :value="item.id || 0" />
+              <ElOption
+                v-for="item in bases"
+                :key="item.id"
+                :label="item.name"
+                :value="item.id || 0"
+              />
             </ElSelect>
           </ElFormItem>
           <ElFormItem label="文件名">
-            <ElInput v-model="query.file_name" clearable placeholder="文件名" @keyup.enter="loadData" />
+            <ElInput
+              v-model="query.file_name"
+              clearable
+              placeholder="文件名"
+              @keyup.enter="loadData"
+            />
           </ElFormItem>
           <ElFormItem>
             <ElButton type="primary" :icon="Search" @click="loadData">查询</ElButton>
@@ -29,9 +39,13 @@
         <ElTableColumn label="状态" width="120">
           <template #default="{ row }">
             <ElTooltip v-if="row.error_message" :content="row.error_message" placement="top">
-              <ElTag :type="documentStatusMeta(row).type" size="small">{{ documentStatusMeta(row).label }}</ElTag>
+              <ElTag :type="documentStatusMeta(row).type" size="small">{{
+                documentStatusMeta(row).label
+              }}</ElTag>
             </ElTooltip>
-            <ElTag v-else :type="documentStatusMeta(row).type" size="small">{{ documentStatusMeta(row).label }}</ElTag>
+            <ElTag v-else :type="documentStatusMeta(row).type" size="small">{{
+              documentStatusMeta(row).label
+            }}</ElTag>
           </template>
         </ElTableColumn>
         <ElTableColumn prop="chunk_count" label="分块数" width="90" />
@@ -64,7 +78,12 @@
             filterable
             placeholder="请选择知识库"
           >
-            <ElOption v-for="item in bases" :key="item.id" :label="item.name" :value="item.id || 0" />
+            <ElOption
+              v-for="item in bases"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id || 0"
+            />
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="文档" required>
@@ -93,7 +112,10 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox, type UploadRequestOptions } from "element-plus";
 import { Refresh, Search, Upload } from "@element-plus/icons-vue";
 import { useRoute } from "vue-router";
-import KnowledgeAPI, { type KnowledgeBase, type KnowledgeDocument } from "@/api/module_ai/knowledge";
+import KnowledgeAPI, {
+  type KnowledgeBase,
+  type KnowledgeDocument,
+} from "@/api/module_ai/knowledge";
 import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 
 defineOptions({ name: "AiKnowledgeDocument" });
@@ -142,7 +164,8 @@ const resetQuery = () => {
 };
 
 const openUploadDialog = () => {
-  uploadForm.knowledge_base_id = query.knowledge_base_id || (bases.value.length === 1 ? bases.value[0]?.id : undefined);
+  uploadForm.knowledge_base_id =
+    query.knowledge_base_id || (bases.value.length === 1 ? bases.value[0]?.id : undefined);
   uploadDialogVisible.value = true;
 };
 
@@ -209,11 +232,11 @@ const formatSize = (size: number) => {
 };
 
 const documentStatusMeta = (row: KnowledgeDocument) => {
-  if (row.parse_status === "failed")   return { label: "解析失败",  type: "danger"  as const };
-  if (row.index_status === "failed")   return { label: "索引失败",  type: "danger"  as const };
-  if (row.index_status === "success")  return { label: "可检索",    type: "success" as const };
-  if (row.index_status === "indexing") return { label: "正在索引",  type: "warning" as const };
-  if (row.parse_status === "success")  return { label: "等待索引",  type: "info"    as const };
+  if (row.parse_status === "failed") return { label: "解析失败", type: "danger" as const };
+  if (row.index_status === "failed") return { label: "索引失败", type: "danger" as const };
+  if (row.index_status === "success") return { label: "可检索", type: "success" as const };
+  if (row.index_status === "indexing") return { label: "正在索引", type: "warning" as const };
+  if (row.parse_status === "success") return { label: "等待索引", type: "info" as const };
   return { label: "等待处理", type: "info" as const };
 };
 

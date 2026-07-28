@@ -94,14 +94,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { ElMessage, ElMessageBox, ElScrollbar } from "element-plus";
-import {
-  ChatLineRound,
-  User,
-  MoreFilled,
-  Plus,
-  Search,
-  ArrowDown,
-} from "@element-plus/icons-vue";
+import { ChatLineRound, User, MoreFilled, Plus, Search, ArrowDown } from "@element-plus/icons-vue";
 import { useUserStoreHook } from "@stores";
 import { ChatSession, SessionGroup, UserInfo } from "@/api/module_ai/chat";
 import AiChatAPI from "@/api/module_ai/chat";
@@ -545,7 +538,6 @@ defineExpose({
           color: var(--el-color-success);
         }
       }
-
     }
 
     .collapsed-user {

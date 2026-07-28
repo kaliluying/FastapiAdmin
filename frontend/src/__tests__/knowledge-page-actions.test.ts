@@ -4,7 +4,10 @@ import { resolve } from "node:path";
 
 describe("Knowledge page actions", () => {
   it("surfaces document actions and index status from the knowledge list", () => {
-    const source = readFileSync(resolve(__dirname, "../views/module_ai/knowledge/index.vue"), "utf-8");
+    const source = readFileSync(
+      resolve(__dirname, "../views/module_ai/knowledge/index.vue"),
+      "utf-8"
+    );
 
     expect(source).toContain("indexed_document_count");
     expect(source).toContain("failed_document_count");
@@ -15,7 +18,10 @@ describe("Knowledge page actions", () => {
   });
 
   it("renders table actions as a compact button group", () => {
-    const source = readFileSync(resolve(__dirname, "../views/module_ai/knowledge/index.vue"), "utf-8");
+    const source = readFileSync(
+      resolve(__dirname, "../views/module_ai/knowledge/index.vue"),
+      "utf-8"
+    );
 
     expect(source).toContain('class="action-buttons"');
     expect(source).toContain('class="action-button"');
@@ -23,7 +29,10 @@ describe("Knowledge page actions", () => {
   });
 
   it("prompts for document upload after a new knowledge base is created", () => {
-    const source = readFileSync(resolve(__dirname, "../views/module_ai/knowledge/index.vue"), "utf-8");
+    const source = readFileSync(
+      resolve(__dirname, "../views/module_ai/knowledge/index.vue"),
+      "utf-8"
+    );
 
     expect(source).toContain("知识库已创建");
     expect(source).toContain("去上传文档");

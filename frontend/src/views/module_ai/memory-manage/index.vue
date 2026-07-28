@@ -19,7 +19,11 @@
       @reset="onResetSearch"
     />
 
-    <ElCard shadow="hover" class="fa-table-card" :style="{ 'margin-top': showSearchBar ? '12px' : '0' }">
+    <ElCard
+      shadow="hover"
+      class="fa-table-card"
+      :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
+    >
       <FaTableHeader
         v-model:columns="columnChecks"
         v-model:showSearchBar="showSearchBar"
@@ -80,7 +84,11 @@
     >
       <ElForm ref="formRef" :model="formData" :rules="formRules" label-width="80px">
         <ElFormItem label="记忆类型" prop="memory_type">
-          <ElSelect v-model="formData.memory_type" :disabled="dialogVisible.type === 'update'" style="width:100%">
+          <ElSelect
+            v-model="formData.memory_type"
+            :disabled="dialogVisible.type === 'update'"
+            style="width: 100%"
+          >
             <ElOption label="用户偏好 (user_preference)" value="user_preference" />
             <ElOption label="用户事实 (fact)" value="fact" />
             <ElOption label="工作规则 (work_rule)" value="work_rule" />
@@ -100,7 +108,11 @@
           />
         </ElFormItem>
         <ElFormItem label="分类" prop="category">
-          <ElInput v-model="formData.category" placeholder="可选分组，如: 用户信息" maxlength="64" />
+          <ElInput
+            v-model="formData.category"
+            placeholder="可选分组，如: 用户信息"
+            maxlength="64"
+          />
         </ElFormItem>
         <ElFormItem label="优先级" prop="priority">
           <ElInputNumber v-model="formData.priority" :min="0" :max="100" />
@@ -118,7 +130,12 @@
 import { ref, reactive, computed } from "vue";
 import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from "element-plus";
-import { AiMemoryAPI, type AiMemoryItem, type MemoryCreatePayload, type MemoryType } from "@/api/module_ai/memory";
+import {
+  AiMemoryAPI,
+  type AiMemoryItem,
+  type MemoryCreatePayload,
+  type MemoryType,
+} from "@/api/module_ai/memory";
 import type { SearchFormItem } from "@/components/forms/fa-search-bar/index.vue";
 import type { ColumnOption } from "@/types/component";
 
@@ -144,10 +161,15 @@ const searchItems = ref<SearchFormItem[]>([
 const searchBarRules: FormRules = {};
 
 const memoryTypeLabel = (type: string) =>
-  ({ user_preference: "用户偏好", fact: "用户事实", work_rule: "工作规则" } as Record<string, string>)[type] || type;
+  (
+    ({ user_preference: "用户偏好", fact: "用户事实", work_rule: "工作规则" }) as Record<
+      string,
+      string
+    >
+  )[type] || type;
 
 const memoryTypeTag = (type: string): "primary" | "success" | "info" | "warning" | "danger" =>
-  ({ user_preference: "primary", fact: "success", work_rule: "warning" } as const)[
+  (({ user_preference: "primary", fact: "success", work_rule: "warning" }) as const)[
     type as "user_preference" | "fact" | "work_rule"
   ] || "info";
 
@@ -179,7 +201,12 @@ const columns = computed<ColumnOption<AiMemoryItem>[]>(() => [
       minWidth: c.prop === "value" ? 250 : c.prop === "key" ? 150 : 100,
       showOverflowTooltip: c.prop === "value",
       useSlot: c.prop === "memory_type" || c.prop === "is_active",
-      slotName: c.prop === "memory_type" ? "memory-type" : c.prop === "is_active" ? "memory-status" : undefined,
+      slotName:
+        c.prop === "memory_type"
+          ? "memory-type"
+          : c.prop === "is_active"
+            ? "memory-status"
+            : undefined,
     })),
   { label: "操作", width: 140, fixed: "right", useSlot: true, slotName: "actions" },
 ]);
@@ -208,18 +235,40 @@ async function loadData() {
   }
 }
 
-function refreshData() { loadData(); }
-function handleSearch() { pagination.current = 1; loadData(); }
-function onResetSearch() { searchForm.memory_type = ""; searchForm.key = ""; handleSearch(); }
-function handleSizeChange(val: number) { pagination.size = val; loadData(); }
-function handleCurrentChange(val: number) { pagination.current = val; loadData(); }
-function onTableSelectionChange(rows: AiMemoryItem[]) { selectedIds.value = rows.map((row) => row.id); }
+function refreshData() {
+  loadData();
+}
+function handleSearch() {
+  pagination.current = 1;
+  loadData();
+}
+function onResetSearch() {
+  searchForm.memory_type = "";
+  searchForm.key = "";
+  handleSearch();
+}
+function handleSizeChange(val: number) {
+  pagination.size = val;
+  loadData();
+}
+function handleCurrentChange(val: number) {
+  pagination.current = val;
+  loadData();
+}
+function onTableSelectionChange(rows: AiMemoryItem[]) {
+  selectedIds.value = rows.map((row) => row.id);
+}
 
 // ── 批量删除 ──
 async function handleBatchDelete() {
-  if (!selectedIds.value.length) { ElMessage.warning("请先选择要删除的记录"); return; }
+  if (!selectedIds.value.length) {
+    ElMessage.warning("请先选择要删除的记录");
+    return;
+  }
   try {
-    await ElMessageBox.confirm(`确定要删除 ${selectedIds.value.length} 条记忆吗？`, "删除确认", { type: "warning" });
+    await ElMessageBox.confirm(`确定要删除 ${selectedIds.value.length} 条记忆吗？`, "删除确认", {
+      type: "warning",
+    });
     batchDeleting.value = true;
     await AiMemoryAPI.delete(selectedIds.value);
     ElMessage.success("批量删除成功");
@@ -244,7 +293,11 @@ async function handleDeleteOne(row: AiMemoryItem) {
 }
 
 // ── 对话框 ──
-const dialogVisible = reactive({ visible: false, title: "", type: "create" as "create" | "update" });
+const dialogVisible = reactive({
+  visible: false,
+  title: "",
+  type: "create" as "create" | "update",
+});
 const submitLoading = ref(false);
 const formRef = ref<FormInstance>();
 const editingId = ref<number | null>(null);

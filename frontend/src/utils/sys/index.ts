@@ -304,4 +304,3 @@ export function systemUpgrade(): void {
     void processUpgrade();
   }, StorageConfig.UPGRADE_DELAY);
 }
-

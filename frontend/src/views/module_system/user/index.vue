@@ -3,151 +3,151 @@
   <div class="fa-full-height user-manage-page">
     <FaPageHeader title="用户管理" />
     <div class="fa-management-page">
-        <FaSearchBar
-          v-show="showSearchBar"
-          ref="searchBarRef"
-          v-model="searchForm"
-          :items="userSearchItems"
-          :rules="searchBarRules"
-          :is-expand="false"
-          :show-expand="true"
-          :show-reset="true"
-          :show-search="true"
-          :disabled-search="false"
-          :default-expanded="false"
-          include-audit
-          @search="handleSearchBarSearch"
-          @reset="onResetSearch"
+      <FaSearchBar
+        v-show="showSearchBar"
+        ref="searchBarRef"
+        v-model="searchForm"
+        :items="userSearchItems"
+        :rules="searchBarRules"
+        :is-expand="false"
+        :show-expand="true"
+        :show-reset="true"
+        :show-search="true"
+        :disabled-search="false"
+        :default-expanded="false"
+        include-audit
+        @search="handleSearchBarSearch"
+        @reset="onResetSearch"
+      />
+
+      <ElCard
+        shadow="hover"
+        class="fa-table-card"
+        :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
+      >
+        <FaTableHeader
+          v-model:columns="columnChecks"
+          v-model:showSearchBar="showSearchBar"
+          :loading="loading"
+          @refresh="refreshData"
+        >
+          <template #left>
+            <FaTableHeaderLeft
+              :remove-ids="selectedIds"
+              :perm-create="['module_system:user:create']"
+              :perm-import="['module_system:user:import']"
+              :perm-export="['module_system:user:export']"
+              :perm-delete="['module_system:user:delete']"
+              :perm-patch="['module_system:user:patch']"
+              :import-loading="uploadLoading"
+              :delete-loading="batchDeleting"
+              :create-loading="createLoading"
+              :more-loading="moreLoading"
+              @add="handleAdd"
+              @import="openImport"
+              @export="openExport"
+              @delete="handleBatchDelete"
+              @more="handleMoreClick"
+            />
+          </template>
+        </FaTableHeader>
+
+        <FaTable
+          ref="faTableRef"
+          row-key="id"
+          :loading="loading"
+          :data="data"
+          :columns="columns"
+          :pagination="pagination"
+          @selection-change="onTableSelectionChange"
+          @pagination:size-change="handleSizeChange"
+          @pagination:current-change="handleCurrentChange"
         />
-
-        <ElCard
-          shadow="hover"
-          class="fa-table-card"
-          :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
-        >
-          <FaTableHeader
-            v-model:columns="columnChecks"
-            v-model:showSearchBar="showSearchBar"
-            :loading="loading"
-            @refresh="refreshData"
+      </ElCard>
+      <FaDrawer
+        v-model="dialogVisible.visible"
+        :title="dialogVisible.title"
+        append-to-body
+        :size="drawerSize"
+        :form-mode="dialogVisible.type"
+        :confirm-loading="submitLoading"
+        @cancel="handleCloseDialog"
+        @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
+      >
+        <template v-if="dialogVisible.type === 'detail'">
+          <FaDescriptions
+            :column="2"
+            :data="detailFormData"
+            :items="userDetailItems"
+            :scrollbar="false"
           >
-            <template #left>
-              <FaTableHeaderLeft
-                :remove-ids="selectedIds"
-                :perm-create="['module_system:user:create']"
-                :perm-import="['module_system:user:import']"
-                :perm-export="['module_system:user:export']"
-                :perm-delete="['module_system:user:delete']"
-                :perm-patch="['module_system:user:patch']"
-                :import-loading="uploadLoading"
-                :delete-loading="batchDeleting"
-                :create-loading="createLoading"
-                :more-loading="moreLoading"
-                @add="handleAdd"
-                @import="openImport"
-                @export="openExport"
-                @delete="handleBatchDelete"
-                @more="handleMoreClick"
-              />
+            <!-- 头像 → 自定义渲染 -->
+            <template #avatar="{ row }">
+              <ElAvatar v-if="row?.avatar" :src="row?.avatar as string" size="small" />
+              <ElAvatar v-else icon="UserFilled" size="small" />
             </template>
-          </FaTableHeader>
+            <!-- 性别 → 三种状态 Tag -->
+            <template #gender="{ row }">
+              <FaStatusTag v-if="row?.gender === '0'" type="success" label="男" />
+              <FaStatusTag v-else-if="row?.gender === '1'" type="warning" label="女" />
+              <FaStatusTag v-else type="info" label="未知" />
+            </template>
+            <!-- 角色 → 数组 join 渲染 -->
+            <template #roles="{ row }">
+              {{
+                (row as unknown as UserInfo)?.roles
+                  ? (row as unknown as UserInfo).roles!.map((item) => item.name).join("、")
+                  : ""
+              }}
+            </template>
+          </FaDescriptions>
+        </template>
+        <template v-else>
+          <FaForm
+            :key="userFormRenderKey"
+            ref="dataFormRef"
+            v-model="formData"
+            :items="userDialogFormItems"
+            :rules="rules"
+            label-suffix=":"
+            :label-width="100"
+            label-position="right"
+            :span="24"
+            :gutter="16"
+            :show-reset="false"
+            :show-submit="false"
+            class="crud-dialog-art-form"
+          >
+            <template #role_ids>
+              <ElSelect v-model="formData.role_ids" multiple placeholder="请选择角色">
+                <ElOption
+                  v-for="item in roleOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                  :disabled="item.disabled"
+                />
+              </ElSelect>
+            </template>
+          </FaForm>
+        </template>
+      </FaDrawer>
 
-          <FaTable
-            ref="faTableRef"
-            row-key="id"
-            :loading="loading"
-            :data="data"
-            :columns="columns"
-            :pagination="pagination"
-            @selection-change="onTableSelectionChange"
-            @pagination:size-change="handleSizeChange"
-            @pagination:current-change="handleCurrentChange"
-          />
-        </ElCard>
-    <FaDrawer
-      v-model="dialogVisible.visible"
-      :title="dialogVisible.title"
-      append-to-body
-      :size="drawerSize"
-      :form-mode="dialogVisible.type"
-      :confirm-loading="submitLoading"
-      @cancel="handleCloseDialog"
-      @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
-    >
-      <template v-if="dialogVisible.type === 'detail'">
-        <FaDescriptions
-          :column="2"
-          :data="detailFormData"
-          :items="userDetailItems"
-          :scrollbar="false"
-        >
-          <!-- 头像 → 自定义渲染 -->
-          <template #avatar="{ row }">
-            <ElAvatar v-if="row?.avatar" :src="row?.avatar as string" size="small" />
-            <ElAvatar v-else icon="UserFilled" size="small" />
-          </template>
-          <!-- 性别 → 三种状态 Tag -->
-          <template #gender="{ row }">
-            <FaStatusTag v-if="row?.gender === '0'" type="success" label="男" />
-            <FaStatusTag v-else-if="row?.gender === '1'" type="warning" label="女" />
-            <FaStatusTag v-else type="info" label="未知" />
-          </template>
-          <!-- 角色 → 数组 join 渲染 -->
-          <template #roles="{ row }">
-            {{
-              (row as unknown as UserInfo)?.roles
-                ? (row as unknown as UserInfo).roles!.map((item) => item.name).join("、")
-                : ""
-            }}
-          </template>
-        </FaDescriptions>
-      </template>
-      <template v-else>
-        <FaForm
-          :key="userFormRenderKey"
-          ref="dataFormRef"
-          v-model="formData"
-          :items="userDialogFormItems"
-          :rules="rules"
-          label-suffix=":"
-          :label-width="100"
-          label-position="right"
-          :span="24"
-          :gutter="16"
-          :show-reset="false"
-          :show-submit="false"
-          class="crud-dialog-art-form"
-        >
-          <template #role_ids>
-            <ElSelect v-model="formData.role_ids" multiple placeholder="请选择角色">
-              <ElOption
-                v-for="item in roleOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-                :disabled="item.disabled"
-              />
-            </ElSelect>
-          </template>
-        </FaForm>
-      </template>
-    </FaDrawer>
+      <FaImportDialog
+        v-model="importVisible"
+        :content-config="userImportContentConfig"
+        default-template-file-name="user_import_template.xlsx"
+        :loading="uploadLoading"
+        @upload="handleImportUpload"
+      />
 
-    <FaImportDialog
-      v-model="importVisible"
-      :content-config="userImportContentConfig"
-      default-template-file-name="user_import_template.xlsx"
-      :loading="uploadLoading"
-      @upload="handleImportUpload"
-    />
-
-    <FaExportDialog
-      v-model="exportVisible"
-      :content-config="userExportContentConfig"
-      :query-params="exportQueryParams"
-      :page-data="data"
-      :selection-data="selectedRows"
-    />
+      <FaExportDialog
+        v-model="exportVisible"
+        :content-config="userExportContentConfig"
+        :query-params="exportQueryParams"
+        :page-data="data"
+        :selection-data="selectedRows"
+      />
     </div>
   </div>
 </template>
@@ -175,11 +175,7 @@ import UserAPI, {
   type UserInfo,
   type UserPageQuery,
 } from "@/api/module_system/user";
-import {
-  renderTableOperationCell,
-  type TableOperationAction,
-  resolveStatusColumns,
-} from "@utils";
+import { renderTableOperationCell, type TableOperationAction, resolveStatusColumns } from "@utils";
 import RoleAPI from "@/api/module_system/role";
 import { useAppStore, useUserStore } from "@stores";
 import { useAuth } from "@/hooks/core/useAuth";
@@ -825,4 +821,3 @@ async function handleMoreClick(status: number) {
   }
 }
 </script>
-

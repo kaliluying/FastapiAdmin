@@ -12,6 +12,10 @@
 // ---------- core/ ----------
 @use "./core/reset";
 @use "./core/app";
+@use "./core/fa-type";
+@use "./core/fa-surface";
+@use "./core/fa-stat";
+@use "./core/fa-motion";
 
 // ---------- element-plus/ ----------
 // Element Plus 组件样式覆写（按钮、弹窗、表格等）

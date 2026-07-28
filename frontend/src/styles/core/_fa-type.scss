@@ -1,0 +1,45 @@
+// Typography tokens — Quiet Luxury Operations
+// 全局缺字体/字号阶梯，这里补上支柱；所有值挂 CSS 变量，便于运行时统一。
+
+:root {
+  --fa-font-sans:
+    "Inter", system-ui, -apple-system, "Segoe UI", roboto, "PingFang SC", "Microsoft YaHei",
+    sans-serif;
+  --fa-font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, menlo, monospace;
+
+  // 字号阶梯（4px 基线上的节奏）
+  --fa-text-xs: 0.75rem; // 12
+  --fa-text-sm: 0.875rem; // 14
+  --fa-text-base: 1rem; // 16
+  --fa-text-lg: 1.125rem; // 18
+  --fa-text-xl: 1.25rem; // 20
+  --fa-text-2xl: 1.5rem; // 24
+  --fa-text-3xl: 1.875rem; // 30
+  --fa-text-4xl: 2.25rem; // 36
+
+  // 行高
+  --fa-leading-tight: 1.25;
+  --fa-leading-snug: 1.4;
+  --fa-leading-normal: 1.6;
+
+  // 字重
+  --fa-weight-regular: 400;
+  --fa-weight-medium: 500;
+  --fa-weight-semibold: 600;
+  --fa-weight-bold: 700;
+}
+
+// 全局基线：字体族 + 抗锯齿 + 数字等宽
+html {
+  font-family: var(--fa-font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizelegibility;
+}
+
+// 表格/统计数字统一等宽对齐（tabular-nums），避免数字跳动
+.fa-num,
+.el-statistic__number,
+.mc-value {
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}

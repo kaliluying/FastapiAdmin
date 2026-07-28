@@ -12,7 +12,7 @@ describe("getConfigValue", () => {
     };
 
     expect(getConfigValue(configData, ["emptyText", "missingValue", "enabled", "laterValue"])).toBe(
-      "true",
+      "true"
     );
   });
 
@@ -23,9 +23,9 @@ describe("getConfigValue", () => {
       nullValue: { config_value: null },
     };
 
-    expect(getConfigValue(configData, ["missingKey", "emptyText", "blankText", "nullValue"], "fallback")).toBe(
-      "fallback",
-    );
+    expect(
+      getConfigValue(configData, ["missingKey", "emptyText", "blankText", "nullValue"], "fallback")
+    ).toBe("fallback");
   });
 
   it("returns fallback when config data is absent", () => {

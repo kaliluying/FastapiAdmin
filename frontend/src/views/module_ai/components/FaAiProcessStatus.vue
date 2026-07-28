@@ -18,28 +18,33 @@ type AiStage = "idle" | "retrieving" | "reranking" | "generating" | "complete" |
 const props = defineProps<{ stage: AiStage }>();
 
 const stageConfig: Record<AiStage, { label: string; icon: string }> = {
-  idle:       { label: "",       icon: "" },
+  idle: { label: "", icon: "" },
   retrieving: { label: "正在检索", icon: "ri:search-eye-line" },
-  reranking:  { label: "正在重排", icon: "ri:sort-desc" },
+  reranking: { label: "正在重排", icon: "ri:sort-desc" },
   generating: { label: "正在生成", icon: "svg-spinners:3-dots-fade" },
-  complete:   { label: "生成完成", icon: "ri:check-line" },
-  error:      { label: "生成失败", icon: "ri:error-warning-line" },
+  complete: { label: "生成完成", icon: "ri:check-line" },
+  error: { label: "生成失败", icon: "ri:error-warning-line" },
 };
 
 const stageLabel = computed(() => stageConfig[props.stage]?.label ?? "");
-const stageIcon  = computed(() => stageConfig[props.stage]?.icon ?? "");
+const stageIcon = computed(() => stageConfig[props.stage]?.icon ?? "");
 </script>
 
 <style scoped lang="scss">
 .fa-ai-process-status {
   display: flex;
-  align-items: center;
   gap: 6px;
+  align-items: center;
   min-height: 24px;
   font-size: 13px;
   color: var(--el-text-color-secondary);
 
-  &__icon { font-size: 16px; }
-  &__label { line-height: 1; }
+  &__icon {
+    font-size: 16px;
+  }
+
+  &__label {
+    line-height: 1;
+  }
 }
 </style>

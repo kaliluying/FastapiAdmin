@@ -3,131 +3,131 @@
   <div class="fa-full-height">
     <FaPageHeader title="角色管理" />
     <div class="fa-management-page">
-    <FaSearchBar
-      v-show="showSearchBar"
-      ref="searchBarRef"
-      v-model="searchForm"
-      :items="roleSearchItems"
-      :rules="searchBarRules"
-      :is-expand="false"
-      :show-expand="true"
-      :show-reset="true"
-      :show-search="true"
-      :disabled-search="false"
-      :default-expanded="false"
-      include-audit
-      @search="handleSearchBarSearch"
-      @reset="onResetSearch"
-    />
-
-    <ElCard
-      shadow="hover"
-      class="fa-table-card"
-      :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
-    >
-      <FaTableHeader
-        v-model:columns="columnChecks"
-        v-model:showSearchBar="showSearchBar"
-        :loading="loading"
-        @refresh="refreshData"
-      >
-        <template #left>
-          <FaTableHeaderLeft
-            :remove-ids="selectedIds"
-            :perm-create="['module_system:role:create']"
-            :perm-export="['module_system:role:export']"
-            :perm-delete="['module_system:role:delete']"
-            :perm-patch="['module_system:role:patch']"
-            :delete-loading="batchDeleting"
-            :create-loading="createLoading"
-            :more-loading="moreLoading"
-            @add="handleAdd"
-            @export="openExport"
-            @delete="handleBatchDelete"
-            @more="handleMoreClick"
-          />
-        </template>
-      </FaTableHeader>
-
-      <FaTable
-        ref="faTableRef"
-        :loading="loading"
-        :data="data"
-        :columns="columns"
-        :pagination="pagination"
-        @selection-change="onTableSelectionChange"
-        @pagination:size-change="handleSizeChange"
-        @pagination:current-change="handleCurrentChange"
+      <FaSearchBar
+        v-show="showSearchBar"
+        ref="searchBarRef"
+        v-model="searchForm"
+        :items="roleSearchItems"
+        :rules="searchBarRules"
+        :is-expand="false"
+        :show-expand="true"
+        :show-reset="true"
+        :show-search="true"
+        :disabled-search="false"
+        :default-expanded="false"
+        include-audit
+        @search="handleSearchBarSearch"
+        @reset="onResetSearch"
       />
-    </ElCard>
 
-    <FaDialog
-      v-model="dialogVisible.visible"
-      :title="dialogVisible.title"
-      width="640px"
-      dialog-class="crud-embed-dialog"
-      modal-class="crud-embed-dialog"
-      :form-mode="dialogVisible.type"
-      :confirm-loading="submitLoading"
-      @cancel="handleCloseDialog"
-      @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
-    >
-      <template v-if="dialogVisible.type === 'detail'">
-        <FaDescriptions
-          :column="4"
-          :data="detailFormData"
-          :items="roleDetailItems"
-          max-height="75vh"
+      <ElCard
+        shadow="hover"
+        class="fa-table-card"
+        :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
+      >
+        <FaTableHeader
+          v-model:columns="columnChecks"
+          v-model:showSearchBar="showSearchBar"
+          :loading="loading"
+          @refresh="refreshData"
         >
-          <template #data_scope="{ row }">
-            <FaStatusTag v-if="row?.data_scope === 1" type="primary" label="仅本人数据权限" />
-            <FaStatusTag v-else-if="row?.data_scope === 4" type="success" label="全部数据权限" />
+          <template #left>
+            <FaTableHeaderLeft
+              :remove-ids="selectedIds"
+              :perm-create="['module_system:role:create']"
+              :perm-export="['module_system:role:export']"
+              :perm-delete="['module_system:role:delete']"
+              :perm-patch="['module_system:role:patch']"
+              :delete-loading="batchDeleting"
+              :create-loading="createLoading"
+              :more-loading="moreLoading"
+              @add="handleAdd"
+              @export="openExport"
+              @delete="handleBatchDelete"
+              @more="handleMoreClick"
+            />
           </template>
-        </FaDescriptions>
-      </template>
-      <template v-else>
-        <FaForm
-          :key="roleFormRenderKey"
-          scrollbar
-          max-height="75vh"
-          ref="dataFormRef"
-          v-model="formData"
-          :items="roleDialogFormItems"
-          :rules="rules"
-          label-suffix=":"
-          :label-width="100"
-          label-position="right"
-          :span="24"
-          :gutter="16"
-          :show-reset="false"
-          :show-submit="false"
-          class="crud-dialog-art-form"
-        >
-          <template #status>
-            <ElRadioGroup v-model="formData.status">
-              <ElRadio :value="0">启用</ElRadio>
-              <ElRadio :value="1">停用</ElRadio>
-            </ElRadioGroup>
-          </template>
-        </FaForm>
-      </template>
-    </FaDialog>
+        </FaTableHeader>
 
-    <FaPermissonDrawer
-      v-if="drawerVisible"
-      v-model="drawerVisible"
-      :role-name="checkedRole.name"
-      :role-id="checkedRole.id"
-      @saved="refreshData"
-    />
+        <FaTable
+          ref="faTableRef"
+          :loading="loading"
+          :data="data"
+          :columns="columns"
+          :pagination="pagination"
+          @selection-change="onTableSelectionChange"
+          @pagination:size-change="handleSizeChange"
+          @pagination:current-change="handleCurrentChange"
+        />
+      </ElCard>
 
-    <FaExportDialog
-      v-model="exportVisible"
-      :content-config="roleExportContentConfig"
-      :query-params="exportQueryParams"
-      :page-data="data"
-      :selection-data="selectedRows"
-    />
+      <FaDialog
+        v-model="dialogVisible.visible"
+        :title="dialogVisible.title"
+        width="640px"
+        dialog-class="crud-embed-dialog"
+        modal-class="crud-embed-dialog"
+        :form-mode="dialogVisible.type"
+        :confirm-loading="submitLoading"
+        @cancel="handleCloseDialog"
+        @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
+      >
+        <template v-if="dialogVisible.type === 'detail'">
+          <FaDescriptions
+            :column="4"
+            :data="detailFormData"
+            :items="roleDetailItems"
+            max-height="75vh"
+          >
+            <template #data_scope="{ row }">
+              <FaStatusTag v-if="row?.data_scope === 1" type="primary" label="仅本人数据权限" />
+              <FaStatusTag v-else-if="row?.data_scope === 4" type="success" label="全部数据权限" />
+            </template>
+          </FaDescriptions>
+        </template>
+        <template v-else>
+          <FaForm
+            :key="roleFormRenderKey"
+            scrollbar
+            max-height="75vh"
+            ref="dataFormRef"
+            v-model="formData"
+            :items="roleDialogFormItems"
+            :rules="rules"
+            label-suffix=":"
+            :label-width="100"
+            label-position="right"
+            :span="24"
+            :gutter="16"
+            :show-reset="false"
+            :show-submit="false"
+            class="crud-dialog-art-form"
+          >
+            <template #status>
+              <ElRadioGroup v-model="formData.status">
+                <ElRadio :value="0">启用</ElRadio>
+                <ElRadio :value="1">停用</ElRadio>
+              </ElRadioGroup>
+            </template>
+          </FaForm>
+        </template>
+      </FaDialog>
+
+      <FaPermissonDrawer
+        v-if="drawerVisible"
+        v-model="drawerVisible"
+        :role-name="checkedRole.name"
+        :role-id="checkedRole.id"
+        @saved="refreshData"
+      />
+
+      <FaExportDialog
+        v-model="exportVisible"
+        :content-config="roleExportContentConfig"
+        :query-params="exportQueryParams"
+        :page-data="data"
+        :selection-data="selectedRows"
+      />
     </div>
   </div>
 </template>

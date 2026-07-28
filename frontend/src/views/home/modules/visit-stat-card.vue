@@ -5,12 +5,7 @@
       <div class="min-w-0">
         <p class="metric-label">{{ title }}</p>
         <div class="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <FaCountTo
-            class="metric-value"
-            :target="value"
-            :duration="1600"
-            separator=","
-          />
+          <FaCountTo class="metric-value" :target="value" :duration="1600" separator="," />
           <span class="text-sm text-g-500">{{ unit }}</span>
         </div>
       </div>
@@ -66,8 +61,18 @@ const normalizedBars = computed(() => {
 .home-card {
   position: relative;
   overflow: hidden;
-  border-color: var(--fa-color-border, rgb(11 18 32 / 8%));
-  box-shadow: 0 18px 42px rgb(11 18 32 / 8%);
+  border-color: var(--fa-card-border);
+  box-shadow: var(--fa-elevation-1);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--theme-color) 18%, var(--fa-card-border));
+    box-shadow: var(--fa-elevation-3);
+    transform: translateY(-3px);
+  }
 
   :deep(.el-card__body) {
     height: 100%;
@@ -77,8 +82,8 @@ const normalizedBars = computed(() => {
 
 .metric-card {
   background:
-    linear-gradient(180deg, rgb(255 255 255), rgb(247 251 255)),
-    var(--fa-color-surface, var(--el-bg-color));
+    linear-gradient(180deg, var(--fa-surface-sheen-top), var(--fa-surface-sheen-bottom)),
+    var(--default-box-color);
 }
 
 .metric-accent {
@@ -93,36 +98,37 @@ const normalizedBars = computed(() => {
   max-width: 100%;
   margin: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 13px;
   font-weight: 650;
-  color: #64748b;
-  text-overflow: ellipsis;
+  color: var(--fa-gray-600);
   white-space: nowrap;
 }
 
 .metric-value {
-  font-size: 32px;
-  font-weight: 760;
+  font-size: var(--fa-text-3xl);
+  font-weight: var(--fa-weight-bold);
+  font-variant-numeric: tabular-nums;
   line-height: 1;
-  color: #0b1220;
+  color: var(--fa-gray-900);
 }
 
 .icon-box {
-  width: 44px;
-  height: 44px;
   display: flex;
+  flex: 0 0 44px;
   align-items: center;
   justify-content: center;
-  flex: 0 0 44px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
   font-size: 22px;
+  border-radius: 8px;
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 58%);
 }
 
 .trend {
   display: inline-flex;
-  align-items: center;
   gap: 2px;
+  align-items: center;
   font-size: 13px;
   font-weight: 600;
 

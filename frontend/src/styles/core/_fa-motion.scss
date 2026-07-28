@@ -1,0 +1,50 @@
+// 微交互 — Quiet Luxury Operations
+
+// 卡片入场 stagger（用法：元素加 class="fa-rise" 并 style="--i:0/1/2..."）
+@keyframes fa-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fa-rise {
+  animation: fa-rise 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+// 骨架屏 shimmer
+@keyframes fa-shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.fa-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--fa-gray-200) 25%,
+    var(--fa-gray-300) 37%,
+    var(--fa-gray-200) 63%
+  );
+  background-size: 800px 100%;
+  border-radius: 8px;
+  animation: fa-shimmer 1.4s ease infinite;
+}
+
+// 尊重 reduced-motion：关闭入场与 shimmer 动效
+@media (prefers-reduced-motion: reduce) {
+  .fa-rise,
+  .fa-skeleton {
+    animation: none !important;
+  }
+}

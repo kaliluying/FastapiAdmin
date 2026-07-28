@@ -33,7 +33,10 @@ export const useConfigStore = defineStore(
         const response = await ParamsAPI.getInitConfig();
         const list = response?.data?.data;
         if (!Array.isArray(list)) {
-          console.warn("[configStore] getInitConfig: response data is not an array", response?.data);
+          console.warn(
+            "[configStore] getInitConfig: response data is not an array",
+            response?.data
+          );
           return;
         }
         list.forEach((item: ConfigTable) => {

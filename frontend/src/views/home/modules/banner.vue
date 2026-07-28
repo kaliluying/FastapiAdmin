@@ -103,9 +103,9 @@ const statusCards = [
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
-  gap: 24px;
+  gap: 20px;
   min-height: 214px;
-  padding: 30px 34px;
+  padding: 24px 28px;
   overflow: hidden;
   color: #0b1220;
   background:
@@ -329,7 +329,7 @@ p {
 
 @media (width <= 640px) {
   .home-command-hero {
-    padding: 22px 18px;
+    padding: 18px 16px;
   }
 
   h1 {

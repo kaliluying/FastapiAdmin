@@ -62,8 +62,7 @@ const highlights = [
   background:
     linear-gradient(135deg, rgb(13 39 74 / 92%), rgb(33 88 94 / 88%)),
     radial-gradient(circle at 25% 20%, rgb(74 222 128 / 26%), transparent 34%),
-    radial-gradient(circle at 78% 72%, rgb(56 189 248 / 22%), transparent 35%),
-    #0f2f46;
+    radial-gradient(circle at 78% 72%, rgb(56 189 248 / 22%), transparent 35%), #0f2f46;
 
   &::before,
   &::after {
@@ -110,8 +109,8 @@ const highlights = [
   font-weight: 700;
   line-height: 1;
   color: rgb(209 250 229);
-  letter-spacing: 0;
   text-transform: uppercase;
+  letter-spacing: 0;
   background: rgb(255 255 255 / 12%);
   border: 1px solid rgb(255 255 255 / 18%);
   border-radius: 999px;

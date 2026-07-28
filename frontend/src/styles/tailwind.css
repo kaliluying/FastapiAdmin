@@ -108,14 +108,14 @@
   --fa-color: #fff;
   --theme-color: var(--main-color);
 
-  /* Theme Colors - OKLCH Format */
-  --fa-primary: #3b82f6;
+  /* Theme Colors — 主色跟随运行时主题色（修复漂移）；语义色对齐 SCSS 单源 _fa-tokens.scss */
+  --fa-primary: var(--theme-color);
   --fa-secondary: #2dd4bf;
-  --fa-error: oklch(73% 0.15 25.3deg);
-  --fa-info: oklch(58% 0.03 254.1deg);
-  --fa-success: oklch(78% 0.17 166.1deg);
-  --fa-warning: oklch(78% 0.14 75.5deg);
-  --fa-danger: oklch(68% 0.22 25.3deg);
+  --fa-error: #fa896b;
+  --fa-info: #909399;
+  --fa-success: #13deb9;
+  --fa-warning: #ffae1f;
+  --fa-danger: #ff4d4f;
 
   /* Gray Scale - Light Mode */
   --fa-gray-100: #fbfdff;
@@ -135,6 +135,27 @@
   --fa-soft-shadow: 0 2px 8px rgb(11 18 32 / 6%);
   --fa-panel-shadow: 0 18px 48px rgb(11 18 32 / 8%);
   --fa-focus-ring: 0 0 0 3px color-mix(in srgb, var(--theme-color) 18%, transparent);
+
+  /* 表面高光：浅色为温润白渐变，深色转透明（让底色透出，仅留极淡顶光做纵深） */
+  --fa-surface-sheen-top: rgb(255 255 255 / 96%);
+  --fa-surface-sheen-bottom: rgb(248 251 255 / 92%);
+
+  /* Spacing scale（4px 基线） */
+  --fa-space-1: 0.25rem; /* 4 */
+  --fa-space-2: 0.5rem; /* 8 */
+  --fa-space-3: 0.75rem; /* 12 */
+  --fa-space-4: 1rem; /* 16 */
+  --fa-space-5: 1.25rem; /* 20 */
+  --fa-space-6: 1.5rem; /* 24 */
+  --fa-space-8: 2rem; /* 32 */
+  --fa-space-10: 2.5rem; /* 40 */
+  --fa-space-12: 3rem; /* 48 */
+  --fa-space-16: 4rem; /* 64 */
+
+  /* Elevation：三级层叠柔和阴影（浅色） */
+  --fa-elevation-1: 0 1px 2px rgb(11 18 32 / 4%), 0 1px 1px rgb(11 18 32 / 3%);
+  --fa-elevation-2: 0 6px 16px rgb(11 18 32 / 7%), 0 2px 4px rgb(11 18 32 / 4%);
+  --fa-elevation-3: 0 18px 48px rgb(11 18 32 / 9%), 0 6px 16px rgb(11 18 32 / 5%);
 
   /* Background Colors */
   --default-bg-color: #f5f8fc;
@@ -173,6 +194,15 @@
   --fa-soft-shadow: 0 1px 2px rgb(0 0 0 / 22%);
   --fa-panel-shadow: 0 1px 2px rgb(0 0 0 / 18%);
   --fa-focus-ring: 0 0 0 3px color-mix(in srgb, var(--theme-color) 24%, transparent);
+
+  /* 深色：高光转透明 + 极淡冷调顶光，避免浮白并建立层叠感 */
+  --fa-surface-sheen-top: rgb(255 255 255 / 5%);
+  --fa-surface-sheen-bottom: transparent;
+
+  /* Elevation：三级层叠柔和阴影（深色） */
+  --fa-elevation-1: 0 1px 2px rgb(0 0 0 / 24%), 0 1px 1px rgb(0 0 0 / 16%);
+  --fa-elevation-2: 0 8px 20px rgb(0 0 0 / 30%), 0 2px 6px rgb(0 0 0 / 20%);
+  --fa-elevation-3: 0 24px 60px rgb(0 0 0 / 38%), 0 6px 18px rgb(0 0 0 / 24%);
 
   /* Background Colors */
   --default-bg-color: #070707;

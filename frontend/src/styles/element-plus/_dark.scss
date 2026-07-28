@@ -16,6 +16,8 @@
 html.dark {
   --fa-color-surface-raised: #1b252c;
   --fa-color-border: #2c3941;
+  // 表格头在深色下原为硬编码浅色 #f6f9fd（C6 修复）
+  --el-table-header-bg-color: #11171d;
 }
 
 $font-color: rgba(#fff, 0.85);
@@ -114,4 +116,17 @@ html.dark {
     background-color: var(--fa-color);
     border-left: 4px solid var(--default-border-dashed) !important;
   }
+}
+
+// ============================ 暗色精修（C6） ============================
+// 表格头在深色下原为硬编码浅色 #f6f9fd（app.scss:763），改为深色冷调
+.dark .el-table th.el-table__cell {
+  color: var(--fa-gray-300) !important;
+  background: #11171d !important;
+}
+
+// 深色表面微冷分层（配合 A1 的 sheen token）
+.dark .fa-stat-card,
+.dark .fa-surface-raised {
+  border-color: rgb(255 255 255 / 10%);
 }
