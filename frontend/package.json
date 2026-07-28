@@ -101,7 +101,6 @@
     "picocolors": "^1.1.1",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
-    "qrcode.vue": "^3.9.0",
     "qs": "^6.15.0",
     "tailwindcss": "^4.3.0",
     "vue": "^3.5.34",
@@ -110,7 +109,6 @@
     "vue-json-pretty": "^2.5.0",
     "vue-router": "^5.0.7",
     "vue-web-terminal": "^3.4.1",
-    "vuedraggable": "^2.24.3",
     "xgplayer": "^3.0.20",
     "xlsx": "^0.18.5"
   },

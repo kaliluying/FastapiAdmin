@@ -30,6 +30,7 @@ from fastapi import FastAPI as _FastAPI
 
 # 内部库导入
 from app.core.logger import logger
+from app.core.plugins import is_plugin_enabled
 
 # 模块级缓存：最近一次构建的动态路由实例
 _dynamic_router_cache: APIRouter | None = None
@@ -65,12 +66,13 @@ def _build_dynamic_router() -> APIRouter:
             path_parts = rel_path.parts
             top_module = path_parts[0]
 
+            if not is_plugin_enabled(top_module):
+                logger.info(f"⏭️ 跳过已禁用或不存在的插件: {top_module}")
+                continue
+
             suffix = top_module[7:] if top_module.startswith("module_") else ""
             if not suffix:
-                logger.error(
-                    f"❌ 跳过异常顶级目录名（须为 module_ 前缀且后面还有名称）: {top_module!r}，"
-                    f"文件: {file}"
-                )
+                logger.error(f"❌ 跳过异常顶级目录名（须为 module_ 前缀且后面还有名称）: {top_module!r}，文件: {file}")
                 continue
             prefix = f"/{suffix}"
 
@@ -109,9 +111,7 @@ def _build_dynamic_router() -> APIRouter:
             route_count = len(container_router.routes)
             root_router.include_router(container_router)
             if route_count == 0:
-                logger.warning(
-                    f"⚠️ 容器前缀 {prefix} 下未挂载任何子路由（可能该 module 下所有 controller 均未导出 APIRouter）"
-                )
+                logger.warning(f"⚠️ 容器前缀 {prefix} 下未挂载任何子路由（可能该 module 下所有 controller 均未导出 APIRouter）")
             logger.info(f"✅ 注册容器: {prefix} (子路由数: {route_count})")
 
         # 记录本次注册的所有插件前缀，供热重载时精准移除
@@ -162,13 +162,7 @@ def reload_dynamic_router() -> APIRouter:
     # ── 1. 从运行中的 app 移除旧的插件路由 ──
     if app and _registered_plugin_prefixes:
         before = len(app.routes)
-        app.routes = [
-            r for r in app.routes
-            if not any(
-                getattr(r, "path", "").startswith(p)
-                for p in _registered_plugin_prefixes
-            )
-        ]
+        app.routes = [r for r in app.routes if not any(getattr(r, "path", "").startswith(p) for p in _registered_plugin_prefixes)]
         removed = before - len(app.routes)
         logger.info(f"🧹 已移除 {removed} 条旧插件路由（前缀: {_registered_plugin_prefixes}）")
     elif not app:
@@ -218,22 +212,14 @@ def _import_failure_hint(exc: BaseException) -> str:
             "③ 磁盘路径与 import 路径不一致（大小写、子目录名拼写）。"
         )
     if isinstance(exc, ImportError):
-        return (
-            "导入失败（ImportError）。常见原因：controller 或其依赖模块循环导入、"
-            "第三方依赖未安装、或相对导入路径错误。"
-        )
+        return "导入失败（ImportError）。常见原因：controller 或其依赖模块循环导入、第三方依赖未安装、或相对导入路径错误。"
     if isinstance(exc, SyntaxError):
         return f"controller.py 存在语法错误：{exc.msg}（约第 {exc.lineno} 行）。"
     if isinstance(exc, PermissionError):
         return (
-            "权限错误（PermissionError）。多见于受限环境（沙箱、部分 CI）："
-            "import 链上某模块初始化时调用了被禁止的系统能力（如进程池），与目录命名无关。"
-            "在完整操作系统下重试；若仍失败再结合堆栈排查。"
+            "权限错误（PermissionError）。多见于受限环境（沙箱、部分 CI）：import 链上某模块初始化时调用了被禁止的系统能力（如进程池），与目录命名无关。在完整操作系统下重试；若仍失败再结合堆栈排查。"
         )
-    return (
-        f"未分类异常（{type(exc).__name__}）。请查看下方堆栈；"
-        "若与命名/包结构无关，可能是 controller 顶层 import 的依赖在加载时失败。"
-    )
+    return f"未分类异常（{type(exc).__name__}）。请查看下方堆栈；若与命名/包结构无关，可能是 controller 顶层 import 的依赖在加载时失败。"
 
 
 # 重新导出函数供外部使用

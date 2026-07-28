@@ -208,6 +208,7 @@ class Settings(BaseSettings):
     # ================================================= #
     # ******************* AI大模型配置 ****************** #
     # ================================================= #
+    AI_ENABLE: bool = True  # 是否启用 AI 插件；关闭后核心后台不加载 AI 路由和模型
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = ""
     OPENAI_EMBEDDING_MODEL: str = ""

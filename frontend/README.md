@@ -11,9 +11,9 @@
 | 工具    | 版本要求                                               |
 | ------- | ------------------------------------------------------ |
 | Node.js | ≥ 20.19（见 `package.json` → `engines`）               |
-| pnpm    | ≥ 8.8，推荐 **pnpm 9**（与 `packageManager` 字段一致） |
+| pnpm    | **10.34.5**（由 `packageManager` 字段固定）             |
 
-未安装 pnpm 时可执行：`corepack enable && corepack prepare pnpm@9.15.3 --activate`（版本可按项目 `packageManager` 调整）。
+未安装 pnpm 时可执行：`corepack enable && corepack prepare pnpm@10.34.5 --activate`。
 
 ### 安装依赖并启动
 

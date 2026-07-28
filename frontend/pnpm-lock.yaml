@@ -114,9 +114,6 @@ importers:
       pinia-plugin-persistedstate:
         specifier: ^4.7.1
         version: 4.7.1(pinia@3.0.4(typescript@6.0.3)(vue@3.5.34(typescript@6.0.3)))
-      qrcode.vue:
-        specifier: ^3.9.0
-        version: 3.9.1(vue@3.5.34(typescript@6.0.3))
       qs:
         specifier: ^6.15.0
         version: 6.15.1
@@ -141,9 +138,6 @@ importers:
       vue-web-terminal:
         specifier: ^3.4.1
         version: 3.4.2(typescript@6.0.3)
-      vuedraggable:
-        specifier: ^2.24.3
-        version: 2.24.3
       xgplayer:
         specifier: ^3.0.20
         version: 3.0.24(core-js@3.49.0)
@@ -3837,11 +3831,6 @@ packages:
     resolution: {integrity: sha512-+Owyggi9IxT1ePKGafcI87ubSmxol6smwJ+RAHDQlx9+9cPwFWDiKFFCPuWhr9ignlGpZ9vDQLw67N4dcTVFEA==}
     engines: {node: '>=20'}
 
-  qrcode.vue@3.9.1:
-    resolution: {integrity: sha512-CpHVRz5iveqwRFh+nzzSYV9hPWU6q+YSOKyq5ZievjQIBv4bIIDzajGgtNz/yYSlczjAkYM3GNAQJHwwCukMEQ==}
-    peerDependencies:
-      vue: ^3.0.0
-
   qs@6.15.1:
     resolution: {integrity: sha512-6YHEFRL9mfgcAvql/XhwTvf5jKcOiiupt2FiJxHkiX1z4j7WL8J/jRHYLluORvc1XxB5rV20KoeK00gVJamspg==}
     engines: {node: '>=0.6'}
@@ -4054,9 +4043,6 @@ packages:
   snabbdom@3.6.3:
     resolution: {integrity: sha512-W2lHLLw2qR2Vv0DcMmcxXqcfdBaIcoN+y/86SmHv8fn4DazEQSH6KN3TjZcWvwujW56OHiiirsbHWZb4vx/0fg==}
     engines: {node: '>=12.17.0'}
-
-  sortablejs@1.10.2:
-    resolution: {integrity: sha512-YkPGufevysvfwn5rfdlGyrGjt7/CRHwvRPogD/lC+TnvcN29jDpCifKP+rBqf+LRldfXSTh+0CGLcSg0VIxq3A==}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -4636,9 +4622,6 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
-
-  vuedraggable@2.24.3:
-    resolution: {integrity: sha512-6/HDXi92GzB+Hcs9fC6PAAozK1RLt1ewPTLjK0anTYguXLAeySDmcnqE8IC0xa7shvSzRjQXq3/+dsZ7ETGF3g==}
 
   w3c-xmlserializer@5.0.0:
     resolution: {integrity: sha512-o8qghlI8NZHU1lLPrpi2+Uq7abh4GGPpYANlalzWxyWteJOCsr/P+oPBA49TOLu5FTZO4d3F9MnWJfiMo4BkmA==}
@@ -8207,10 +8190,6 @@ snapshots:
     dependencies:
       hookified: 2.2.0
 
-  qrcode.vue@3.9.1(vue@3.5.34(typescript@6.0.3)):
-    dependencies:
-      vue: 3.5.34(typescript@6.0.3)
-
   qs@6.15.1:
     dependencies:
       side-channel: 1.1.0
@@ -8438,8 +8417,6 @@ snapshots:
       is-fullwidth-code-point: 5.1.0
 
   snabbdom@3.6.3: {}
-
-  sortablejs@1.10.2: {}
 
   source-map-js@1.2.1: {}
 
@@ -9062,10 +9039,6 @@ snapshots:
       '@vue/shared': 3.5.34
     optionalDependencies:
       typescript: 6.0.3
-
-  vuedraggable@2.24.3:
-    dependencies:
-      sortablejs: 1.10.2
 
   w3c-xmlserializer@5.0.0:
     dependencies:

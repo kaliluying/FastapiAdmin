@@ -41,6 +41,7 @@ copy env\.env.dev.example env\.env.dev
 Required AI/vector settings:
 
 ```env
+AI_ENABLE=True
 OPENAI_API_KEY=
 OPENAI_BASE_URL=
 OPENAI_MODEL=
