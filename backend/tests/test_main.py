@@ -3,6 +3,9 @@
 """
 
 from fastapi.testclient import TestClient
+from pytest import MonkeyPatch
+
+from app.config.setting import settings
 
 
 def test_check_readiness(test_client: TestClient) -> None:
@@ -10,7 +13,12 @@ def test_check_readiness(test_client: TestClient) -> None:
     assert response.status_code == 200
     body = response.json()
     assert body["success"] is True
-    assert body["data"] is not None
+    data = body["data"]
+    assert data is not None
+    assert data["status"] == 1
+    assert set(data["dependencies"]) == {"database", "redis"}
+    assert all(dependency["status"] == 1 for dependency in data["dependencies"].values())
+    assert isinstance(data["disk_usage"], (int, float))
 
 
 def test_check_health(test_client: TestClient) -> None:
@@ -19,3 +27,16 @@ def test_check_health(test_client: TestClient) -> None:
     body = response.json()
     assert body["success"] is True
     assert body["code"] == 0
+
+
+def test_check_readiness_returns_degraded_dependency_payload(test_client: TestClient, monkeypatch: MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "REDIS_ENABLE", False)
+
+    response = test_client.get("/common/health/ready/")
+
+    assert response.status_code == 503
+    body = response.json()
+    assert body["success"] is False
+    assert body["data"]["status"] == 0
+    assert body["data"]["dependencies"]["database"]["status"] == 1
+    assert body["data"]["dependencies"]["redis"]["status"] == 0

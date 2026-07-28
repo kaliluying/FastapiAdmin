@@ -71,6 +71,17 @@ frontend/.vite
 *.bak
 frontend/src/types/auto-imports.d.ts
 frontend/src/types/components.d.ts
+
+# Local runtime data and historical workspaces
+.superpowers/
+backend/data/
+backend/storage/
+backend/find_doc.py
+courseware/
+frontend/web/
+docs/superpowers/plans/
+test-demo.py
+
 .plan
 CLAUDE.md
 AGENTS.md

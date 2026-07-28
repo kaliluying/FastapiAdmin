@@ -17,6 +17,13 @@ import { redirectToLogin } from "@/utils/auth";
 import { $t } from "@/locales";
 import AuthAPI from "@/api/module_system/auth";
 
+declare module "axios" {
+  interface AxiosRequestConfig {
+    showErrorMessage?: boolean;
+    showSuccessMessage?: boolean;
+  }
+}
+
 // --- Configuration constants ---------------------------------------------------
 
 /** Skip auth marker: set headers.Authorization to this value when a request should not carry a token. */
@@ -24,8 +31,6 @@ export const NO_AUTH_FLAG = "no-auth";
 
 export interface ExtendedRequestConfig extends AxiosRequestConfig {
   skipAuth?: boolean;
-  showSuccessMessage?: boolean;
-  showErrorMessage?: boolean;
 }
 
 // --- Semantic HTTP status codes and HttpError ----------------------------------
@@ -152,6 +157,38 @@ export const isHttpError = (error: unknown): error is HttpError => {
   return error instanceof HttpError;
 };
 
+/**
+ * Determines whether an HTTP failure should be surfaced as a global message.
+ *
+ * @param config Request configuration associated with the failure.
+ * @returns Whether the shared error notification should be displayed.
+ */
+function shouldShowErrorMessage(config?: AxiosRequestConfig): boolean {
+  return config?.showErrorMessage !== false;
+}
+
+/**
+ * Creates an HTTP error while retaining the server payload for local recovery.
+ *
+ * @param message Human-readable error message.
+ * @param code HTTP or business error code.
+ * @param data Response payload returned by the server.
+ * @param config Request configuration that produced the error.
+ * @returns Normalized error object for callers.
+ */
+function createHttpError(
+  message: string,
+  code: number,
+  data?: unknown,
+  config?: AxiosRequestConfig
+): HttpError {
+  return new HttpError(message, code, {
+    data,
+    url: config?.url,
+    method: config?.method?.toUpperCase(),
+  });
+}
+
 // --- Token refresh de-duplication ---------------------------------------------
 
 /**
@@ -244,7 +281,8 @@ request.interceptors.response.use(
     if (
       response.config.method?.toUpperCase() !== "GET" &&
       !response.config.url?.includes("login") &&
-      !response.config.url?.includes("logout")
+      !response.config.url?.includes("logout") &&
+      response.config.showSuccessMessage !== false
     ) {
       ElMessage.success(data.msg);
     }
@@ -252,6 +290,8 @@ request.interceptors.response.use(
     return response;
   },
   async (error: AxiosError<ApiResponse>) => {
+    const showErrorMessage = shouldShowErrorMessage(error.config);
+
     // Network errors without a response body.
     if (!error.response) {
       let errorMessage = "网络连接异常";
@@ -265,7 +305,7 @@ request.interceptors.response.use(
       }
 
       console.error("网络请求失败:", error);
-      ElMessage.error(errorMessage);
+      if (showErrorMessage) ElMessage.error(errorMessage);
       return Promise.reject(new Error(errorMessage));
     }
 
@@ -278,15 +318,15 @@ request.interceptors.response.use(
         const jsonData: ApiResponse = JSON.parse(text);
 
         if (jsonData.code === ResultEnum.ERROR) {
-          ElMessage.error(jsonData.msg || "请求错误");
+          if (showErrorMessage) ElMessage.error(jsonData.msg || "请求错误");
           return Promise.reject(new Error(jsonData.msg || "请求错误"));
         } else if (jsonData.code === ResultEnum.EXCEPTION) {
-          ElMessage.error(jsonData.msg || "服务异常");
+          if (showErrorMessage) ElMessage.error(jsonData.msg || "服务异常");
           return Promise.reject(new Error(jsonData.msg || "服务异常"));
         }
       } catch (e) {
         console.error("请求异常:", e);
-        ElMessage.error("数据解析失败");
+        if (showErrorMessage) ElMessage.error("数据解析失败");
         return Promise.reject(new Error("数据解析失败"));
       }
     }
@@ -355,17 +395,23 @@ request.interceptors.response.use(
 
     // Business errors mapped by code.
     if (data?.code === ResultEnum.ERROR) {
-      ElMessage.error(data.msg || "请求错误");
-      return Promise.reject(new HttpError(data.msg || "请求错误", ApiStatus.error));
+      const message = data.msg || "请求错误";
+      if (showErrorMessage) ElMessage.error(message);
+      return Promise.reject(createHttpError(message, ApiStatus.error, data, error.config));
     } else if (data?.code === ResultEnum.UNAUTHORIZED) {
-      ElMessage.error(data.msg || "暂无权限");
-      return Promise.reject(new HttpError(data.msg || "请求错误", ApiStatus.unauthorized));
+      const message = data.msg || "暂无权限";
+      if (showErrorMessage) ElMessage.error(message);
+      return Promise.reject(createHttpError(message, ApiStatus.unauthorized, data, error.config));
     } else if (data?.code === ResultEnum.EXCEPTION) {
-      ElMessage.error(data.msg || "服务异常");
-      return Promise.reject(new HttpError(data.msg || "服务异常", ApiStatus.error));
+      const message = data.msg || "服务异常";
+      if (showErrorMessage) ElMessage.error(message);
+      return Promise.reject(createHttpError(message, ApiStatus.error, data, error.config));
     } else {
-      ElMessage.error("请求处理失败，请稍后重试");
-      return Promise.reject(new Error("请求处理失败"));
+      const message = data?.msg || "请求处理失败，请稍后重试";
+      if (showErrorMessage) ElMessage.error(message);
+      return Promise.reject(
+        createHttpError(message, status || ApiStatus.error, data, error.config)
+      );
     }
   }
 );
