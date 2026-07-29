@@ -29,35 +29,35 @@ async def _check_database() -> DependencyStatus:
     """检查数据库连接"""
     try:
         if not settings.SQL_DB_ENABLE:
-            return DependencyStatus(status=0)
+            return DependencyStatus(status=1, enabled=False)
 
         start = time.perf_counter()
         async with async_db_session() as session:
             await session.execute(text("SELECT 1"))
         latency = (time.perf_counter() - start) * 1000
-        return DependencyStatus(status=1, latency_ms=round(latency, 2))
+        return DependencyStatus(status=1, enabled=True, latency_ms=round(latency, 2))
     except Exception as e:
         logger.warning(f"数据库健康检查失败: {e}")
-        return DependencyStatus(status=0)
+        return DependencyStatus(status=0, enabled=True)
 
 
 async def _check_redis(request: Request) -> DependencyStatus:
     """检查 Redis 连接"""
     try:
         if not settings.REDIS_ENABLE:
-            return DependencyStatus(status=0)
+            return DependencyStatus(status=1, enabled=False)
 
         redis = getattr(request.app.state, "redis", None)
         if not redis:
-            return DependencyStatus(status=0)
+            return DependencyStatus(status=0, enabled=True)
 
         start = time.perf_counter()
         await redis.ping()
         latency = (time.perf_counter() - start) * 1000
-        return DependencyStatus(status=1, latency_ms=round(latency, 2))
+        return DependencyStatus(status=1, enabled=True, latency_ms=round(latency, 2))
     except Exception as e:
         logger.warning(f"Redis 健康检查失败: {e}")
-        return DependencyStatus(status=0)
+        return DependencyStatus(status=0, enabled=True)
 
 
 def _get_disk_usage() -> float:
@@ -161,7 +161,7 @@ async def readiness_check(request: Request):
     def is_ok(d: DependencyStatus) -> bool:
         return d.status == 1
 
-    all_ok = all(is_ok(d) for d in dependencies.values())
+    all_ok = all(is_ok(d) for d in dependencies.values() if d.enabled)
 
     payload = ReadinessOut(
         status=1 if all_ok else 0,

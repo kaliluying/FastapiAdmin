@@ -195,6 +195,7 @@ const healthDescription = computed(() => {
   const dependencySummary = Object.entries(healthData.value.dependencies)
     .map(([name, dependency]) => {
       const label = dependencyLabels[name as keyof HealthReadiness["dependencies"]] || name;
+      if (!dependency.enabled) return `${label} 未启用`;
       if (dependency.status !== 1) return `${label} 异常`;
       return `${label} ${dependency.latency_ms === null ? "正常" : `${dependency.latency_ms}ms`}`;
     })
@@ -337,7 +338,9 @@ function isHealthReadiness(value: unknown): value is HealthReadiness {
     const dependency = (candidate.dependencies as Record<string, unknown>)[name];
     if (!dependency || typeof dependency !== "object") return false;
 
-    const status = (dependency as Record<string, unknown>).status;
+    const dependencyData = dependency as Record<string, unknown>;
+    if (typeof dependencyData.enabled !== "boolean") return false;
+    const status = dependencyData.status;
     return status === 0 || status === 1;
   });
 }

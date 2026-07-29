@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Any, Literal
 from urllib.parse import quote_plus
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.common.enums import EnvironmentEnum
@@ -61,7 +62,7 @@ class Settings(BaseSettings):
     # ================================================= #
     # ******************* 登录认证配置 ****************** #
     # ================================================= #
-    SECRET_KEY: str = "vgb0tnl9d58+6n-6h-ea&u^1#s0ccp!794=krylxcjq75vzps$"  # JWT密钥
+    SECRET_KEY: str = ""  # JWT密钥；生产环境必须显式配置
     ALGORITHM: str = "HS256"  # JWT算法
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 60 * 12  # access_token过期时间(秒)12 小时
     REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 60 * 12  # refresh_token过期时间(秒)12 小时
@@ -86,6 +87,7 @@ class Settings(BaseSettings):
     AUTOFLUSH: bool = False  # 是否自动刷新（映射 SQLAlchemy sessionmaker(autoflush=...)）
     AUTOFETCH: bool | None = None  # 兼容旧环境变量名（保留别名，避免 .env 中已有 AUTOFETCH 的部署报错）
     EXPIRE_ON_COMMIT: bool = False  # 是否在提交时过期
+    DATABASE_AUTO_CREATE_TABLES: bool | None = None  # 未配置时仅开发环境自动建表
 
     # MySQL/PostgreSQL数据库连接
     DATABASE_TYPE: Literal["mysql", "postgres", "sqlite"] = "mysql"
@@ -285,6 +287,20 @@ class Settings(BaseSettings):
                 500: {"description": "服务器内部错误"},
             },
         }
+
+    @model_validator(mode="after")
+    def validate_production_security(self) -> "Settings":
+        """Reject insecure production settings before the application starts.
+
+        Returns:
+            The validated settings instance.
+
+        Raises:
+            ValueError: If production does not provide a sufficiently strong JWT key.
+        """
+        if self.ENVIRONMENT == EnvironmentEnum.PROD and len(self.SECRET_KEY) < 32:
+            raise ValueError("生产环境必须通过 SECRET_KEY 配置至少 32 个字符的 JWT 密钥")
+        return self
 
 
 @lru_cache(maxsize=1)

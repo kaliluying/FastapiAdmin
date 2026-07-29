@@ -17,6 +17,7 @@ export default HealthAPI;
 
 export interface HealthDependencyStatus {
   status: 0 | 1;
+  enabled: boolean;
   latency_ms: number | null;
 }
 

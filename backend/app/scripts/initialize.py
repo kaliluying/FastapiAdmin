@@ -20,7 +20,9 @@ from app.api.v1.module_system.log.model import LoginLogModel, OperationLogModel
 from app.api.v1.module_system.params.model import ParamsModel
 from app.api.v1.module_system.role.model import RoleMenusModel, RoleModel
 from app.api.v1.module_system.user.model import UserModel, UserRolesModel
+from app.common.enums import EnvironmentEnum
 from app.config.path_conf import SCRIPT_DIR
+from app.config.setting import settings
 from app.core.database import async_db_session, create_tables
 from app.core.logger import logger
 from app.core.plugins import filter_disabled_plugin_seed_data, load_enabled_plugin_models
@@ -61,6 +63,18 @@ class InitializeData:
         """
         return [*cls.prepare_init_models, *load_enabled_plugin_models()]
 
+    @staticmethod
+    def should_auto_create_tables() -> bool:
+        """Return whether application startup may create missing tables.
+
+        Returns:
+            ``True`` when explicitly enabled or when running in development
+            with no explicit setting; otherwise ``False``.
+        """
+        if settings.DATABASE_AUTO_CREATE_TABLES is not None:
+            return settings.DATABASE_AUTO_CREATE_TABLES
+        return settings.ENVIRONMENT != EnvironmentEnum.PROD
+
     # 树形模型：JSON 含嵌套 children，需递归创建对象
     _RECURSIVE_TABLES: set[str] = {"platform_menu"}
 
@@ -68,7 +82,8 @@ class InitializeData:
         """建表并导入种子数据"""
         try:
             load_enabled_plugin_models()
-            await create_tables()
+            if self.should_auto_create_tables():
+                await create_tables()
         except asyncio.exceptions.TimeoutError:
             logger.error("❌️ 数据库表结构初始化超时")
             raise

@@ -207,6 +207,14 @@ def upgrade(
     get_settings.cache_clear()
     alembic_cfg = Config("alembic.ini")
     command.upgrade(alembic_cfg, "head")
+    # Core tables are managed by Alembic. Enabled optional plugins own their
+    # models, so this explicit deployment command creates only their missing
+    # tables without making application startup call create_all.
+    import asyncio
+
+    from app.core.database import create_tables
+
+    asyncio.run(create_tables())
     typer.echo("所有迁移已应用。")
 
 

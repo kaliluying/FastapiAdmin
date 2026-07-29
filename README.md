@@ -89,6 +89,9 @@ REDIS_PORT = 6379
 REDIS_PASSWORD = "your_redis_password"
 REDIS_DB_NAME = 1
 
+DATABASE_AUTO_CREATE_TABLES = True  # 生产环境请设为 False，并先执行 Alembic
+SECRET_KEY = "dev-only-change-this-secret-before-sharing"
+
 AI_ENABLE = False
 OPENAI_BASE_URL = "https://api.example.com"
 OPENAI_API_KEY = "your_api_key"
@@ -122,7 +125,7 @@ uv sync --extra ai
 # 在 env/.env.dev 中设置 AI_ENABLE = True
 ```
 
-首次启动时，应用会在表为空时创建基础表结构并写入当前启用模块的种子数据。
+开发环境首次启动时，应用会自动创建表并写入当前启用模块的种子数据。生产环境启动前必须先执行 `uv run main.py upgrade --env=prod`；该命令会先应用核心 Alembic 迁移，再补齐当前已启用插件的缺失表，应用运行时不会自动建表。
 
 `backend/requirements.txt` 仅包含基础后台依赖；启用 AI 的部署使用 `backend/requirements-ai.txt`。
 

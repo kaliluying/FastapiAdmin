@@ -70,9 +70,9 @@ uv sync --extra ai
 
 `requirements.txt` exports the core backend profile. Use `requirements-ai.txt` for deployments that enable AI.
 
-The Alembic baseline manages core admin tables only. When AI is enabled, application initialization imports the AI models and creates any missing AI tables.
+The Alembic baseline manages core admin tables only. Run `uv run main.py upgrade --env=prod` before production startup; the explicit deployment command also creates missing tables for enabled optional plugins. Development startup may create tables automatically; production startup never calls `create_all`.
 
-On first startup, the app creates tables and seeds base data when tables are empty.
+Application startup seeds base data when tables are empty. Optional AI tables still require the AI models to be installed and included in the deployment migration workflow.
 
 ## Verification
 

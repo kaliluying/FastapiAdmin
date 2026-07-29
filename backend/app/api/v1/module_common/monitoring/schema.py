@@ -5,6 +5,7 @@ class DependencyStatus(BaseModel):
     """依赖状态"""
 
     status: int = Field(..., description="状态(0:异常 1:正常)")
+    enabled: bool = Field(default=True, description="是否启用该依赖")
     latency_ms: float | None = Field(default=None, description="延迟(毫秒)")
 
 
