@@ -172,6 +172,43 @@ class TestRetrievalModes:
         retriever = HybridKnowledgeRetriever(alpha=0.5, top_k=5)  # alpha=0.5 混合
         assert retriever.base_alpha == 0.5
 
+    async def test_bm25_mode_accepts_rag_scope_and_skips_vector_search(self):
+        """纯BM25必须兼容RAG协议，且不触发向量化。"""
+        class FailingEmbeddingClient:
+            async def embed_texts(self, _texts):
+                raise AssertionError("pure BM25 retrieval must not create embeddings")
+
+        class Bm25Index:
+            async def search(self, **_kwargs):
+                return [
+                    {
+                        "chunk_id": "kb-1-doc-1-0",
+                        "content": "第123条规定",
+                        "score": 5.0,
+                        "knowledge_base_id": 1,
+                        "document_id": 1,
+                        "chunk_index": 0,
+                        "file_name": "law.md",
+                    }
+                ]
+
+        retriever = HybridKnowledgeRetriever(
+            embedding_client=FailingEmbeddingClient(),
+            bm25_index=Bm25Index(),
+            alpha=0.0,
+            auto_adjust_alpha=False,
+        )
+
+        documents = await retriever.retrieve(
+            query="第123条",
+            user_id="user-1",
+            scope_id="user-1",
+            session_id=None,
+            knowledge_base_ids=[1],
+        )
+
+        assert [document.content for document in documents] == ["第123条规定"]
+
 
 @pytest.mark.asyncio
 class TestChineseTokenization:

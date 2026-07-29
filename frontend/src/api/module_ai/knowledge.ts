@@ -132,9 +132,11 @@ export interface RetrievalHit {
   content: string;
   metadata: Record<string, unknown>;
   distance?: number;
+  score?: number;
 }
 
 export interface RetrievalTestResult {
   query: string;
+  retrieval_mode: "vector" | "bm25" | "hybrid";
   results: RetrievalHit[];
 }

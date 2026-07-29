@@ -553,10 +553,10 @@ def create_rag_chain(db: Any | None = None, auth: Any | None = None) -> RagChatC
         from app.plugin.module_ai.chat.hybrid_retriever import HybridKnowledgeRetriever
 
         retriever = HybridKnowledgeRetriever(
-            alpha=getattr(settings, "HYBRID_ALPHA", 0.5),
-            top_k=getattr(settings, "RETRIEVAL_TOP_K", 5),
-            candidate_multiplier=getattr(settings, "RETRIEVAL_CANDIDATE_MULTIPLIER", 4),
-            auto_adjust_alpha=getattr(settings, "RETRIEVAL_AUTO_ADJUST_ALPHA", True),
+            alpha=settings.HYBRID_ALPHA,
+            top_k=settings.RETRIEVAL_TOP_K,
+            candidate_multiplier=settings.RETRIEVAL_CANDIDATE_MULTIPLIER,
+            auto_adjust_alpha=settings.RETRIEVAL_AUTO_ADJUST_ALPHA,
         )
         logger.info(
             f"使用混合检索模式: alpha={settings.HYBRID_ALPHA}, "
@@ -567,13 +567,14 @@ def create_rag_chain(db: Any | None = None, auth: Any | None = None) -> RagChatC
 
         retriever = HybridKnowledgeRetriever(
             alpha=0.0,  # 纯BM25
-            top_k=getattr(settings, "RETRIEVAL_TOP_K", 5),
+            top_k=settings.RETRIEVAL_TOP_K,
+            auto_adjust_alpha=False,
         )
         logger.info("使用纯BM25检索模式")
     else:
         # 默认：纯向量检索（向后兼容）
         retriever = ChromaKnowledgeRetriever(
-            top_k=getattr(settings, "RETRIEVAL_TOP_K", 5),
+            top_k=settings.RETRIEVAL_TOP_K,
         )
         logger.info("使用纯向量检索模式")
 

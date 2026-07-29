@@ -67,7 +67,7 @@ class HybridKnowledgeRetriever:
         *,
         query: str,
         user_id: str,
-        dept_id: str,
+        scope_id: str,
         session_id: str | None,
         knowledge_base_ids: list[int] | None = None,
         files: list[dict[str, Any]] | None = None,
@@ -77,7 +77,7 @@ class HybridKnowledgeRetriever:
         Args:
             query: 用户查询
             user_id: 用户ID
-            dept_id: 部门ID
+            scope_id: 数据范围标识
             session_id: 会话ID
             knowledge_base_ids: 知识库ID列表
             files: 临时上传文件
@@ -90,7 +90,7 @@ class HybridKnowledgeRetriever:
             return await self.file_retriever.retrieve(
                 query=query,
                 user_id=user_id,
-                dept_id=dept_id,
+                scope_id=scope_id,
                 session_id=session_id,
                 files=files,
             )
@@ -101,11 +101,12 @@ class HybridKnowledgeRetriever:
         # 动态调整alpha
         alpha = self._get_dynamic_alpha(query)
 
-        # 1. 向量检索
-        vector_results = await self._vector_search(query, knowledge_base_ids, candidate_top_k)
-
-        # 2. BM25检索
-        bm25_results = await self._bm25_search(query, knowledge_base_ids, candidate_top_k)
+        vector_results = {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
+        bm25_results: list[dict[str, Any]] = []
+        if alpha > 0:
+            vector_results = await self._vector_search(query, knowledge_base_ids, candidate_top_k)
+        if alpha < 1:
+            bm25_results = await self._bm25_search(query, knowledge_base_ids, candidate_top_k)
 
         # 3. RRF融合
         fused_chunk_ids = self._rrf_fusion(vector_results, bm25_results, self.top_k, alpha)

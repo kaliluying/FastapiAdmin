@@ -195,35 +195,39 @@ class KnowledgeService:
                 f"kb-{document.knowledge_base_id}-doc-{document.id}-{index}-{uuid.uuid4().hex}"
                 for index in range(len(chunks))
             ]
-            embeddings = await self._get_embedding_client().embed_texts(chunks)
-            metadatas = [
-                build_chroma_metadata(
-                    knowledge_base_id=document.knowledge_base_id,
-                    document_id=document.id,
-                    chunk_index=index,
-                    file_name=document.file_name,
-                    extra=chunk_metas[index].metadata if chunk_metas else None,
-                )
-                for index in range(len(chunks))
-            ]
-            await self._get_store().delete_document(document.id)
-            await self._get_store().upsert_chunks(
-                ids=chroma_ids, embeddings=embeddings, documents=chunks, metadatas=metadatas
+            retrieval_mode = settings.RETRIEVAL_MODE
+            embeddings: list[list[float]] | None = None
+            metadatas: list[dict[str, int | str]] | None = None
+            if retrieval_mode in ("vector", "hybrid"):
+                embeddings = await self._get_embedding_client().embed_texts(chunks)
+                metadatas = [
+                    build_chroma_metadata(
+                        knowledge_base_id=document.knowledge_base_id,
+                        document_id=document.id,
+                        chunk_index=index,
+                        file_name=document.file_name,
+                        extra=chunk_metas[index].metadata if chunk_metas else None,
+                    )
+                    for index in range(len(chunks))
+                ]
+
+            chunk_models = await KnowledgeChunkCRUD(self.auth).replace_chunks(
+                knowledge_base_id=document.knowledge_base_id,
+                document_id=document.id,
+                chunks=chunks,
+                chroma_ids=chroma_ids,
             )
 
-            # 同步写入BM25索引
-            retrieval_mode = getattr(settings, "RETRIEVAL_MODE", "vector")
-            if retrieval_mode in ("hybrid", "bm25"):
-                chunk_models = await KnowledgeChunkCRUD(self.auth).replace_chunks(
-                    knowledge_base_id=document.knowledge_base_id,
-                    document_id=document.id,
-                    chunks=chunks,
-                    chroma_ids=chroma_ids,
+            if embeddings is not None and metadatas is not None:
+                await self._get_store().delete_document(document.id)
+                await self._get_store().upsert_chunks(
+                    ids=chroma_ids, embeddings=embeddings, documents=chunks, metadatas=metadatas
                 )
-                # 准备BM25索引数据
+
+            if retrieval_mode in ("hybrid", "bm25"):
                 bm25_chunks = [
                     {
-                        "id": chunk_model.id,
+                        "id": chunk_model.chroma_id,
                         "content": chunk_model.content,
                         "knowledge_base_id": chunk_model.knowledge_base_id,
                         "document_id": chunk_model.document_id,
@@ -232,15 +236,10 @@ class KnowledgeService:
                     }
                     for chunk_model in chunk_models
                 ]
-                await self._get_bm25_index().add_chunks(bm25_chunks)
+                bm25_index = self._get_bm25_index()
+                await bm25_index.delete_by_document(document.id)
+                await bm25_index.add_chunks(bm25_chunks)
                 logger.info(f"BM25索引同步完成: document_id={document.id}, chunks={len(bm25_chunks)}")
-            else:
-                await KnowledgeChunkCRUD(self.auth).replace_chunks(
-                    knowledge_base_id=document.knowledge_base_id,
-                    document_id=document.id,
-                    chunks=chunks,
-                    chroma_ids=chroma_ids,
-                )
 
             obj = await doc_crud.update_status(
                 document_id, index_status="success", error_message=None, indexed_at=datetime.now()
@@ -256,10 +255,10 @@ class KnowledgeService:
     async def delete_document(self, ids: list[int]) -> None:
         if not ids:
             raise CustomException(msg="document ids cannot be empty")
+        retrieval_mode = settings.RETRIEVAL_MODE
         for document_id in ids:
-            await self._get_store().delete_document(document_id)
-            # 同步删除BM25索引
-            retrieval_mode = getattr(settings, "RETRIEVAL_MODE", "vector")
+            if retrieval_mode in ("vector", "hybrid"):
+                await self._get_store().delete_document(document_id)
             if retrieval_mode in ("hybrid", "bm25"):
                 await self._get_bm25_index().delete_by_document(document_id)
         chunks = await KnowledgeChunkCRUD(self.auth).get_list(search={"document_id": ("in", ids)})
@@ -271,13 +270,64 @@ class KnowledgeService:
     async def query_retrieval(self, data: RetrievalTestSchema) -> dict[str, Any]:
         if not data.knowledge_base_ids:
             raise CustomException(msg="please select at least one knowledge base")
+
+        retrieval_mode = settings.RETRIEVAL_MODE
+        if retrieval_mode == "bm25":
+            results = await self._get_bm25_index().search(
+                query=data.query,
+                knowledge_base_ids=data.knowledge_base_ids,
+                top_k=data.top_k,
+            )
+            return {
+                "query": data.query,
+                "retrieval_mode": retrieval_mode,
+                "results": self._format_bm25_results(results),
+            }
+
+        if retrieval_mode == "hybrid":
+            from app.plugin.module_ai.chat.hybrid_retriever import HybridKnowledgeRetriever
+
+            retriever = HybridKnowledgeRetriever(
+                chroma_store=self._get_store(),
+                bm25_index=self._get_bm25_index(),
+                embedding_client=self._get_embedding_client(),
+                alpha=settings.HYBRID_ALPHA,
+                top_k=data.top_k,
+                candidate_multiplier=settings.RETRIEVAL_CANDIDATE_MULTIPLIER,
+                auto_adjust_alpha=settings.RETRIEVAL_AUTO_ADJUST_ALPHA,
+            )
+            documents = await retriever.retrieve(
+                query=data.query,
+                user_id="retrieval-test",
+                scope_id="retrieval-test",
+                session_id=None,
+                knowledge_base_ids=data.knowledge_base_ids,
+            )
+            return {
+                "query": data.query,
+                "retrieval_mode": retrieval_mode,
+                "results": [
+                    {
+                        "content": document.content,
+                        "metadata": document.metadata,
+                        "distance": document.metadata.get("vector_distance"),
+                        "score": document.metadata.get("bm25_score"),
+                    }
+                    for document in documents
+                ],
+            }
+
         embeddings = await self._get_embedding_client().embed_texts([data.query])
         raw = await self._get_store().query(
             query_embedding=embeddings[0],
             knowledge_base_ids=data.knowledge_base_ids,
             top_k=data.top_k,
         )
-        return {"query": data.query, "results": self._format_chroma_results(raw)}
+        return {
+            "query": data.query,
+            "retrieval_mode": retrieval_mode,
+            "results": self._format_chroma_results(raw),
+        }
 
     async def _save_upload_file(self, file: UploadFile) -> Path:
         UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
@@ -320,3 +370,27 @@ class KnowledgeService:
                 }
             )
         return results
+
+    @staticmethod
+    def _format_bm25_results(raw: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Format BM25 search hits for the retrieval test response.
+
+        Args:
+            raw: Raw BM25 hits returned by the index adapter.
+
+        Returns:
+            Hits with the same content/metadata shape used by vector retrieval.
+        """
+        return [
+            {
+                "content": item["content"],
+                "metadata": {
+                    "knowledge_base_id": item["knowledge_base_id"],
+                    "document_id": item["document_id"],
+                    "chunk_index": item.get("chunk_index", 0),
+                    "file_name": item.get("file_name", ""),
+                },
+                "score": item["score"],
+            }
+            for item in raw
+        ]

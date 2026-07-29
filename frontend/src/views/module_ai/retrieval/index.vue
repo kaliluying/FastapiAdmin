@@ -82,6 +82,9 @@
                 <span v-if="item.distance != null"
                   >距离 {{ Number(item.distance).toFixed(4) }}</span
                 >
+                <span v-if="item.score != null"
+                  >BM25 得分 {{ Number(item.score).toFixed(4) }}</span
+                >
               </div>
               <p class="result-content">{{ item.content }}</p>
             </ElCard>
