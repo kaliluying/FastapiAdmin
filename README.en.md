@@ -60,8 +60,12 @@ git clone https://github.com/fastapiadmin/FastapiAdmin.git
 cp backend/env/.env.dev.example backend/env/.env.dev
 cp frontend/.env.example frontend/.env
 
-# 3. Start backend (auto-creates tables + seed data on first run)
+# 3. Start the core backend (auto-creates tables + seed data on first run)
 cd backend && uv sync && uv run main.py run --env=dev
+
+# Optional: enable AI knowledge-base and RAG
+cd backend && uv sync --extra ai
+# Set AI_ENABLE=true in backend/env/.env.dev
 
 # 4. Start frontend
 cd ../frontend && pnpm install && pnpm run dev

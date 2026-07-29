@@ -1,15 +1,15 @@
 # FastApiAdmin AI Knowledge Skeleton
 
-FastApiAdmin AI Knowledge Skeleton 是一个面向单组织内部使用的后台管理系统骨架。当前代码线保留后台管理基础能力，并内置 AI 知识库、文档索引和 RAG 对话流程。
+FastApiAdmin AI Knowledge Skeleton 是一个面向单组织内部使用的后台管理系统骨架。当前代码线保留后台管理基础能力，AI 知识库、文档索引和 RAG 对话通过可选依赖组启用。
 
 ## 项目定位
 
 - **使用场景**：单组织内部后台、知识库管理、RAG 问答、基础系统管理。
 - **组织边界**：当前版本不支持多租户，也不保留多租户字段或切换入口。
-- **后端栈**：FastAPI、SQLAlchemy、Alembic、Redis、MySQL、ChromaDB 本地持久化、OpenAI-compatible API。
+- **后端栈**：FastAPI、SQLAlchemy、Alembic、Redis、MySQL；启用 AI 后增加 ChromaDB 与 OpenAI-compatible API。
 - **前端栈**：Vue 3、Vite、TypeScript、Element Plus、Pinia、Vue Router。
-- **向量检索**：ChromaDB 本地持久化目录存储向量和文本块索引。
-- **模型接入**：通过 OpenAI-compatible chat 和 embedding endpoint 接入模型能力。
+- **向量检索**：启用 AI 后使用 ChromaDB 本地持久化目录存储向量和文本块索引。
+- **模型接入**：启用 AI 后通过 OpenAI-compatible chat 和 embedding endpoint 接入模型能力。
 
 ## 功能范围
 
@@ -18,7 +18,7 @@ FastApiAdmin AI Knowledge Skeleton 是一个面向单组织内部使用的后台
 - 系统管理：用户、角色、菜单、字典、参数配置、操作日志。
 - 公共能力：认证、RBAC、动态菜单、文件上传、Redis 缓存。
 - AI 对话：会话记录、模型配置、普通对话、结合知识库的 RAG 对话。
-- AI 知识库：知识库管理、文档上传、文本抽取、分块、embedding、Chroma 写入、召回验证。
+- AI 知识库：知识库管理、文档上传、文本抽取、分块、embedding、Chroma 写入、召回验证（安装 `ai` 可选组后启用）。
 
 ### 已移除或禁用
 
@@ -62,8 +62,8 @@ FastApiAdmin AI Knowledge Skeleton 是一个面向单组织内部使用的后台
 - pnpm
 - MySQL 8+
 - Redis 6+
-- OpenAI-compatible chat endpoint
-- OpenAI-compatible embedding endpoint
+- 启用 AI 时需要 OpenAI-compatible chat endpoint
+- 启用 AI 时需要 OpenAI-compatible embedding endpoint
 
 ## 后端配置
 
@@ -90,6 +90,7 @@ REDIS_PORT = 6379
 REDIS_PASSWORD = "your_redis_password"
 REDIS_DB_NAME = 1
 
+AI_ENABLE = False
 OPENAI_BASE_URL = "https://api.example.com"
 OPENAI_API_KEY = "your_api_key"
 OPENAI_MODEL = "your_chat_model"
@@ -113,11 +114,18 @@ CHROMA_COLLECTION_NAME = "knowledge_base"
 
 ```powershell
 cd backend
+# 基础后台
 uv sync
 uv run main.py run --env=dev
+
+# 启用 AI 知识库与 RAG
+uv sync --extra ai
+# 在 env/.env.dev 中设置 AI_ENABLE = True
 ```
 
-首次启动时，应用会在表为空时创建基础表结构并写入最小后台骨架与 AI 知识库相关种子数据。
+首次启动时，应用会在表为空时创建基础表结构并写入当前启用模块的种子数据。
+
+`backend/requirements.txt` 仅包含基础后台依赖；启用 AI 的部署使用 `backend/requirements-ai.txt`。
 
 默认开发配置中的 API 前缀为 `/api/v1`。Swagger 和 ReDoc 路径由 `backend/env/.env.dev` 中的 `DOCS_URL`、`REDOC_URL` 控制。
 
@@ -165,6 +173,8 @@ pnpm run build
 
 ## AI 知识库流程
 
+先执行 `uv sync --extra ai` 并设置 `AI_ENABLE=True`，再进行以下操作：
+
 1. 在“AI 知识库 / 知识库管理”创建知识库。
 2. 在“文档管理”上传 `.txt`、`.md`、`.pdf`、`.docx` 文件。
 3. 后端保存文件到 `backend/storage/knowledge`。
@@ -195,10 +205,11 @@ frontend/src/views/module_ai/
 
 ```powershell
 cd backend
-uv run pytest tests\core\test_single_org_runtime.py tests\scripts\test_skeleton_seed_menu.py tests\plugin\module_ai -q
+uv run pytest tests\core\test_optional_ai_plugin.py -q
+uv run --extra ai pytest tests\plugin\module_ai -q
 python -m compileall -q app tests
 uv run ruff check app\plugin\module_ai app\scripts\initialize.py app\api\v1\module_system\__init__.py app\config\setting.py app\init_app.py tests --output-format concise
-uv run python -c "import chromadb, openai, pypdf, docx"
+uv run --extra ai python -c "import chromadb, openai, pypdf, docx"
 ```
 
 前端：

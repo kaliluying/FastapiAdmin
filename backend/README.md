@@ -1,6 +1,6 @@
 # Backend
 
-FastAPI backend for the single-organization admin + AI knowledge-base skeleton.
+FastAPI backend for the single-organization admin. AI knowledge-base and RAG capabilities are installed as an optional `ai` extra.
 
 ## Runtime Scope
 
@@ -38,7 +38,7 @@ Copy and edit the development env file:
 copy env\.env.dev.example env\.env.dev
 ```
 
-Required AI/vector settings:
+AI/vector settings are only required after installing the AI extra:
 
 ```env
 AI_ENABLE=True
@@ -59,19 +59,27 @@ When changing embedding models, clear the existing Chroma collection or use a ne
 ## Start
 
 ```powershell
+# Core admin only
 uv sync
 uv run main.py run --env=dev
+
+# Enable AI knowledge-base and RAG
+uv sync --extra ai
+# Set AI_ENABLE=True in env/.env.dev
 ```
+
+`requirements.txt` exports the core backend profile. Use `requirements-ai.txt` for deployments that enable AI.
 
 On first startup, the app creates tables and seeds base data when tables are empty.
 
 ## Verification
 
 ```powershell
-uv run pytest tests\core\test_single_org_runtime.py tests\scripts\test_skeleton_seed_menu.py tests\plugin\module_ai -q
+uv run pytest tests\core\test_optional_ai_plugin.py -q
+uv run --extra ai pytest tests\plugin\module_ai -q
 python -m compileall -q app tests
 uv run ruff check app\plugin\module_ai app\scripts\initialize.py app\api\v1\module_system\__init__.py app\config\setting.py app\init_app.py tests --output-format concise
-uv run python -c "import chromadb, fastembed, openai, pypdf, docx"
+uv run --extra ai python -c "import chromadb, fastembed, openai, pypdf, docx"
 ```
 
 ## Notes
@@ -79,3 +87,4 @@ uv run python -c "import chromadb, fastembed, openai, pypdf, docx"
 - The Chroma persist directory must be writable for document indexing and retrieval.
 - Knowledge document upload supports `.txt`, `.md`, `.pdf`, and `.docx`.
 - API keys are not exposed by the model-config endpoint; it only reports whether the key is configured.
+- When `AI_ENABLE=True` but the `ai` extra is absent, the backend logs the missing modules and starts without the AI plugin.
