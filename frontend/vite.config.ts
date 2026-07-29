@@ -131,7 +131,6 @@ export default ({ mode }: { mode: string }) => {
             if (id.includes("echarts") || id.includes("zrender")) return "echarts";
             if (id.includes("element-plus")) return "element-plus";
             if (id.includes("@wangeditor")) return "wangeditor";
-            if (id.includes("codemirror")) return "codemirror";
             if (id.includes("exceljs")) return "exceljs";
             if (id.includes("highlight.js") || id.includes("highlightjs")) return "highlight";
             if (id.includes("xgplayer")) return "xgplayer";
@@ -233,7 +232,6 @@ export default ({ mode }: { mode: string }) => {
         "vue-router",
         "vue-i18n",
         "vue-json-pretty",
-        "vue-web-terminal",
         "vue-draggable-plus",
         "element-plus",
         "@element-plus/icons-vue",
@@ -243,8 +241,6 @@ export default ({ mode }: { mode: string }) => {
         "pinia",
         "axios",
         "@vueuse/core",
-        "codemirror",
-        "codemirror-editor-vue3",
         "@wangeditor-next/editor",
         "@wangeditor-next/editor-for-vue",
         "exceljs",

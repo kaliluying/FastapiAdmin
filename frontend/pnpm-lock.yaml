@@ -51,12 +51,6 @@ importers:
       clipboard:
         specifier: ^2.0.11
         version: 2.0.11
-      codemirror:
-        specifier: ^5.65.21
-        version: 5.65.21
-      codemirror-editor-vue3:
-        specifier: ^2.8.0
-        version: 2.8.0(codemirror@5.65.21)(diff-match-patch@1.0.5)(vue@3.5.34(typescript@6.0.3))
       crypto-js:
         specifier: ^4.2.0
         version: 4.2.0
@@ -135,9 +129,6 @@ importers:
       vue-router:
         specifier: ^5.0.7
         version: 5.0.7(@vue/compiler-sfc@3.5.34)(pinia@3.0.4(typescript@6.0.3)(vue@3.5.34(typescript@6.0.3)))(vue@3.5.34(typescript@6.0.3))
-      vue-web-terminal:
-        specifier: ^3.4.1
-        version: 3.4.2(typescript@6.0.3)
       xgplayer:
         specifier: ^3.0.20
         version: 3.0.24(core-js@3.49.0)
@@ -157,9 +148,6 @@ importers:
       '@iconify/utils':
         specifier: ^2.3.0
         version: 2.3.0
-      '@types/codemirror':
-        specifier: ^5.60.17
-        version: 5.60.17
       '@types/file-saver':
         specifier: ^2.0.7
         version: 2.0.7
@@ -1491,9 +1479,6 @@ packages:
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
 
-  '@types/codemirror@5.60.17':
-    resolution: {integrity: sha512-AZq2FIsUHVMlp7VSe2hTfl5w4pcUkoFkM3zVsRKsn1ca8CXRDYvnin04+HP2REkwsxemuHqvDofdlhUWNpbwfw==}
-
   '@types/deep-eql@4.0.2':
     resolution: {integrity: sha512-c9h9dVVMigMPc4bwTvC5dxqtqJZwQPePsWjPlpSOnojbor6pGqdk541lfA7AqFQr5pB1BRdq0juY9db81BwyFw==}
 
@@ -1550,9 +1535,6 @@ packages:
 
   '@types/sortablejs@1.15.9':
     resolution: {integrity: sha512-7HP+rZGE2p886PKV9c9OJzLBI6BBJu1O7lJGYnPyG3fS4/duUCcngkNCjsLwIMV+WMqANe3tt4irrXHSIe68OQ==}
-
-  '@types/tern@0.23.9':
-    resolution: {integrity: sha512-ypzHFE/wBzh+BlH6rrBgS5I/Z7RD21pGhZ2rltb/+ZrVM1awdZwjx7hE5XfuYgHWk9uvV5HLZN3SloevCAp3Bw==}
 
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
@@ -2185,16 +2167,6 @@ packages:
     resolution: {integrity: sha512-JQHZ2QMW6l3aH/j6xCqQThY/9OH4D/9ls34cgkUBiEeocRTU04tHfKPBsUK1PqZCUQM7GiA0IIXJSuXHI64Kbg==}
     engines: {node: '>=0.8'}
 
-  codemirror-editor-vue3@2.8.0:
-    resolution: {integrity: sha512-ebYGNhBpLmQNLguXzNyMMkn6K8v3lcS5/Ncvdn6YS4bLGEHE67MfsJIS/WV0L7I6WavUuFlY/Rs/AJKChIwSwg==}
-    peerDependencies:
-      codemirror: ^5
-      diff-match-patch: ^1.0.5
-      vue: ^3.x
-
-  codemirror@5.65.21:
-    resolution: {integrity: sha512-6teYk0bA0nR3QP0ihGMoxuKzpl5W80FpnHpBJpgy66NK3cZv5b/d/HY8PnRvfSsCG1MTfr92u2WUl+wT0E40mQ==}
-
   codepage@1.15.0:
     resolution: {integrity: sha512-3g6NUTPd/YtuuGrhMnOMRjFc+LJw/bnMp3+0r/Wcz3IXUuCosKRJvMphm5+Q+bvTVGcJJuRvVLuYba+WojaFaA==}
     engines: {node: '>=0.8'}
@@ -2415,9 +2387,6 @@ packages:
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
-
-  diff-match-patch@1.0.5:
-    resolution: {integrity: sha512-IayShXAgj/QMXgB0IWmKx+rOPuGMhqm5w6jvFxmVenXKIzRqTAAsbBPT3kWQeGANj3jGgvcvv4yK6SxqYmikgw==}
 
   dom-serializer@2.0.0:
     resolution: {integrity: sha512-wIkAryiqt/nV5EQKqQpo3SToSOV9J0DnbJqwK7Wv/Trc92zIAYZ4FlMu+JPFW1DfGFt81ZTCGgDEabffXeLyJg==}
@@ -4586,11 +4555,6 @@ packages:
     peerDependencies:
       vue: '>=3.0.0'
 
-  vue-json-viewer@3.0.4:
-    resolution: {integrity: sha512-pnC080rTub6YjccthVSNQod2z9Sl5IUUq46srXtn6rxwhW8QM4rlYn+CTSLFKXWfw+N3xv77Cioxw7B4XUKIbQ==}
-    peerDependencies:
-      vue: ^3.2.2
-
   vue-router@5.0.7:
     resolution: {integrity: sha512-dqfk8kvRbCutmCOCj/XLDqDEYxc1wBdAOGLuVy5M93ifYMsBd5fIjfaPN4tQAbxr5IprdBDIox1gr4wYyOx/SA==}
     peerDependencies:
@@ -4611,9 +4575,6 @@ packages:
     hasBin: true
     peerDependencies:
       typescript: '>=5.0.0'
-
-  vue-web-terminal@3.4.2:
-    resolution: {integrity: sha512-H+wvDxZxWu7vHMNhsHzqPLn/wxgiQ7bSKWbcAORMwNfPadtWgAZa0fCvct25RJBMBYQrh1wfCJ6KtrDzdAn6Gg==}
 
   vue@3.5.34:
     resolution: {integrity: sha512-WdLBG9gm02OgJIG9axd5Hpx0TFLdzVgfG2evFFu8Rur5O/IoGc5cMjnjh3tPL6GnRGsYvUhBSKVPYVcxRKpMCA==}
@@ -5740,10 +5701,6 @@ snapshots:
       '@types/deep-eql': 4.0.2
       assertion-error: 2.0.1
 
-  '@types/codemirror@5.60.17':
-    dependencies:
-      '@types/tern': 0.23.9
-
   '@types/deep-eql@4.0.2': {}
 
   '@types/esrecurse@4.3.1': {}
@@ -5788,10 +5745,6 @@ snapshots:
   '@types/qs@6.15.1': {}
 
   '@types/sortablejs@1.15.9': {}
-
-  '@types/tern@0.23.9':
-    dependencies:
-      '@types/estree': 1.0.9
 
   '@types/trusted-types@2.0.7':
     optional: true
@@ -6587,14 +6540,6 @@ snapshots:
 
   clone@1.0.4: {}
 
-  codemirror-editor-vue3@2.8.0(codemirror@5.65.21)(diff-match-patch@1.0.5)(vue@3.5.34(typescript@6.0.3)):
-    dependencies:
-      codemirror: 5.65.21
-      diff-match-patch: 1.0.5
-      vue: 3.5.34(typescript@6.0.3)
-
-  codemirror@5.65.21: {}
-
   codepage@1.15.0: {}
 
   color-convert@1.9.3:
@@ -6803,8 +6748,6 @@ snapshots:
   detect-indent@6.1.0: {}
 
   detect-libc@2.1.2: {}
-
-  diff-match-patch@1.0.5: {}
 
   dom-serializer@2.0.0:
     dependencies:
@@ -8988,11 +8931,6 @@ snapshots:
     dependencies:
       vue: 3.5.34(typescript@6.0.3)
 
-  vue-json-viewer@3.0.4(vue@3.5.34(typescript@6.0.3)):
-    dependencies:
-      clipboard: 2.0.11
-      vue: 3.5.34(typescript@6.0.3)
-
   vue-router@5.0.7(@vue/compiler-sfc@3.5.34)(pinia@3.0.4(typescript@6.0.3)(vue@3.5.34(typescript@6.0.3)))(vue@3.5.34(typescript@6.0.3)):
     dependencies:
       '@babel/generator': 8.0.0-rc.5
@@ -9022,13 +8960,6 @@ snapshots:
       '@volar/typescript': 2.4.28
       '@vue/language-core': 3.2.9
       typescript: 6.0.3
-
-  vue-web-terminal@3.4.2(typescript@6.0.3):
-    dependencies:
-      vue: 3.5.34(typescript@6.0.3)
-      vue-json-viewer: 3.0.4(vue@3.5.34(typescript@6.0.3))
-    transitivePeerDependencies:
-      - typescript
 
   vue@3.5.34(typescript@6.0.3):
     dependencies:
