@@ -12,8 +12,9 @@ import anyio
 from whoosh import index
 from whoosh.fields import ID, STORED, TEXT, Schema
 
-from app.config.setting import settings
+from app.config.path_conf import BASE_DIR
 from app.core.logger import logger
+from app.plugin.module_ai.config import settings
 
 
 class BM25KnowledgeIndex:
@@ -31,7 +32,7 @@ class BM25KnowledgeIndex:
             index_dir: 索引存储目录，默认从配置读取
             tokenizer: 分词器类型，"char"(单字) 或 "jieba"(词组)，默认从配置读取
         """
-        self.index_dir = Path(index_dir or getattr(settings, "BM25_INDEX_DIR", str(settings.BASE_DIR / "data" / "bm25_index")))
+        self.index_dir = Path(index_dir or settings.BM25_INDEX_DIR or str(BASE_DIR / "data" / "bm25_index"))
         self.index_dir.mkdir(parents=True, exist_ok=True)
 
         self.tokenizer_type = tokenizer or getattr(settings, "BM25_TOKENIZER", "jieba")
@@ -160,6 +161,7 @@ class BM25KnowledgeIndex:
                 except Exception:
                     # 查询解析失败，使用通配符查询
                     from whoosh.query import Term
+
                     q = Term("content", query)
 
                 search_results = searcher.search(q, limit=top_k * 2)  # 过滤前多召回一些
@@ -171,15 +173,17 @@ class BM25KnowledgeIndex:
                     if hit["knowledge_base_id"] not in kb_id_set:
                         continue
 
-                    results.append({
-                        "chunk_id": hit["chunk_id"],
-                        "content": hit["content"],
-                        "score": hit.score,
-                        "knowledge_base_id": int(hit["knowledge_base_id"]),
-                        "document_id": int(hit["document_id"]),
-                        "chunk_index": hit.get("chunk_index", 0),
-                        "file_name": hit.get("file_name", ""),
-                    })
+                    results.append(
+                        {
+                            "chunk_id": hit["chunk_id"],
+                            "content": hit["content"],
+                            "score": hit.score,
+                            "knowledge_base_id": int(hit["knowledge_base_id"]),
+                            "document_id": int(hit["document_id"]),
+                            "chunk_index": hit.get("chunk_index", 0),
+                            "file_name": hit.get("file_name", ""),
+                        }
+                    )
 
                     if len(results) >= top_k:
                         break
@@ -194,6 +198,7 @@ class BM25KnowledgeIndex:
         Args:
             document_id: 文档ID
         """
+
         def _delete():
             ix = self._get_index()
             writer = ix.writer()
@@ -210,6 +215,7 @@ class BM25KnowledgeIndex:
 
     async def clear_index(self) -> None:
         """清空整个索引"""
+
         def _clear():
             # 先关闭索引
             if self._index:
@@ -218,10 +224,12 @@ class BM25KnowledgeIndex:
 
             # 等待文件句柄释放
             import time
+
             time.sleep(0.1)
 
             # 删除索引目录
             import shutil
+
             if self.index_dir.exists():
                 try:
                     shutil.rmtree(self.index_dir)

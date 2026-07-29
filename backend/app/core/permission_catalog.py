@@ -5,31 +5,10 @@ Menu seed data controls UI visibility and role grants, while backend
 permission code used by either side in this catalog so drift is testable.
 """
 
-PERMISSION_CODES: frozenset[str] = frozenset(
+from app.core.plugins import get_plugin_permission_codes
+
+CORE_PERMISSION_CODES: frozenset[str] = frozenset(
     {
-        "module_ai:chat:create",
-        "module_ai:chat:delete",
-        "module_ai:chat:detail",
-        "module_ai:chat:query",
-        "module_ai:chat:update",
-        "module_ai:chat:ws",
-        "module_ai:document:create",
-        "module_ai:document:delete",
-        "module_ai:document:query",
-        "module_ai:knowledge:create",
-        "module_ai:knowledge:delete",
-        "module_ai:knowledge:query",
-        "module_ai:knowledge:update",
-        "module_ai:memory:create",
-        "module_ai:memory:delete",
-        "module_ai:memory:query",
-        "module_ai:memory:update",
-        "module_ai:model_config:query",
-        "module_ai:model_config:update",
-        "module_ai:retrieval:test",
-        "module_ai:session:delete",
-        "module_ai:session:detail",
-        "module_ai:session:query",
         "module_common:file:download",
         "module_common:file:upload",
         "module_platform:menu:create",
@@ -82,3 +61,5 @@ PERMISSION_CODES: frozenset[str] = frozenset(
         "module_system:user:update",
     }
 )
+
+PERMISSION_CODES: frozenset[str] = CORE_PERMISSION_CODES | get_plugin_permission_codes()

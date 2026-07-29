@@ -120,16 +120,12 @@ class TestChunkTracking:
         assert hasattr(ChunkQualityStats, "citation_rate")
         assert hasattr(ChunkQualityStats, "quality_score")
 
-    def test_models_discoverable_for_table_creation(self):
-        """回归：模型必须能被建表发现机制扫描到（定义在 model.py）
+    def test_models_declared_for_plugin_table_creation(self, monkeypatch):
+        """插件清单必须声明包含所有 AI ORM 模型的模块。"""
+        from app.core.plugins import load_enabled_plugin_models
 
-        建表/迁移机制 ImportUtil.find_models 只扫描 model.py/models.py，
-        若模型定义在 chunk_tracker.py 则表永远不会被创建。
-        """
-        from app.core.base_model import MappedBase
-        from app.utils.import_util import ImportUtil
-
-        table_names = {m.__tablename__ for m in ImportUtil.find_models(MappedBase)}
+        monkeypatch.setenv("AI_ENABLE", "true")
+        table_names = {model.__tablename__ for model in load_enabled_plugin_models()}
         assert "ai_chunk_usage" in table_names
         assert "ai_chunk_quality_stats" in table_names
 
@@ -171,9 +167,7 @@ class TestChunkTrackingIntegration:
 
             from sqlalchemy import select
 
-            stat = (
-                await db.execute(select(ChunkQualityStats).where(ChunkQualityStats.chunk_id == 9001))
-            ).scalar_one()
+            stat = (await db.execute(select(ChunkQualityStats).where(ChunkQualityStats.chunk_id == 9001))).scalar_one()
             assert stat.retrieval_count == 1
             assert stat.citation_count == 1
             assert stat.citation_rate == 1.0

@@ -33,7 +33,7 @@ def test_initial_baseline_creates_only_core_tables() -> None:
         "UserRolesModel",
     ]:
         assert table_name in source
-    assert "ImportUtil.find_models" not in source
+    assert not (BACKEND_DIR / "app" / "utils" / "import_util.py").exists()
     assert "module_ai" not in source
     assert "sys_dept" not in source
     assert "sys_role_depts" not in source

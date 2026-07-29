@@ -9,24 +9,14 @@ from alembic import context
 from app.config.path_conf import ALEMBIC_VERSION_DIR
 from app.config.setting import get_settings
 from app.core.base_model import MappedBase
-from app.utils.import_util import ImportUtil
+from app.scripts.initialize import InitializeData
 
 # 确保 alembic 版本目录存在
 ALEMBIC_VERSION_DIR.mkdir(parents=True, exist_ok=True)
 
-# 清除MappedBase.metadata中的表定义，避免重复注册
-if hasattr(MappedBase, "metadata") and MappedBase.metadata.tables:
-    print(f"🧹 清除已存在的表定义，当前有 {len(MappedBase.metadata.tables)} 个表")
-    # 创建一个新的空metadata对象
-    from sqlalchemy import MetaData
-
-    MappedBase.metadata = MetaData()
-    print("✅️ 已重置metadata")
-
-# 自动查找所有模型
-print("🔍 开始查找模型...")
-found_models = ImportUtil.find_models(MappedBase)
-print(f"📊 找到 {len(found_models)} 个有效模型")
+# 导入核心模型及清单声明的已启用插件模型，供 autogenerate 使用。
+loaded_models = InitializeData.get_prepare_init_models()
+print(f"📊 已加载 {len(loaded_models)} 个核心或已启用插件模型")
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

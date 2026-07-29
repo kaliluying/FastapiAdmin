@@ -2,31 +2,11 @@
 
 import type { App } from "vue";
 import mitt, { type Emitter } from "mitt";
-import { upgradeLogList } from "@/mock/upgrade/changeLog";
-import { ElNotification } from "element-plus";
-import { useUserStore } from "@stores";
 import { StorageConfig } from "@utils";
-import { BANNER } from "../../../build/banner";
 
-// -----------------------------
-// Console banner：ANSI 转义码生成网站  https://patorjk.com/software/taag/#p=testall&f=Fire+Font-k&t=fastapiadmin%0A&x=none&v=4&h=4&w=80&we=false
-// -----------------------------
-
+/** 输出当前实例的简要启动信息。 */
 export function printConsoleBanner(): void {
-  const asciiArt = `
-\x1b[32m欢迎使用 ${StorageConfig.appName}-v${StorageConfig.CURRENT_VERSION}！
-\x1b[0m
-\x1b[32m${BANNER}
-\x1b[0m
-\x1b[36m哇！你居然在用我的项目～ 好用的话别忘了去 GitHub 点个 ★Star 呀，你的支持就是我更新的超强动力！祝使用体验满分💯
-\x1b[0m
-\x1b[33mGitHub: https://github.com/fastapiadmin/FastapiAdmin
-\x1b[0m
-\x1b[31m技术支持（社区群）: https://service.fastapiadmin.com/about/，和开发者一起交流～ 群里有小伙伴实时答疑，遇到问题不用慌！
-\x1b[0m
-`;
-
-  console.log(asciiArt);
+  console.info(`[${StorageConfig.appName}] v${StorageConfig.CURRENT_VERSION} 已启动`);
 }
 
 // -----------------------------
@@ -132,14 +112,10 @@ export function initErrorHandle(app: App) {
  * 1. 跳过 1.0.0 版本（无需升级的基版本）
  * 2. 首次访问 → 写入当前版本号，不升级
  * 3. 版本相同 → 无需升级
- * 4. 版本不同 + 存在旧数据 → 执行升级（展示通知、清理旧 key、按需登出）
+ * 4. 版本不同 + 存在旧数据 → 清理旧 key
  * 5. 版本不同 + 无旧数据 → 仅更新版本号
  */
 class VersionManager {
-  private normalizeVersion(version: string): string {
-    return version.replace(/^v/, "");
-  }
-
   private getStoredVersion(): string | null {
     return localStorage.getItem(StorageConfig.VERSION_KEY);
   }
@@ -180,46 +156,6 @@ class VersionManager {
     return { oldSysKey, oldVersionKeys };
   }
 
-  private shouldRequireReLogin(storedVersion: string): boolean {
-    const normalizedCurrent = this.normalizeVersion(StorageConfig.CURRENT_VERSION);
-    const normalizedStored = this.normalizeVersion(storedVersion);
-
-    return upgradeLogList.value.some((item) => {
-      const itemVersion = this.normalizeVersion(item.version);
-      return (
-        item.requireReLogin && itemVersion > normalizedStored && itemVersion <= normalizedCurrent
-      );
-    });
-  }
-
-  private buildUpgradeMessage(requireReLogin: boolean): string {
-    const { title: content } = upgradeLogList.value[0]!;
-    const messageParts = [
-      `<p style="color: var(--fa-gray-800) !important; padding-bottom: 5px;">`,
-      `系统已升级到 ${StorageConfig.CURRENT_VERSION} 版本，此次更新带来了以下改进：`,
-      `</p>`,
-      content,
-    ];
-
-    if (requireReLogin) {
-      messageParts.push(
-        `<p style="color: var(--theme-color); padding-top: 5px;">升级完成，请重新登录后继续使用。</p>`
-      );
-    }
-
-    return messageParts.join("");
-  }
-
-  private showUpgradeNotification(message: string): void {
-    ElNotification({
-      title: "系统升级公告",
-      message,
-      duration: 0,
-      type: "success",
-      dangerouslyUseHTMLString: true,
-    });
-  }
-
   private cleanupLegacyData(oldSysKey: string | null, oldVersionKeys: string[]): void {
     if (oldSysKey) {
       localStorage.removeItem(oldSysKey);
@@ -232,37 +168,13 @@ class VersionManager {
     });
   }
 
-  private performLogout(): void {
-    try {
-      useUserStore().logout();
-      console.info("[Upgrade] 已执行升级后登出");
-    } catch (error) {
-      console.error("[Upgrade] 升级后登出失败:", error);
-    }
-  }
-
-  private async executeUpgrade(
+  private executeUpgrade(
     storedVersion: string,
     legacyStorage: ReturnType<typeof this.findLegacyStorage>
-  ): Promise<void> {
-    try {
-      if (!upgradeLogList.value.length) {
-        console.warn("[Upgrade] 升级日志列表为空");
-        return;
-      }
-
-      const requireReLogin = this.shouldRequireReLogin(storedVersion);
-      const message = this.buildUpgradeMessage(requireReLogin);
-
-      this.showUpgradeNotification(message);
-      this.setStoredVersion(StorageConfig.CURRENT_VERSION);
-      this.cleanupLegacyData(legacyStorage.oldSysKey, legacyStorage.oldVersionKeys);
-      if (requireReLogin) this.performLogout();
-
-      console.info(`[Upgrade] 升级完成: ${storedVersion} → ${StorageConfig.CURRENT_VERSION}`);
-    } catch (error) {
-      console.error("[Upgrade] 系统升级处理失败:", error);
-    }
+  ): void {
+    this.cleanupLegacyData(legacyStorage.oldSysKey, legacyStorage.oldVersionKeys);
+    this.setStoredVersion(StorageConfig.CURRENT_VERSION);
+    console.info(`[Storage] 已迁移本地数据: ${storedVersion} → ${StorageConfig.CURRENT_VERSION}`);
   }
 
   async processUpgrade(): Promise<void> {
@@ -290,7 +202,7 @@ class VersionManager {
       return;
     }
 
-    await this.executeUpgrade(storedVersion!, legacyStorage);
+    this.executeUpgrade(storedVersion!, legacyStorage);
   }
 }
 

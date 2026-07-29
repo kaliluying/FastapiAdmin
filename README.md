@@ -48,7 +48,6 @@ FastApiAdmin AI Knowledge Skeleton 是一个面向单组织内部使用的后台
 │   │   ├── stores/            # Pinia state
 │   │   └── views/             # Pages
 │   └── package.json
-├── courseware/               # 实训课件与展示材料
 └── docs/                     # 项目文档与实训资料
 ```
 

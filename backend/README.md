@@ -8,7 +8,7 @@ The backend keeps the admin foundation:
 
 - Auth and current-user APIs
 - RBAC permissions and menu authorization
-- Users, roles, departments, menus, dictionaries, params, logs
+- Users, roles, menus, dictionaries, params, and audit logs
 - Common file upload
 - AI chat and session history
 - AI knowledge-base metadata and document indexing

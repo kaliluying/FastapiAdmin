@@ -18,7 +18,7 @@ from typing import Any
 
 import networkx as nx
 
-from app.config.setting import settings
+from app.config.path_conf import BASE_DIR
 from app.core.logger import logger
 
 # 进程内按知识库ID共享的锁，保证同一图的写入串行化
@@ -47,7 +47,7 @@ class KnowledgeGraph:
             storage_dir: 存储目录，默认使用配置
         """
         self.knowledge_base_id = knowledge_base_id
-        self.storage_dir = storage_dir or Path(settings.BASE_DIR) / "data" / "knowledge_graphs"
+        self.storage_dir = storage_dir or BASE_DIR / "data" / "knowledge_graphs"
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
         self.graph = nx.MultiDiGraph()  # 有向多重图（支持同一对节点间多条边）
@@ -309,12 +309,14 @@ class KnowledgeGraph:
                 if relation_filter and rel_type not in relation_filter:
                     continue
 
-                visited_relations.append({
-                    "source": entity,
-                    "target": neighbor,
-                    "type": rel_type,
-                    "properties": {k: v for k, v in edge_data.items() if k != "relation_type"},
-                })
+                visited_relations.append(
+                    {
+                        "source": entity,
+                        "target": neighbor,
+                        "type": rel_type,
+                        "properties": {k: v for k, v in edge_data.items() if k != "relation_type"},
+                    }
+                )
 
                 if depth < max_hops:
                     dfs(neighbor, depth + 1, current_path)
@@ -328,11 +330,13 @@ class KnowledgeGraph:
         for entity_name in visited_entities:
             entity_data = self.get_entity(entity_name)
             if entity_data:
-                entities.append({
-                    "name": entity_name,
-                    "type": entity_data.get("type", "unknown"),
-                    "properties": {k: v for k, v in entity_data.items() if k != "type"},
-                })
+                entities.append(
+                    {
+                        "name": entity_name,
+                        "type": entity_data.get("type", "unknown"),
+                        "properties": {k: v for k, v in entity_data.items() if k != "type"},
+                    }
+                )
 
         return {
             "entities": entities,
@@ -356,12 +360,14 @@ class KnowledgeGraph:
 
         try:
             # 找出所有简单路径
-            paths = list(nx.all_simple_paths(
-                self.graph,
-                source=source,
-                target=target,
-                cutoff=max_length,
-            ))
+            paths = list(
+                nx.all_simple_paths(
+                    self.graph,
+                    source=source,
+                    target=target,
+                    cutoff=max_length,
+                )
+            )
             return paths
         except Exception as e:
             logger.warning(f"查找路径失败: {e}")
@@ -378,10 +384,7 @@ class KnowledgeGraph:
                 # 转换为JSON可序列化格式
                 data = {
                     "knowledge_base_id": self.knowledge_base_id,
-                    "nodes": [
-                        {"id": node, **self.graph.nodes[node]}
-                        for node in self.graph.nodes()
-                    ],
+                    "nodes": [{"id": node, **self.graph.nodes[node]} for node in self.graph.nodes()],
                     "edges": [
                         {
                             "source": u,

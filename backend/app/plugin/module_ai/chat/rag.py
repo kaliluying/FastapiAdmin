@@ -8,8 +8,8 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 
-from app.config.setting import settings
 from app.core.logger import logger
+from app.plugin.module_ai.config import settings
 from app.plugin.module_ai.knowledge.chroma_store import ChromaKnowledgeStore
 from app.plugin.module_ai.knowledge.embedding import EmbeddingClient, create_embedding_client
 
@@ -236,10 +236,7 @@ class RagPromptBuilder:
         if profile_text:
             prompt_parts.append("\n【个人中心信息——仅作为用户自述背景参考】\n")
             prompt_parts.append(profile_text)
-            prompt_parts.append(
-                "\n请把这些信息作为背景线索使用；如果与用户本轮描述或材料内容矛盾，"
-                "请提示用户核对，不要直接替用户下最终结论。\n"
-            )
+            prompt_parts.append("\n请把这些信息作为背景线索使用；如果与用户本轮描述或材料内容矛盾，请提示用户核对，不要直接替用户下最终结论。\n")
 
         # ── 长期记忆：用户偏好/事实/工作规则 ──
         if memories:
@@ -256,15 +253,11 @@ class RagPromptBuilder:
                 prompt_parts.append(f"{role_tag}: {turn.get('content', '')}\n")
             prompt_parts.append("\n")
 
-        prompt_parts.extend([
-            f"用户: {user_id}\n"
-            f"用户范围: {scope_id}\n"
-            f"会话: {session_id or 'new'}\n\n"
-            "检索上下文:\n"
-            f"{context}\n\n"
-            "用户问题:\n"
-            f"{message}",
-        ])
+        prompt_parts.extend(
+            [
+                f"用户: {user_id}\n用户范围: {scope_id}\n会话: {session_id or 'new'}\n\n检索上下文:\n{context}\n\n用户问题:\n{message}",
+            ]
+        )
         return "".join(prompt_parts)
 
     @staticmethod
@@ -318,11 +311,7 @@ class RagPromptBuilder:
                     header += f"\n    关键词: {keywords}"
             else:
                 # Fallback: show all metadata as flat key=value pairs.
-                flat = ", ".join(
-                    f"{key}={value}"
-                    for key, value in meta.items()
-                    if key not in ("distance", "chunk_index", "document_id", "knowledge_base_id")
-                )
+                flat = ", ".join(f"{key}={value}" for key, value in meta.items() if key not in ("distance", "chunk_index", "document_id", "knowledge_base_id"))
                 header = f"[{index}]" + (f" ({flat})" if flat else "")
 
             lines.append(f"{header}\n{doc.content}")
@@ -527,14 +516,11 @@ class RagChatChain:
             logger.warning(f"获取长期记忆失败 (非致命): {e}")
             return []
 
+
 def _extract_user_profile(user: Any | None) -> dict[str, Any]:
     if user is None:
         return {}
-    return {
-        field_name: value
-        for field_name in ("name", "mobile", "email", "description")
-        if (value := getattr(user, field_name, None)) not in (None, "")
-    }
+    return {field_name: value for field_name in ("name", "mobile", "email", "description") if (value := getattr(user, field_name, None)) not in (None, "")}
 
 
 def create_rag_chain(db: Any | None = None, auth: Any | None = None) -> RagChatChain:
@@ -558,10 +544,7 @@ def create_rag_chain(db: Any | None = None, auth: Any | None = None) -> RagChatC
             candidate_multiplier=settings.RETRIEVAL_CANDIDATE_MULTIPLIER,
             auto_adjust_alpha=settings.RETRIEVAL_AUTO_ADJUST_ALPHA,
         )
-        logger.info(
-            f"使用混合检索模式: alpha={settings.HYBRID_ALPHA}, "
-            f"auto_adjust={getattr(settings, 'RETRIEVAL_AUTO_ADJUST_ALPHA', True)}"
-        )
+        logger.info(f"使用混合检索模式: alpha={settings.HYBRID_ALPHA}, auto_adjust={getattr(settings, 'RETRIEVAL_AUTO_ADJUST_ALPHA', True)}")
     elif retrieval_mode == "bm25":
         from app.plugin.module_ai.chat.hybrid_retriever import HybridKnowledgeRetriever
 

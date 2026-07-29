@@ -3,8 +3,8 @@
           <img src="frontend/public/logo.svg" width="150" height="150" alt="logo" />
      </p>
      <h1>FastApiAdmin <sup style="background-color: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.4em; vertical-align: super; margin-left: 5px;">v3.0.0</sup></h1>
-     <h3>🚀 Exceptional Code Quality, Production-Ready Admin Dashboard in 5 Minutes</h3>
-     <p>Full-stack rapid development platform powered by <b>FastAPI + Vue3 + TypeScript</b>. Web, H5, and Mini Program — all in one project.</p>
+     <h3>Single-organization administration foundation</h3>
+     <p>FastAPI + Vue 3 + TypeScript for RBAC, system configuration, audit logs, and an optional AI/RAG plugin.</p>
      <p align="center">
           <a href="https://gitee.com/fastapiadmin/FastapiAdmin.git" target="_blank">
                <img src="https://gitee.com/fastapiadmin/FastapiAdmin/badge/star.svg?theme=dark" alt="Gitee Stars">
@@ -29,28 +29,7 @@ English | [简体中文](./README.md)
 
 </div>
 
-## 💡 Why FastapiAdmin?
-
-| You Need | FastapiAdmin | Django Admin | Frontend-Only |
-|----------|:-----------:|:-----------:|:-------------:|
-| 🎯 **Ready-to-use** admin system | ✅ | ⚠️ Limited | ❌ UI only |
-| ⚡ **FastAPI async** high-performance backend | ✅ | ❌ Sync-first | ❌ No backend |
-| 🔐 **RBAC** menu/button/data level permissions | ✅ | ❌ Basic | ❌ |
-| 🤖 **Code generator** (table → full CRUD) | ✅ | ❌ | ❌ |
-| 📱 **Mobile** (H5 + Mini Program) included | ✅ | ❌ | ❌ |
-| 🐳 **Docker** one-click deploy (Nginx + SSL) | ✅ | ❌ | ❌ |
-
-> 👉 Full comparison: [Why FastapiAdmin?](https://service.fastapiadmin.com/en/guide/why)
-
-## 🍪 Live Demo
-
-| | URL | Account |
-|---|-----|---------|
-| 💻 Web | [service.fastapiadmin.com/web](https://service.fastapiadmin.com/web) | `admin` / `123456` |
-| 📱 Mobile | [service.fastapiadmin.com/app](https://service.fastapiadmin.com/app) | `admin` / `123456` |
-| 📖 Official Docs | [service.fastapiadmin.com](https://service.fastapiadmin.com) | No login |
-
-## 🚀 5-Minute Quick Start
+## Quick Start
 
 ```bash
 # 1. Clone
@@ -87,8 +66,6 @@ FastapiAdmin/            # Monorepo full-stack project
 │   ├── src/
 │   ├── public/
 │   └── package.json
-├─ docker/               # Docker Compose deploy (Nginx + SSL)
-├─ deploy.sh             # One-click deploy script
 └─ LICENSE               # MIT
 ```
 
@@ -96,14 +73,11 @@ FastapiAdmin/            # Monorepo full-stack project
 
 | Module | Capabilities |
 |--------|-------------|
-| 📊 Dashboard | Workbench, Analytics |
-| ⚙️ System | Users, Roles, Menus, Departments, Positions, Dicts, Config, Notices |
-| 👀 Monitoring | Online users, Server, Cache |
-| 📋 Tasks | Scheduled task management |
-| 📝 Logs | Operation auditing |
-| 🧰 Dev Tools | **Code Generator** (table → full CRUD), Form Builder, API Docs |
-| 📁 Files | Unified file management |
-| 🤖 AI Agent | Agno-powered assistant |
+| 📊 Dashboard | Operational overview and system health |
+| ⚙️ System | Users, roles, menus, dictionaries, and parameters |
+| 📝 Audit | Login and operation logs |
+| 📁 Files | File upload and download |
+| 🤖 Optional AI/RAG plugin | Chat, knowledge bases, documents, retrieval, memory, and model configuration |
 
 ## 🔧 Screenshots
 

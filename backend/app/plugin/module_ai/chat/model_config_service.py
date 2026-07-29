@@ -7,10 +7,11 @@ from dataclasses import dataclass
 from cryptography.fernet import Fernet, InvalidToken
 from sqlalchemy import select
 
-from app.config.setting import settings
+from app.config.setting import settings as core_settings
 from app.core.base_schema import AuthSchema
 from app.core.database import async_db_session
 from app.core.logger import logger
+from app.plugin.module_ai.config import settings
 
 from .model import AiModelConfigModel
 from .schema import AiModelConfigOutSchema, AiModelConfigUpdateSchema
@@ -29,7 +30,7 @@ _active_config: ChatModelRuntimeConfig | None = None
 
 def _fernet() -> Fernet:
     # Derive a stable encryption key from the existing application secret.
-    key = base64.urlsafe_b64encode(hashlib.sha256(settings.SECRET_KEY.encode("utf-8")).digest())
+    key = base64.urlsafe_b64encode(hashlib.sha256(core_settings.SECRET_KEY.encode("utf-8")).digest())
     return Fernet(key)
 
 
@@ -79,12 +80,7 @@ async def _find_record(auth: AuthSchema) -> AiModelConfigModel | None:
     db = getattr(auth, "db", None)
     if db is None or not hasattr(db, "execute"):
         return None
-    result = await db.execute(
-        select(AiModelConfigModel)
-        .where(AiModelConfigModel.is_deleted.is_(False))
-        .order_by(AiModelConfigModel.id.asc())
-        .limit(1)
-    )
+    result = await db.execute(select(AiModelConfigModel).where(AiModelConfigModel.is_deleted.is_(False)).order_by(AiModelConfigModel.id.asc()).limit(1))
     return result.scalars().first()
 
 
@@ -132,9 +128,7 @@ async def update_model_config(
             protocol=data.chat_protocol,
             openai_base_url=data.openai_base_url,
             openai_model=data.openai_model,
-            encrypted_api_key=_encrypt_api_key(data.openai_api_key or current.api_key)
-            if (data.openai_api_key or current.api_key)
-            else None,
+            encrypted_api_key=_encrypt_api_key(data.openai_api_key or current.api_key) if (data.openai_api_key or current.api_key) else None,
             created_id=getattr(getattr(auth, "user", None), "id", None),
         )
         auth.db.add(record)

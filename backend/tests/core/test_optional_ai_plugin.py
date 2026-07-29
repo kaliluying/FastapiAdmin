@@ -2,28 +2,27 @@ import json
 import tomllib
 from pathlib import Path
 
-from app.config.setting import Settings, settings
-from app.core import discover, plugins
-from app.scripts.initialize import InitializeData
+from app.core import plugins
+from app.core.plugins import filter_disabled_plugin_seed_data, get_plugin_routers
 
 
 def test_disabled_ai_plugin_is_not_registered(monkeypatch):
-    """禁用 AI 后，动态路由发现不应加载 /ai 路由。"""
-    monkeypatch.setattr(settings, "AI_ENABLE", False)
+    """禁用 AI 后，清单注册器不应加载 /ai 路由。"""
+    monkeypatch.setenv("AI_ENABLE", "false")
 
-    router = discover._build_dynamic_router()
+    routers = get_plugin_routers()
 
-    assert not any(route.path.startswith("/ai") for route in router.routes)
+    assert not any(route.path.startswith("/ai") for router in routers for route in router.routes)
 
 
 def test_disabled_ai_plugin_seed_data_excludes_ai_entries(monkeypatch):
     """禁用 AI 后，初始菜单和角色权限不应生成失效入口。"""
-    monkeypatch.setattr(settings, "AI_ENABLE", False)
+    monkeypatch.setenv("AI_ENABLE", "false")
     menu_data = json.loads(Path("app/scripts/data/platform_menu.json").read_text(encoding="utf-8"))
     role_menu_data = json.loads(Path("app/scripts/data/sys_role_menus.json").read_text(encoding="utf-8"))
 
-    filtered_menu = InitializeData._filter_disabled_plugin_seed_data("platform_menu", menu_data)
-    filtered_roles = InitializeData._filter_disabled_plugin_seed_data("sys_role_menus", role_menu_data)
+    filtered_menu = filter_disabled_plugin_seed_data("platform_menu", menu_data)
+    filtered_roles = filter_disabled_plugin_seed_data("sys_role_menus", role_menu_data)
 
     serialized_menu = json.dumps(filtered_menu, ensure_ascii=False)
     serialized_roles = json.dumps(filtered_roles, ensure_ascii=False)
@@ -48,18 +47,14 @@ def test_ai_dependencies_are_an_optional_extra():
         "python-docx",
         "whoosh",
     }
-    base_dependencies = {
-        dependency.split("=", maxsplit=1)[0].split(">", maxsplit=1)[0].split("<", maxsplit=1)[0]
-        for dependency in pyproject["project"]["dependencies"]
-    }
-    ai_dependencies = {
-        dependency.split("=", maxsplit=1)[0].split(">", maxsplit=1)[0].split("<", maxsplit=1)[0]
-        for dependency in pyproject["project"]["optional-dependencies"]["ai"]
-    }
+    base_dependencies = {dependency.split("=", maxsplit=1)[0].split(">", maxsplit=1)[0].split("<", maxsplit=1)[0] for dependency in pyproject["project"]["dependencies"]}
+    ai_dependencies = {dependency.split("=", maxsplit=1)[0].split(">", maxsplit=1)[0].split("<", maxsplit=1)[0] for dependency in pyproject["project"]["optional-dependencies"]["ai"]}
 
     assert required_modules <= ai_dependencies
     assert not base_dependencies & required_modules
-    assert Settings.model_fields["AI_ENABLE"].default is False
+    manifest = tomllib.loads((Path(__file__).parents[2] / "app/plugin/module_ai/plugin.toml").read_text(encoding="utf-8"))
+    assert manifest["optional"] is True
+    assert manifest["enabled_env"] == "AI_ENABLE"
 
 
 def test_enabled_ai_plugin_skips_when_optional_dependencies_are_missing(monkeypatch):
@@ -71,10 +66,6 @@ def test_enabled_ai_plugin_skips_when_optional_dependencies_are_missing(monkeypa
             return None
         return original_find_spec(module_name)
 
-    monkeypatch.setattr(settings, "AI_ENABLE", True)
+    monkeypatch.setenv("AI_ENABLE", "true")
     monkeypatch.setattr(plugins.importlib.util, "find_spec", find_spec)
-    plugins._missing_ai_extra_modules.cache_clear()
-    try:
-        assert not plugins.is_plugin_enabled("module_ai")
-    finally:
-        plugins._missing_ai_extra_modules.cache_clear()
+    assert not plugins.is_plugin_enabled("module_ai")

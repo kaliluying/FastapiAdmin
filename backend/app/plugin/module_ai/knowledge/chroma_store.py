@@ -4,7 +4,7 @@ from typing import Any
 
 import anyio
 
-from app.config.setting import settings
+from app.plugin.module_ai.config import settings
 
 
 class ChromaKnowledgeStore:
@@ -42,9 +42,7 @@ class ChromaKnowledgeStore:
         documents: list[str],
         metadatas: list[dict[str, Any]],
     ) -> None:
-        await anyio.to_thread.run_sync(
-            lambda: self.collection.upsert(ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas)
-        )
+        await anyio.to_thread.run_sync(lambda: self.collection.upsert(ids=ids, embeddings=embeddings, documents=documents, metadatas=metadatas))
 
     async def query(self, *, query_embedding: list[float], knowledge_base_ids: list[int], top_k: int = 5) -> dict[str, Any]:
         return await anyio.to_thread.run_sync(
@@ -59,9 +57,7 @@ class ChromaKnowledgeStore:
     async def get_by_ids(self, ids: list[str]) -> dict[str, Any]:
         if not ids:
             return {"ids": [], "documents": [], "metadatas": []}
-        return await anyio.to_thread.run_sync(
-            lambda: self.collection.get(ids=ids, include=["documents", "metadatas"])
-        )
+        return await anyio.to_thread.run_sync(lambda: self.collection.get(ids=ids, include=["documents", "metadatas"]))
 
     async def delete_document(self, document_id: int) -> None:
         await anyio.to_thread.run_sync(lambda: self.collection.delete(where={"document_id": document_id}))

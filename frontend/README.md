@@ -8,10 +8,10 @@
 
 ### 环境准备
 
-| 工具    | 版本要求                                               |
-| ------- | ------------------------------------------------------ |
-| Node.js | ≥ 20.19（见 `package.json` → `engines`）               |
-| pnpm    | **10.34.5**（由 `packageManager` 字段固定）             |
+| 工具    | 版本要求                                    |
+| ------- | ------------------------------------------- |
+| Node.js | ≥ 20.19（见 `package.json` → `engines`）    |
+| pnpm    | **10.34.5**（由 `packageManager` 字段固定） |
 
 未安装 pnpm 时可执行：`corepack enable && corepack prepare pnpm@10.34.5 --activate`。
 
@@ -65,17 +65,16 @@ main.ts 启动
 
 ## 常用脚本
 
-| 命令                                          | 说明                                                          |
-| --------------------------------------------- | ------------------------------------------------------------- |
-| `pnpm dev`                                    | 本地开发（读取 `.env` + `.env.development`）                  |
-| `pnpm dev:force`                              | 强制预打包依赖后启动（缓存异常时）                            |
-| `pnpm build`                                  | `vue-tsc` 类型检查 + 生产构建，产物在 **`dist/`**             |
-| `pnpm build:dev` / `build:test` / `build:pro` | 按 mode 构建（需对应 env 文件）                               |
-| `pnpm preview`                                | 本地预览构建结果                                              |
-| `pnpm type-check`                             | 仅 TypeScript 检查                                            |
-| `pnpm lint`                                   | ESLint + Prettier + Stylelint                                 |
-| `pnpm clean:dev`                              | 执行 `scripts/clean-dev.ts`（清理演示等，使用前阅读脚本说明） |
-| `pnpm clean:cache`                            | 清理 Vite 等缓存                                              |
+| 命令                                          | 说明                                              |
+| --------------------------------------------- | ------------------------------------------------- |
+| `pnpm dev`                                    | 本地开发（读取 `.env` + `.env.development`）      |
+| `pnpm dev:force`                              | 强制预打包依赖后启动（缓存异常时）                |
+| `pnpm build`                                  | `vue-tsc` 类型检查 + 生产构建，产物在 **`dist/`** |
+| `pnpm build:dev` / `build:test` / `build:pro` | 按 mode 构建（需对应 env 文件）                   |
+| `pnpm preview`                                | 本地预览构建结果                                  |
+| `pnpm type-check`                             | 仅 TypeScript 检查                                |
+| `pnpm lint`                                   | ESLint + Prettier + Stylelint                     |
+| `pnpm clean:cache`                            | 清理 Vite 等缓存                                  |
 
 ## 目录结构（src）
 

@@ -57,6 +57,9 @@ backend/*.db
 backend/alembic/versions/*
 !backend/alembic/versions/.gitkeep
 
+# Offline API documentation ships minified runtime assets only.
+backend/static/swagger/**/*.map
+
 docker/nginx/app/dist
 docker/nginx/docs/dist
 docker/nginx/web/dist

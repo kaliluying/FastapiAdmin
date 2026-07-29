@@ -15,7 +15,7 @@ from .config.setting import settings
 from .core.exceptions import handle_exception
 from .core.http_limit import http_limit_callback, ws_limit_callback
 from .core.logger import logger
-from .core.plugins import is_plugin_enabled
+from .core.plugins import get_plugin_routers, get_plugin_websocket_routers, initialize_enabled_plugins
 from .scripts.initialize import InitializeData
 from .utils.common_util import import_module, import_modules_async
 from .utils.console import console_end, console_start
@@ -26,16 +26,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
     from app.api.v1.module_system.dict.service import DictDataService
     from app.api.v1.module_system.params.service import ParamsService
 
-    initialize_runtime_chat_model_config = None
-    if is_plugin_enabled("module_ai"):
-        from app.plugin.module_ai.chat.model_config_service import initialize_runtime_chat_model_config
-
     try:
         await InitializeData().init_db()
         logger.info("✅ {}数据库初始化完成", settings.DATABASE_TYPE)
-        if initialize_runtime_chat_model_config:
-            await initialize_runtime_chat_model_config()
-            logger.info("✅ AI 对话模型配置已加载")
+        await initialize_enabled_plugins()
         await import_modules_async(modules=settings.EVENT_LIST, desc="全局事件", app=app, status=True)
         logger.info("✅ 全局事件模块加载完成")
         await ParamsService.init_cache(redis=app.state.redis)
@@ -111,15 +105,11 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(platform_router, dependencies=[Depends(RateLimiter(times=200, seconds=10))])
     app.include_router(system_router, dependencies=[Depends(RateLimiter(times=200, seconds=10))])
 
-    if is_plugin_enabled("module_ai"):
-        from app.plugin.module_ai.chat.ws import WS_AI
+    for router in get_plugin_websocket_routers():
+        app.include_router(router=router, dependencies=[Depends(WebSocketRateLimiter(times=200, seconds=10))])
 
-        app.include_router(router=WS_AI, dependencies=[Depends(WebSocketRateLimiter(times=200, seconds=10))])
-
-    from app.core.discover import get_dynamic_router, set_app_ref
-
-    app.include_router(router=get_dynamic_router(), dependencies=[Depends(RateLimiter(times=200, seconds=10))])
-    set_app_ref(app)
+    for router in get_plugin_routers():
+        app.include_router(router=router, dependencies=[Depends(RateLimiter(times=200, seconds=10))])
 
 
 def register_files(app: FastAPI) -> None:

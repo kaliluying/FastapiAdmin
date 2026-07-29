@@ -1,8 +1,64 @@
-# 见 docs/PLUGIN_ARCHITECTURE.md
-
 name = "ai"
+package = "module_ai"
 title = "AI 子系统"
 version = "1.0.0"
-description = "对话、检索增强生成（LangChain/RAG 风格）等能力；路由由 module_ai/**/controller 动态注册。"
+description = "对话、检索增强生成（LangChain/RAG 风格）等能力。"
 optional = true
+enabled_env = "AI_ENABLE"
+route_prefix = "/ai"
 tags = ["ai", "chat", "rag", "langchain-style"]
+
+required_modules = [
+  "chromadb",
+  "docx",
+  "fastembed",
+  "jieba",
+  "langchain_anthropic",
+  "langchain_core",
+  "langchain_openai",
+  "networkx",
+  "openai",
+  "pypdf",
+  "whoosh",
+]
+
+routers = [
+  "chat.controller:ChatRouter",
+  "knowledge.controller:KnowledgeRouter",
+  "memory.controller:MemoryRouter",
+]
+websocket_routers = ["chat.ws:WS_AI"]
+model_modules = ["chat.model", "knowledge.model", "memory.model"]
+startup_hooks = ["chat.model_config_service:initialize_runtime_chat_model_config"]
+
+permissions = [
+  "module_ai:chat:create",
+  "module_ai:chat:delete",
+  "module_ai:chat:detail",
+  "module_ai:chat:query",
+  "module_ai:chat:update",
+  "module_ai:chat:ws",
+  "module_ai:document:create",
+  "module_ai:document:delete",
+  "module_ai:document:query",
+  "module_ai:knowledge:create",
+  "module_ai:knowledge:delete",
+  "module_ai:knowledge:query",
+  "module_ai:knowledge:update",
+  "module_ai:memory:create",
+  "module_ai:memory:delete",
+  "module_ai:memory:query",
+  "module_ai:memory:update",
+  "module_ai:model_config:query",
+  "module_ai:model_config:update",
+  "module_ai:retrieval:test",
+  "module_ai:session:delete",
+  "module_ai:session:detail",
+  "module_ai:session:query",
+]
+
+[seed]
+route_names = ["AI"]
+route_paths = ["ai"]
+component_prefixes = ["module_ai"]
+permission_prefixes = ["module_ai:"]

@@ -41,7 +41,7 @@ def console_start(
 
     # 核心服务信息
     service_info = Text()
-    service_info.append(f"服务名称 {settings.TITLE} • 优雅 • 简洁 • 高效", style="bold magenta")
+    service_info.append(f"服务名称 {settings.TITLE}", style="bold magenta")
     service_info.append(f"\n当前版本 v{settings.VERSION}", style="bold green")
     service_info.append(f"\n服务地址 {url}", style="bold blue")
     service_info.append(
@@ -99,9 +99,8 @@ def console_end() -> None:
     """
     shutdown_content = Text()
     shutdown_content.append("🛑 ", style="bold red")
-    shutdown_content.append("FastapiAdmin 服务关闭")
+    shutdown_content.append("服务已关闭")
     shutdown_content.append(f"\n⏰ {datetime.now().strftime('%H:%M:%S')}")
-    shutdown_content.append("\n👋 感谢使用！", style="dim")
 
     result = Panel(
         shutdown_content,

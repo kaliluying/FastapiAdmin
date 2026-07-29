@@ -15,8 +15,8 @@ from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
-from app.config.setting import settings
 from app.core.logger import logger
+from app.plugin.module_ai.config import settings
 
 
 class Entity(BaseModel):

@@ -1,6 +1,6 @@
 {
   "name": "fastapiadmin",
-  "description": "Vue3 + Vite + TypeScript + Element-Plus 的后台管理模板",
+  "description": "FastapiAdmin 管理控制台",
   "version": "3.0.0",
   "private": true,
   "type": "module",
@@ -32,8 +32,7 @@
     "lint:prettier": "prettier --write \"**/*.{js,cjs,ts,json,tsx,css,less,scss,vue,html,md}\"",
     "lint:stylelint": "stylelint \"**/*.{css,scss,vue}\" --cache --fix",
     "lint:lint-staged": "lint-staged -c ./.husky/lintstagedrc.cjs",
-    "commit": "git-cz",
-    "clean:dev": "tsx scripts/clean-dev.ts"
+    "commit": "git-cz"
   },
   "config": {
     "commitizen": {

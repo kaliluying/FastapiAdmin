@@ -23,31 +23,7 @@ from app.api.v1.module_system.user.model import UserModel, UserRolesModel
 from app.config.path_conf import SCRIPT_DIR
 from app.core.database import async_db_session, create_tables
 from app.core.logger import logger
-from app.core.plugins import is_plugin_enabled
-
-
-def _load_optional_models() -> list[type]:
-    """加载当前启用插件的 ORM 模型。
-
-    返回:
-    - list[type]: 需要加入 SQLAlchemy metadata 与种子初始化流程的模型类。
-
-    异常/副作用:
-    - AI 插件关闭或目录不存在时返回空列表；启用时导入其模型并注册到 metadata。
-    """
-    if not is_plugin_enabled("module_ai"):
-        return []
-
-    from app.plugin.module_ai.chat.model import AiModelConfigModel, ChatSessionModel
-    from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeChunkModel, KnowledgeDocumentModel
-
-    return [
-        ChatSessionModel,
-        AiModelConfigModel,
-        KnowledgeBaseModel,
-        KnowledgeDocumentModel,
-        KnowledgeChunkModel,
-    ]
+from app.core.plugins import filter_disabled_plugin_seed_data, load_enabled_plugin_models
 
 
 class InitializeData:
@@ -57,7 +33,7 @@ class InitializeData:
     _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
     _TIME_RE = re.compile(r"^\d{2}:\d{2}:\d{2}(\.\d+)?$")
 
-    # 按依赖关系排序：先基础表，再关联表。插件模型在模块启用时追加。
+    # 按依赖关系排序：先基础表，再关联表。已启用插件模型在运行时追加。
     prepare_init_models: list[type] = [
         # ── 平台管理：基础表 ──
         MenuModel,
@@ -74,13 +50,7 @@ class InitializeData:
         # ── 日志表（追加写入） ──
         LoginLogModel,
         OperationLogModel,
-        *_load_optional_models(),
     ]
-
-    @staticmethod
-    def _load_optional_models() -> list[type]:
-        """加载当前启用插件的 ORM 模型，保持向后兼容的类级入口。"""
-        return _load_optional_models()
 
     @classmethod
     def get_prepare_init_models(cls) -> list[type]:
@@ -89,7 +59,7 @@ class InitializeData:
         返回:
         - list[type]: 按外键依赖顺序排列的初始化模型列表。
         """
-        return list(cls.prepare_init_models)
+        return [*cls.prepare_init_models, *load_enabled_plugin_models()]
 
     # 树形模型：JSON 含嵌套 children，需递归创建对象
     _RECURSIVE_TABLES: set[str] = {"platform_menu"}
@@ -97,7 +67,7 @@ class InitializeData:
     async def init_db(self) -> None:
         """建表并导入种子数据"""
         try:
-            self._load_optional_models()
+            load_enabled_plugin_models()
             await create_tables()
         except asyncio.exceptions.TimeoutError:
             logger.error("❌️ 数据库表结构初始化超时")
@@ -248,53 +218,13 @@ class InitializeData:
             with open(json_path, encoding="utf-8") as f:
                 raw = json.loads(f.read())
             data = [self._parse_date_strings(item) for item in raw]
-            return self._filter_disabled_plugin_seed_data(filename, data)
+            return filter_disabled_plugin_seed_data(filename, data)
         except json.JSONDecodeError as e:
             logger.error(f"❌️ 解析 {json_path} 失败: {e!s}")
             raise
         except Exception as e:
             logger.error(f"❌️ 读取 {json_path} 失败: {e!s}")
             raise
-
-    @staticmethod
-    def _filter_disabled_plugin_seed_data(filename: str, data: list[dict]) -> list[dict]:
-        """过滤已禁用插件的菜单与角色权限种子。
-
-        参数:
-        - filename: 种子表名，不含 ``.json`` 后缀。
-        - data: 已完成日期转换的种子记录。
-
-        返回:
-        - list[dict]: 保留核心后台数据后的种子记录。
-        """
-        if is_plugin_enabled("module_ai"):
-            return data
-
-        if filename == "sys_role_menus":
-            return [item for item in data if item.get("route_name") != "AI" and not str(item.get("permission", "")).startswith("module_ai:")]
-
-        if filename != "platform_menu":
-            return data
-
-        def filter_menu_items(items: list[dict]) -> list[dict]:
-            filtered: list[dict] = []
-            for raw_item in items:
-                item = {key: value for key, value in raw_item.items() if key != "children"}
-                children = filter_menu_items(raw_item.get("children", []))
-                if children:
-                    item["children"] = children
-
-                is_ai_item = (
-                    item.get("route_name") == "AI"
-                    or str(item.get("route_path", "")).strip("/") == "ai"
-                    or str(item.get("component_path", "")).startswith("module_ai")
-                    or str(item.get("permission", "")).startswith("module_ai:")
-                )
-                if not is_ai_item:
-                    filtered.append(item)
-            return filtered
-
-        return filter_menu_items(data)
 
     @classmethod
     def _parse_date_strings(cls, data: dict) -> dict:

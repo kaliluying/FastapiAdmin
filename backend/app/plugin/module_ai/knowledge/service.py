@@ -8,10 +8,10 @@ from typing import Any
 import aiofiles
 from fastapi import UploadFile
 
-from app.config.setting import settings
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
 from app.core.logger import logger
+from app.plugin.module_ai.config import settings
 
 from .bm25_index import BM25KnowledgeIndex
 from .chroma_store import ChromaKnowledgeStore
@@ -191,10 +191,7 @@ class KnowledgeService:
 
             now = datetime.now()
             await doc_crud.update_status(document_id, parse_status="success", index_status="indexing", parsed_at=now)
-            chroma_ids = [
-                f"kb-{document.knowledge_base_id}-doc-{document.id}-{index}-{uuid.uuid4().hex}"
-                for index in range(len(chunks))
-            ]
+            chroma_ids = [f"kb-{document.knowledge_base_id}-doc-{document.id}-{index}-{uuid.uuid4().hex}" for index in range(len(chunks))]
             retrieval_mode = settings.RETRIEVAL_MODE
             embeddings: list[list[float]] | None = None
             metadatas: list[dict[str, int | str]] | None = None
@@ -220,9 +217,7 @@ class KnowledgeService:
 
             if embeddings is not None and metadatas is not None:
                 await self._get_store().delete_document(document.id)
-                await self._get_store().upsert_chunks(
-                    ids=chroma_ids, embeddings=embeddings, documents=chunks, metadatas=metadatas
-                )
+                await self._get_store().upsert_chunks(ids=chroma_ids, embeddings=embeddings, documents=chunks, metadatas=metadatas)
 
             if retrieval_mode in ("hybrid", "bm25"):
                 bm25_chunks = [
@@ -241,9 +236,7 @@ class KnowledgeService:
                 await bm25_index.add_chunks(bm25_chunks)
                 logger.info(f"BM25索引同步完成: document_id={document.id}, chunks={len(bm25_chunks)}")
 
-            obj = await doc_crud.update_status(
-                document_id, index_status="success", error_message=None, indexed_at=datetime.now()
-            )
+            obj = await doc_crud.update_status(document_id, index_status="success", error_message=None, indexed_at=datetime.now())
             return KnowledgeDocumentOutSchema.model_validate(obj)
         except CustomException:
             await doc_crud.update_status(document_id, parse_status="failed", index_status="failed", error_message="index failed")

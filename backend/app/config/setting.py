@@ -1,4 +1,4 @@
-﻿import os
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
@@ -34,12 +34,10 @@ class Settings(BaseSettings):
     # ******************* API文档配置 ****************** #
     # ================================================= #
     DEBUG: bool = True  # 调试模式
-    TITLE: str = "🎉 FastapiAdmin 🎉 "  # 文档标题
+    TITLE: str = "FastapiAdmin"  # 文档标题
     VERSION: str = "0.1.0"  # 版本号
-    DESCRIPTION: str = (
-        "该项目是一个基于python的web服务框架，基于fastapi和sqlalchemy实现。"  # 文档描述
-    )
-    SUMMARY: str = "接口汇总"  # 文档概述
+    DESCRIPTION: str = "单组织后台服务，提供 RBAC、系统配置、审计日志和可选 AI/RAG 插件。"
+    SUMMARY: str = "管理接口"
     DOCS_URL: str = "/docs"  # Swagger UI路径
     REDOC_URL: str = "/redoc"  # ReDoc路径
     LJDOC_URL: str = "/ljdoc"  # LangJin UI路径
@@ -206,35 +204,6 @@ class Settings(BaseSettings):
     FAVICON_URL: str = "static/image/favicon.ico"
 
     # ================================================= #
-    # ******************* AI大模型配置 ****************** #
-    # ================================================= #
-    AI_ENABLE: bool = False  # 是否启用 AI 插件；需先安装 uv sync --extra ai
-    OPENAI_API_KEY: str = ""
-    OPENAI_MODEL: str = ""
-    OPENAI_EMBEDDING_MODEL: str = ""
-    OPENAI_BASE_URL: str = ""  # API Base URL，如 https://api.minimax.chat/v1
-    EMBEDDING_PROVIDER: str = "local"  # local 或 openai
-    LOCAL_EMBEDDING_MODEL: str = "BAAI/bge-small-zh-v1.5"
-    LOCAL_EMBEDDING_CACHE_DIR: str = str(BASE_DIR / "data" / "fastembed")
-
-    # ================================================= #
-    # ******************* ChromaDB配置 ****************** #
-    # ================================================= #
-    CHROMA_PERSIST_DIR: str = str(BASE_DIR / "data" / "chroma")  # 本地 Chroma 持久化目录
-    CHROMA_COLLECTION_NAME: str = "knowledge_base"  # ChromaDB 集合名称
-
-    # ================================================= #
-    # ******************* 混合检索配置 ****************** #
-    # ================================================= #
-    RETRIEVAL_MODE: Literal["vector", "bm25", "hybrid"] = "hybrid"  # 检索模式：vector(纯向量) | bm25(纯关键词) | hybrid(混合)
-    HYBRID_ALPHA: float = 0.5  # 混合检索中向量权重（0-1），1-alpha为BM25权重，0.5表示各占50%
-    BM25_INDEX_DIR: str = str(BASE_DIR / "data" / "bm25_index")  # BM25索引目录
-    BM25_TOKENIZER: Literal["char", "jieba"] = "jieba"  # BM25分词器：char(单字) | jieba(词组)
-    RETRIEVAL_TOP_K: int = 5  # 最终返回结果数
-    RETRIEVAL_CANDIDATE_MULTIPLIER: int = 4  # 粗召回倍数（候选数 = top_k * multiplier）
-    RETRIEVAL_AUTO_ADJUST_ALPHA: bool = True  # 是否根据查询类型自动调整alpha
-
-    # ================================================= #
     # ******************* 请求限制配置 ****************** #
     # ================================================= #
     REQUEST_LIMITER_REDIS_PREFIX: str = "fastapiadmin:request_limiter:"
@@ -268,9 +237,7 @@ class Settings(BaseSettings):
     @property
     def ASYNC_DB_URI(self) -> str:
         if self.DATABASE_TYPE not in ("mysql", "postgres", "sqlite"):
-            raise ValueError(
-                f"数据库驱动不支持: {self.DATABASE_TYPE}, 异步数据库请选择 mysql、postgres、sqlite"
-            )
+            raise ValueError(f"数据库驱动不支持: {self.DATABASE_TYPE}, 异步数据库请选择 mysql、postgres、sqlite")
         db_connect: str = ""
         if self.DATABASE_TYPE == "mysql":
             db_connect = f"mysql+asyncmy://{self.DATABASE_USER}:{quote_plus(self.DATABASE_PASSWORD)}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}?charset=utf8mb4"
@@ -283,9 +250,7 @@ class Settings(BaseSettings):
     @property
     def DB_URI(self) -> str:
         if self.DATABASE_TYPE not in ("mysql", "postgres", "sqlite"):
-            raise ValueError(
-                f"数据库驱动不支持: {self.DATABASE_TYPE}, 同步数据库请选择 mysql、postgres、sqlite"
-            )
+            raise ValueError(f"数据库驱动不支持: {self.DATABASE_TYPE}, 同步数据库请选择 mysql、postgres、sqlite")
         db_connect: str = ""
         if self.DATABASE_TYPE == "mysql":
             db_connect = f"mysql+pymysql://{self.DATABASE_USER}:{quote_plus(self.DATABASE_PASSWORD)}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}?charset=utf8mb4"

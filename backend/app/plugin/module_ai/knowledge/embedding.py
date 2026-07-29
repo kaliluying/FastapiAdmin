@@ -4,7 +4,7 @@ import anyio
 from fastembed import TextEmbedding
 from openai import AsyncOpenAI
 
-from app.config.setting import settings
+from app.plugin.module_ai.config import settings
 
 
 class EmbeddingClient(Protocol):
@@ -54,10 +54,7 @@ class OpenAICompatibleEmbeddingClient:
         _validate_embeddings(
             embeddings,
             len(texts),
-            empty_message=(
-                "Embedding service returned no vectors. Check OPENAI_EMBEDDING_MODEL and whether "
-                "OPENAI_BASE_URL supports the /embeddings endpoint."
-            ),
+            empty_message=("Embedding service returned no vectors. Check OPENAI_EMBEDDING_MODEL and whether OPENAI_BASE_URL supports the /embeddings endpoint."),
         )
         return embeddings
 
@@ -67,10 +64,7 @@ class OpenAICompatibleEmbeddingClient:
         _validate_embeddings(
             embeddings,
             len(batch),
-            empty_message=(
-                "Embedding service returned no vectors. Check OPENAI_EMBEDDING_MODEL and whether "
-                "OPENAI_BASE_URL supports the /embeddings endpoint."
-            ),
+            empty_message=("Embedding service returned no vectors. Check OPENAI_EMBEDDING_MODEL and whether OPENAI_BASE_URL supports the /embeddings endpoint."),
         )
         return embeddings
 
