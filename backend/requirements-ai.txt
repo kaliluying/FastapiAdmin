@@ -205,8 +205,6 @@ multidict==6.7.1
     # via
     #   aiohttp
     #   yarl
-networkx==3.4.2
-    # via backend
 numpy==2.4.1
     # via
     #   chromadb

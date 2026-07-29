@@ -19,26 +19,29 @@ from .schema import (
     ParamsUpdateSchema,
 )
 
-# 中间件系统配置内存缓存（避免每请求查 Redis）
-_MID_CONFIG_TTL: float = 60.0  # 缓存 60 秒
-_mid_config_cache: dict = {"ts": 0.0, "data": None}
+# IP 黑名单内存缓存（避免每请求查 Redis）
+_IP_BLOCKLIST_CACHE_TTL: float = 60.0
+_ip_blocklist_cache: dict[str, float | list[str]] = {"ts": 0.0, "data": []}
 
 
-def _parse_bool_config(value: object, *, default: bool = False) -> bool:
-    """Parse bool-like system config values stored as strings."""
-    if isinstance(value, bool):
-        return value
-    if value is None:
-        return default
-    if isinstance(value, int | float):
-        return value != 0
+def _parse_ip_list_config(value: object) -> list[str]:
+    """Parse an IP-list configuration value from the parameter store.
+
+    Args:
+        value: A JSON array or its serialized representation.
+
+    Returns:
+        Trimmed IPv4 or IPv6 string entries; malformed values become an empty list.
+    """
+    raw_items = value
     if isinstance(value, str):
-        normalized = value.strip().lower()
-        if normalized in {"true", "1", "yes", "y", "on"}:
-            return True
-        if normalized in {"false", "0", "no", "n", "off", ""}:
-            return False
-    return default
+        try:
+            raw_items = json.loads(value)
+        except json.JSONDecodeError:
+            return []
+    if not isinstance(raw_items, list):
+        return []
+    return [item.strip() for item in raw_items if isinstance(item, str) and item.strip()]
 
 
 class ParamsService:
@@ -176,6 +179,9 @@ class ParamsService:
             logger.error(f"创建字典类型失败: {e}")
             raise CustomException(msg="同步配置到缓存失败") from e
 
+        if data.config_key == "ip_black_list":
+            _ip_blocklist_cache.update(ts=0.0, data=[])
+
         return out
 
     async def update(self, redis: Redis, id: int, data: ParamsUpdateSchema) -> ParamsOutSchema:
@@ -215,6 +221,9 @@ class ParamsService:
         except Exception as e:
             logger.error(f"更新系统配置失败: {e}")
             raise CustomException(msg="同步配置到缓存失败") from e
+
+        if new_obj.config_key == "ip_black_list":
+            _ip_blocklist_cache.update(ts=0.0, data=[])
 
         return out
 
@@ -386,80 +395,42 @@ class ParamsService:
         return configs
 
     @staticmethod
-    async def get_system_config_for_middleware(redis: Redis) -> dict:
-        """
-        获取中间件所需的系统配置（带 60 秒内存缓存，避免每请求查 Redis）。
+    async def get_ip_blacklist_for_middleware(redis: Redis) -> list[str]:
+        """Get the IP blacklist required by request middleware.
 
-        参数:
-        - redis (Redis): Redis 客户端实例
+        Args:
+            redis: Active Redis client.
 
-        返回:
-        - dict: 包含演示模式、IP白名单、API白名单和IP黑名单的配置字典
+        Returns:
+            Cached IP blacklist entries, refreshed at most once per minute.
         """
         now = time.monotonic()
-        if _mid_config_cache["data"] and now - _mid_config_cache["ts"] < _MID_CONFIG_TTL:
-            return _mid_config_cache["data"]
+        cached = _ip_blocklist_cache["data"]
+        if isinstance(cached, list) and now - _ip_blocklist_cache["ts"] < _IP_BLOCKLIST_CACHE_TTL:
+            return cached
 
-        config_result = await ParamsService._fetch_system_config_for_middleware(redis)
-        _mid_config_cache["data"] = config_result
-        _mid_config_cache["ts"] = now
-        return config_result
+        blacklist = await ParamsService._fetch_ip_blacklist_for_middleware(redis)
+        _ip_blocklist_cache["data"] = blacklist
+        _ip_blocklist_cache["ts"] = now
+        return blacklist
 
     @staticmethod
-    async def _fetch_system_config_for_middleware(redis: Redis) -> dict:
-        # 定义需要获取的配置键
-        config_keys = [
-            f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:1:demo_enable",
-            f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:1:ip_white_list",
-            f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:1:white_api_list_path",
-            f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:1:ip_black_list",
-        ]
+    async def _fetch_ip_blacklist_for_middleware(redis: Redis) -> list[str]:
+        """Read and parse the persisted IP blacklist.
 
-        # 批量获取配置
-        config_values = await RedisCURD(redis).mget(config_keys)
+        Args:
+            redis: Active Redis client.
 
-        # 初始化默认配置
-        config_result = {
-            "demo_enable": False,
-            "ip_white_list": [],
-            "white_api_list_path": [],
-            "ip_black_list": [],
-        }
-
-        # 解析演示模式配置
-        if config_values[0]:
-            try:
-                demo_config = json.loads(config_values[0])
-                config_result["demo_enable"] = (
-                    _parse_bool_config(demo_config.get("config_value", False)) if isinstance(demo_config, dict) else False
-                )
-            except json.JSONDecodeError:
-                logger.error("解析演示模式配置失败")
-
-        # 解析IP白名单配置
-        if config_values[1]:
-            try:
-                ip_white_config = json.loads(config_values[1])
-                # 确保是列表类型
-                config_result["ip_white_list"] = json.loads(ip_white_config.get("config_value", []))
-            except json.JSONDecodeError:
-                logger.error("解析IP白名单配置失败")
-        # 解析IP黑名单
-        # 解析API路径白名单
-        if config_values[2]:
-            try:
-                white_api_config = json.loads(config_values[2])
-                # 确保是列表类型
-                config_result["white_api_list_path"] = json.loads(white_api_config.get("config_value", []))
-            except json.JSONDecodeError:
-                logger.error("解析API白名单配置失败")
-
-        # 解析IP黑名单
-        if config_values[3]:
-            try:
-                black_ip_config = json.loads(config_values[3])
-                # 确保是列表类型
-                config_result["ip_black_list"] = json.loads(black_ip_config.get("config_value", []))
-            except json.JSONDecodeError:
-                logger.error("解析IP黑名单配置失败")
-        return config_result
+        Returns:
+            Parsed IP blacklist entries, or an empty list when no valid setting exists.
+        """
+        key = f"{RedisInitKeyConfig.SYSTEM_CONFIG.key}:1:ip_black_list"
+        value = (await RedisCURD(redis).mget([key]))[0]
+        if not value:
+            return []
+        try:
+            config = json.loads(value)
+        except json.JSONDecodeError:
+            logger.error("解析 IP 黑名单配置失败")
+            return []
+        return _parse_ip_list_config(config.get("config_value") if isinstance(config, dict) else None)

@@ -87,7 +87,7 @@ class Settings(BaseSettings):
     AUTOFLUSH: bool = False  # 是否自动刷新（映射 SQLAlchemy sessionmaker(autoflush=...)）
     AUTOFETCH: bool | None = None  # 兼容旧环境变量名（保留别名，避免 .env 中已有 AUTOFETCH 的部署报错）
     EXPIRE_ON_COMMIT: bool = False  # 是否在提交时过期
-    DATABASE_AUTO_CREATE_TABLES: bool | None = None  # 未配置时仅开发环境自动建表
+    DATABASE_AUTO_CREATE_TABLES: bool = False  # 仅显式开启时自动建表
 
     # MySQL/PostgreSQL数据库连接
     DATABASE_TYPE: Literal["mysql", "postgres", "sqlite"] = "mysql"

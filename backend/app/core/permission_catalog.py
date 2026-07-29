@@ -5,7 +5,7 @@ Menu seed data controls UI visibility and role grants, while backend
 permission code used by either side in this catalog so drift is testable.
 """
 
-from app.core.plugins import get_plugin_permission_codes
+from app.core.plugins import get_ai_permission_codes
 
 CORE_PERMISSION_CODES: frozenset[str] = frozenset(
     {
@@ -62,4 +62,4 @@ CORE_PERMISSION_CODES: frozenset[str] = frozenset(
     }
 )
 
-PERMISSION_CODES: frozenset[str] = CORE_PERMISSION_CODES | get_plugin_permission_codes()
+PERMISSION_CODES: frozenset[str] = CORE_PERMISSION_CODES | get_ai_permission_codes()

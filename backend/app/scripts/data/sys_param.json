@@ -1,29 +1,5 @@
 [
   {
-    "config_name": "演示模式启用",
-    "config_key": "demo_enable",
-    "config_value": "false",
-    "config_type": true,
-    "status": 0,
-    "description": "是否启用演示模式"
-  },
-  {
-    "config_name": "演示访问IP白名单",
-    "config_key": "ip_white_list",
-    "config_value": "[\"127.0.0.1\", \"223.104.209.37\"]",
-    "config_type": true,
-    "status": 0,
-    "description": "演示模式下允许访问的IP列表"
-  },
-  {
-    "config_name": "接口白名单",
-    "config_key": "white_api_list_path",
-    "config_value": "[\"/api/v1/system/auth/login\", \"/api/v1/system/auth/token/refresh\", \"/api/v1/system/auth/captcha/get\", \"/api/v1/system/auth/logout\", \"/api/v1/system/config/info\", \"/api/v1/system/user/current/info\", \"/api/v1/system/auth/auto-login/users\", \"/api/v1/system/auth/auto-login/token\", \"/api/v1/system/auth/auto-login\", \"/common/health\", \"/common/health/ready\", \"/common/health/live\", \"/metrics\"]",
-    "config_type": true,
-    "status": 0,
-    "description": "无需登录即可访问的接口列表"
-  },
-  {
     "config_name": "访问IP黑名单",
     "config_key": "ip_black_list",
     "config_value": "[]",
@@ -128,27 +104,27 @@
     "description": "登录时是否查询IP归属地"
   },
   {
-    "config_name": "????",
+    "config_name": "系统名称",
     "config_key": "system_name",
-    "config_value": "FastApiAdmin AI Knowledge",
+    "config_value": "后台管理系统",
     "config_type": true,
     "status": 0,
-    "description": "?????????"
+    "description": "系统显示名称"
   },
   {
-    "config_name": "?? Logo",
+    "config_name": "系统 Logo",
     "config_key": "system_logo",
     "config_value": "",
     "config_type": true,
     "status": 0,
-    "description": "??????? Logo URL"
+    "description": "系统 Logo 地址"
   },
   {
-    "config_name": "????",
+    "config_name": "系统版本",
     "config_key": "system_version",
-    "config_value": "3.0.0-ai",
+    "config_value": "0.1.0",
     "config_type": true,
     "status": 0,
-    "description": "?????????"
+    "description": "系统版本号"
   }
 ]

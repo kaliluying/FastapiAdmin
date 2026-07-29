@@ -335,7 +335,6 @@
     "mobileLoginSubTitle": "请输入您的手机号码以开始管理您的项目",
     "mobilePhonePlaceholder": "手机号码",
     "getSmsCode": "获取验证码",
-    "smsCodeSentMock": "验证码已发送（演示环境）",
     "smsCodeRequired": "请输入 6 位短信验证码",
     "mobileLoginPending": "手机号登录接口暂未接入，仅供界面演示",
     "backToAccountLogin": "返回",

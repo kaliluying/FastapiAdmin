@@ -15,7 +15,7 @@ from .config.setting import settings
 from .core.exceptions import handle_exception
 from .core.http_limit import http_limit_callback, ws_limit_callback
 from .core.logger import logger
-from .core.plugins import get_plugin_routers, get_plugin_websocket_routers, initialize_enabled_plugins
+from .core.plugins import get_ai_routers, get_ai_websocket_routers, initialize_ai_plugin
 from .scripts.initialize import InitializeData
 from .utils.common_util import import_module, import_modules_async
 from .utils.console import console_end, console_start
@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
     try:
         await InitializeData().init_db()
         logger.info("✅ {}数据库初始化完成", settings.DATABASE_TYPE)
-        await initialize_enabled_plugins()
+        await initialize_ai_plugin()
         await import_modules_async(modules=settings.EVENT_LIST, desc="全局事件", app=app, status=True)
         logger.info("✅ 全局事件模块加载完成")
         await ParamsService.init_cache(redis=app.state.redis)
@@ -105,10 +105,10 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(platform_router, dependencies=[Depends(RateLimiter(times=200, seconds=10))])
     app.include_router(system_router, dependencies=[Depends(RateLimiter(times=200, seconds=10))])
 
-    for router in get_plugin_websocket_routers():
+    for router in get_ai_websocket_routers():
         app.include_router(router=router, dependencies=[Depends(WebSocketRateLimiter(times=200, seconds=10))])
 
-    for router in get_plugin_routers():
+    for router in get_ai_routers():
         app.include_router(router=router, dependencies=[Depends(RateLimiter(times=200, seconds=10))])
 
 

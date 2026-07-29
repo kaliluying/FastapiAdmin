@@ -3,16 +3,26 @@ import tomllib
 from pathlib import Path
 
 from app.core import plugins
-from app.core.plugins import filter_disabled_plugin_seed_data, get_plugin_routers
+from app.core.plugins import filter_ai_seed_data, get_ai_routers
 
 
 def test_disabled_ai_plugin_is_not_registered(monkeypatch):
     """禁用 AI 后，清单注册器不应加载 /ai 路由。"""
     monkeypatch.setenv("AI_ENABLE", "false")
 
-    routers = get_plugin_routers()
+    routers = get_ai_routers()
 
     assert not any(route.path.startswith("/ai") for router in routers for route in router.routes)
+
+
+def test_core_application_excludes_ai_routes_when_disabled(monkeypatch):
+    """核心应用在 AI 关闭时不应注册任何 AI 路由。"""
+    from main import create_app
+
+    monkeypatch.setenv("AI_ENABLE", "false")
+    app = create_app()
+
+    assert not any(route.path.startswith("/ai") for route in app.routes)
 
 
 def test_disabled_ai_plugin_seed_data_excludes_ai_entries(monkeypatch):
@@ -21,8 +31,8 @@ def test_disabled_ai_plugin_seed_data_excludes_ai_entries(monkeypatch):
     menu_data = json.loads(Path("app/scripts/data/platform_menu.json").read_text(encoding="utf-8"))
     role_menu_data = json.loads(Path("app/scripts/data/sys_role_menus.json").read_text(encoding="utf-8"))
 
-    filtered_menu = filter_disabled_plugin_seed_data("platform_menu", menu_data)
-    filtered_roles = filter_disabled_plugin_seed_data("sys_role_menus", role_menu_data)
+    filtered_menu = filter_ai_seed_data("platform_menu", menu_data)
+    filtered_roles = filter_ai_seed_data("sys_role_menus", role_menu_data)
 
     serialized_menu = json.dumps(filtered_menu, ensure_ascii=False)
     serialized_roles = json.dumps(filtered_roles, ensure_ascii=False)
@@ -41,7 +51,6 @@ def test_ai_dependencies_are_an_optional_extra():
         "langchain-anthropic",
         "langchain-core",
         "langchain-openai",
-        "networkx",
         "openai",
         "pypdf",
         "python-docx",
@@ -68,4 +77,4 @@ def test_enabled_ai_plugin_skips_when_optional_dependencies_are_missing(monkeypa
 
     monkeypatch.setenv("AI_ENABLE", "true")
     monkeypatch.setattr(plugins.importlib.util, "find_spec", find_spec)
-    assert not plugins.is_plugin_enabled("module_ai")
+    assert not plugins.is_ai_plugin_enabled()

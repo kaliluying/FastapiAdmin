@@ -1,6 +1,6 @@
-# FastApiAdmin AI Knowledge Skeleton
+# FastapiAdmin
 
-FastApiAdmin AI Knowledge Skeleton 是一个面向单组织内部使用的后台管理系统骨架。当前代码线保留后台管理基础能力，AI 知识库、文档索引和 RAG 对话通过可选依赖组启用。
+FastapiAdmin 是一个面向单组织内部使用的后台管理系统。它提供 RBAC、系统配置、审计日志和文件管理；AI 知识库、文档索引和 RAG 对话通过可选依赖组启用。
 
 ## 项目定位
 
@@ -89,7 +89,7 @@ REDIS_PORT = 6379
 REDIS_PASSWORD = "your_redis_password"
 REDIS_DB_NAME = 1
 
-DATABASE_AUTO_CREATE_TABLES = True  # 生产环境请设为 False，并先执行 Alembic
+DATABASE_AUTO_CREATE_TABLES = True  # 仅本地开发需要自动建表时显式开启
 SECRET_KEY = "dev-only-change-this-secret-before-sharing"
 
 AI_ENABLE = False
@@ -125,7 +125,7 @@ uv sync --extra ai
 # 在 env/.env.dev 中设置 AI_ENABLE = True
 ```
 
-开发环境首次启动时，应用会自动创建表并写入当前启用模块的种子数据。生产环境启动前必须先执行 `uv run main.py upgrade --env=prod`；该命令会先应用核心 Alembic 迁移，再补齐当前已启用插件的缺失表，应用运行时不会自动建表。
+将 `DATABASE_AUTO_CREATE_TABLES` 显式设为 `True` 时，应用启动会创建缺失表并写入当前启用模块的种子数据。生产环境启动前必须执行 `uv run main.py upgrade --env=prod`；该命令会先应用核心 Alembic 迁移，再补齐当前启用 AI 模块的缺失表，应用运行时不会自动建表。
 
 `backend/requirements.txt` 仅包含基础后台依赖；启用 AI 的部署使用 `backend/requirements-ai.txt`。
 

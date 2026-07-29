@@ -166,10 +166,18 @@ type CheckItem = {
 
 type HealthState = "loading" | "healthy" | "degraded" | "unavailable";
 
+type HealthPresentation = Pick<DashboardMetric, "value" | "icon" | "tone">;
+
 const HEALTH_REFRESH_INTERVAL = 30_000;
 const dependencyLabels: Record<keyof HealthReadiness["dependencies"], string> = {
   database: "数据库",
   redis: "Redis",
+};
+const healthPresentations: Record<HealthState, HealthPresentation> = {
+  loading: { value: "检查中", icon: "ri:heart-pulse-line", tone: "info" },
+  healthy: { value: "正常", icon: "ri:heart-pulse-line", tone: "success" },
+  degraded: { value: "需处理", icon: "ri:error-warning-line", tone: "warning" },
+  unavailable: { value: "不可用", icon: "ri:error-warning-line", tone: "warning" },
 };
 
 const userStore = useUserStore();
@@ -205,41 +213,12 @@ const healthDescription = computed(() => {
   return `${dependencySummary} · ${diskSummary}`;
 });
 const healthMetric = computed<DashboardMetric>(() => {
-  const healthMetrics: Record<HealthState, DashboardMetric> = {
-    loading: {
-      label: "系统健康",
-      value: "检查中",
-      unit: "",
-      description: healthDescription.value,
-      icon: "ri:heart-pulse-line",
-      tone: "info",
-    },
-    healthy: {
-      label: "系统健康",
-      value: "正常",
-      unit: "",
-      description: healthDescription.value,
-      icon: "ri:heart-pulse-line",
-      tone: "success",
-    },
-    degraded: {
-      label: "系统健康",
-      value: "需处理",
-      unit: "",
-      description: healthDescription.value,
-      icon: "ri:error-warning-line",
-      tone: "warning",
-    },
-    unavailable: {
-      label: "系统健康",
-      value: "不可用",
-      unit: "",
-      description: healthDescription.value,
-      icon: "ri:error-warning-line",
-      tone: "warning",
-    },
+  return {
+    label: "系统健康",
+    unit: "",
+    description: healthDescription.value,
+    ...healthPresentations[healthState.value],
   };
-  return healthMetrics[healthState.value];
 });
 
 const metrics = computed<DashboardMetric[]>(() => [

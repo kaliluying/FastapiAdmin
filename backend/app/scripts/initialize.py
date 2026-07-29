@@ -20,12 +20,11 @@ from app.api.v1.module_system.log.model import LoginLogModel, OperationLogModel
 from app.api.v1.module_system.params.model import ParamsModel
 from app.api.v1.module_system.role.model import RoleMenusModel, RoleModel
 from app.api.v1.module_system.user.model import UserModel, UserRolesModel
-from app.common.enums import EnvironmentEnum
 from app.config.path_conf import SCRIPT_DIR
 from app.config.setting import settings
 from app.core.database import async_db_session, create_tables
 from app.core.logger import logger
-from app.core.plugins import filter_disabled_plugin_seed_data, load_enabled_plugin_models
+from app.core.plugins import filter_ai_seed_data, load_ai_models
 
 
 class InitializeData:
@@ -61,19 +60,12 @@ class InitializeData:
         返回:
         - list[type]: 按外键依赖顺序排列的初始化模型列表。
         """
-        return [*cls.prepare_init_models, *load_enabled_plugin_models()]
+        return [*cls.prepare_init_models, *load_ai_models()]
 
     @staticmethod
     def should_auto_create_tables() -> bool:
-        """Return whether application startup may create missing tables.
-
-        Returns:
-            ``True`` when explicitly enabled or when running in development
-            with no explicit setting; otherwise ``False``.
-        """
-        if settings.DATABASE_AUTO_CREATE_TABLES is not None:
-            return settings.DATABASE_AUTO_CREATE_TABLES
-        return settings.ENVIRONMENT != EnvironmentEnum.PROD
+        """Return whether application startup may create missing tables."""
+        return settings.DATABASE_AUTO_CREATE_TABLES
 
     # 树形模型：JSON 含嵌套 children，需递归创建对象
     _RECURSIVE_TABLES: set[str] = {"platform_menu"}
@@ -81,7 +73,7 @@ class InitializeData:
     async def init_db(self) -> None:
         """建表并导入种子数据"""
         try:
-            load_enabled_plugin_models()
+            load_ai_models()
             if self.should_auto_create_tables():
                 await create_tables()
         except asyncio.exceptions.TimeoutError:
@@ -233,7 +225,7 @@ class InitializeData:
             with open(json_path, encoding="utf-8") as f:
                 raw = json.loads(f.read())
             data = [self._parse_date_strings(item) for item in raw]
-            return filter_disabled_plugin_seed_data(filename, data)
+            return filter_ai_seed_data(filename, data)
         except json.JSONDecodeError as e:
             logger.error(f"❌️ 解析 {json_path} 失败: {e!s}")
             raise

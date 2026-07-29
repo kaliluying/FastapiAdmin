@@ -43,7 +43,7 @@ class CustomCORSMiddleware(CORSMiddleware):
 
 
 class RequestLogMiddleware(BaseHTTPMiddleware):
-    """请求日志 & 演示模式拦截"""
+    """请求日志与 IP 黑名单拦截。"""
 
     def __init__(self, app: ASGIApp) -> None:
         super().__init__(app)
@@ -86,7 +86,6 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
                      request.client.host if request.client else "unknown")
 
         try:
-            path = request.scope.get("path")
             request_ip = (
                 (x_forwarded_for.split(",")[0].strip())
                 if (x_forwarded_for := request.headers.get("X-Forwarded-For"))
@@ -95,24 +94,13 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
 
             try:
                 redis = request.app.state.redis
-                config = await ParamsService.get_system_config_for_middleware(redis)
-                demo_enable = config["demo_enable"]
-                ip_white_list = config["ip_white_list"]
-                white_api_list_path = config["white_api_list_path"]
-                ip_black_list = config["ip_black_list"]
+                ip_black_list = await ParamsService.get_ip_blacklist_for_middleware(redis)
             except Exception:
-                demo_enable = False
-                ip_white_list, white_api_list_path, ip_black_list = [], [], []
+                ip_black_list = []
 
-            should_block = (request_ip and request_ip in ip_black_list) or (
-                demo_enable and request.method != "GET"
-                and request_ip not in ip_white_list
-                and path not in white_api_list_path
-            )
-
-            if should_block:
-                logger.warning("演示模式拦截: {} {} | ip={}", request.method, path, request_ip)
-                return ErrorResponse(msg="演示环境，禁止操作")
+            if request_ip and request_ip in ip_black_list:
+                logger.warning("IP 黑名单拦截: {} {} | ip={}", request.method, request.url.path, request_ip)
+                return ErrorResponse(msg="当前 IP 已被拒绝访问")
 
             response = await call_next(request)
             process_time = round(time.time() - start_time, 5)
@@ -158,4 +146,3 @@ class CorrelationIdMiddleware(BaseHTTPMiddleware):
             return response
         finally:
             reset_correlation_id(token)
-

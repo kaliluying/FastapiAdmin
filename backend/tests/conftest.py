@@ -29,7 +29,8 @@ _TEST_DB_PATH = tempfile.NamedTemporaryFile(suffix=".db", delete=False).name
 os.environ["DATABASE_TYPE"] = "sqlite"
 os.environ["DATABASE_NAME"] = _TEST_DB_PATH
 os.environ["REDIS_ENABLE"] = "true"
-os.environ["AI_ENABLE"] = "true"
+os.environ["AI_ENABLE"] = "false"
+os.environ["DATABASE_AUTO_CREATE_TABLES"] = "true"
 os.environ["SECRET_KEY"] = "test-secret-key-for-backend-tests-32-chars"
 os.environ["POOL_SIZE"] = "1"
 os.environ["MAX_OVERFLOW"] = "1"
@@ -39,6 +40,7 @@ from app.config.setting import settings
 settings.DATABASE_TYPE = "sqlite"
 settings.DATABASE_NAME = _TEST_DB_PATH
 settings.REDIS_ENABLE = True
+settings.DATABASE_AUTO_CREATE_TABLES = True
 settings.SECRET_KEY = "test-secret-key-for-backend-tests-32-chars"
 settings.POOL_SIZE = 1
 settings.MAX_OVERFLOW = 1
@@ -179,8 +181,12 @@ WebSocketRateLimiter.__call__ = _noop_rate_limit
 # ============================================================
 
 
-@asynccontextmanager
-async def _test_lifespan(app) -> AsyncGenerator[Any, None]:
+async def _initialize_test_app(app) -> None:
+    """Initialize database state shared by a test application.
+
+    Args:
+        app: FastAPI application whose Redis state should be initialized.
+    """
     from app.scripts.initialize import InitializeData
 
     await InitializeData().init_db()
@@ -201,13 +207,39 @@ async def _test_lifespan(app) -> AsyncGenerator[Any, None]:
         )
         await db.commit()
 
+
+@asynccontextmanager
+async def _test_lifespan(app) -> AsyncGenerator[Any, None]:
+    """Start the core-only test application."""
+    await _initialize_test_app(app)
+
     yield
+
+
+@asynccontextmanager
+async def _ai_test_lifespan(app) -> AsyncGenerator[Any, None]:
+    """Start an AI-enabled test application without changing the core fixture."""
+    previous_value = os.environ.get("AI_ENABLE")
+    os.environ["AI_ENABLE"] = "true"
+    try:
+        await _initialize_test_app(app)
+        yield
+    finally:
+        if previous_value is None:
+            os.environ.pop("AI_ENABLE", None)
+        else:
+            os.environ["AI_ENABLE"] = previous_value
 
 
 from main import create_app
 
 _app = create_app()
 _app.router.lifespan_context = _test_lifespan
+
+os.environ["AI_ENABLE"] = "true"
+_ai_app = create_app()
+os.environ["AI_ENABLE"] = "false"
+_ai_app.router.lifespan_context = _ai_test_lifespan
 
 # ============================================================
 # Fixtures
@@ -218,6 +250,13 @@ _app.router.lifespan_context = _test_lifespan
 def _api_client() -> TestClient:
     """session 级共享 TestClient，所有测试复用同一个 app 实例。"""
     with TestClient(_app) as c:
+        yield c
+
+
+@pytest.fixture(scope="session")
+def ai_client() -> TestClient:
+    """session 级 AI 客户端，仅供 AI 模块接口测试使用。"""
+    with TestClient(_ai_app) as c:
         yield c
 
 
