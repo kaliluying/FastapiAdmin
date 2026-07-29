@@ -22,25 +22,12 @@ const __APP_INFO__ = {
 };
 
 /**
- * 返回所有 Element Plus 组件的样式入口（style/index + style/css）。
+ * Return style entry points for Element Plus components used by the source tree.
  *
- * 这些路径路由懒加载组件首次渲染时若未预热，vite optimizer 会重新处理
- * → "new dependencies optimized → reloading" 循环，导致菜单切换卡顿 + 整页刷新。
- * 提前加入 optimizeDeps.include 可消除此问题（仅影响 dev 启动预编译，不影响生产）。
- *
- * - style/css：预编译 CSS（兜底）
- * - style/index：SCSS 入口。useSource: true 时必须预热，否则懒加载触发 optimizer。
- *
- * 性能权衡
- * --------
- * - 当前实现：一次性预热 ~244 个 EP 路径（122 个组件 × 2 入口），dev 启动慢 1-2 分钟
- *   但后续路由切换零卡顿。
- * - 未来优化：扫描 src/ 中实际用到的 el-xxx 组件名，只预热这部分。
- *   实测本项目用到了约 70 个不同 EP 组件，可减少 40%+ 预热开销。
- *   需在新增 EP 组件时同步更新扫描结果，否则会再次触发菜单卡顿。
+ * Returns:
+ *     Existing `style/index` and `style/css` entries for referenced components.
  */
 function elementPlusStyleIncludes(): string[] {
-  // 预构建所有 Element Plus 组件的样式，避免开发时访问新页面触发依赖优化刷新
   const componentsDir = path.join(
     process.cwd(),
     "node_modules",
@@ -48,18 +35,32 @@ function elementPlusStyleIncludes(): string[] {
     "es",
     "components"
   );
+  const sourceDir = path.join(__dirname, "src");
   try {
-    const result: string[] = [];
-    for (const entry of fs.readdirSync(componentsDir, { withFileTypes: true })) {
-      if (!entry.isDirectory()) continue;
-      const styleDir = path.join(componentsDir, entry.name, "style");
-      // 只包含实际存在 style 目录的组件
-      if (fs.existsSync(styleDir) && fs.statSync(styleDir).isDirectory()) {
-        result.push(`element-plus/es/components/${entry.name}/style/index`);
-        result.push(`element-plus/es/components/${entry.name}/style/css`);
+    const componentNames = new Set<string>();
+    const sourceFiles = fs.readdirSync(sourceDir, { recursive: true });
+
+    for (const sourceFile of sourceFiles) {
+      if (!/\.(ts|vue)$/.test(sourceFile)) continue;
+
+      const source = fs.readFileSync(path.join(sourceDir, sourceFile), "utf-8");
+      for (const match of source.matchAll(/\bEl([A-Z][A-Za-z0-9]*)\b/g)) {
+        const componentName = match[1]
+          .replace(/([a-z0-9])([A-Z])/g, "$1-$2")
+          .replace(/([A-Z])([A-Z][a-z])/g, "$1-$2")
+          .toLowerCase();
+        componentNames.add(componentName);
       }
     }
-    return result;
+
+    return [...componentNames].sort().flatMap((componentName) => {
+      const styleDir = path.join(componentsDir, componentName, "style");
+      if (!fs.existsSync(styleDir)) return [];
+      return [
+        `element-plus/es/components/${componentName}/style/index`,
+        `element-plus/es/components/${componentName}/style/css`,
+      ];
+    });
   } catch {
     return [];
   }
@@ -138,7 +139,6 @@ export default ({ mode }: { mode: string }) => {
             if (id.includes("@iconify-json")) return "iconify-icons";
             if (id.includes("xlsx")) return "xlsx";
             if (id.includes("crypto-js")) return "crypto";
-            if (id.includes("js-beautify")) return "beautify";
             if (id.includes("dayjs")) return "dayjs";
             if (
               id.includes("vue/") ||
@@ -251,13 +251,11 @@ export default ({ mode }: { mode: string }) => {
         "nprogress",
         "qs",
         "path-to-regexp",
-        "path-browserify",
         "xgplayer",
         "@iconify/vue",
         "xlsx",
         "highlight.js",
         "dompurify",
-        "js-beautify",
         "markdown-it",
         "markdown-it-highlightjs",
         "clipboard",

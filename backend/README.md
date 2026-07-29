@@ -70,6 +70,8 @@ uv sync --extra ai
 
 `requirements.txt` exports the core backend profile. Use `requirements-ai.txt` for deployments that enable AI.
 
+The Alembic baseline manages core admin tables only. When AI is enabled, application initialization imports the AI models and creates any missing AI tables.
+
 On first startup, the app creates tables and seeds base data when tables are empty.
 
 ## Verification

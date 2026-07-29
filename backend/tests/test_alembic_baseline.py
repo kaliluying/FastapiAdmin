@@ -1,4 +1,5 @@
 import os
+import sqlite3
 import subprocess
 import sys
 from pathlib import Path
@@ -20,21 +21,20 @@ def test_alembic_chain_is_a_single_current_schema_baseline() -> None:
     assert script.get_heads() == ["000000000001"]
 
 
-def test_initial_baseline_creates_current_core_and_ai_tables() -> None:
+def test_initial_baseline_creates_only_core_tables() -> None:
     baseline_path = BACKEND_DIR / "app" / "alembic" / "versions" / "000000000001_initial_baseline.py"
     source = baseline_path.read_text(encoding="utf-8")
 
     for table_name in [
-        "sys_user",
-        "sys_role",
-        "sys_role_menus",
-        "platform_menu",
-        "ai_chat_session",
-        "ai_model_config",
-        "ai_knowledge_base",
-        "ai_memory",
+        "MenuModel",
+        "RoleModel",
+        "RoleMenusModel",
+        "UserModel",
+        "UserRolesModel",
     ]:
-        assert f'"{table_name}"' in source
+        assert table_name in source
+    assert "ImportUtil.find_models" not in source
+    assert "module_ai" not in source
     assert "sys_dept" not in source
     assert "sys_role_depts" not in source
 
@@ -44,7 +44,7 @@ def test_alembic_upgrade_head_from_empty_sqlite(tmp_path: Path) -> None:
     env = {
         **os.environ,
         "DATABASE_TYPE": "sqlite",
-        "DATABASE_NAME": str(db_path),
+        "DATABASE_NAME": str(db_path.with_suffix("")),
         "REDIS_ENABLE": "false",
         "PYTHONUTF8": "1",
     }
@@ -60,3 +60,9 @@ def test_alembic_upgrade_head_from_empty_sqlite(tmp_path: Path) -> None:
     )
 
     assert result.returncode == 0, result.stderr + result.stdout
+
+    with sqlite3.connect(db_path) as connection:
+        table_names = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+
+    assert {"platform_menu", "sys_role", "sys_user"} <= table_names
+    assert not {"ai_chat_session", "ai_model_config", "ai_knowledge_base", "ai_memory"} & table_names

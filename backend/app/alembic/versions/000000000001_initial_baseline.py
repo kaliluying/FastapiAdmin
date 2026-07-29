@@ -5,13 +5,18 @@ Revises:
 Create Date: 2026-07-01 20:20:00.000000
 
 """
+
 from collections.abc import Sequence
 
 from sqlalchemy import MetaData
 
 from alembic import op
-from app.core.base_model import MappedBase
-from app.utils.import_util import ImportUtil
+from app.api.v1.module_platform.menu.model import MenuModel
+from app.api.v1.module_system.dict.model import DictDataModel, DictTypeModel
+from app.api.v1.module_system.log.model import LoginLogModel, OperationLogModel
+from app.api.v1.module_system.params.model import ParamsModel
+from app.api.v1.module_system.role.model import RoleMenusModel, RoleModel
+from app.api.v1.module_system.user.model import UserModel, UserRolesModel
 
 revision: str = "000000000001"
 down_revision: str | None = None
@@ -19,53 +24,34 @@ branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
 
-BASELINE_TABLES = {
-    "platform_menu",
-    "sys_dict_data",
-    "sys_dict_type",
-    "sys_login_log",
-    "sys_operation_log",
-    "sys_param",
-    "sys_role",
-    "sys_role_menus",
-    "sys_user",
-    "sys_user_roles",
-    "ai_chat_session",
-    "ai_model_config",
-    "ai_knowledge_base",
-    "ai_knowledge_document",
-    "ai_knowledge_chunk",
-    "ai_memory",
-}
-
-EXCLUDED_COLUMNS = {}
+CORE_MODELS = (
+    MenuModel,
+    DictTypeModel,
+    DictDataModel,
+    LoginLogModel,
+    OperationLogModel,
+    ParamsModel,
+    RoleMenusModel,
+    RoleModel,
+    UserRolesModel,
+    UserModel,
+)
 
 
 def _baseline_metadata() -> MetaData:
-    """Build the schema that existed before later business migrations."""
-    ImportUtil.find_models(MappedBase)
+    """Build the stable schema for a core-only installation.
+
+    Returns:
+        The metadata for tables that are always part of the admin backend.
+
+    The AI plugin owns its tables and creates them only when enabled during
+    application initialization. Keeping plugin models out of this historical
+    migration makes a core-only Alembic upgrade independent of optional code.
+    """
     metadata = MetaData()
 
-    for table in MappedBase.metadata.tables.values():
-        if table.name in BASELINE_TABLES:
-            table.to_metadata(metadata)
-
-    for table_name, column_names in EXCLUDED_COLUMNS.items():
-        table = metadata.tables.get(table_name)
-        if table is None:
-            continue
-
-        for constraint in list(table.constraints):
-            if any(column_name in constraint.columns for column_name in column_names):
-                table.constraints.discard(constraint)
-
-        for index in list(table.indexes):
-            if any(column_name in index.columns for column_name in column_names):
-                table.indexes.discard(index)
-
-        for column_name in column_names:
-            if column_name in table.c:
-                table._columns.remove(table.c[column_name])
+    for model in CORE_MODELS:
+        model.__table__.to_metadata(metadata)
 
     return metadata
 
