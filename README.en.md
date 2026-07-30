@@ -6,19 +6,7 @@
      <h3>Single-organization administration foundation</h3>
      <p>FastAPI + Vue 3 + TypeScript for RBAC, system configuration, audit logs, and an optional AI/RAG plugin.</p>
      <p align="center">
-          <a href="https://gitee.com/fastapiadmin/FastapiAdmin.git" target="_blank">
-               <img src="https://gitee.com/fastapiadmin/FastapiAdmin/badge/star.svg?theme=dark" alt="Gitee Stars">
-          </a>
-          <a href="https://github.com/fastapiadmin/FastapiAdmin.git" target="_blank">
-               <img src="https://img.shields.io/github/stars/fastapiadmin/FastapiAdmin?style=social" alt="GitHub Stars">
-          </a>
-          <a href="https://github.com/fastapiadmin/FastapiAdmin/forks" target="_blank">
-               <img src="https://img.shields.io/github/forks/fastapiadmin/FastapiAdmin?style=social" alt="GitHub Forks">
-          </a>
-          <br>
-          <a href="https://gitee.com/fastapiadmin/FastapiAdmin/blob/master/LICENSE" target="_blank">
-               <img src="https://img.shields.io/badge/License-MIT-orange" alt="License">
-          </a>
+          <img src="https://img.shields.io/badge/License-MIT-orange" alt="License">
           <img src="https://img.shields.io/badge/Python-≥3.12-blue">
           <img src="https://img.shields.io/badge/NodeJS-≥20.0-blue">
           <img src="https://img.shields.io/badge/MySQL-≥8.0-blue">
@@ -32,8 +20,8 @@ English | [简体中文](./README.md)
 ## Quick Start
 
 ```bash
-# 1. Clone
-git clone https://github.com/fastapiadmin/FastapiAdmin.git
+# 1. Clone your repository
+git clone <repository-url>
 
 # 2. Configure environments
 cp backend/env/.env.dev.example backend/env/.env.dev
@@ -93,22 +81,6 @@ FastapiAdmin/            # Monorepo full-stack project
 ## 🤝 Contributing
 
 Issues and PRs are welcome! See [Contributing Guide](https://service.fastapiadmin.com/en/about/contributing).
-
-## 👥 Community
-
-| WeChat Group |
-| ------------ |
-| ![Group QR](frontend/public/group.jpg) |
-
-> If you find this project useful, please give it a ⭐️ Star!
-
-[![Stargazers over time](https://starchart.cc/fastapiadmin/FastapiAdmin.svg?variant=adaptive)](https://starchart.cc/fastapiadmin/FastapiAdmin)
-
-## 👥 Contributors
-
-<a href="https://github.com/fastapiadmin/FastapiAdmin/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=fastapiadmin/FastapiAdmin"/>
-</a>
 
 ## 🙏 Acknowledgments
 

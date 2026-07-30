@@ -211,26 +211,6 @@ function resolveRedirectTarget(query: LocationQuery): RouteLocationRaw {
   }
 }
 
-let notificationInstance: ReturnType<typeof ElNotification> | null = null;
-
-const showVoteNotification = () => {
-  notificationInstance = ElNotification({
-    title: "⭐ FastapiAdmin 完全开源 · 期待您的 Star 支持 🙏",
-    message: `项目持续迭代中，若对您有所帮助，欢迎点亮 Star 支持！
-    <br/><a href="https://github.com/fastapiadmin/FastapiAdmin" target="_blank" style="color: var(--el-color-primary); text-decoration: none; font-weight: 500;">Github仓库 →</a>
-    <br/><a href="https://gitee.com/fastapiadmin/FastapiAdmin" target="_blank" style="color: var(--el-color-warning); text-decoration: none; font-weight: 500;">Gitee仓库 →</a>`,
-    type: "success",
-    position:
-      panelAlign.value === "right" || panelAlign.value === "center"
-        ? "bottom-left"
-        : "bottom-right",
-    duration: 0,
-    dangerouslyUseHTMLString: true,
-  });
-};
-
-let voteTimer: ReturnType<typeof setTimeout> | null = null;
-
 onMounted(async () => {
   try {
     await configStore.getConfig(true);
@@ -241,15 +221,6 @@ onMounted(async () => {
     await router.replace(resolveRedirectTarget(route.query));
     return;
   }
-  voteTimer = setTimeout(() => {
-    void showVoteNotification;
-  }, 500);
-});
-
-onBeforeUnmount(() => {
-  if (voteTimer !== null) clearTimeout(voteTimer);
-  notificationInstance?.close();
-  notificationInstance = null;
 });
 
 const handleSubmit = async () => {
