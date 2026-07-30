@@ -10,24 +10,6 @@
       :validate-on-rule-change="false"
       @keyup.enter="$emit('submit')"
     >
-      <ElFormItem>
-        <ElSelect
-          :model-value="demoAccountKey"
-          class="w-full"
-          :placeholder="$t('login.quickSelectAccount')"
-          @update:model-value="$emit('setupAccount', $event as AccountKey)"
-        >
-          <ElOption
-            v-for="account in accounts"
-            :key="account.key"
-            :label="account.label"
-            :value="account.key"
-          >
-            <span>{{ account.label }}</span>
-          </ElOption>
-        </ElSelect>
-      </ElFormItem>
-
       <ElFormItem prop="username">
         <ElInput
           class="custom-height"
@@ -84,7 +66,6 @@
 import { Lock, User } from "@element-plus/icons-vue";
 import type { LoginFormData } from "@/api/module_system/auth";
 import type { FormRules } from "element-plus";
-import type { Account, AccountKey } from "@views/module_system/auth/login/types";
 
 const loginForm = defineModel<LoginFormData>("loginForm", { required: true });
 
@@ -92,8 +73,6 @@ defineOptions({ name: "FaLoginAccountForm" });
 
 interface Props {
   rules: FormRules;
-  demoAccountKey: AccountKey;
-  accounts: Account[];
   formKey: number | string;
   loading: boolean;
 }
@@ -102,7 +81,6 @@ withDefaults(defineProps<Props>(), {});
 
 interface Emits {
   submit: [];
-  setupAccount: [key: AccountKey];
 }
 
 const emit = defineEmits<Emits>();

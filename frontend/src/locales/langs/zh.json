@@ -330,7 +330,6 @@
     "title": "欢迎回来 👋",
     "subTitle": "请输入您的账户信息以开始管理您的项目",
     "versionLabel": "版本",
-    "quickSelectAccount": "快速选择账号",
     "mobileLogin": "手机号登录",
     "mobileLoginSubTitle": "请输入您的手机号码以开始管理您的项目",
     "mobilePhonePlaceholder": "手机号码",
@@ -348,11 +347,6 @@
     "comingSoon": "功能开发中，敬请期待",
     "accountLoginTab": "账号登录",
     "quickLoginTab": "快速登录",
-    "roles": {
-      "super": "超级管理员",
-      "admin": "管理员",
-      "user": "普通用户"
-    },
     "placeholder": {
       "username": "请输入用户名",
       "password": "请输入密码",

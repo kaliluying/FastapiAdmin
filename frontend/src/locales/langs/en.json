@@ -330,7 +330,6 @@
     "title": "Welcome back 👋",
     "subTitle": "Enter your account details to start managing your project",
     "versionLabel": "Version",
-    "quickSelectAccount": "Quick select account",
     "mobileLogin": "Mobile login",
     "mobileLoginSubTitle": "Enter your mobile number to start managing your projects",
     "mobilePhonePlaceholder": "Mobile number",
@@ -349,11 +348,6 @@
     "comingSoon": "Coming soon",
     "accountLoginTab": "Account",
     "quickLoginTab": "Quick login",
-    "roles": {
-      "super": "Super Admin",
-      "admin": "Admin",
-      "user": "User"
-    },
     "placeholder": {
       "username": "Please enter username",
       "password": "Please enter password",

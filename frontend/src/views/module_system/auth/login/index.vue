@@ -46,12 +46,9 @@
                       ref="accountFormRef"
                       v-model:login-form="loginForm"
                       :rules="rules"
-                      :demo-account-key="demoAccountKey"
-                      :accounts="accounts"
                       :form-key="formKey"
                       :loading="loading"
                       @submit="handleSubmit"
-                      @setup-account="setupAccount"
                     />
                   </div>
                 </div>
@@ -121,7 +118,6 @@ import type { LoginFormData } from "@/api/module_system/auth";
 import { useConfigStore, useAppStore, useSettingsStore, useUserStore } from "@stores";
 import { getConfigValue, HttpError } from "@utils";
 import { ElNotification, type FormRules } from "element-plus";
-import type { Account, AccountKey } from "./types";
 import FaLoginAccountForm from "@/components/views/fa-login/forms/FaLoginAccountForm.vue";
 import FaAuthTopBar from "@/components/views/fa-login/widgets/FaAuthTopBar.vue";
 import FaEnterpriseIntro from "@/components/views/fa-login/widgets/FaEnterpriseIntro.vue";
@@ -163,31 +159,6 @@ watch(locale, () => {
   formKey.value++;
 });
 
-const accounts = computed<Account[]>(() => [
-  {
-    key: "super",
-    label: t("login.roles.super"),
-    username: "super",
-    password: "123456",
-    roles: ["R_SUPER"],
-  },
-  {
-    key: "admin",
-    label: t("login.roles.admin"),
-    username: "admin",
-    password: "123456",
-    roles: ["R_ADMIN"],
-  },
-  {
-    key: "user",
-    label: t("login.roles.user"),
-    username: "user",
-    password: "123456",
-    roles: ["R_USER"],
-  },
-]);
-
-const demoAccountKey = ref<AccountKey>("super");
 const userStore = useUserStore();
 const router = useRouter();
 const route = useRoute();
@@ -226,13 +197,6 @@ const rules = computed<FormRules>(() => {
   };
 });
 
-function setupAccount(key: AccountKey) {
-  const selected = accounts.value.find((a: Account) => a.key === key);
-  demoAccountKey.value = key;
-  loginForm.username = selected?.username ?? "";
-  loginForm.password = selected?.password ?? "";
-}
-
 function resolveRedirectTarget(query: LocationQuery): RouteLocationRaw {
   const defaultPath = "/";
   const rawRedirect = (query.redirect as string) || defaultPath;
@@ -268,7 +232,6 @@ const showVoteNotification = () => {
 let voteTimer: ReturnType<typeof setTimeout> | null = null;
 
 onMounted(async () => {
-  setupAccount("super");
   try {
     await configStore.getConfig(true);
   } catch (error) {
