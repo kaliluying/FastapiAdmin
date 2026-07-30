@@ -131,13 +131,10 @@ export default ({ mode }: { mode: string }) => {
             if (!id.includes("node_modules")) return;
             if (id.includes("echarts") || id.includes("zrender")) return "echarts";
             if (id.includes("element-plus")) return "element-plus";
-            if (id.includes("@wangeditor")) return "wangeditor";
             if (id.includes("exceljs")) return "exceljs";
             if (id.includes("highlight.js") || id.includes("highlightjs")) return "highlight";
-            if (id.includes("xgplayer")) return "xgplayer";
             if (id.includes("markdown-it")) return "markdown";
             if (id.includes("@iconify-json")) return "iconify-icons";
-            if (id.includes("xlsx")) return "xlsx";
             if (id.includes("crypto-js")) return "crypto";
             if (id.includes("dayjs")) return "dayjs";
             if (
@@ -241,8 +238,6 @@ export default ({ mode }: { mode: string }) => {
         "pinia",
         "axios",
         "@vueuse/core",
-        "@wangeditor-next/editor",
-        "@wangeditor-next/editor-for-vue",
         "exceljs",
         "echarts/core",
         "echarts/renderers",
@@ -250,15 +245,11 @@ export default ({ mode }: { mode: string }) => {
         "echarts/components",
         "nprogress",
         "qs",
-        "path-to-regexp",
-        "xgplayer",
         "@iconify/vue",
-        "xlsx",
         "highlight.js",
         "dompurify",
         "markdown-it",
         "markdown-it-highlightjs",
-        "clipboard",
         "crypto-js",
         "file-saver",
         "mitt",

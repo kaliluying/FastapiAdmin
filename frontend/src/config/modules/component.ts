@@ -9,7 +9,6 @@
  * - 组件配置 - 集中管理全局组件的配置信息
  * - 异步加载 - 使用 defineAsyncComponent 实现按需加载
  * - 开关控制 - 支持通过 enabled 字段启用/禁用组件
- * - 配置查询 - 提供工具函数快速查询组件配置
  *
  * @module config/component
  * @author FastapiAdmin Team
@@ -73,13 +72,4 @@ export interface GlobalComponentConfig {
  */
 export const getEnabledGlobalComponents = () => {
   return globalComponentsConfig.filter((config) => config.enabled !== false);
-};
-
-/**
- * 根据 key 获取组件配置
- * @param key 组件标识
- * @returns 组件配置对象
- */
-export const getGlobalComponentByKey = (key: string) => {
-  return globalComponentsConfig.find((config) => config.key === key);
 };
