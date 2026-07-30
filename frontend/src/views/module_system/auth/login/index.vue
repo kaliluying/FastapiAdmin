@@ -63,14 +63,7 @@
         >
           <div class="login-footer-text text-sm">
             <div class="login-footer-row">
-              <a
-                :href="footerGitCode"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="login-page-footer__link"
-              >
-                {{ footerCopyright }}
-              </a>
+              <span>{{ footerCopyright }}</span>
             </div>
             <span class="login-page-footer__sep login-footer-sep-center">|</span>
             <div class="login-footer-row">
@@ -137,9 +130,6 @@ const panelSubTitle = computed(() => t("login.subTitle"));
 
 const footerCopyright = computed(() =>
   getConfigValue(configStore.configData, ["copyright", "sys_web_copyright"])
-);
-const footerGitCode = computed(() =>
-  getConfigValue(configStore.configData, ["git_code", "sys_git_code"], "#")
 );
 const footerHelpDoc = computed(() =>
   getConfigValue(configStore.configData, ["help_doc", "sys_help_doc"], "#")

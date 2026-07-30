@@ -259,7 +259,7 @@ const exportToExcel = async (
       workbook.Props = {
         Title: filename,
         Subject: "数据导出",
-        Author: props.workbookOptions.creator || "Art Design Pro",
+        Author: props.workbookOptions.creator || "后台管理系统",
         Manager: props.workbookOptions.lastModifiedBy || "",
         Company: "系统导出",
         Category: "数据",

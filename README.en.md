@@ -75,12 +75,7 @@ FastapiAdmin/            # Monorepo full-stack project
 
 ## 📖 Documentation
 
-- 🌐 [Official Docs](https://service.fastapiadmin.com) — Full guides, architecture, custom development
 - 📁 Sub-project READMEs: [backend](backend/README.md) · [frontend](frontend/README.md) · [Docker](docker/README.md)
-
-## 🤝 Contributing
-
-Issues and PRs are welcome! See [Contributing Guide](https://service.fastapiadmin.com/en/about/contributing).
 
 ## 🙏 Acknowledgments
 
