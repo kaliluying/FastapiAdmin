@@ -294,7 +294,7 @@ onBeforeUnmount(() => {
 <!-- <template>
   <div class="page-content space-y-5">
     <FaTextScroll
-      text="Art Design Pro 是一款兼具设计美学与高效开发的后台系统 <a target='_blank' href='https://www.artd.pro/docs/'>点击我 </a>访问官方文档"
+      text="系统公告支持滚动展示、关闭和主题样式"
       showClose
     />
 

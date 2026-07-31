@@ -1,5 +1,7 @@
-﻿from dataclasses import dataclass
+﻿import re
+from dataclasses import dataclass
 from typing import Literal
+from urllib.parse import urlparse
 
 from fastapi import Query
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -8,6 +10,61 @@ from app.common.enums import QueueEnum
 from app.core.base_params import BaseQueryParam
 from app.core.base_schema import BaseSchema
 from app.core.validator import menu_request_validator
+
+_PERMISSION_PATTERN = re.compile(r"^[a-z][a-z0-9_]*(?::[a-z][a-z0-9_]*){2}$")
+_ROUTE_NAME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9_]*$")
+_ROUTE_PATH_PATTERN = re.compile(r"^/?[A-Za-z0-9_:@/.-]+$")
+_COMPONENT_PATH_PATTERN = re.compile(r"^[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*$")
+
+
+def _validate_local_route_path(value: str, field_name: str) -> str:
+    """Validate a local router path without traversal or query segments.
+
+    Args:
+        value: Route path supplied by the menu editor.
+        field_name: Field name used in validation feedback.
+
+    Returns:
+        The trimmed local route path.
+
+    Raises:
+        ValueError: If the path contains unsupported or unsafe segments.
+    """
+    path = value.strip()
+    if not path or not _ROUTE_PATH_PATTERN.fullmatch(path) or "//" in path or ".." in path:
+        raise ValueError(f"{field_name}只能包含字母、数字、_、-、/、:、@ 和 .，且不能含有 .. 或 //")
+    return path
+
+
+def _validate_external_url(value: str) -> str:
+    """Validate an externally opened or embedded URL.
+
+    Args:
+        value: Candidate external URL.
+
+    Returns:
+        A trimmed HTTPS URL.
+
+    Raises:
+        ValueError: If the value is not an absolute HTTPS URL.
+    """
+    url = value.strip()
+    parsed = urlparse(url)
+    try:
+        port = parsed.port
+    except ValueError as error:
+        raise ValueError("外链地址必须是有效的 HTTPS URL") from error
+    if (
+        parsed.scheme != "https"
+        or not parsed.hostname
+        or parsed.username is not None
+        or parsed.password is not None
+        or port is not None and not 1 <= port <= 65535
+        or any(character.isspace() or ord(character) < 32 for character in url)
+        or "\\" in url
+    ):
+        raise ValueError("外链地址必须是有效的 HTTPS URL")
+    return url
 
 
 class MenuCreateSchema(BaseModel):
@@ -24,12 +81,7 @@ class MenuCreateSchema(BaseModel):
     redirect: str | None = Field(default=None, max_length=200, description="重定向地址")
     hidden: bool = Field(default=False, description="是否隐藏")
     keep_alive: bool = Field(default=True, description="是否缓存")
-    always_show: bool = Field(default=False, description="是否始终显示")
     title: str | None = Field(default=None, max_length=50, description="菜单标题")
-    params: list[dict[str, str]] | None = Field(
-        default=None,
-        description="路由参数，格式为[{key: string, value: string}]",
-    )
     affix: bool = Field(default=False, description="是否固定标签页")
     parent_id: int | None = Field(default=None, ge=1, description="父菜单ID")
     status: int = Field(default=0, ge=0, le=1, description="状态(0:启动 1:停用)")
@@ -47,6 +99,47 @@ class MenuCreateSchema(BaseModel):
         if v not in {0, 1}:
             raise ValueError("状态仅支持 0(正常) 或 1(禁用)")
         return v
+
+    @field_validator("permission")
+    @classmethod
+    def _validate_permission(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if not _PERMISSION_PATTERN.fullmatch(value):
+            raise ValueError("权限标识必须为 module:resource:action 格式，且不支持通配符")
+        return value
+
+    @field_validator("route_name")
+    @classmethod
+    def _validate_route_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if not _ROUTE_NAME_PATTERN.fullmatch(value):
+            raise ValueError("路由名称必须以字母开头，仅允许字母、数字和下划线")
+        return value
+
+    @field_validator("route_path", "redirect", "active_path")
+    @classmethod
+    def _validate_route_path(cls, value: str | None, info) -> str | None:
+        if value is None:
+            return value
+        return _validate_local_route_path(value, info.field_name)
+
+    @field_validator("component_path")
+    @classmethod
+    def _validate_component_path(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if not _COMPONENT_PATH_PATTERN.fullmatch(value):
+            raise ValueError("组件路径只能包含目录段，且不能含有 .、.. 或空目录")
+        return value
+
+    @field_validator("link")
+    @classmethod
+    def _validate_link(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        return _validate_external_url(value)
 
     @model_validator(mode="before")
     @classmethod
@@ -108,9 +201,7 @@ class MenuUpdateSchema(BaseModel):
     redirect: str | None = Field(default=None, max_length=200, description="重定向地址")
     hidden: bool | None = Field(default=None, description="是否隐藏")
     keep_alive: bool | None = Field(default=None, description="是否缓存")
-    always_show: bool | None = Field(default=None, description="是否始终显示")
     title: str | None = Field(default=None, max_length=50, description="菜单标题")
-    params: list[dict[str, str]] | None = Field(default=None, description="路由参数")
     affix: bool | None = Field(default=None, description="是否固定标签页")
     parent_id: int | None = Field(default=None, ge=1, description="父菜单ID")
     status: int | None = Field(default=None, ge=0, le=1, description="状态(0:启动 1:停用)")
@@ -131,6 +222,47 @@ class MenuUpdateSchema(BaseModel):
         if v not in {0, 1}:
             raise ValueError("状态仅支持 0(正常) 或 1(禁用)")
         return v
+
+    @field_validator("permission")
+    @classmethod
+    def _validate_permission(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if not _PERMISSION_PATTERN.fullmatch(value):
+            raise ValueError("权限标识必须为 module:resource:action 格式，且不支持通配符")
+        return value
+
+    @field_validator("route_name")
+    @classmethod
+    def _validate_route_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if not _ROUTE_NAME_PATTERN.fullmatch(value):
+            raise ValueError("路由名称必须以字母开头，仅允许字母、数字和下划线")
+        return value
+
+    @field_validator("route_path", "redirect", "active_path")
+    @classmethod
+    def _validate_route_path(cls, value: str | None, info) -> str | None:
+        if value is None:
+            return value
+        return _validate_local_route_path(value, info.field_name)
+
+    @field_validator("component_path")
+    @classmethod
+    def _validate_component_path(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        if not _COMPONENT_PATH_PATTERN.fullmatch(value):
+            raise ValueError("组件路径只能包含目录段，且不能含有 .、.. 或空目录")
+        return value
+
+    @field_validator("link")
+    @classmethod
+    def _validate_link(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        return _validate_external_url(value)
 
     @model_validator(mode="before")
     @classmethod

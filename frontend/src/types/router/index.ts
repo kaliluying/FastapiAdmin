@@ -47,13 +47,6 @@ declare module "vue-router" {
     hidden?: boolean;
 
     /**
-     * 始终显示父级菜单，即使只有一个子菜单
-     * true 显示父级菜单, false 隐藏父级菜单，显示唯一子节点
-     * @default false
-     */
-    alwaysShow?: boolean;
-
-    /**
      * 是否固定在页签上
      * true 固定, false 不固定
      * @default false

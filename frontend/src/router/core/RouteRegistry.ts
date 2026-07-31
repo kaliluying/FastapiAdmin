@@ -8,8 +8,20 @@ import { RouteValidator } from "./RouteValidator";
 import { RouteTransformer } from "./RouteTransformer";
 import { ROOT_LAYOUT_ROUTE_NAME } from "../staticRoutes";
 
-/** 与静态壳层冲突的一级 path 段，动态注册时跳过。 */
-const RESERVED_SHELL_SEGMENTS = new Set(["profile", "changelog"]);
+/** 与静态壳层冲突的一级 path 段。菜单服务端禁止写入，前端保留兜底。 */
+const RESERVED_SHELL_SEGMENTS = new Set([
+  "auth",
+  "changelog",
+  "home",
+  "login",
+  "outside",
+  "profile",
+  "redirect",
+  "401",
+  "403",
+  "404",
+  "500",
+]);
 
 function pathFirstSegment(path: string): string {
   return (
@@ -64,7 +76,7 @@ export class RouteRegistry {
     menuList.forEach((route, index) => {
       const seg = pathFirstSegment(route.path || "");
       if (seg && RESERVED_SHELL_SEGMENTS.has(seg)) {
-        return;
+        throw new Error(`动态菜单路由与系统保留路径冲突: ${route.path}`);
       }
 
       const namedRoute = registrationName(route, index);

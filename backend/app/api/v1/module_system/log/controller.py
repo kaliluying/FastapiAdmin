@@ -6,15 +6,13 @@ from fastapi.responses import JSONResponse
 from app.common.response import ResponseSchema, SuccessResponse
 from app.core.base_params import PaginationQueryParam
 from app.core.base_schema import AuthSchema, BatchDelete, PageResultSchema
-from app.core.dependencies import AuthPermission, get_current_user
+from app.core.dependencies import AuthPermission
 from app.core.router_class import OperationLogRoute
 
 from .schema import (
-    LoginLogCreateSchema,
     LoginLogDetailOutSchema,
     LoginLogOutSchema,
     LoginLogQueryParam,
-    OperationLogCreateSchema,
     OperationLogDetailOutSchema,
     OperationLogOutSchema,
     OperationLogQueryParam,
@@ -56,19 +54,6 @@ async def get_log_list_controller(
     return SuccessResponse(data=result_dict, msg="查询登录日志列表成功")
 
 
-@LogRouter.post(
-    "/login/create",
-    summary="创建登录日志",
-    response_model=ResponseSchema[LoginLogDetailOutSchema],
-)
-async def create_log_controller(
-    data: LoginLogCreateSchema,
-    auth: Annotated[AuthSchema, Depends(get_current_user)],
-) -> JSONResponse:
-    result_dict = await LoginLogService(auth).create(data=data)
-    return SuccessResponse(data=result_dict, msg="创建登录日志成功")
-
-
 @LogRouter.delete(
     "/login/delete",
     summary="删除登录日志",
@@ -86,12 +71,11 @@ async def delete_log_controller(
     "/operation/detail/{id}",
     summary="获取操作日志详情",
     response_model=ResponseSchema[OperationLogDetailOutSchema],
-    dependencies=[Depends(AuthPermission(["module_system:log:query"]))],
 )
 async def get_operation_log_detail_controller(
     *,
     id: Annotated[int, Path(gt=0)],
-    auth: Annotated[AuthSchema, Depends(get_current_user)],
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_system:log:query"]))],
 ):
     result_dict = await OperationLogService(auth).detail(id=id)
     return SuccessResponse(data=result_dict, msg="获取操作日志详情成功")
@@ -101,13 +85,12 @@ async def get_operation_log_detail_controller(
     "/operation/list",
     summary="获取操作日志列表",
     response_model=ResponseSchema[PageResultSchema[OperationLogOutSchema]],
-    dependencies=[Depends(AuthPermission(["module_system:log:query"]))],
 )
 async def list(
     *,
     page: Annotated[PaginationQueryParam, Depends()],
     search: Annotated[OperationLogQueryParam, Depends()],
-    auth: Annotated[AuthSchema, Depends(get_current_user)],
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_system:log:query"]))],
 ):
     result_dict = await OperationLogService(auth).page(
         page_no=page.page_no,
@@ -118,30 +101,15 @@ async def list(
     return SuccessResponse(data=result_dict, msg="查询操作日志列表成功")
 
 
-@LogRouter.post(
-    "/operation/create",
-    summary="创建操作日志",
-    response_model=ResponseSchema[OperationLogDetailOutSchema],
-)
-async def create_operation_log_controller(
-    *,
-    data: OperationLogCreateSchema,
-    auth: Annotated[AuthSchema, Depends(get_current_user)],
-):
-    result_dict = await OperationLogService(auth).create(data=data)
-    return SuccessResponse(data=result_dict, msg="创建操作日志成功")
-
-
 @LogRouter.delete(
     "/operation/delete",
     summary="删除操作日志",
     response_model=ResponseSchema,
-    dependencies=[Depends(AuthPermission(["module_system:log:delete"]))],
 )
 async def delete(
     *,
     data: BatchDelete,
-    auth: Annotated[AuthSchema, Depends(get_current_user)],
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_system:log:delete"]))],
 ):
     await OperationLogService(auth).delete(ids=data.ids)
     return SuccessResponse(msg="删除操作日志成功")

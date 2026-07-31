@@ -149,6 +149,7 @@ async def export_param_list_controller(
 )
 async def get_init_config_controller(
     redis: Annotated[Redis, Depends(redis_getter)],
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_system:param:query"]))],
 ) -> JSONResponse:
     result_dict = await ParamsService.get_init_cache(redis=redis)
     return SuccessResponse(data=result_dict, msg="获取初始化缓存参数成功")

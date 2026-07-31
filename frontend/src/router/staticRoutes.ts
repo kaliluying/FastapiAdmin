@@ -125,6 +125,8 @@ const IframeView = defineComponent({
           ref: iframeRef,
           src: iframeUrl.value,
           frameborder: "0",
+          sandbox: "allow-forms allow-popups allow-scripts",
+          referrerpolicy: "no-referrer",
           class: "w-full h-full min-h-[calc(100vh-120px)] border-none",
           onLoad: handleIframeLoad,
         }),

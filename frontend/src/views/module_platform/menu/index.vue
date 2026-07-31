@@ -201,52 +201,9 @@
               />
             </template>
 
-            <!-- 路由参数(动态键值编辑器) -->
-            <template #params>
-              <template
-                v-if="
-                  !formData.params ||
-                  (Array.isArray(formData.params) && formData.params.length === 0)
-                "
-              >
-                <ElButton type="success" plain @click="formData.params = [{ key: '', value: '' }]">
-                  添加路由参数
-                </ElButton>
-              </template>
-              <template v-else>
-                <div v-for="(item, index) in formData.params" :key="index">
-                  <ElInput v-model="item.key" placeholder="参数名" :style="'width: 100px'" />
-                  <span class="mx-1">=</span>
-                  <ElInput v-model="item.value" placeholder="参数值" :style="'width: 100px'" />
-                  <ElIcon
-                    v-if="formData.params.indexOf(item) === formData.params.length - 1"
-                    class="ml-2 cursor-pointer color-[var(--el-color-success)]"
-                    :style="'vertical-align: -0.15em'"
-                    @click="formData.params.push({ key: '', value: '' })"
-                  >
-                    <CirclePlusFilled />
-                  </ElIcon>
-                  <ElIcon
-                    class="ml-2 cursor-pointer color-[var(--el-color-danger)]"
-                    :style="'vertical-align: -0.15em'"
-                    @click="formData.params.splice(formData.params.indexOf(item), 1)"
-                  >
-                    <DeleteFilled />
-                  </ElIcon>
-                </div>
-              </template>
-            </template>
             <!-- 是否隐藏 -->
             <template #hidden>
               <ElRadioGroup v-model="formData.hidden">
-                <ElRadio :value="true">是</ElRadio>
-                <ElRadio :value="false">否</ElRadio>
-              </ElRadioGroup>
-            </template>
-
-            <!-- 始终显示 -->
-            <template #always_show>
-              <ElRadioGroup v-model="formData.always_show">
                 <ElRadio :value="true">是</ElRadio>
                 <ElRadio :value="false">否</ElRadio>
               </ElRadioGroup>
@@ -325,7 +282,6 @@ defineOptions({
   inheritAttrs: false,
 });
 
-import { CirclePlusFilled, DeleteFilled } from "@element-plus/icons-vue";
 import { useAppStore, useUserStore } from "@stores";
 import { DeviceEnum } from "@/enums/settings/device.enum";
 import { useTableColumns } from "@/hooks/core/useTableColumns";
@@ -343,11 +299,23 @@ import type FaSearchBar from "@/components/forms/fa-search-bar/index.vue";
 import type { FormItem } from "@/components/forms/fa-form/index.vue";
 import type FaForm from "@/components/forms/fa-form/index.vue";
 import FaMenuRouteIcon from "@/components/others/fa-menu-route-icon/index.vue";
+import { refreshMenuAndRoutes } from "@/router/beforeEach";
 import { ElMessage, ElMessageBox } from "element-plus";
 
 const { hasAuth } = useAuth();
 const appStore = useAppStore();
 const userStore = useUserStore();
+
+/**
+ * Reload the current administrator's permissions and registered menu routes.
+ *
+ * @returns A promise resolved after the sidebar and dynamic router use the
+ * latest server-side menu definition.
+ */
+async function refreshAuthorizationUi(): Promise<void> {
+  await userStore.getUserInfo();
+  await refreshMenuAndRoutes();
+}
 
 type MenuSearchForm = {
   name?: string;
@@ -502,15 +470,7 @@ const menuDetailItems: import("@/components/others/fa-descriptions/index.vue").D
         map: { true: { type: "success", text: "是" }, false: { type: "danger", text: "否" } },
       },
     },
-    {
-      label: "是否显示根路由",
-      prop: "always_show",
-      tag: {
-        map: { true: { type: "success", text: "是" }, false: { type: "danger", text: "否" } },
-      },
-    },
     { label: "菜单标题", prop: "title" },
-    { label: "路由参数", prop: "params" },
     {
       label: "是否固定路由",
       prop: "affix",
@@ -579,7 +539,7 @@ const menuDialogFormItems = computed<FormItem[]>(() => {
       key: "route_path",
       label: "路由路径",
       type: "input",
-      hidden: t !== MenuTypeEnum.CATALOG && t !== MenuTypeEnum.MENU,
+      hidden: t !== MenuTypeEnum.CATALOG && t !== MenuTypeEnum.MENU && t !== MenuTypeEnum.EXTLINK,
     },
     {
       key: "component_path",
@@ -614,12 +574,6 @@ const menuDialogFormItems = computed<FormItem[]>(() => {
     },
     { key: "hidden", label: "是否隐藏", type: "input", hidden: t === MenuTypeEnum.BUTTON },
     {
-      key: "always_show",
-      label: "始终显示",
-      type: "input",
-      hidden: t !== MenuTypeEnum.CATALOG && t !== MenuTypeEnum.MENU,
-    },
-    {
       key: "keep_alive",
       label: "缓存页面",
       type: "input",
@@ -633,13 +587,6 @@ const menuDialogFormItems = computed<FormItem[]>(() => {
       label: "文字角标内容",
       type: "input",
       hidden: t === MenuTypeEnum.BUTTON || !formData.value.show_badge,
-    },
-    {
-      key: "params",
-      label: "路由参数",
-      type: "input",
-      span: 24,
-      hidden: t !== MenuTypeEnum.MENU,
     },
     {
       key: "description",
@@ -671,9 +618,7 @@ const formData = ref<MenuForm>({
   parent_id: undefined,
   keep_alive: false,
   hidden: false,
-  always_show: false,
   title: "",
-  params: undefined,
   affix: false,
   link: undefined,
   is_iframe: false,
@@ -731,6 +676,54 @@ function filterMenuTypes(nodes: MenuTable[]): MenuTable[] {
     }));
 }
 
+/**
+ * Collect a menu and every descendant that cannot become its parent.
+ *
+ * @param id Menu being edited.
+ * @param nodes Complete menu tree used by the parent selector.
+ * @returns IDs that must be disabled in the parent selector.
+ */
+function collectInvalidParentIds(id: number | undefined, nodes: MenuTable[]): Set<number> {
+  const invalidIds = new Set<number>();
+  if (id == null) return invalidIds;
+
+  const collect = (node: MenuTable) => {
+    if (node.id != null) invalidIds.add(node.id);
+    node.children?.forEach(collect);
+  };
+
+  const findAndCollect = (items: MenuTable[]): boolean => {
+    for (const node of items) {
+      if (node.id === id) {
+        collect(node);
+        return true;
+      }
+      if (node.children?.length && findAndCollect(node.children)) return true;
+    }
+    return false;
+  };
+
+  findAndCollect(nodes);
+  return invalidIds;
+}
+
+/**
+ * Rebuild parent selector options and disable the edited menu's descendants.
+ *
+ * @returns Nothing; updates the selector options used by the active form.
+ */
+function refreshMenuOptions(): void {
+  const invalidParentIds = collectInvalidParentIds(formData.value.id, fullMenuTree.value);
+  const disableInvalidParents = (options: OptionType[]): OptionType[] =>
+    options.map((option) => ({
+      ...option,
+      disabled: option.disabled || invalidParentIds.has(Number(option.value)),
+      children: option.children ? disableInvalidParents(option.children) : undefined,
+    }));
+
+  menuOptions.value = disableInvalidParents(formatTree(filterMenuTypes(fullMenuTree.value)));
+}
+
 async function loadMenuData() {
   loading.value = true;
   try {
@@ -740,7 +733,7 @@ async function loadMenuData() {
     const tree = res.data.data || [];
     fullMenuTree.value = tree;
     tableData.value = tree;
-    menuOptions.value = formatTree(filterMenuTypes(tree));
+    refreshMenuOptions();
   } catch (e: unknown) {
     console.error(e);
   } finally {
@@ -793,7 +786,7 @@ async function deleteMenuRow(id: number) {
     });
 
     await MenuAPI.deleteMenu([id]);
-    await userStore.getUserInfo();
+    await refreshAuthorizationUi();
     selectedRows.value = [];
     await loadMenuData();
   } catch {
@@ -871,15 +864,6 @@ const { columnChecks, columns } = useTableColumns<MenuTable>(
       },
     },
     {
-      prop: "always_show",
-      label: "显示根路由",
-      width: 108,
-      status: {
-        true: { type: "success", text: "是" },
-        false: { type: "danger", text: "否" },
-      },
-    },
-    {
       prop: "affix",
       label: "固定路由",
       width: 96,
@@ -917,17 +901,6 @@ const { columnChecks, columns } = useTableColumns<MenuTable>(
       },
     },
     { prop: "show_text_badge", label: "文字角标", width: 100, showOverflowTooltip: true },
-    {
-      prop: "params",
-      label: "路由参数",
-      minWidth: 100,
-      formatter: (row: MenuTable) =>
-        row.params == null
-          ? "—"
-          : typeof row.params === "object"
-            ? JSON.stringify(row.params)
-            : String(row.params),
-    },
     { prop: "description", label: "描述", minWidth: 140, showOverflowTooltip: true },
     { prop: "created_time", label: "创建时间", width: 168, showOverflowTooltip: true },
     { prop: "updated_time", label: "更新时间", width: 168, showOverflowTooltip: true },
@@ -960,7 +933,6 @@ const rules = reactive({
   ],
   keep_alive: [{ required: true, message: "请选择是否缓存", trigger: "change" }],
   hidden: [{ required: true, message: "请选择是否隐藏", trigger: "change" }],
-  always_show: [{ required: true, message: "请选择始终显示", trigger: "change" }],
   status: [{ required: true, message: "请选择状态", trigger: "change" }],
   redirect: [
     {
@@ -994,9 +966,7 @@ const initialFormData: MenuForm = {
   parent_id: undefined,
   keep_alive: false,
   hidden: false,
-  always_show: false,
   title: "",
-  params: [] as { key: string; value: string }[],
   affix: false,
   link: undefined,
   is_iframe: false,
@@ -1077,12 +1047,38 @@ async function handleOpenDialog(
       }
     }
   }
+  refreshMenuOptions();
   dialogVisible.visible = true;
 }
 
+/**
+ * Clear fields that are not valid for the newly selected menu type.
+ *
+ * @returns Nothing; mutates the active form model so hidden stale values are
+ * not submitted to the strict backend validator.
+ */
 function handleMenuTypeChange() {
-  if (formData.value.type === MenuTypeEnum.MENU) {
+  const type = formData.value.type;
+  if (type === MenuTypeEnum.CATALOG) {
+    formData.value.permission = undefined;
+    formData.value.component_path = undefined;
+    formData.value.link = undefined;
+    formData.value.is_iframe = false;
+  } else if (type === MenuTypeEnum.MENU) {
     formData.value.component_path = "";
+    formData.value.link = undefined;
+    formData.value.is_iframe = false;
+  } else if (type === MenuTypeEnum.BUTTON) {
+    formData.value.route_name = undefined;
+    formData.value.route_path = undefined;
+    formData.value.component_path = undefined;
+    formData.value.redirect = undefined;
+    formData.value.link = undefined;
+    formData.value.is_iframe = false;
+  } else if (type === MenuTypeEnum.EXTLINK) {
+    formData.value.permission = undefined;
+    formData.value.component_path = undefined;
+    formData.value.redirect = undefined;
   }
   nextTick(() => {
     dataFormRef.value?.clearValidate("redirect");
@@ -1112,7 +1108,7 @@ async function handleSubmit() {
       dialogVisible.visible = false;
       await resetForm();
       await loadMenuData();
-      await userStore.getUserInfo();
+      await refreshAuthorizationUi();
     } catch (error: unknown) {
       console.error(error);
     } finally {
@@ -1132,7 +1128,7 @@ async function handleBatchDelete() {
     });
     batchDeleting.value = true;
     await MenuAPI.deleteMenu(ids);
-    await userStore.getUserInfo();
+    await refreshAuthorizationUi();
     selectedRows.value = [];
     await loadMenuData();
   } catch {
@@ -1161,6 +1157,7 @@ async function handleMoreClick(status: number) {
     });
     moreLoading.value = true;
     await MenuAPI.batchMenu({ ids, status });
+    await refreshAuthorizationUi();
     await loadMenuData();
   } catch {
     // 用户取消

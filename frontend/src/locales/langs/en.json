@@ -37,8 +37,6 @@
       "changeLog": "Release notes",
       "paramConfig": "Config center",
       "docs": "Document",
-      "github": "Github",
-      "gitee": "Gitee",
       "tour": "Guided tour",
       "lockScreen": "Lock screen",
       "logout": "Log out"
@@ -564,7 +562,6 @@
     "dashboard": "Home",
     "logout": "Logout",
     "document": "Document",
-    "gitee": "Gitee",
     "lock": "Lock",
     "unlock": "Unlock",
     "profile": "User Profile",

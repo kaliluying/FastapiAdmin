@@ -92,7 +92,6 @@ function mapMenuNode(item: MenuTable, depth = 0): AppRouteRecord {
     keepAlive: item.keep_alive ?? true,
     affix: !!item.affix,
     fixedTab: !!item.affix,
-    alwaysShow: !!item.always_show,
     isHide: !!item.hidden,
     isHideTab: !!item.is_hide_tab,
     link: item.link || undefined,

@@ -162,16 +162,8 @@
     "npm": ">=10.0.0",
     "pnpm": ">=8.8.0"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://gitee.com/fastapiadmin/FastapiAdmin.git"
-  },
-  "bugs": {
-    "url": "https://gitee.com/fastapiadmin/FastapiAdmin/issues"
-  },
   "author": "fastapiadmin <948080782@qq.com>",
   "license": "MIT",
-  "homepage": "https://gitee.com/fastapiadmin/FastapiAdmin",
   "browserslist": [
     "Chrome >= 84",
     "Firefox >= 83",

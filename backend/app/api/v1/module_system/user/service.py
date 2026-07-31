@@ -31,6 +31,15 @@ class UserService:
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth
 
+    def _ensure_role_assignment_allowed(self) -> None:
+        """Restrict assignment of security roles to super administrators.
+
+        Raises:
+            CustomException: If the current user is not a super administrator.
+        """
+        if not self.auth.user or not self.auth.user.is_superuser:
+            raise CustomException(msg="仅超级管理员可以分配用户角色", code=10403, status_code=403)
+
     async def detail(self, id: int) -> UserOutSchema:
         user = await UserCRUD(self.auth).get_or_404(id=id)
         return UserOutSchema.model_validate(user)
@@ -64,6 +73,8 @@ class UserService:
             raise CustomException(msg="用户名不能为空")
         if data.is_superuser:
             raise CustomException(msg="不允许创建超级管理员")
+        if data.role_ids:
+            self._ensure_role_assignment_allowed()
         user = await UserCRUD(self.auth).get(username=data.username)
         if user:
             raise CustomException(msg="已存在相同用户名称的账号")
@@ -95,6 +106,8 @@ class UserService:
             exist_email_user = await UserCRUD(self.auth).get(email=data.email)
             if exist_email_user and exist_email_user.id != id:
                 raise CustomException(msg="该数据已存在")
+        if "role_ids" in data.model_fields_set:
+            self._ensure_role_assignment_allowed()
         new_user = await UserCRUD(self.auth).update(id=id, data=data)
 
         if "role_ids" in data.model_fields_set:

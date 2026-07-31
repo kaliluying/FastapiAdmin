@@ -88,6 +88,7 @@ import RoleAPI, { permissionDataType } from "@/api/module_system/role";
 import MenuAPI, { MenuTable } from "@/api/module_platform/menu";
 import { DeviceEnum } from "@/enums/settings/device.enum";
 import { useAppStore, useUserStore } from "@stores";
+import { refreshMenuAndRoutes } from "@/router/beforeEach";
 import { ElMessage } from "element-plus";
 
 const props = defineProps<{
@@ -174,6 +175,7 @@ async function handleDrawerSave() {
 
     const userStore = useUserStore();
     await userStore.getUserInfo();
+    await refreshMenuAndRoutes();
 
     drawerVisible.value = false;
     emit("saved");

@@ -186,7 +186,11 @@ export function formatTree(nodes: TreeNode[]): CascaderNode[] {
     const formatted: CascaderNode = {
       value: node.id ?? "",
       label: node.name ?? "",
-      disabled: node.status === false || String(node.status) === "false",
+      disabled:
+        node.status === false ||
+        node.status === 1 ||
+        String(node.status) === "false" ||
+        String(node.status) === "1",
     };
 
     if (node.children && node.children.length > 0) {
