@@ -1,6 +1,7 @@
 ﻿from typing import Any
 
 from app.core.base_schema import AuthSchema, BatchSetAvailable
+from app.core.dependencies import require_superadmin
 from app.core.exceptions import CustomException
 from app.utils.excel_util import ExcelUtil
 
@@ -23,6 +24,19 @@ class RoleService:
 
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth
+
+    @staticmethod
+    def _ensure_system_role_protected(role_ids: list[int]) -> None:
+        """Reject mutations to the built-in super-administrator role.
+
+        Args:
+            role_ids: Role IDs targeted by a mutating operation.
+
+        Raises:
+            CustomException: If the built-in role is included.
+        """
+        if 1 in role_ids:
+            raise CustomException(msg="系统默认角色不可修改、停用、删除或重新授权")
 
     async def detail(self, id: int) -> RoleOutSchema:
         """
@@ -82,6 +96,7 @@ class RoleService:
             out_schema=RoleOutSchema,
         )
 
+    @require_superadmin
     async def create(self, data: RoleCreateSchema) -> RoleOutSchema:
         """
         创建角色
@@ -102,6 +117,7 @@ class RoleService:
         new_role = await RoleCRUD(self.auth).create(data=data)
         return RoleOutSchema.model_validate(new_role)
 
+    @require_superadmin
     async def update(self, id: int, data: RoleUpdateSchema) -> RoleOutSchema:
         """
         更新角色
@@ -113,6 +129,7 @@ class RoleService:
         返回:
         - RoleOutSchema: 更新后的角色响应模型
         """
+        self._ensure_system_role_protected([id])
         _ = await RoleCRUD(self.auth).get_or_404(id=id, msg="更新失败，该数据不存在")
         exist_role = await RoleCRUD(self.auth).get(name=data.name)
         if exist_role and exist_role.id != id:
@@ -123,6 +140,7 @@ class RoleService:
         updated_role = await RoleCRUD(self.auth).update(id=id, data=data)
         return RoleOutSchema.model_validate(updated_role)
 
+    @require_superadmin
     async def delete(self, ids: list[int]) -> None:
         """
         删除角色
@@ -135,6 +153,7 @@ class RoleService:
         """
         if len(ids) < 1:
             raise CustomException(msg="删除失败，删除对象不能为空")
+        self._ensure_system_role_protected(ids)
 
         # 批量校验角色存在性
         roles = await RoleCRUD(self.auth).get_list(search={"id": ("in", ids)})
@@ -143,6 +162,7 @@ class RoleService:
 
         await RoleCRUD(self.auth).delete(ids=ids)
 
+    @require_superadmin
     async def set_permission(self, data: RolePermissionSettingSchema) -> None:
         """
         设置角色权限
@@ -153,6 +173,7 @@ class RoleService:
         返回:
         - None
         """
+        self._ensure_system_role_protected(data.role_ids)
         roles = await RoleCRUD(self.auth).get_list(search={"id": ("in", data.role_ids)})
         if len(roles) != len(data.role_ids):
             raise CustomException(msg="授权失败，部分角色不存在或无权操作")
@@ -161,6 +182,7 @@ class RoleService:
         await RoleCRUD(self.auth).set_role_menus_crud(role_ids=role_ids, menu_ids=data.menu_ids)
         await RoleCRUD(self.auth).set(ids=role_ids, data_scope=data.data_scope)
 
+    @require_superadmin
     async def set_available(self, data: BatchSetAvailable) -> None:
         """
         设置角色可用状态
@@ -171,6 +193,7 @@ class RoleService:
         返回:
         - None
         """
+        self._ensure_system_role_protected(data.ids)
         roles = await RoleCRUD(self.auth).get_list(search={"id": ("in", data.ids)})
         role_map = {r.id: r for r in roles}
         for rid in data.ids:

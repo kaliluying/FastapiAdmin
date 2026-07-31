@@ -12,6 +12,61 @@ from app.core.base_schema import AuthSchema
 from app.core.database import async_db_session
 from app.core.logger import logger
 
+_SENSITIVE_FIELD_NAMES = frozenset(
+    {
+        "access",
+        "apikey",
+        "authorization",
+        "captcha",
+        "credential",
+        "password",
+        "refresh",
+        "secret",
+        "token",
+    }
+)
+_LOG_VALUE_LIMIT = 2000
+
+
+def _redact_sensitive_values(value: Any, key: str | None = None) -> Any:
+    """Recursively replace credential-like values before audit persistence.
+
+    Args:
+        value: Parsed request or response payload.
+        key: Current mapping key, if the value belongs to one.
+
+    Returns:
+        A copy safe to serialize into an operation log.
+    """
+    normalized_key = "".join(character for character in (key or "").lower() if character.isalnum())
+    if normalized_key and (
+        normalized_key in _SENSITIVE_FIELD_NAMES
+        or "password" in normalized_key
+        or "token" in normalized_key
+        or "captcha" in normalized_key
+        or "secret" in normalized_key
+        or "credential" in normalized_key
+    ):
+        return "***"
+    if isinstance(value, dict):
+        return {str(item_key): _redact_sensitive_values(item_value, str(item_key)) for item_key, item_value in value.items()}
+    if isinstance(value, list):
+        return [_redact_sensitive_values(item) for item in value]
+    return value
+
+
+def _serialize_log_value(value: Any) -> str:
+    """Serialize and cap a redacted operation-log payload.
+
+    Args:
+        value: Request or response content ready for audit serialization.
+
+    Returns:
+        JSON text capped to the storage policy length.
+    """
+    text = json.dumps(_redact_sensitive_values(value), ensure_ascii=False, default=str)
+    return text if len(text) <= _LOG_VALUE_LIMIT else "日志内容过长，已省略"
+
 
 async def _write_operation_log_async(log_data: dict) -> None:
     from app.api.v1.module_system.log.schema import OperationLogCreateSchema
@@ -53,17 +108,18 @@ class OperationLogRoute(APIRoute):
                         try:
                             oper_param["body"] = json.loads(payload.decode())
                         except (json.JSONDecodeError, UnicodeDecodeError):
-                            oper_param["body"] = payload.decode("utf-8", errors="ignore")
+                            oper_param["body"] = "非 JSON 请求体已省略"
 
                 if request.path_params:
                     oper_param["path_params"] = dict(request.path_params)
 
-                log_payload = json.dumps(oper_param, ensure_ascii=False)
-                if len(log_payload) > 2000:
-                    log_payload = "请求参数过长"
-
                 is_json = "application/json" in response.headers.get("Content-Type", "")
-                response_data = response.body if is_json else b"{}"
+                response_payload: Any = {}
+                if is_json and getattr(response, "body", None):
+                    try:
+                        response_payload = json.loads(response.body.decode())
+                    except (json.JSONDecodeError, UnicodeDecodeError):
+                        response_payload = {"message": "响应不是可解析的 JSON，已省略"}
 
                 ctx = getattr(request.state, "ctx", None)
                 current_user_id = ctx.user_id if ctx else None
@@ -71,9 +127,9 @@ class OperationLogRoute(APIRoute):
                 log_data: dict[str, Any] = {
                     "request_path": request.url.path,
                     "request_method": request.method,
-                    "request_payload": log_payload,
+                    "request_payload": _serialize_log_value(oper_param),
                     "response_code": response.status_code,
-                    "response_json": response_data.decode(),
+                    "response_json": _serialize_log_value(response_payload),
                     "process_time": f"{(time.time() - start):.2f}s",
                     "description": route.summary if route else "",
                     "created_id": current_user_id,

@@ -1,6 +1,6 @@
 ﻿from typing import TYPE_CHECKING
 
-from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, CheckConstraint, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.common.enums import PermissionFilterStrategy
@@ -22,7 +22,12 @@ class MenuModel(ModelMixin):
     """
 
     __tablename__: str = "platform_menu"
-    __table_args__: dict[str, str] = {"comment": "平台菜单表"}
+    __table_args__ = (
+        CheckConstraint("type IN (1, 2, 3, 4)", name="ck_platform_menu_type"),
+        UniqueConstraint("route_name", name="uq_platform_menu_route_name"),
+        UniqueConstraint("parent_id", "route_path", name="uq_platform_menu_parent_route_path"),
+        {"comment": "平台菜单表"},
+    )
     __tree_children_attr__: str = "children"
     __loader_options__: list[str] = ["roles", "children"]
     __permission_strategy__: PermissionFilterStrategy = PermissionFilterStrategy.MENU_AUTH
@@ -38,9 +43,7 @@ class MenuModel(ModelMixin):
     redirect: Mapped[str | None] = mapped_column(String(200), comment="重定向地址")
     hidden: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, comment="是否隐藏(True:隐藏 False:显示)")
     keep_alive: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, comment="是否缓存(True:是 False:否)")
-    always_show: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, comment="是否始终显示(True:是 False:否)")
     title: Mapped[str | None] = mapped_column(String(50), comment="菜单标题")
-    params: Mapped[list[dict[str, str]] | None] = mapped_column(JSON, comment="路由参数(JSON对象)")
     affix: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, comment="是否固定标签页(True:是 False:否)")
     link: Mapped[str | None] = mapped_column(String(500), comment="外链地址(仅type=4)")
     is_iframe: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, comment="是否嵌入iframe(True:是 False:否)")

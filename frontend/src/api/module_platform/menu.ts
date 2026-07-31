@@ -77,9 +77,7 @@ export interface MenuTable extends BaseType {
   parent_name?: string;
   keep_alive?: boolean;
   hidden?: boolean;
-  always_show?: boolean;
   title?: string;
-  params?: { key: string; value: string }[];
   affix?: boolean;
   children?: MenuTable[];
   link?: string;
@@ -105,9 +103,7 @@ export interface MenuForm extends BaseFormType {
   parent_id?: number;
   keep_alive?: boolean;
   hidden?: boolean;
-  always_show?: boolean;
   title?: string;
-  params?: KeyValue[];
   affix?: boolean;
   link?: string;
   is_iframe?: boolean;
@@ -117,9 +113,4 @@ export interface MenuForm extends BaseFormType {
   show_text_badge?: string;
   status?: number;
   description?: string;
-}
-
-export interface KeyValue {
-  key: string;
-  value: string;
 }

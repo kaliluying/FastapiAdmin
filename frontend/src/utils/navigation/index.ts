@@ -67,7 +67,13 @@ export const getFirstMenuPath = (menuList: AppRouteRecordFromTypes[]): string =>
   return "";
 };
 
-export const openExternalLink = (link: string) => window.open(link, "_blank");
+/**
+ * Open a validated external menu link without exposing the opener window.
+ *
+ * @param link HTTPS URL configured for the external menu.
+ * @returns The newly opened window, or null when the browser blocks it.
+ */
+export const openExternalLink = (link: string) => window.open(link, "_blank", "noopener,noreferrer");
 
 export const handleMenuJump = (item: AppRouteRecord, jumpToFirst: boolean = false) => {
   const { link, isIframe: menuIsIframe } = item.meta;

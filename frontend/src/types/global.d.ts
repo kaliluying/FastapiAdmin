@@ -57,6 +57,8 @@ declare global {
     value: string | number;
     /** 文本 */
     label: string;
+    /** 是否禁用 */
+    disabled?: boolean;
     /** 子列表  */
     children?: OptionType[];
   }

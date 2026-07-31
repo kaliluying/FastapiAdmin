@@ -77,6 +77,7 @@ frontend/src/types/components.d.ts
 
 # Local runtime data and historical workspaces
 .superpowers/
+/data/
 backend/data/
 backend/storage/
 backend/find_doc.py

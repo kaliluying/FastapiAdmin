@@ -153,7 +153,9 @@ def get_child_recursion(
     返回:
     - list[int]: 所有子级 ID 列表。
     """
-    ids = ids or []
+    ids = [] if ids is None else ids
+    if id in ids:
+        raise CustomException(msg="递归获取子级ID失败,菜单层级存在循环引用")
     ids.append(id)
     for child in id_map.get(id, []):
         get_child_recursion(child, id_map, ids)

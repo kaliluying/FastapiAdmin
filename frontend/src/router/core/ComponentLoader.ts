@@ -1,6 +1,6 @@
 /**
  * 组件加载器 —— 菜单字符串路径 → views 懒加载。
- * 支持 module_system→module_platform 回退、param→params 重命名回退。
+ * 菜单组件路径必须与实际视图目录一致，避免历史回退掩盖配置错误。
  */
 import { defineComponent, h, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
@@ -35,29 +35,6 @@ export class ComponentLoader {
     const fullPath = `../../views${normalized}.vue`;
     const fullPathWithIndex = `../../views${normalized}/index.vue`;
     let module = this.modules[fullPath] || this.modules[fullPathWithIndex];
-
-    // Fallback: component moved from module_system to module_platform
-    if (!module && normalized.includes("/module_system/")) {
-      const altPath = normalized.replace("/module_system/", "/module_platform/");
-      module =
-        this.modules[`../../views${altPath}.vue`] ||
-        this.modules[`../../views${altPath}/index.vue`];
-    }
-    // Fallback: renamed view directories (param→params)
-    if (!module) {
-      const renames: Record<string, string> = { "/param/": "/params/" };
-      for (const [oldP, newP] of Object.entries(renames)) {
-        const alt = normalized.replace(oldP, newP);
-        if (alt !== normalized) {
-          const fallbackModule =
-            this.modules[`../../views${alt}.vue`] || this.modules[`../../views${alt}/index.vue`];
-          if (fallbackModule) {
-            module = fallbackModule;
-            break;
-          }
-        }
-      }
-    }
 
     if (!module) {
       console.error(
@@ -98,6 +75,8 @@ export class ComponentLoader {
                 h("iframe", {
                   src: iframeUrl.value,
                   frameborder: "0",
+                  sandbox: "allow-forms allow-popups allow-scripts",
+                  referrerpolicy: "no-referrer",
                   class: "w-full h-full min-h-[calc(100vh-120px)] border-none",
                   onLoad: handleIframeLoad,
                 }),

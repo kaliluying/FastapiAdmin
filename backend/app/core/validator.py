@@ -247,19 +247,52 @@ def menu_request_validator(data: Any) -> Any:
             msg=f"菜单类型必须为: {','.join(map(str, menu_types.keys()))}",
         )
 
-    if data.type in [1, 2]:
+    def reject_fields(*fields: str) -> None:
+        """Reject fields that do not belong to the selected menu type.
+
+        Args:
+            *fields: Field names that must be empty for the menu type.
+
+        Raises:
+            CustomException: If a disallowed field has a value.
+        """
+        labels = {
+            "permission": "权限标识",
+            "component_path": "组件路径",
+            "redirect": "重定向地址",
+            "link": "外链地址",
+            "is_iframe": "嵌入 iframe",
+            "route_name": "路由名称",
+            "route_path": "路由路径",
+        }
+        for field in fields:
+            value = getattr(data, field, None)
+            if value not in (None, "", False):
+                raise CustomException(code=RET.ERROR.code, msg=f"{menu_types[data.type]}类型不允许填写{labels[field]}")
+
+    if data.type in {1, 2, 4}:
         if not data.route_name:
             raise CustomException(code=RET.ERROR.code, msg="路由名称不能为空")
         if not data.route_path:
             raise CustomException(code=RET.ERROR.code, msg="路由路径不能为空")
 
-    if data.type == 1 and not (data.redirect and str(data.redirect).strip()):
-        raise CustomException(code=RET.ERROR.code, msg="目录类型必须填写重定向地址")
-
-    if data.type == 2 and not data.component_path:
-        raise CustomException(code=RET.ERROR.code, msg="组件路径不能为空")
-
-    if data.type == 4 and not getattr(data, "link", None):
-        raise CustomException(code=RET.ERROR.code, msg="外链类型必须填写链接地址")
+    if data.type == 1:
+        if not data.redirect:
+            raise CustomException(code=RET.ERROR.code, msg="目录类型必须填写重定向地址")
+        reject_fields("permission", "component_path", "link", "is_iframe")
+    elif data.type == 2:
+        if not data.component_path:
+            raise CustomException(code=RET.ERROR.code, msg="菜单类型必须填写组件路径")
+        if not data.permission:
+            raise CustomException(code=RET.ERROR.code, msg="菜单类型必须填写查询权限标识")
+        reject_fields("link", "is_iframe")
+    elif data.type == 3:
+        if not data.permission:
+            raise CustomException(code=RET.ERROR.code, msg="按钮类型必须填写权限标识")
+        reject_fields("route_name", "route_path", "component_path", "redirect", "link", "is_iframe")
+    elif data.type == 4:
+        if not data.link:
+            raise CustomException(code=RET.ERROR.code, msg="外链类型必须填写链接地址")
+        reject_fields("permission", "component_path", "redirect")
 
     return data

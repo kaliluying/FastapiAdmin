@@ -285,7 +285,7 @@ async def test_update_user_clears_roles_when_an_empty_list_is_submitted(monkeypa
 
     monkeypatch.setattr(user_service, "UserCRUD", FakeUserCRUD)
 
-    result = await user_service.UserService(AuthSchema(user=_user())).update(
+    result = await user_service.UserService(AuthSchema(user=_user(is_superuser=True))).update(
         id=target_user.id,
         data=UserUpdateSchema(username=target_user.username, role_ids=[]),
     )
