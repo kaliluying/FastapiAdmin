@@ -289,15 +289,17 @@ class Settings(BaseSettings):
         }
 
     @model_validator(mode="after")
-    def validate_production_security(self) -> "Settings":
-        """Reject insecure production settings before the application starts.
+    def validate_security_settings(self) -> "Settings":
+        """Reject missing or insecure JWT settings before the application starts.
 
         Returns:
             The validated settings instance.
 
         Raises:
-            ValueError: If production does not provide a sufficiently strong JWT key.
+            ValueError: If the JWT key is missing or too short for production.
         """
+        if not self.SECRET_KEY.strip():
+            raise ValueError("必须通过 SECRET_KEY 配置 JWT 密钥")
         if self.ENVIRONMENT == EnvironmentEnum.PROD and len(self.SECRET_KEY) < 32:
             raise ValueError("生产环境必须通过 SECRET_KEY 配置至少 32 个字符的 JWT 密钥")
         return self
