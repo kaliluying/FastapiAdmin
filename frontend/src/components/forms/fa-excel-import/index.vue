@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import * as XLSX from "xlsx";
+import ExcelJS, { type CellValue } from "exceljs";
 import type { UploadFile } from "element-plus";
 
 defineOptions({ name: "FaExcelImport" });
@@ -33,7 +33,7 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), {
-  accept: ".xlsx, .xls",
+  accept: ".xlsx",
   buttonText: "导入 Excel",
   loading: false,
   disabled: false,
@@ -41,25 +41,50 @@ withDefaults(defineProps<Props>(), {
 
 // Excel 导入工具函数
 async function importExcel(file: File): Promise<Array<Record<string, unknown>>> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
+  const workbook = new ExcelJS.Workbook();
+  const buffer = await file.arrayBuffer();
+  await workbook.xlsx.load(buffer as ArrayBuffer & { [key: number]: number });
 
-    reader.onload = (e) => {
-      try {
-        const data = e.target?.result;
-        const workbook = XLSX.read(data, { type: "array" });
-        const firstSheetName = workbook.SheetNames[0]!;
-        const worksheet = workbook.Sheets[firstSheetName]!;
-        const results = XLSX.utils.sheet_to_json(worksheet);
-        resolve(results as Array<Record<string, unknown>>);
-      } catch (error) {
-        reject(error);
-      }
-    };
+  const worksheet = workbook.worksheets[0];
+  if (!worksheet) {
+    throw new Error("Excel 文件不包含工作表");
+  }
 
-    reader.onerror = (error) => reject(error);
-    reader.readAsArrayBuffer(file);
+  const normalizeCellValue = (value: CellValue): unknown => {
+    if (!value || typeof value !== "object") return value ?? "";
+    if ("richText" in value) return value.richText.map((part) => part.text).join("");
+    if ("text" in value) return value.text;
+    if ("result" in value) return normalizeCellValue(value.result as CellValue);
+    if ("error" in value) return value.error;
+    return "";
+  };
+
+  const headerValues = worksheet.getRow(1).values;
+  if (!Array.isArray(headerValues)) {
+    throw new Error("Excel 文件缺少表头");
+  }
+
+  const headers = headerValues.slice(1).map((value, index) => {
+    const header = String(normalizeCellValue(value as CellValue)).trim();
+    return header || `列${index + 1}`;
   });
+  if (!headers.length) {
+    throw new Error("Excel 文件缺少表头");
+  }
+
+  const results: Array<Record<string, unknown>> = [];
+  worksheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return;
+    const result: Record<string, unknown> = {};
+    headers.forEach((header, index) => {
+      const value = normalizeCellValue(row.getCell(index + 1).value);
+      if (value !== "" && value !== null && value !== undefined) {
+        result[header] = value;
+      }
+    });
+    if (Object.keys(result).length) results.push(result);
+  });
+  return results;
 }
 
 // 定义 emits

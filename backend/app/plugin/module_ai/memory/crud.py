@@ -52,7 +52,7 @@ class MemoryCRUD:
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth
         self.db = auth.db
-        self.user_id = auth.user.username if auth and auth.user else "user"
+        self.user_id = str(auth.user.id) if auth and auth.user and auth.user.id is not None else "anonymous"
         self.team_id = None
 
     async def get_by_id(self, memory_id: int) -> MemoryEntry | None:
@@ -83,6 +83,56 @@ class MemoryCRUD:
         except Exception as e:
             logger.error(f"获取记忆列表失败: {e}")
             return []
+
+    async def page_crud(
+        self,
+        *,
+        offset: int,
+        limit: int,
+        search: dict[str, Any] | None = None,
+    ) -> tuple[list[MemoryEntry], int]:
+        """Fetch one memory page and its total count in the database.
+
+        Args:
+            offset: Number of matching rows to skip.
+            limit: Maximum number of rows to return.
+            search: Optional memory filters.
+
+        Returns:
+            A tuple of page entries and the matching row count.
+        """
+        try:
+            filters = [
+                AiMemoryModel.user_id == self.user_id,
+                AiMemoryModel.is_deleted == False,  # noqa: E712
+            ]
+            search = search or {}
+            if search.get("memory_type"):
+                filters.append(AiMemoryModel.memory_type == search["memory_type"])
+            if search.get("category"):
+                filters.append(AiMemoryModel.category == search["category"])
+            if search.get("key"):
+                filters.append(AiMemoryModel.key.like(f"%{search['key']}%"))
+            if search.get("is_active") is not None:
+                filters.append(AiMemoryModel.is_active == search["is_active"])
+
+            from sqlalchemy import func
+
+            total_result = await self.db.execute(
+                select(func.count(AiMemoryModel.id)).where(*filters)
+            )
+            total = int(total_result.scalar() or 0)
+            result = await self.db.execute(
+                select(AiMemoryModel)
+                .where(*filters)
+                .order_by(AiMemoryModel.priority.desc(), AiMemoryModel.updated_time.desc())
+                .offset(offset)
+                .limit(limit)
+            )
+            return [self._to_entry(obj) for obj in result.scalars().all()], total
+        except Exception as e:
+            logger.error(f"获取记忆分页失败: {e}")
+            return [], 0
 
     async def create_crud(self, data: MemoryCreateSchema) -> MemoryEntry | None:
         try:

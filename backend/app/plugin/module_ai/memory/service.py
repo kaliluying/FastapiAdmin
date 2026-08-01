@@ -26,11 +26,11 @@ class MemoryService:
     ) -> dict[str, Any]:
         crud = MemoryCRUD(self.auth)
         search_dict = search.model_dump(exclude_none=True) if search else {}
-        items = await crud.list_crud(search=search_dict)
-        total = len(items)
-        start = (page_no - 1) * page_size
-        end = start + page_size
-        page_items = items[start:end]
+        page_items, total = await crud.page_crud(
+            offset=(page_no - 1) * page_size,
+            limit=page_size,
+            search=search_dict,
+        )
         return {
             "items": [MemoryOutSchema.model_validate(item.to_dict()) for item in page_items],
             "total": total,

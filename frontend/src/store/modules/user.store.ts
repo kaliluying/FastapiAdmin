@@ -268,7 +268,7 @@ export const useUserStore = defineStore(
       const token = Auth.getAccessToken();
       if (token) {
         try {
-          const response = await AuthAPI.logout({ token });
+          const response = await AuthAPI.logout();
           if (response.data.code === ResultEnum.SUCCESS) {
             ElNotification({
               title: "退出成功",

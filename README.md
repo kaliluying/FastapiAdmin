@@ -125,11 +125,13 @@ uv sync --extra ai
 # 在 env/.env.dev 中设置 AI_ENABLE = True
 ```
 
-将 `DATABASE_AUTO_CREATE_TABLES` 显式设为 `True` 时，应用启动会创建缺失表并写入当前启用模块的种子数据。生产环境启动前必须执行 `uv run main.py upgrade --env=prod`；该命令会先应用核心 Alembic 迁移，再补齐当前启用 AI 模块的缺失表，应用运行时不会自动建表。
+将 `DATABASE_AUTO_CREATE_TABLES` 显式设为 `True` 时，应用启动会创建缺失表并写入当前启用模块的种子数据。生产环境启动前必须执行 `uv run main.py upgrade --env=prod`；启用 AI 时需先在目标环境安装 AI 依赖并设置 `AI_ENABLE=True`，Alembic 的可选 AI 迁移会创建对应表，应用运行时不会自动建表。
 
 `backend/requirements.txt` 仅包含基础后台依赖；启用 AI 的部署使用 `backend/requirements-ai.txt`。
 
 默认开发配置中的 API 前缀为 `/api/v1`。Swagger 和 ReDoc 路径由 `backend/env/.env.dev` 中的 `DOCS_URL`、`REDOC_URL` 控制。
+
+上传文件默认保存到后端私有目录 `backend/storage/upload`，不会通过静态文件目录直接暴露。通用文件返回的 `file_url` 走需要登录和下载权限的私有预览路由；头像和站点参数图片走仅允许图片格式的公开预览路由。接口返回的是相对存储路径，不要把服务器绝对路径写入业务数据或前端。
 
 ## 前端配置
 
@@ -230,6 +232,7 @@ pnpm run type-check
 
 - `CHROMA_PERSIST_DIR` 是否可读写，磁盘空间是否充足。
 - `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_EMBEDDING_MODEL` 是否正确。
+- 用户编辑的模型地址不能解析到本机或内网；确需使用受控代理域名时，在服务端配置 `MODEL_ALLOWED_HOSTS` 白名单。
 - 上传文件是否为 `.txt`、`.md`、`.pdf`、`.docx`。
 - 后端日志中的 `error_message` 字段。
 

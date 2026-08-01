@@ -9,6 +9,7 @@
 """
 
 import json
+import secrets
 from typing import Any, Literal
 from urllib.parse import quote, urlencode, urlparse
 
@@ -31,6 +32,8 @@ OAuthProvider = Literal["wechat", "qq", "github", "gitee"]
 
 STATE_PREFIX = "oauth_state:"
 STATE_TTL_SECONDS = 600
+OAUTH_TICKET_PREFIX = "oauth_ticket:"
+OAUTH_TICKET_TTL_SECONDS = 60
 
 
 def _extract_url_origin(url: str) -> str:
@@ -60,6 +63,25 @@ def _validate_redirect_uri(redirect_uri: str) -> None:
         raise CustomException(msg="非法的回调地址")
 
 
+def safe_frontend_redirect(redirect_uri: str | None) -> str:
+    """Return a validated frontend redirect or the configured fallback.
+
+    Args:
+        redirect_uri: User-supplied frontend URL.
+
+    Returns:
+        A URL whose origin is present in the configured allowlist.
+    """
+    fallback = settings.OAUTH_FRONTEND_FALLBACK
+    if not redirect_uri:
+        return fallback
+    try:
+        _validate_redirect_uri(redirect_uri)
+    except CustomException:
+        return fallback
+    return redirect_uri.strip()
+
+
 def _callback_url(request: Request, provider: OAuthProvider) -> str:
     root = str(request.base_url).rstrip("/")
     return f"{root}/system/auth/oauth/{provider}/callback"
@@ -68,18 +90,6 @@ def _callback_url(request: Request, provider: OAuthProvider) -> str:
 def _frontend_error_redirect(frontend_base: str, message: str) -> str:
     sep = "&" if "?" in frontend_base else "?"
     return f"{frontend_base}{sep}oauth_error={quote(message, safe='')}"
-
-
-def _frontend_success_redirect(frontend_base: str, access_token: str, refresh_token: str, token_type: str) -> str:
-    q = urlencode(
-        {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            "token_type": token_type,
-        }
-    )
-    sep = "&" if "?" in frontend_base else "?"
-    return f"{frontend_base}{sep}{q}"
 
 
 def _require_credentials(provider: OAuthProvider) -> tuple[str, str]:
@@ -345,7 +355,9 @@ async def complete_oauth_login(
     state: str,
 ) -> tuple[JWTOutSchema, str]:
     rc = RedisCURD(redis)
-    raw = await rc.get(f"{STATE_PREFIX}{state}")
+    # Consume the CSRF state before exchanging the provider code. A callback
+    # retry must start a fresh OAuth flow instead of reusing the same state.
+    raw = await rc.getdel(f"{STATE_PREFIX}{state}")
     if not raw:
         raise CustomException(msg="登录状态已失效，请重试")
     if isinstance(raw, bytes):
@@ -388,7 +400,6 @@ async def complete_oauth_login(
 
     login_type = f"oauth_{provider}"
     token = await LoginService.create_token(request=request, redis=redis, user=user, login_type=login_type)
-    await rc.delete(f"{STATE_PREFIX}{state}")
     return token, frontend
 
 
@@ -410,26 +421,56 @@ async def save_oauth_state(
         raise CustomException(msg="缓存 OAuth 状态失败")
 
 
-def oauth_service_frontend_redirect_from_token(frontend_base: str, token: JWTOutSchema) -> str:
-    return _frontend_success_redirect(
-        frontend_base,
-        token.access_token,
-        token.refresh_token,
-        token.token_type,
+async def save_oauth_ticket(redis: Redis, token: JWTOutSchema) -> str:
+    """Store OAuth-issued JWTs behind a short-lived one-time ticket."""
+    ticket = secrets.token_urlsafe(32)
+    ok = await RedisCURD(redis).set(
+        f"{OAUTH_TICKET_PREFIX}{ticket}",
+        token.model_dump(),
+        expire=OAUTH_TICKET_TTL_SECONDS,
     )
+    if not ok:
+        raise CustomException(msg="缓存 OAuth 登录凭证失败")
+    return ticket
+
+
+async def exchange_oauth_ticket(redis: Redis, ticket: str) -> JWTOutSchema:
+    """Consume an OAuth ticket and return its JWT payload exactly once."""
+    if not ticket or len(ticket) > 256:
+        raise CustomException(msg="OAuth 登录凭证已失效", status_code=401)
+    raw = await RedisCURD(redis).getdel(f"{OAUTH_TICKET_PREFIX}{ticket}")
+    if not raw:
+        raise CustomException(msg="OAuth 登录凭证已失效", status_code=401)
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8")
+    try:
+        return JWTOutSchema.model_validate(json.loads(raw))
+    except (TypeError, json.JSONDecodeError, ValueError):
+        raise CustomException(msg="OAuth 登录凭证无效", status_code=401)
+
+
+def oauth_service_frontend_redirect_from_ticket(frontend_base: str, ticket: str) -> str:
+    """Build a callback URL containing only the opaque OAuth ticket."""
+    safe_frontend = safe_frontend_redirect(frontend_base)
+    sep = "&" if "?" in safe_frontend else "?"
+    return f"{safe_frontend}{sep}oauth_ticket={quote(ticket, safe='')}"
 
 
 def oauth_service_error_redirect(frontend_base: str, message: str) -> str:
-    return _frontend_error_redirect(frontend_base, message)
+    return _frontend_error_redirect(safe_frontend_redirect(frontend_base), message)
 
 
 __all__ = [
     "OAuthProvider",
     "STATE_PREFIX",
+    "OAUTH_TICKET_PREFIX",
     "build_authorize_url",
     "complete_oauth_login",
     "save_oauth_state",
     "_callback_url",
-    "oauth_service_frontend_redirect_from_token",
+    "oauth_service_frontend_redirect_from_ticket",
+    "save_oauth_ticket",
+    "exchange_oauth_ticket",
+    "safe_frontend_redirect",
     "oauth_service_error_redirect",
 ]

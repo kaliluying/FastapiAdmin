@@ -137,7 +137,6 @@ export default ({ mode }: { mode: string }) => {
             if (id.includes("xgplayer")) return "xgplayer";
             if (id.includes("markdown-it")) return "markdown";
             if (id.includes("@iconify-json")) return "iconify-icons";
-            if (id.includes("xlsx")) return "xlsx";
             if (id.includes("crypto-js")) return "crypto";
             if (id.includes("dayjs")) return "dayjs";
             if (
@@ -253,7 +252,6 @@ export default ({ mode }: { mode: string }) => {
         "path-to-regexp",
         "xgplayer",
         "@iconify/vue",
-        "xlsx",
         "highlight.js",
         "dompurify",
         "markdown-it",

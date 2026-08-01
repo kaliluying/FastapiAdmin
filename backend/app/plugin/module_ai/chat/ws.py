@@ -6,7 +6,7 @@ from starlette.status import WS_1008_POLICY_VIOLATION
 
 from app.core.base_schema import AuthSchema
 from app.core.database import async_db_session
-from app.core.dependencies import _verify_token
+from app.core.dependencies import _verify_ws_ticket
 from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.core.router_class import OperationLogRoute
@@ -22,12 +22,12 @@ WS_AI = APIRouter(
 
 
 async def _resolve_ws_auth(websocket: WebSocket, db: AsyncSession) -> AuthSchema:
-    token = websocket.query_params.get("token")
-    if not token:
+    ticket = websocket.query_params.get("ticket")
+    if not ticket:
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
 
     redis = websocket.app.state.redis
-    return await _verify_token(token, db, redis)
+    return await _verify_ws_ticket(ticket, db, redis)
 
 
 def _has_ws_permission(auth: AuthSchema, permission: str) -> bool:

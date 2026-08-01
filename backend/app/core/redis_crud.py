@@ -66,6 +66,81 @@ class RedisCURD:
             logger.error(f"获取缓存失败: {e!s}")
             return None
 
+    async def getdel(self, key: str) -> Any:
+        """Atomically read and delete a one-time cache value.
+
+        Args:
+            key: Redis key.
+
+        Returns:
+            The cached value before deletion, or ``None`` when absent.
+
+        Notes:
+            Redis 6.2+ provides ``GETDEL`` directly. Older Redis servers use
+            an equivalent Lua script so one-time authentication tickets do not
+            fall back to a race-prone separate ``GET`` and ``DEL``.
+        """
+        getdel_error: Exception | None = None
+        try:
+            getdel = getattr(self.redis, "getdel", None)
+            if getdel is not None:
+                return await getdel(key)
+        except Exception as exc:
+            getdel_error = exc
+
+        try:
+            return await self.redis.eval(
+                "local value = redis.call('GET', KEYS[1]); "
+                "if value then redis.call('DEL', KEYS[1]); end; return value",
+                1,
+                key,
+            )
+        except Exception as eval_error:
+            # Lightweight test doubles may implement neither GETDEL nor EVAL.
+            # Keep a final compatibility path, but never use it on a real
+            # Redis client that supports the atomic primitives above.
+            try:
+                value = await self.redis.get(key)
+                if value is not None:
+                    await self.redis.delete(key)
+                return value
+            except Exception as fallback_error:
+                error = getdel_error or eval_error or fallback_error
+                logger.error(f"一次性缓存读取失败: {error!s}")
+                return None
+
+    async def compare_and_delete(self, key: str, expected: str) -> bool:
+        """Delete a cached value only when it still equals ``expected``.
+
+        Args:
+            key: Redis key to compare.
+            expected: Value supplied by the caller.
+
+        Returns:
+            ``True`` when the matching value was deleted, otherwise ``False``.
+
+        Notes:
+            Real Redis clients use one Lua script, so refresh-token rotation
+            cannot be won by two concurrent requests. Lightweight test
+            doubles without ``eval`` use a compatibility read/delete path.
+        """
+        script = """
+        if redis.call('get', KEYS[1]) == ARGV[1] then
+            return redis.call('del', KEYS[1])
+        end
+        return 0
+        """
+        try:
+            result = await self.redis.eval(script, 1, key, expected)
+            return result == 1
+        except (AttributeError, NotImplementedError, TypeError):
+            current = await self.get(key)
+            current_value = current.decode("utf-8") if isinstance(current, bytes) else str(current or "")
+            if current_value != expected:
+                return False
+            await self.delete(key)
+            return True
+
     async def set(self, key: str, value: Any, expire: int | None = 86400) -> bool:
         """设置缓存
 

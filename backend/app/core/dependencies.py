@@ -18,6 +18,8 @@ from app.core.redis_crud import RedisCURD
 from app.core.request_context import RequestContext
 from app.core.security import OAuth2Schema, decode_access_token
 
+WS_TICKET_PREFIX = "auth:ws_ticket:"
+
 
 async def db_getter() -> AsyncGenerator[AsyncSession, None]:
     """数据库会话 — 请求级生命周期管理。
@@ -215,11 +217,11 @@ async def get_current_user(
 
 
 async def get_current_user_ws(
-    token: str = Query(..., description="认证token"),
+    ticket: str = Query(..., description="一次性 WebSocket ticket"),
     db: AsyncSession = Depends(db_getter),
     redis: Redis = Depends(redis_getter),
 ) -> AuthSchema:
-    """获取当前用户（WebSocket专用，从查询参数获取token）
+    """获取当前用户（WebSocket专用，从查询参数获取一次性 ticket）
 
     参数:
     - token (str): 认证token
@@ -229,7 +231,54 @@ async def get_current_user_ws(
     返回:
     - AuthSchema: 认证信息模型
     """
-    return await _verify_token(token, db, redis)
+    return await _verify_ws_ticket(ticket, db, redis)
+
+
+async def _verify_ws_ticket(ticket: str, db: AsyncSession, redis: Redis) -> AuthSchema:
+    """Consume a short-lived WebSocket ticket and load its user session.
+
+    Args:
+        ticket: One-time ticket issued by the authenticated HTTP endpoint.
+        db: Database session used to load the user.
+        redis: Redis connection containing the ticket and session state.
+
+    Returns:
+        Authenticated user context.
+
+    Raises:
+        CustomException: If the ticket is missing, replayed, or expired.
+    """
+    if not ticket or len(ticket) > 256:
+        raise CustomException(msg="认证已失效", code=10401, status_code=401)
+    raw = await RedisCURD(redis).getdel(f"{WS_TICKET_PREFIX}{ticket}")
+    if not raw:
+        raise CustomException(msg="WebSocket ticket 已失效", code=10401, status_code=401)
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8")
+    try:
+        ticket_data = json.loads(raw)
+    except (TypeError, json.JSONDecodeError):
+        raise CustomException(msg="WebSocket ticket 无效", code=10401, status_code=401)
+    session_id = str(ticket_data.get("session_id") or "")
+    if not session_id:
+        raise CustomException(msg="WebSocket ticket 无效", code=10401, status_code=401)
+    await _check_token_online(redis, session_id)
+    session_raw = await RedisCURD(redis).get(f"{RedisInitKeyConfig.USER_SESSION.key}:{session_id}")
+    if not session_raw:
+        raise CustomException(msg="认证已失效", code=10401, status_code=401)
+    if isinstance(session_raw, bytes):
+        session_raw = session_raw.decode("utf-8")
+    try:
+        user_info = json.loads(session_raw)
+    except (TypeError, json.JSONDecodeError):
+        raise CustomException(msg="认证已失效", code=10401, status_code=401)
+    username = user_info.get("user_name")
+    if not username:
+        raise CustomException(msg="认证已失效", code=10401, status_code=401)
+    user = await _load_user_from_db(db, username)
+    auth = AuthSchema(db=db, check_data_scope=False)
+    auth.user = user
+    return auth
 
 
 async def _verify_token(

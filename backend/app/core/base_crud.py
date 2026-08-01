@@ -20,7 +20,7 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, TypeVar
 
 from pydantic import BaseModel
-from sqlalchemy import Select, asc, delete, desc, false, func, literal_column, select, update
+from sqlalchemy import asc, delete, desc, false, func, literal_column, select, update
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -405,7 +405,6 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
 
             if self._supports_soft_delete:
                 sql = update(self.model).where(pk.in_(ids)).values(**self._soft_delete_values())
-                await self.db.execute(sql)
             else:
                 sql = delete(self.model).where(pk.in_(ids))
             sql = await self.__filter_permissions(sql)
@@ -421,10 +420,10 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
         try:
             if self._supports_soft_delete:
                 sql = update(self.model).values(**self._soft_delete_values())
-                await self.db.execute(sql)
             else:
                 sql = delete(self.model)
-                await self.db.execute(sql)
+            sql = await self.__filter_permissions(sql)
+            await self.db.execute(sql)
             await self.db.flush()
         except CustomException:
             raise
@@ -451,6 +450,7 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
                 raise CustomException(msg="该模型不支持软删除，无法恢复")
             pk = self._get_pk_col()
             sql = update(self.model).where(pk.in_(ids)).values(is_deleted=False, deleted_time=None, deleted_id=None)
+            sql = await self.__filter_permissions(sql)
             await self.db.execute(sql)
             await self.db.flush()
         except CustomException:
@@ -458,8 +458,8 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
         except Exception as e:
             raise CustomException(msg=f"恢复失败: {e!s}")
 
-    async def __filter_permissions(self, sql: Select) -> Select:
-        """过滤数据权限（仅用于 Select）"""
+    async def __filter_permissions(self, sql: Any) -> Any:
+        """为查询或数据修改语句追加数据权限条件。"""
         if not self.auth:
             return sql
         filter_obj = Permission(model=self.model, auth=self.auth)

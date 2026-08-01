@@ -1,6 +1,7 @@
 import os
 import random
 import re
+import secrets
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urljoin
@@ -77,6 +78,8 @@ MIME_TYPE_MAPPING = {
     "text/csv": ".csv",
 }
 
+PUBLIC_IMAGE_EXTENSIONS = {".gif", ".jpg", ".jpeg", ".png", ".ico"}
+
 
 class UploadUtil:
     """
@@ -104,7 +107,7 @@ class UploadUtil:
         返回:
         - bool: 文件是否存在。
         """
-        return Path(filepath).exists()
+        return Path(filepath).is_file()
 
     @staticmethod
     def sanitize_filename(filename: str) -> str:
@@ -241,7 +244,10 @@ class UploadUtil:
         detected_type = cls.detect_file_type(content)
         if detected_type:
             expected_ext = MIME_TYPE_MAPPING.get(detected_type, "")
-            if expected_ext and expected_ext != claimed_extension.lower():
+            compatible_extensions = {expected_ext}
+            if detected_type == "image/jpeg":
+                compatible_extensions.add(".jpeg")
+            if expected_ext and claimed_extension.lower() not in compatible_extensions:
                 raise CustomException(
                     msg=f"文件内容与扩展名不匹配：检测为 {detected_type}，声明为 {claimed_extension}"
                 )
@@ -261,7 +267,7 @@ class UploadUtil:
         异常:
         - CustomException: 文件过大时抛出。
         """
-        if file.size and file.size > settings.MAX_FILE_SIZE:
+        if file.size is not None and file.size > settings.MAX_FILE_SIZE:
             raise CustomException(
                 msg=f"文件大小超过限制，最大允许 {settings.MAX_FILE_SIZE // (1024 * 1024)}MB"
             )
@@ -288,8 +294,9 @@ class UploadUtil:
         if len(name_part) > 50:
             name_part = name_part[:50]
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+        unique_suffix = secrets.token_hex(8)
         random_suffix = cls.generate_random_number()
-        return f"{name_part}_{timestamp}{settings.UPLOAD_MACHINE}{random_suffix}{extension}"
+        return f"{name_part}_{unique_suffix}_{timestamp}{settings.UPLOAD_MACHINE}{random_suffix}{extension}"
 
     @staticmethod
     def check_file_timestamp(filename: str) -> bool:
@@ -359,6 +366,73 @@ class UploadUtil:
         with filepath.open("rb") as f:
             while chunk := f.read(chunk_size):
                 yield chunk
+
+    @classmethod
+    async def read_upload_prefix(cls, file: UploadFile, prefix_size: int = 8192) -> bytes:
+        """Count an upload in bounded memory and return only its leading bytes.
+
+        Args:
+            file: Incoming upload.
+            prefix_size: Maximum number of leading bytes retained for type checks.
+
+        Returns:
+            The leading bytes of the upload.
+
+        Raises:
+            CustomException: If the stream exceeds ``MAX_FILE_SIZE``.
+        """
+        total = 0
+        prefix = bytearray()
+        while chunk := await file.read(1024 * 1024):
+            total += len(chunk)
+            if len(prefix) < prefix_size:
+                prefix.extend(chunk[: prefix_size - len(prefix)])
+            if total > settings.MAX_FILE_SIZE:
+                await file.seek(0)
+                raise CustomException(
+                    msg=f"文件大小超过限制，最大允许 {settings.MAX_FILE_SIZE // (1024 * 1024)}MB"
+                )
+        await file.seek(0)
+        return bytes(prefix)
+
+    @classmethod
+    async def save_upload_stream(cls, file: UploadFile, filepath: Path) -> int:
+        """Persist an upload while enforcing the configured size limit.
+
+        Args:
+            file: Incoming upload positioned at its beginning.
+            filepath: Validated private destination path.
+
+        Returns:
+            Number of bytes written.
+
+        Raises:
+            CustomException: If the stream exceeds the size limit or cannot be saved.
+        """
+        total = 0
+        filepath.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            # Exclusive creation prevents a pre-existing symlink or a rare
+            # generated-name collision from being overwritten.
+            async with aiofiles.open(filepath, "xb") as target:
+                while chunk := await file.read(1024 * 1024):
+                    total += len(chunk)
+                    if total > settings.MAX_FILE_SIZE:
+                        raise CustomException(
+                            msg=f"文件大小超过限制，最大允许 {settings.MAX_FILE_SIZE // (1024 * 1024)}MB"
+                        )
+                    await target.write(chunk)
+        except CustomException:
+            filepath.unlink(missing_ok=True)
+            await file.seek(0)
+            raise
+        except Exception as exc:
+            filepath.unlink(missing_ok=True)
+            await file.seek(0)
+            logger.exception("文件保存失败: path=%s", filepath)
+            raise CustomException(msg="文件保存失败，请稍后重试") from exc
+        await file.seek(0)
+        return total
 
     @staticmethod
     def _sanitize_target_path(target_path: str) -> str:
@@ -458,10 +532,15 @@ class UploadUtil:
 
         cls.check_file_size(file)
 
-        content = await file.read()
-        await file.seek(0)
+        content = await cls.read_upload_prefix(file)
 
         cls.validate_file_content_type(content, extension)
+        if upload_type in {"avatar", "param"}:
+            if extension not in PUBLIC_IMAGE_EXTENSIONS:
+                raise CustomException(msg="头像和站点图片只允许上传常见图片格式")
+            detected_type = cls.detect_file_type(content)
+            if detected_type and not detected_type.startswith("image/"):
+                raise CustomException(msg="图片内容校验失败")
 
         safe_filename = cls.generate_safe_filename(original_filename, extension)
 
@@ -497,20 +576,23 @@ class UploadUtil:
                 logger.error(f"检测到路径穿越攻击，目标路径: {filepath}")
                 raise CustomException(msg="非法的文件路径")
 
-            file_url = urljoin(base_url, str(filepath))
-
-            chunk_size = 8 * 1024 * 1024
-            async with aiofiles.open(filepath, "wb") as f:
-                while chunk := await file.read(chunk_size):
-                    await f.write(chunk)
+            relative_path = filepath.resolve().relative_to(settings.UPLOAD_FILE_PATH.resolve()).as_posix()
+            route_prefix = "public-upload" if upload_type in {"avatar", "param"} else "private-upload"
+            file_url = urljoin(
+                base_url.rstrip("/") + "/",
+                f"common/file/{route_prefix}/{relative_path}",
+            )
+            await cls.save_upload_stream(file=file, filepath=filepath)
 
             return safe_filename, filepath, file_url
 
         except CustomException:
             raise
         except Exception as e:
-            logger.error(f"文件上传失败: {e}")
-            raise CustomException(msg=f"文件上传失败: {e}")
+            logger.exception("文件上传失败")
+            if isinstance(e, CustomException):
+                raise
+            raise CustomException(msg="文件上传失败，请稍后重试") from e
 
     @staticmethod
     def get_file_tree(file_path: str) -> list[dict]:
@@ -526,7 +608,7 @@ class UploadUtil:
         return [{"name": item.name, "is_dir": item.is_dir()} for item in Path(file_path).iterdir()]
 
     @classmethod
-    async def download_file(cls, file_path: str) -> str:
+    def download_file(cls, file_path: str) -> str:
         """
         下载文件，生成新的文件名。
 
@@ -536,5 +618,4 @@ class UploadUtil:
         返回:
         - str: 文件下载信息。
         """
-        filename = cls.generate_file(Path(file_path))
-        return str(filename)
+        return Path(file_path).name

@@ -65,6 +65,21 @@ async def _redis_set(name: bytes, value: bytes, ex: int | None = None, nx: bool 
     return True
 
 
+async def _redis_incr(name: bytes) -> int:
+    """Increment a mock Redis counter using the same byte representation as Redis."""
+    current = _mock_redis_store.get(name, b"0")
+    if isinstance(current, bytes):
+        current = current.decode("utf-8")
+    value = int(current) + 1
+    _mock_redis_store[name] = str(value).encode("utf-8")
+    return value
+
+
+async def _redis_getdel(name: bytes) -> bytes | None:
+    """Atomically read and remove one mock Redis value."""
+    return _mock_redis_store.pop(name, None)
+
+
 async def _redis_delete(*names: bytes) -> int:
     count = 0
     for n in names:
@@ -143,6 +158,8 @@ _mock_redis = AsyncMock()
 _mock_redis.ping = AsyncMock(return_value=True)
 _mock_redis.get = AsyncMock(side_effect=_redis_get)
 _mock_redis.set = AsyncMock(side_effect=_redis_set)
+_mock_redis.incr = AsyncMock(side_effect=_redis_incr)
+_mock_redis.getdel = AsyncMock(side_effect=_redis_getdel)
 _mock_redis.delete = AsyncMock(side_effect=_redis_delete)
 _mock_redis.keys = AsyncMock(side_effect=_redis_keys)
 _mock_redis.exists = AsyncMock(side_effect=_redis_exists)

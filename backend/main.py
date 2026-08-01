@@ -122,31 +122,52 @@ def reset(
 
     import asyncio
 
-    from sqlalchemy import text
+    from sqlalchemy import MetaData, inspect
+    from sqlalchemy.exc import CompileError
+    from sqlalchemy.schema import DropConstraint, DropTable
 
     # 导入 initialize 会注册全部模型到 metadata（create_all 依赖完整元数据）
-    from app.core.database import async_engine
+    from app.core.database import async_engine, create_tables
     from app.scripts.initialize import InitializeData
 
     async def _reset() -> None:
-        # 表间存在循环外键（sys_dept 自引用、UserMixin 审计列指向 sys_user），
-        # SQLAlchemy 的 metadata.drop_all 在 Python 端拓扑排序阶段即失败，
-        # 无法到达 SQL 执行。改为关闭外键检查后，从 information_schema 读取
-        # 当前库的所有表名并逐个 DROP，彻底绕过排序。
+        """通过当前数据库方言反射并删除全部表，再重建 ORM 表结构。"""
+
+        def drop_reflected_tables(connection) -> None:
+            """Drop reflected tables and foreign keys without vendor SQL.
+
+            参数:
+            - connection: SQLAlchemy 同步连接，由异步连接的 ``run_sync`` 提供。
+
+            返回:
+            - None
+
+            说明:
+            - 先删除可反射的外键约束，再按逆依赖顺序删表，避免依赖
+              MySQL ``information_schema`` 或 ``FOREIGN_KEY_CHECKS``。
+            """
+            inspector = inspect(connection)
+            table_names = inspector.get_table_names()
+            if not table_names:
+                return
+
+            metadata = MetaData()
+            metadata.reflect(bind=connection, only=table_names)
+            for table in metadata.tables.values():
+                for constraint in table.foreign_key_constraints:
+                    try:
+                        connection.execute(DropConstraint(constraint))
+                    except (CompileError, NotImplementedError):
+                        # SQLite 不支持独立删除外键约束，后续删表即可清理。
+                        continue
+
+            for table in reversed(list(metadata.tables.values())):
+                connection.execute(DropTable(table, if_exists=True))
+
         async with async_engine.begin() as conn:
-            db_name = (await conn.execute(text("SELECT DATABASE()"))).scalar()
-            rows = await conn.execute(
-                text(
-                    "SELECT table_name FROM information_schema.tables "
-                    "WHERE table_schema = :db"
-                ),
-                {"db": db_name},
-            )
-            tables = [row[0] for row in rows]
-            await conn.execute(text("SET FOREIGN_KEY_CHECKS = 0"))
-            for table in tables:
-                await conn.execute(text(f"DROP TABLE IF EXISTS `{table}`"))
-            await conn.execute(text("SET FOREIGN_KEY_CHECKS = 1"))
+            await conn.run_sync(drop_reflected_tables)
+        # reset 不能依赖开发环境的自动建表开关，清表后必须显式恢复完整模型结构。
+        await create_tables()
         await InitializeData().init_db()
 
     asyncio.run(_reset())
@@ -207,14 +228,6 @@ def upgrade(
     get_settings.cache_clear()
     alembic_cfg = Config("alembic.ini")
     command.upgrade(alembic_cfg, "head")
-    # Core tables are managed by Alembic. Enabled optional plugins own their
-    # models, so this explicit deployment command creates only their missing
-    # tables without making application startup call create_all.
-    import asyncio
-
-    from app.core.database import create_tables
-
-    asyncio.run(create_tables())
     typer.echo("所有迁移已应用。")
 
 

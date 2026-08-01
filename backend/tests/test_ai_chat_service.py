@@ -185,7 +185,7 @@ async def test_chat_session_crud_persists_session_messages_with_sqlalchemy() -> 
         crud = ChatSessionCRUD(auth)
         session = await crud.create_crud(ChatSessionCreateSchema(title="First chat"))
         assert session is not None
-        assert session.user_id == "admin"
+        assert session.user_id == "1"
         assert session.team_id is None
 
         await crud.append_run_crud(session_id=session.session_id, message="hi", response="hello")
@@ -250,6 +250,7 @@ async def test_chat_query_returns_message_when_stream_has_no_content(monkeypatch
     monkeypatch.setattr(model_config_service.settings, "OPENAI_API_KEY", "test_key")
     monkeypatch.setattr(model_config_service.settings, "OPENAI_MODEL", "MiniMax-M3")
     monkeypatch.setattr(model_config_service.settings, "OPENAI_BASE_URL", "https://api.minimaxi.com/v1")
+    monkeypatch.setattr(model_config_service.settings, "MODEL_ALLOWED_HOSTS", ["api.minimaxi.com"])
     monkeypatch.setattr(service, "ChatSessionCRUD", FakeCrud)
     monkeypatch.setattr(service, "create_rag_chain", fake_create_rag_chain)
 
@@ -298,11 +299,12 @@ async def test_chat_query_passes_context_to_rag_chain(monkeypatch) -> None:
     monkeypatch.setattr(model_config_service.settings, "OPENAI_API_KEY", "test_key")
     monkeypatch.setattr(model_config_service.settings, "OPENAI_MODEL", "MiniMax-M3")
     monkeypatch.setattr(model_config_service.settings, "OPENAI_BASE_URL", "https://api.minimaxi.com/v1")
+    monkeypatch.setattr(model_config_service.settings, "MODEL_ALLOWED_HOSTS", ["api.minimaxi.com"])
     monkeypatch.setattr(service, "ChatSessionCRUD", FakeCrud)
     monkeypatch.setattr(service, "create_rag_chain", fake_create_rag_chain)
 
     files = [{"name": "manual.md", "content": "用户管理路径是 /system/user"}]
-    auth = SimpleNamespace(user=SimpleNamespace(username="admin"), db=FakeDB())
+    auth = SimpleNamespace(user=SimpleNamespace(id=1, username="admin"), db=FakeDB())
     chunks = [
         chunk
         async for chunk in ChatService(auth).chat_query(
@@ -312,8 +314,8 @@ async def test_chat_query_passes_context_to_rag_chain(monkeypatch) -> None:
 
     assert chunks == ["pong"]
     assert captured["message"] == "hello"
-    assert captured["user_id"] == "admin"
-    assert captured["scope_id"] == "admin"
+    assert captured["user_id"] == "1"
+    assert captured["scope_id"] == "1"
     assert captured["session_id"] == "test_session"
     assert captured["files"] == files
     assert captured["db"] is FakeCrud.db

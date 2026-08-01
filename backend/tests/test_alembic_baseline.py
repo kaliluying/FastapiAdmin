@@ -18,7 +18,7 @@ def test_alembic_chain_reaches_the_current_menu_schema() -> None:
 
     assert baseline is not None
     assert baseline.down_revision is None
-    assert script.get_heads() == ["000000000002"]
+    assert script.get_heads() == ["000000000003"]
 
 
 def test_initial_baseline_creates_only_core_tables() -> None:
@@ -73,6 +73,50 @@ def test_alembic_upgrade_head_from_empty_sqlite(tmp_path: Path) -> None:
     assert {"always_show", "params"}.isdisjoint(menu_columns)
     assert "uq_platform_menu_route_name" in menu_schema
     assert "uq_platform_menu_parent_route_path" in menu_schema
+
+
+def test_startup_repairs_ai_tables_when_ai_is_enabled_after_migration(tmp_path: Path) -> None:
+    """Enabling AI after a core-only Alembic run must repair only AI tables."""
+    db_path = tmp_path / "late-ai.db"
+    base_env = {
+        **os.environ,
+        "DATABASE_TYPE": "sqlite",
+        "DATABASE_NAME": str(db_path.with_suffix("")),
+        "REDIS_ENABLE": "false",
+        "DATABASE_AUTO_CREATE_TABLES": "false",
+        "SECRET_KEY": "test-secret-key-for-alembic-32-chars",
+        "PYTHONUTF8": "1",
+    }
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        cwd=BACKEND_DIR,
+        env={**base_env, "AI_ENABLE": "false"},
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=30,
+    )
+    assert result.returncode == 0, result.stderr + result.stdout
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import asyncio; from app.scripts.initialize import InitializeData; asyncio.run(InitializeData().init_db())",
+        ],
+        cwd=BACKEND_DIR,
+        env={**base_env, "AI_ENABLE": "true"},
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=60,
+    )
+    assert result.returncode == 0, result.stderr + result.stdout
+
+    with sqlite3.connect(db_path) as connection:
+        table_names = {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
+
+    assert {"ai_chat_session", "ai_model_config", "ai_knowledge_base", "ai_memory"} <= table_names
 
 
 def test_menu_hardening_migration_upgrades_legacy_menu_columns(tmp_path: Path) -> None:

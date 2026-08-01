@@ -107,6 +107,7 @@ class JWTPayloadSchema(BaseModel):
     sub: str = Field(..., description="用户登录信息")
     is_refresh: bool = Field(default=False, description="是否刷新token")
     exp: datetime | int = Field(..., description="过期时间")
+    jti: str | None = Field(default=None, description="令牌唯一编号")
 
     @model_validator(mode="after")
     def validate_fields(self):

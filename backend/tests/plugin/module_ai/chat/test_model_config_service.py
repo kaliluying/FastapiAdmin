@@ -30,6 +30,12 @@ class _FakeDb:
 
 
 async def test_update_model_config_encrypts_key_and_keeps_vector_settings_read_only(monkeypatch) -> None:
+    import socket
+
+    monkeypatch.setattr(
+        "app.plugin.module_ai.config.socket.getaddrinfo",
+        lambda *_args, **_kwargs: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443))],
+    )
     monkeypatch.setattr(model_config_service, "_active_config", None)
     monkeypatch.setattr(model_config_service.settings, "OPENAI_API_KEY", "env-key")
     monkeypatch.setattr(model_config_service.settings, "OPENAI_BASE_URL", "https://embedding.example/v1")

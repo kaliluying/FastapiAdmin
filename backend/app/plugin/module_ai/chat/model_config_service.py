@@ -11,7 +11,7 @@ from app.config.setting import settings as core_settings
 from app.core.base_schema import AuthSchema
 from app.core.database import async_db_session
 from app.core.logger import logger
-from app.plugin.module_ai.config import settings
+from app.plugin.module_ai.config import settings, validate_model_base_url
 
 from .model import AiModelConfigModel
 from .schema import AiModelConfigOutSchema, AiModelConfigUpdateSchema
@@ -51,7 +51,9 @@ def _decrypt_api_key(value: str | None) -> str | None:
 def _environment_config() -> ChatModelRuntimeConfig:
     return ChatModelRuntimeConfig(
         protocol="openai",
-        base_url=settings.OPENAI_BASE_URL.strip(),
+        # Environment files are deployment-owned configuration. User-edited
+        # database values still go through the DNS-aware validator below.
+        base_url=validate_model_base_url(settings.OPENAI_BASE_URL, resolve_dns=False) if settings.OPENAI_BASE_URL.strip() else "",
         model=settings.OPENAI_MODEL.strip(),
         api_key=settings.OPENAI_API_KEY.strip(),
     )
@@ -69,7 +71,7 @@ def _apply_record(record: AiModelConfigModel | None) -> ChatModelRuntimeConfig:
 
     _active_config = ChatModelRuntimeConfig(
         protocol=record.protocol if record.protocol in {"openai", "anthropic"} else "openai",
-        base_url=record.openai_base_url.strip(),
+        base_url=validate_model_base_url(record.openai_base_url),
         model=record.openai_model.strip(),
         api_key=_decrypt_api_key(record.encrypted_api_key) or _environment_config().api_key,
     )
@@ -126,7 +128,7 @@ async def update_model_config(
     if record is None:
         record = AiModelConfigModel(
             protocol=data.chat_protocol,
-            openai_base_url=data.openai_base_url,
+            openai_base_url=validate_model_base_url(data.openai_base_url),
             openai_model=data.openai_model,
             encrypted_api_key=_encrypt_api_key(data.openai_api_key or current.api_key) if (data.openai_api_key or current.api_key) else None,
             created_id=getattr(getattr(auth, "user", None), "id", None),
@@ -134,7 +136,7 @@ async def update_model_config(
         auth.db.add(record)
     else:
         record.protocol = data.chat_protocol
-        record.openai_base_url = data.openai_base_url
+        record.openai_base_url = validate_model_base_url(data.openai_base_url)
         record.openai_model = data.openai_model
         if data.openai_api_key:
             record.encrypted_api_key = _encrypt_api_key(data.openai_api_key)

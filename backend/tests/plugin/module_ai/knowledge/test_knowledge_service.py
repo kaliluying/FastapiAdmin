@@ -43,15 +43,21 @@ def test_knowledge_base_output_exposes_index_status_counts():
 
 
 @pytest.mark.asyncio
-async def test_bm25_indexing_skips_vector_dependencies_and_uses_chroma_ids(monkeypatch):
+async def test_bm25_indexing_skips_vector_dependencies_and_uses_chroma_ids(monkeypatch, tmp_path):
     """Verify BM25-only indexing avoids embeddings and retains shared chunk IDs."""
     from app.plugin.module_ai.knowledge import service as service_module
+
+    knowledge_root = tmp_path / "knowledge"
+    knowledge_root.mkdir()
+    document_path = knowledge_root / "handbook.md"
+    document_path.write_text("test document", encoding="utf-8")
+    monkeypatch.setattr(service_module, "UPLOAD_DIR", knowledge_root)
 
     document = SimpleNamespace(
         id=9,
         knowledge_base_id=7,
         file_name="handbook.md",
-        file_path="/tmp/handbook.md",
+        file_path=str(document_path),
         file_type="md",
         file_size=12,
         parse_status="pending",
