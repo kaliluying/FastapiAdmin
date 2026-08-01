@@ -10,6 +10,7 @@ import pytest
 
 from app.api.v1.module_system.role import crud as role_crud
 from app.api.v1.module_system.role.crud import RoleCRUD
+from app.api.v1.module_system.role.schema import RoleOutSchema
 from app.api.v1.module_system.user import crud as user_crud
 from app.api.v1.module_system.user import service as user_service
 from app.api.v1.module_system.user.crud import UserCRUD
@@ -21,6 +22,13 @@ from app.core.permission_catalog import PERMISSION_CODES
 
 SEED_DIR = Path(__file__).resolve().parents[1] / "app" / "scripts" / "data"
 APP_DIR = Path(__file__).resolve().parents[1] / "app"
+
+
+def test_role_schema_normalizes_legacy_department_data_scope() -> None:
+    """Keep old role rows readable after department data scopes were removed."""
+    role = RoleOutSchema(name="旧角色", code="LEGACY_ROLE", data_scope=3)
+
+    assert role.data_scope == 1
 
 
 class _FakeScalarResult:

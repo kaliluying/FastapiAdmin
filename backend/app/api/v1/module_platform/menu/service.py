@@ -3,6 +3,7 @@ from typing import Any
 from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.dependencies import require_superadmin
 from app.core.exceptions import CustomException
+from app.core.plugins import filter_ai_seed_data
 from app.utils.common_util import (
     get_child_id_map,
     get_child_recursion,
@@ -154,6 +155,8 @@ class MenuService:
     ) -> list[dict]:
         menu_list = await MenuCRUD(self.auth).tree_list(search=vars(search) if search else None, order_by=order_by)
         menu_dict_list = [MenuTreeOutSchema.model_validate(menu).model_dump() for menu in menu_list]
+        # Existing databases can retain AI menus after the optional plugin is disabled.
+        menu_dict_list = filter_ai_seed_data("platform_menu", menu_dict_list)
         return traversal_to_tree(menu_dict_list)
 
     @require_superadmin

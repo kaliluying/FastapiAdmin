@@ -363,8 +363,12 @@ request.interceptors.response.use(
         isRefreshing = true;
         try {
           // Call refresh directly here to avoid dynamically importing user.store and creating cycles.
+          const refreshToken = Auth.getRefreshToken();
+          if (!refreshToken) {
+            throw new HttpError("没有有效的刷新令牌", ApiStatus.unauthorized);
+          }
           const refreshResp = await AuthAPI.refreshToken({
-            refresh_token: Auth.getRefreshToken(),
+            refresh_token: refreshToken,
           });
           const tokenData = refreshResp.data.data;
           const newAccessToken = tokenData?.access_token || "";
