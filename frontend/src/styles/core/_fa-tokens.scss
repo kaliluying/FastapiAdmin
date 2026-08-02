@@ -1,47 +1,65 @@
-// 主题色 token 单一来源（partial，不单独编译）
-// 任何 SCSS 模块需要使用功能性色 hex 值，都从这里 @use 引入：
-//   @use "@styles/core/fa-tokens" as *;
-// 保证整个项目只有这一处定义 success/warning/danger/error/info 的 hex 值。
+// Quiet Operations semantic tokens (partial; never compiled alone).
+// SCSS modules import this file for Element Plus's compile-time color setup;
+// runtime styles consume the matching CSS custom properties below.
 
-$fa-primary: #4080ff;
-$fa-success: #13deb9;
-$fa-warning: #ffae1f;
-$fa-danger: #ff4d4f;
-$fa-error: #fa896b;
-$fa-info: #909399;
+$fa-primary: #2d7d72;
+$fa-success: #25806f;
+$fa-warning: #b7791f;
+$fa-danger: #c2413b;
+$fa-error: #c2413b;
+$fa-info: #39728c;
 
-// ── Quiet Operations semantic design tokens ──────────────────────────────
 :root {
-  // Surface hierarchy
   --fa-color-canvas: #f3f5f6;
-  --fa-color-surface: #fff;
-  --fa-color-surface-raised: #fff;
-  // Sidebar
+  --fa-color-surface: #ffffff;
+  --fa-color-surface-raised: #ffffff;
   --fa-color-sidebar: #18232d;
   --fa-color-sidebar-active: #263842;
-  // Accent / brand
   --fa-color-accent: #2d7d72;
-  // Text
+  --fa-color-accent-hover: #256b62;
   --fa-color-text: #26333d;
   --fa-color-text-muted: #68747c;
-  // Border
   --fa-color-border: #dfe5e8;
-  // Radius
+  --fa-color-success: #25806f;
+  --fa-color-warning: #b7791f;
+  --fa-color-danger: #c2413b;
+  --fa-color-info: #39728c;
+  --fa-space-1: 4px;
+  --fa-space-2: 8px;
+  --fa-space-3: 12px;
+  --fa-space-4: 16px;
+  --fa-space-5: 20px;
+  --fa-space-6: 24px;
   --fa-radius-control: 5px;
   --fa-radius-panel: 6px;
   --fa-radius-overlay: 8px;
-  // Density
   --fa-control-height: 36px;
-  // Motion
   --fa-motion-control: 150ms;
   --fa-motion-page: 200ms;
+  --fa-overlay-shadow: 0 12px 28px rgb(24 35 45 / 16%);
+
+  // Compatibility aliases retained for existing runtime theme and Tailwind consumers.
+  --default-bg-color: var(--fa-color-canvas);
+  --default-box-color: var(--fa-color-surface);
+  --default-border: var(--fa-color-border);
+  --default-border-dashed: var(--fa-color-border);
+  --fa-card-border: var(--fa-color-border);
+  --fa-soft-shadow: none;
+  --fa-panel-shadow: none;
+  --fa-focus-ring: 0 0 0 3px color-mix(in srgb, var(--theme-color) 24%, transparent);
+  --fa-hover-color: color-mix(in srgb, var(--theme-color) 8%, var(--fa-color-surface));
+  --fa-active-color: color-mix(in srgb, var(--theme-color) 14%, var(--fa-color-surface));
+  --fa-el-active-color: color-mix(in srgb, var(--theme-color) 12%, var(--fa-color-surface));
 }
 
 html.dark {
   --fa-color-canvas: #0d1318;
   --fa-color-surface: #151d23;
   --fa-color-surface-raised: #1b252c;
+  --fa-color-sidebar: #0a1014;
+  --fa-color-sidebar-active: #1b252c;
   --fa-color-text: #e7edef;
   --fa-color-text-muted: #9cabb3;
   --fa-color-border: #2c3941;
+  --fa-overlay-shadow: 0 12px 28px rgb(0 0 0 / 36%);
 }

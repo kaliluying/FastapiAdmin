@@ -30,7 +30,7 @@
  *   以及 $button / $messagebox / $popover 等组件样式偏好。
  * - primary 由运行时 setElementThemeColor() 动态写入 :root
  *   （因为用户在设置面板里可切换 themeColorPresets）
- * - SCSS 注入的 primary 退化为默认值 #4080ff，与 themeColorPresets 首项保持一致。
+ * - SCSS 注入的 primary 退化为 Quiet Operations teal；运行时仍可覆盖它。
  */
 
 @use "../core/fa-tokens.scss" as *;
@@ -58,7 +58,7 @@
     ),
   ),
 
-  // 按钮样式偏好：primary 链路按钮 hover 用浅色背景（更柔和的视觉反馈）
+  // Quiet Operations controls retain a compact, stable geometry.
   $button: (
       "hover-bg-color": var(--el-color-primary-light-9),
       "hover-border-color": var(--el-color-primary),
@@ -66,11 +66,11 @@
       "text-color": var(--el-color-primary),
     ),
 
-  // 圆角偏好
+  // 浮层圆角上限为 8px。
   $messagebox: (
-      "border-radius": "12px",
+      "border-radius": "8px",
     ),
   $popover: (
-    "border-radius": "12px",
+    "border-radius": "8px",
   )
 );
