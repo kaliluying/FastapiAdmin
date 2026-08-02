@@ -250,17 +250,25 @@ class KnowledgeService:
     async def delete_document(self, ids: list[int]) -> None:
         if not ids:
             raise CustomException(msg="document ids cannot be empty")
+
+        normalized_ids = list(dict.fromkeys(ids))
+        document_crud = KnowledgeDocumentCRUD(self.auth)
+        documents = await document_crud.get_list(search={"id": ("in", normalized_ids)})
+        accessible_ids = {document.id for document in documents}
+        if accessible_ids != set(normalized_ids):
+            raise CustomException(msg="知识库文档不存在或无权访问", status_code=403)
+
         retrieval_mode = settings.RETRIEVAL_MODE
-        for document_id in ids:
+        for document_id in normalized_ids:
             if retrieval_mode in ("vector", "hybrid"):
                 await self._get_store().delete_document(document_id)
             if retrieval_mode in ("hybrid", "bm25"):
                 await self._get_bm25_index().delete_by_document(document_id)
-        chunks = await KnowledgeChunkCRUD(self.auth).get_list(search={"document_id": ("in", ids)})
+        chunks = await KnowledgeChunkCRUD(self.auth).get_list(search={"document_id": ("in", normalized_ids)})
         chunk_ids = [chunk.id for chunk in chunks]
         if chunk_ids:
             await KnowledgeChunkCRUD(self.auth).delete(ids=chunk_ids)
-        await KnowledgeDocumentCRUD(self.auth).delete(ids=ids)
+        await document_crud.delete(ids=normalized_ids)
 
     async def query_retrieval(self, data: RetrievalTestSchema) -> dict[str, Any]:
         if not data.knowledge_base_ids:
