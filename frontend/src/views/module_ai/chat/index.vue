@@ -1,9 +1,12 @@
 <template>
   <div class="fa-full-height">
-    <ElContainer class="main-chat">
-      <ElAside
+    <ElSplitter class="main-chat" :lazy="true">
+      <ElSplitterPanel
+        v-model:size="sidebarPanelSize"
+        :min="64"
+        :max="400"
         aria-label="会话列表"
-        class="sidebar-container"
+        class="chat-split-panel sidebar-panel"
         :class="{ collapsed: isSidebarCollapsed }"
       >
         <FaSidebar
@@ -14,44 +17,52 @@
           @new-session="handleNewSession"
           @delete-session="handleDeleteSession"
         />
-      </ElAside>
-      <ElContainer aria-label="对话内容" class="chat-container">
-        <ElHeader class="chat-header">
-          <FaChatNavbar
-            :connection-status="connectionStatus"
-            :is-connected="isConnected"
-            :message-count="messages.length"
-            :is-sidebar-collapsed="isSidebarCollapsed"
-            :knowledge-bases="knowledgeBases"
-            v-model:knowledge-base-ids="selectedKnowledgeBaseIds"
-            @clear-chat="handleClearChat"
-            @toggle-connection="toggleConnection"
-            @toggle-sidebar="toggleSidebar"
-          />
-        </ElHeader>
-        <ElMain class="chat-main">
-          <FaChatMessages
-            ref="chatMessagesRef"
-            :messages="messages"
-            :error="error"
-            @prompt-click="handleSendMessage"
-            @error-close="error = ''"
-          />
-        </ElMain>
-        <ElFooter class="chat-footer">
-          <FaChatInput
-            :disabled="!isConnected"
-            :sending="sending"
-            :is-connected="isConnected"
-            @send="handleSendMessage"
-          />
-        </ElFooter>
-      </ElContainer>
-      <ElAside aria-label="回答依据" class="evidence-panel">
+      </ElSplitterPanel>
+      <ElSplitterPanel :min="360" class="chat-split-panel center-panel">
+        <ElContainer aria-label="对话内容" class="chat-container">
+          <ElHeader class="chat-header">
+            <FaChatNavbar
+              :connection-status="connectionStatus"
+              :is-connected="isConnected"
+              :message-count="messages.length"
+              :is-sidebar-collapsed="isSidebarCollapsed"
+              :knowledge-bases="knowledgeBases"
+              v-model:knowledge-base-ids="selectedKnowledgeBaseIds"
+              @clear-chat="handleClearChat"
+              @toggle-connection="toggleConnection"
+              @toggle-sidebar="toggleSidebar"
+            />
+          </ElHeader>
+          <ElMain class="chat-main">
+            <FaChatMessages
+              ref="chatMessagesRef"
+              :messages="messages"
+              :error="error"
+              @prompt-click="handleSendMessage"
+              @error-close="error = ''"
+            />
+          </ElMain>
+          <ElFooter class="chat-footer">
+            <FaChatInput
+              :disabled="!isConnected"
+              :sending="sending"
+              :is-connected="isConnected"
+              @send="handleSendMessage"
+            />
+          </ElFooter>
+        </ElContainer>
+      </ElSplitterPanel>
+      <ElSplitterPanel
+        v-model:size="evidencePanelSize"
+        :min="200"
+        :max="420"
+        aria-label="回答依据"
+        class="chat-split-panel evidence-panel"
+      >
         <FaAiProcessStatus :stage="processStage" />
         <FaCitationList :citations="activeCitations" />
-      </ElAside>
-    </ElContainer>
+      </ElSplitterPanel>
+    </ElSplitter>
     <!-- 移动端会话抽屉（≤768px 时使用） -->
     <ElDrawer v-model="isMobileDrawerOpen" title="会话列表" direction="ltr" size="260px">
       <FaSidebar
@@ -72,6 +83,7 @@ defineOptions({
 });
 
 import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useMediaQuery } from "@vueuse/core";
 import { ElMessage, ElMessageBox } from "element-plus";
 import AiChatAPI, { ChatSession } from "@/api/module_ai/chat";
 import KnowledgeAPI, { type KnowledgeBase } from "@/api/module_ai/knowledge";
@@ -92,6 +104,8 @@ const connectionStatus = ref<"connected" | "connecting" | "disconnected">("disco
 const error = ref("");
 const currentSessionId = ref<string | null>(null);
 const isSidebarCollapsed = ref(false);
+const sidebarPanelSize = ref<number | string>(220);
+const evidencePanelSize = ref<number | string>(260);
 const knowledgeBases = ref<KnowledgeBase[]>([]);
 const selectedKnowledgeBaseIds = ref<number[]>([]);
 
@@ -111,6 +125,7 @@ const processStage = computed(
 
 // 移动端抽屉
 const isMobileDrawerOpen = ref(false);
+const isMobileViewport = useMediaQuery("(max-width: 768px)");
 
 // WebSocket
 let ws: WebSocket | null = null;
@@ -347,7 +362,13 @@ const handleClearChat = async () => {
 };
 
 const toggleSidebar = () => {
+  if (isMobileViewport.value) {
+    isMobileDrawerOpen.value = true;
+    return;
+  }
+
   isSidebarCollapsed.value = !isSidebarCollapsed.value;
+  sidebarPanelSize.value = isSidebarCollapsed.value ? 64 : 220;
 };
 
 // ============ 生命周期 ============
@@ -382,21 +403,41 @@ onUnmounted(disconnectWebSocket);
   border-radius: 8px;
   box-shadow: var(--fa-panel-shadow);
 
-  /* 与右侧同一表面色；与内容区的分界交给 Sidebar 的竖线即可 */
-  .sidebar-container {
-    width: 200px;
+  .chat-split-panel {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
     background: transparent;
-    transition: width 0.3s ease;
+  }
+
+  .sidebar-panel {
+    transition: flex-basis 0.25s ease;
+
+    :deep(.sidebar) {
+      min-width: 0;
+    }
 
     &.collapsed {
-      width: 64px;
+      :deep(.sidebar) {
+        overflow: hidden;
+      }
     }
+  }
+
+  .center-panel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    background: transparent;
   }
 
   .chat-container {
     display: flex;
     flex-direction: column;
+    width: 100%;
     height: 100%;
+    min-width: 0;
+    min-height: 0;
     overflow: hidden;
   }
 
@@ -410,6 +451,7 @@ onUnmounted(disconnectWebSocket);
 
   .chat-main {
     flex: 1;
+    min-height: 0;
     overflow: hidden;
   }
 
@@ -422,11 +464,19 @@ onUnmounted(disconnectWebSocket);
   }
 
   .evidence-panel {
-    width: 240px;
     padding: 12px;
     overflow-y: auto;
     background: color-mix(in srgb, var(--default-box-color) 60%, transparent);
-    border-left: 1px solid var(--fa-card-border);
+  }
+
+  :deep(.el-splitter-bar__dragger) {
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+  }
+
+  :deep(.el-splitter-bar__dragger:hover:not(.is-disabled)),
+  :deep(.el-splitter-bar__dragger-active) {
+    background: color-mix(in srgb, var(--theme-color) 12%, transparent);
   }
 
   @media (width <= 1024px) {
@@ -436,8 +486,15 @@ onUnmounted(disconnectWebSocket);
   }
 
   @media (width <= 768px) {
-    .sidebar-container {
+    .sidebar-panel {
       display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sidebar-panel,
+    :deep(.el-splitter-bar__dragger) {
+      transition: none;
     }
   }
 }

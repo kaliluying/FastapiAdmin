@@ -24,6 +24,8 @@
       </article>
     </section>
 
+    <LoginTrend class="home-login-trend" />
+
     <section class="dashboard-grid">
       <ElCard shadow="never" class="home-card">
         <template #header>
@@ -146,6 +148,7 @@ import { useUserStore } from "@stores";
 import { HttpError } from "@utils";
 import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
 import Banner from "./modules/banner.vue";
+import LoginTrend from "./modules/login-trend.vue";
 
 defineOptions({ name: "Home", inheritAttrs: false });
 
@@ -384,6 +387,11 @@ onUnmounted(() => {
 <style scoped lang="scss">
 .home-workspace {
   min-width: 0;
+}
+
+.home-login-trend {
+  display: block;
+  margin-bottom: 20px;
 }
 
 .metrics-grid {

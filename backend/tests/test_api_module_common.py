@@ -20,6 +20,22 @@ class TestHealth:
         assert_route(test_client, "GET", "/common/health/live", expected_status=200)
 
 
+class TestMonitoring:
+    """首页运营概览接口。"""
+
+    def test_login_trend(self, test_client: TestClient, auth_headers: dict) -> None:
+        response = test_client.get("/common/monitoring/login-trend", headers=auth_headers)
+
+        assert response.status_code == 200
+        payload = response.json()
+        items = payload["data"]["items"]
+        assert len(items) == 7
+        assert [item["day"] for item in items] == sorted(item["day"] for item in items)
+        assert all(set(item) == {"day", "logins", "unique_users", "new_users"} for item in items)
+        assert sum(item["logins"] for item in items) >= 1
+        assert max(item["unique_users"] for item in items) >= 1
+
+
 class TestFile:
     """文件管理接口。"""
 
