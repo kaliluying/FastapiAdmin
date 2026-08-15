@@ -16,7 +16,7 @@ from app.api.v1.module_system.params.model import ParamsModel
 from app.api.v1.module_system.role.model import RoleMenusModel, RoleModel
 from app.api.v1.module_system.user.model import UserModel, UserRolesModel
 from app.config.path_conf import SCRIPT_DIR
-from app.core.database import async_db_session, create_optional_plugin_tables
+from app.core.database import async_db_session, create_tables
 from app.core.logger import logger
 from app.core.plugins import filter_ai_seed_data, load_ai_models
 
@@ -60,13 +60,10 @@ class InitializeData:
     _RECURSIVE_TABLES: set[str] = {"platform_menu"}
 
     async def init_db(self) -> None:
-        """补齐可选插件表并导入种子数据。"""
+        """按当前 ORM 模型创建骨架表并导入种子数据。"""
         try:
             load_ai_models()
-            # Core tables are always managed by the startup Alembic migration.
-            # This targeted pass only repairs optional plugin tables enabled
-            # after the last migration was applied.
-            await create_optional_plugin_tables()
+            await create_tables()
         except asyncio.exceptions.TimeoutError:
             logger.error("❌️ 数据库表结构初始化超时")
             raise

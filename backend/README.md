@@ -70,12 +70,11 @@ uv sync --extra ai
 
 `requirements.txt` exports the core backend profile. Use `requirements-ai.txt` for deployments that enable AI.
 
-Alembic revision `000000000001` manages the core admin tables, and revision
-`000000000003` creates the optional AI tables when `AI_ENABLE=True` and the AI
-dependencies are installed. Application startup applies committed migrations
-before initializing seed data. Use `uv run main.py revision --env=dev` to
-generate migrations, review and commit them, and let startup apply them; do
-not generate migration files during startup. Multi-replica production
+Application startup applies committed Alembic migrations when revision files
+exist. This skeleton currently has no revision files, so startup creates tables
+from the active ORM models before seeding data. Use `uv run main.py revision
+--env=dev` to generate migrations when the project begins tracking schema
+history; review and commit them before deployment. Multi-replica production
 deployments should still run one dedicated migration job.
 
 Application startup seeds base data when tables are empty. Optional AI tables still require the AI models to be installed and included in the deployment migration workflow.

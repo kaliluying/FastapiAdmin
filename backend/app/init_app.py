@@ -23,19 +23,23 @@ from .utils.common_util import import_module, import_modules_async
 from .utils.console import console_end, console_start
 
 
-async def run_startup_migration() -> None:
+async def run_startup_migration() -> bool:
     """Apply all committed Alembic migrations before database initialization.
 
     Returns:
-        None.
+        bool: Whether a migration head was found and applied or checked.
 
     Side effects:
         Runs Alembic ``upgrade head`` in a worker thread and may modify the
         configured database schema.
     """
     logger.info("⏳ 开始应用数据库迁移")
-    await asyncio.to_thread(upgrade_database)
-    logger.info("✅ 数据库迁移应用完成")
+    applied = await asyncio.to_thread(upgrade_database)
+    if applied:
+        logger.info("✅ 数据库迁移应用完成")
+    else:
+        logger.info("ℹ️ 当前没有迁移文件，跳过 Alembic")
+    return applied
 
 
 @asynccontextmanager

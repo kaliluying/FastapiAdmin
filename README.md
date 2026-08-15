@@ -124,7 +124,7 @@ uv sync --extra ai
 # 在 env/.env.dev 中设置 AI_ENABLE = True
 ```
 
-应用启动时会先执行已提交的 Alembic 迁移，再补齐启用插件表并写入种子数据。修改模型后仍需先运行 `uv run main.py revision --env=dev` 生成并审核迁移文件；应用启动只会执行已有迁移，不会自动生成迁移。多副本生产部署仍建议使用单独的迁移任务。
+应用启动时会先执行已提交的 Alembic 迁移；当前骨架没有 revision 文件时，会按 ORM 模型创建表并写入种子数据。修改模型后仍可运行 `uv run main.py revision --env=dev` 生成并审核迁移文件；应用启动不会自动生成迁移。多副本生产部署仍建议使用单独的迁移任务。
 
 `backend/requirements.txt` 仅包含基础后台依赖；启用 AI 的部署使用 `backend/requirements-ai.txt`。
 

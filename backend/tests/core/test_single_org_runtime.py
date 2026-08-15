@@ -9,8 +9,9 @@ async def test_startup_applies_migrations_before_database_initialization(monkeyp
     """Startup migration should run through a worker thread before seeding."""
     calls: list[str] = []
 
-    def fake_upgrade_database() -> None:
+    def fake_upgrade_database() -> bool:
         calls.append("upgrade")
+        return True
 
     async def fake_to_thread(function) -> None:
         calls.append("thread")
