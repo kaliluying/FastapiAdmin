@@ -89,7 +89,6 @@ REDIS_PORT = 6379
 REDIS_PASSWORD = "your_redis_password"
 REDIS_DB_NAME = 1
 
-DATABASE_AUTO_CREATE_TABLES = True  # 仅本地开发需要自动建表时显式开启
 SECRET_KEY = "dev-only-change-this-secret-before-sharing"
 
 AI_ENABLE = False
@@ -125,7 +124,7 @@ uv sync --extra ai
 # 在 env/.env.dev 中设置 AI_ENABLE = True
 ```
 
-将 `DATABASE_AUTO_CREATE_TABLES` 显式设为 `True` 时，应用启动会创建缺失表并写入当前启用模块的种子数据。生产环境启动前必须执行 `uv run main.py upgrade --env=prod`；启用 AI 时需先在目标环境安装 AI 依赖并设置 `AI_ENABLE=True`，Alembic 的可选 AI 迁移会创建对应表，应用运行时不会自动建表。
+应用启动时会先执行已提交的 Alembic 迁移，再补齐启用插件表并写入种子数据。修改模型后仍需先运行 `uv run main.py revision --env=dev` 生成并审核迁移文件；应用启动只会执行已有迁移，不会自动生成迁移。多副本生产部署仍建议使用单独的迁移任务。
 
 `backend/requirements.txt` 仅包含基础后台依赖；启用 AI 的部署使用 `backend/requirements-ai.txt`。
 

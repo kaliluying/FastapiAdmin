@@ -72,10 +72,11 @@ uv sync --extra ai
 
 Alembic revision `000000000001` manages the core admin tables, and revision
 `000000000003` creates the optional AI tables when `AI_ENABLE=True` and the AI
-dependencies are installed. Set the target environment before running
-`uv run main.py upgrade --env=prod`, then start production with automatic table
-creation disabled. Development startup may create enabled-plugin tables only
-when `DATABASE_AUTO_CREATE_TABLES=True`.
+dependencies are installed. Application startup applies committed migrations
+before initializing seed data. Use `uv run main.py revision --env=dev` to
+generate migrations, review and commit them, and let startup apply them; do
+not generate migration files during startup. Multi-replica production
+deployments should still run one dedicated migration job.
 
 Application startup seeds base data when tables are empty. Optional AI tables still require the AI models to be installed and included in the deployment migration workflow.
 

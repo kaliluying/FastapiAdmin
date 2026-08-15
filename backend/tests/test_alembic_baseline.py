@@ -83,7 +83,6 @@ def test_startup_repairs_ai_tables_when_ai_is_enabled_after_migration(tmp_path: 
         "DATABASE_TYPE": "sqlite",
         "DATABASE_NAME": str(db_path.with_suffix("")),
         "REDIS_ENABLE": "false",
-        "DATABASE_AUTO_CREATE_TABLES": "false",
         "SECRET_KEY": "test-secret-key-for-alembic-32-chars",
         "PYTHONUTF8": "1",
     }

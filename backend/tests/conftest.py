@@ -30,7 +30,6 @@ os.environ["DATABASE_TYPE"] = "sqlite"
 os.environ["DATABASE_NAME"] = _TEST_DB_PATH
 os.environ["REDIS_ENABLE"] = "true"
 os.environ["AI_ENABLE"] = "false"
-os.environ["DATABASE_AUTO_CREATE_TABLES"] = "true"
 os.environ["SECRET_KEY"] = "test-secret-key-for-backend-tests-32-chars"
 os.environ["POOL_SIZE"] = "1"
 os.environ["MAX_OVERFLOW"] = "1"
@@ -40,7 +39,6 @@ from app.config.setting import settings
 settings.DATABASE_TYPE = "sqlite"
 settings.DATABASE_NAME = _TEST_DB_PATH
 settings.REDIS_ENABLE = True
-settings.DATABASE_AUTO_CREATE_TABLES = True
 settings.SECRET_KEY = "test-secret-key-for-backend-tests-32-chars"
 settings.POOL_SIZE = 1
 settings.MAX_OVERFLOW = 1
@@ -204,8 +202,10 @@ async def _initialize_test_app(app) -> None:
     Args:
         app: FastAPI application whose Redis state should be initialized.
     """
+    from app.init_app import run_startup_migration
     from app.scripts.initialize import InitializeData
 
+    await run_startup_migration()
     await InitializeData().init_db()
     app.state.redis = _mock_redis
 

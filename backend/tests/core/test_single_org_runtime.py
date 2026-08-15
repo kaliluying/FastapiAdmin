@@ -1,14 +1,27 @@
-from app.config.setting import settings
+import pytest
+
+from app import init_app
 from app.scripts.initialize import InitializeData
 
 
-def test_auto_create_tables_requires_an_explicit_setting(monkeypatch):
-    """Application startup should not create tables unless explicitly enabled."""
-    monkeypatch.setattr(settings, "DATABASE_AUTO_CREATE_TABLES", False)
-    assert InitializeData.should_auto_create_tables() is False
+@pytest.mark.asyncio
+async def test_startup_applies_migrations_before_database_initialization(monkeypatch):
+    """Startup migration should run through a worker thread before seeding."""
+    calls: list[str] = []
 
-    monkeypatch.setattr(settings, "DATABASE_AUTO_CREATE_TABLES", True)
-    assert InitializeData.should_auto_create_tables() is True
+    def fake_upgrade_database() -> None:
+        calls.append("upgrade")
+
+    async def fake_to_thread(function) -> None:
+        calls.append("thread")
+        function()
+
+    monkeypatch.setattr(init_app, "upgrade_database", fake_upgrade_database)
+    monkeypatch.setattr(init_app.asyncio, "to_thread", fake_to_thread)
+
+    await init_app.run_startup_migration()
+
+    assert calls == ["thread", "upgrade"]
 
 
 def test_single_org_seed_models_only_include_active_runtime_tables():

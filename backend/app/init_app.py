@@ -1,3 +1,4 @@
+import asyncio
 from collections.abc import AsyncGenerator
 from typing import Any
 
@@ -17,8 +18,24 @@ from .core.http_limit import http_limit_callback, ws_limit_callback
 from .core.logger import logger
 from .core.plugins import get_ai_routers, get_ai_websocket_routers, initialize_ai_plugin
 from .scripts.initialize import InitializeData
+from .scripts.migrate import upgrade_database
 from .utils.common_util import import_module, import_modules_async
 from .utils.console import console_end, console_start
+
+
+async def run_startup_migration() -> None:
+    """Apply all committed Alembic migrations before database initialization.
+
+    Returns:
+        None.
+
+    Side effects:
+        Runs Alembic ``upgrade head`` in a worker thread and may modify the
+        configured database schema.
+    """
+    logger.info("⏳ 开始应用数据库迁移")
+    await asyncio.to_thread(upgrade_database)
+    logger.info("✅ 数据库迁移应用完成")
 
 
 @asynccontextmanager
@@ -27,6 +44,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
     from app.api.v1.module_system.params.service import ParamsService
 
     try:
+        await run_startup_migration()
         await InitializeData().init_db()
         logger.info("✅ {}数据库初始化完成", settings.DATABASE_TYPE)
         await initialize_ai_plugin()

@@ -166,7 +166,7 @@ def reset(
 
         async with async_engine.begin() as conn:
             await conn.run_sync(drop_reflected_tables)
-        # reset 不能依赖开发环境的自动建表开关，清表后必须显式恢复完整模型结构。
+        # reset 清表后必须显式恢复完整模型结构，不能等待启动迁移。
         await create_tables()
         await InitializeData().init_db()
 
@@ -226,8 +226,9 @@ def upgrade(
     from app.config.setting import get_settings
 
     get_settings.cache_clear()
-    alembic_cfg = Config("alembic.ini")
-    command.upgrade(alembic_cfg, "head")
+    from app.scripts.migrate import upgrade_database
+
+    upgrade_database()
     typer.echo("所有迁移已应用。")
 
 
