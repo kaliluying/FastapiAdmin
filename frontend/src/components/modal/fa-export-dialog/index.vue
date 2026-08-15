@@ -64,7 +64,6 @@
 </template>
 
 <script lang="ts" setup>
-import ExcelJS from "exceljs";
 import type { IContentConfig, IObject } from "@/components/modal/types";
 import { useThrottleFn } from "@vueuse/core";
 import { type FormInstance, type FormRules, ElMessage } from "element-plus";
@@ -190,15 +189,7 @@ async function handleExports() {
       ? exportsFormData.filename
       : props.contentConfig.permPrefix || "export";
     const sheetname = exportsFormData.sheetname ? exportsFormData.sheetname : "sheet";
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet(sheetname);
-    const columns: Partial<ExcelJS.Column>[] = [];
-    cols.value.forEach((col) => {
-      if (col.label && col.prop && exportsFormData.fields.includes(col.prop)) {
-        columns.push({ header: col.label, key: col.prop });
-      }
-    });
-    worksheet.columns = columns;
+    let remoteRows: IObject[] | undefined;
 
     if (exportsFormData.origin === ExportsOriginEnum.REMOTE) {
       const lastFormData = props.queryParams ?? {};
@@ -209,13 +200,28 @@ async function handleExports() {
         return;
       }
       if (props.contentConfig.exportsAction) {
-        const res = await props.contentConfig.exportsAction(lastFormData);
-        worksheet.addRows(res);
-        const buffer = await workbook.xlsx.writeBuffer();
-        saveXlsx(buffer, filename as string);
+        remoteRows = await props.contentConfig.exportsAction(lastFormData);
       } else {
         ElMessage.error("未配置 exportsAction 或 exportsBlobAction");
+        return;
       }
+    }
+
+    const { default: ExcelJS } = await import("exceljs");
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet(sheetname);
+    const columns: Partial<import("exceljs").Column>[] = [];
+    cols.value.forEach((col) => {
+      if (col.label && col.prop && exportsFormData.fields.includes(col.prop)) {
+        columns.push({ header: col.label, key: col.prop });
+      }
+    });
+    worksheet.columns = columns;
+
+    if (exportsFormData.origin === ExportsOriginEnum.REMOTE) {
+      worksheet.addRows(remoteRows ?? []);
+      const buffer = await workbook.xlsx.writeBuffer();
+      saveXlsx(buffer, filename as string);
     } else if (exportsFormData.origin === ExportsOriginEnum.SELECTED) {
       const rows = props.selectionData ?? [];
       worksheet.addRows(rows);

@@ -11,7 +11,7 @@ from app.plugin.module_ai.config import validate_model_base_url
 class ChatQuerySchema(BaseModel):
     """WebSocket chat request."""
 
-    message: str = Field(..., min_length=1, description="Message content")
+    message: str = Field(..., min_length=1, max_length=8_000, description="Message content")
     session_id: str | None = Field(None, description="Session ID")
     files: list[dict[str, Any]] | None = Field(None, description="Ad-hoc file context")
     knowledge_base_ids: list[int] = Field(default_factory=list, max_length=20, description="Knowledge base IDs")
@@ -55,7 +55,7 @@ class ChatSessionQueryParam(BaseQueryParam, UserByQueryParam):
 class AiChatRequestSchema(BaseModel):
     """Non-streaming AI chat request."""
 
-    message: str = Field(..., min_length=1, description="User message")
+    message: str = Field(..., min_length=1, max_length=8_000, description="User message")
     session_id: str | None = Field(None, description="Session ID; creates a new session when omitted")
     knowledge_base_ids: list[int] = Field(default_factory=list, max_length=20, description="Knowledge base IDs")
 

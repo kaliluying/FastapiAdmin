@@ -5,12 +5,13 @@
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from app.core.logger import logger
-from app.plugin.module_ai.knowledge.bm25_index import BM25KnowledgeIndex
-from app.plugin.module_ai.knowledge.chroma_store import ChromaKnowledgeStore
-from app.plugin.module_ai.knowledge.embedding import EmbeddingClient, create_embedding_client
+from app.plugin.module_ai.knowledge.bm25_index import BM25KnowledgeIndex, get_cached_bm25_index
+from app.plugin.module_ai.knowledge.chroma_store import ChromaKnowledgeStore, get_cached_chroma_store
+from app.plugin.module_ai.knowledge.embedding import EmbeddingClient, get_cached_embedding_client
 
 from .query_analyzer import QueryAnalyzer
 from .rag import KeywordKnowledgeRetriever, RagDocument
@@ -103,10 +104,16 @@ class HybridKnowledgeRetriever:
 
         vector_results = {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
         bm25_results: list[dict[str, Any]] = []
+        searches = []
         if alpha > 0:
-            vector_results = await self._vector_search(query, knowledge_base_ids, candidate_top_k)
+            searches.append(("vector", self._vector_search(query, knowledge_base_ids, candidate_top_k)))
         if alpha < 1:
-            bm25_results = await self._bm25_search(query, knowledge_base_ids, candidate_top_k)
+            searches.append(("bm25", self._bm25_search(query, knowledge_base_ids, candidate_top_k)))
+        for (search_type, _), result in zip(searches, await asyncio.gather(*(task for _, task in searches)), strict=True):
+            if search_type == "vector":
+                vector_results = result
+            else:
+                bm25_results = result
 
         # 3. RRF融合
         fused_chunk_ids = self._rrf_fusion(vector_results, bm25_results, self.top_k, alpha)
@@ -278,17 +285,17 @@ class HybridKnowledgeRetriever:
     def _get_chroma_store(self) -> ChromaKnowledgeStore:
         """延迟加载ChromaDB存储"""
         if self.chroma_store is None:
-            self.chroma_store = ChromaKnowledgeStore()
+            self.chroma_store = get_cached_chroma_store()
         return self.chroma_store
 
     def _get_bm25_index(self) -> BM25KnowledgeIndex:
         """延迟加载BM25索引"""
         if self.bm25_index is None:
-            self.bm25_index = BM25KnowledgeIndex()
+            self.bm25_index = get_cached_bm25_index()
         return self.bm25_index
 
     def _get_embedding_client(self) -> EmbeddingClient:
         """延迟加载embedding客户端"""
         if self.embedding_client is None:
-            self.embedding_client = create_embedding_client()
+            self.embedding_client = get_cached_embedding_client()
         return self.embedding_client

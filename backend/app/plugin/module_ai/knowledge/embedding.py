@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Protocol
 
 import anyio
@@ -85,6 +86,26 @@ def create_embedding_client(provider: str | None = None) -> EmbeddingClient:
     if selected in {"openai", "remote"}:
         return OpenAICompatibleEmbeddingClient()
     raise ValueError("EMBEDDING_PROVIDER must be 'local' or 'openai'")
+
+
+@lru_cache(maxsize=4)
+def _cached_embedding_client(config: tuple[str, ...]) -> EmbeddingClient:
+    """Create one embedding client per effective provider configuration."""
+    return create_embedding_client(config[0])
+
+
+def get_cached_embedding_client(provider: str | None = None) -> EmbeddingClient:
+    """Reuse the process-local embedding client for normal request paths."""
+    selected = (provider or settings.EMBEDDING_PROVIDER or "local").strip().lower()
+    config = (
+        selected,
+        settings.LOCAL_EMBEDDING_MODEL,
+        settings.LOCAL_EMBEDDING_CACHE_DIR,
+        settings.OPENAI_API_KEY,
+        settings.OPENAI_BASE_URL,
+        settings.OPENAI_EMBEDDING_MODEL,
+    )
+    return _cached_embedding_client(config)
 
 
 def _validate_embeddings(

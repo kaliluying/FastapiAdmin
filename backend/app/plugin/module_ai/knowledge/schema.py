@@ -46,6 +46,6 @@ class KnowledgeDocumentOutSchema(BaseSchema, UserBySchema):
 
 
 class RetrievalTestSchema(BaseModel):
-    query: str = Field(min_length=1)
+    query: str = Field(min_length=1, max_length=8_000)
     knowledge_base_ids: list[int] = Field(default_factory=list)
     top_k: int = Field(default=5, ge=1, le=20)

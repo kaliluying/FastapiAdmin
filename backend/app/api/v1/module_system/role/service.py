@@ -1,7 +1,7 @@
 ﻿from typing import Any
 
 from app.core.base_schema import AuthSchema, BatchSetAvailable
-from app.core.dependencies import require_superadmin
+from app.core.dependencies import invalidate_permission_cache, require_superadmin
 from app.core.exceptions import CustomException
 from app.utils.excel_util import ExcelUtil
 
@@ -115,6 +115,7 @@ class RoleService:
             raise CustomException(msg="创建失败，编码已存在")
 
         new_role = await RoleCRUD(self.auth).create(data=data)
+        await invalidate_permission_cache(getattr(self.auth, "redis", None))
         return RoleOutSchema.model_validate(new_role)
 
     @require_superadmin
@@ -138,6 +139,7 @@ class RoleService:
         if exist_code and exist_code.id != id:
             raise CustomException(msg="更新失败，角色编码已存在")
         updated_role = await RoleCRUD(self.auth).update(id=id, data=data)
+        await invalidate_permission_cache(getattr(self.auth, "redis", None))
         return RoleOutSchema.model_validate(updated_role)
 
     @require_superadmin
@@ -161,6 +163,7 @@ class RoleService:
             raise CustomException(msg="删除失败，部分ID不存在")
 
         await RoleCRUD(self.auth).delete(ids=ids)
+        await invalidate_permission_cache(getattr(self.auth, "redis", None))
 
     @require_superadmin
     async def set_permission(self, data: RolePermissionSettingSchema) -> None:
@@ -181,6 +184,7 @@ class RoleService:
         role_ids = [role.id for role in roles]
         await RoleCRUD(self.auth).set_role_menus_crud(role_ids=role_ids, menu_ids=data.menu_ids)
         await RoleCRUD(self.auth).set(ids=role_ids, data_scope=data.data_scope)
+        await invalidate_permission_cache(getattr(self.auth, "redis", None))
 
     @require_superadmin
     async def set_available(self, data: BatchSetAvailable) -> None:
@@ -200,6 +204,7 @@ class RoleService:
             if rid not in role_map:
                 raise CustomException(msg="该数据不存在")
         await RoleCRUD(self.auth).set(ids=data.ids, status=data.status)
+        await invalidate_permission_cache(getattr(self.auth, "redis", None))
 
     @staticmethod
     def export_list(role_list: list[dict[str, Any]]) -> bytes:

@@ -1,6 +1,6 @@
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Body, Depends, Form, Path, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, Form, Path, UploadFile
 from fastapi.responses import JSONResponse
 
 from app.common.response import ResponseSchema, SuccessResponse
@@ -121,9 +121,14 @@ async def list_document_controller(
 async def upload_document_controller(
     knowledge_base_id: Annotated[int, Form(ge=1)],
     file: UploadFile,
+    background_tasks: BackgroundTasks,
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:document:create"]))],
 ) -> JSONResponse:
-    result = await KnowledgeService(auth).upload_document(knowledge_base_id=knowledge_base_id, file=file)
+    result = await KnowledgeService(auth).upload_document(
+        knowledge_base_id=knowledge_base_id,
+        file=file,
+        background_tasks=background_tasks,
+    )
     return SuccessResponse(data=result, msg="upload knowledge document success")
 
 

@@ -3,20 +3,22 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 from fastapi import UploadFile
 
 from app.config.path_conf import BASE_DIR
 from app.core.base_schema import AuthSchema
+from app.core.database import async_db_session
 from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.plugin.module_ai.config import settings
 
-from .bm25_index import BM25KnowledgeIndex
-from .chroma_store import ChromaKnowledgeStore
+from .bm25_index import BM25KnowledgeIndex, get_cached_bm25_index
+from .chroma_store import ChromaKnowledgeStore, get_cached_chroma_store
 from .crud import KnowledgeBaseCRUD, KnowledgeChunkCRUD, KnowledgeDocumentCRUD
-from .embedding import EmbeddingClient, create_embedding_client
+from .embedding import EmbeddingClient, get_cached_embedding_client
 from .extractors import extract_text
 from .schema import (
     KnowledgeBaseCreateSchema,
@@ -31,6 +33,26 @@ from .text_splitter import split_legal_text
 from .text_splitter import split_text as split_text_fallback
 
 UPLOAD_DIR = BASE_DIR / "storage" / "knowledge"
+
+
+async def index_document_in_background(document_id: int, user_id: int | None) -> None:
+    """Index one uploaded document with an independent database session."""
+    async with async_db_session() as db:
+        auth = AuthSchema(
+            user=SimpleNamespace(id=user_id),
+            db=db,
+            check_data_scope=False,
+        )
+        try:
+            await KnowledgeService(auth).index_document(document_id)
+        except Exception:
+            try:
+                await db.commit()
+            except Exception:
+                await db.rollback()
+            logger.exception("后台索引知识库文档失败: document_id=%s", document_id)
+        else:
+            await db.commit()
 
 
 def build_chroma_metadata(
@@ -155,7 +177,13 @@ class KnowledgeService:
             item["file_path"] = self._safe_knowledge_path(item.get("file_path"))
         return result.model_dump()
 
-    async def upload_document(self, *, knowledge_base_id: int, file: UploadFile) -> KnowledgeDocumentOutSchema:
+    async def upload_document(
+        self,
+        *,
+        knowledge_base_id: int,
+        file: UploadFile,
+        background_tasks: Any | None = None,
+    ) -> KnowledgeDocumentOutSchema:
         await KnowledgeBaseCRUD(self.auth).get_or_404(id=knowledge_base_id, msg="knowledge base not found")
         saved_path = await self._save_upload_file(file)
         document = await KnowledgeDocumentCRUD(self.auth).create_document(
@@ -165,9 +193,16 @@ class KnowledgeService:
             file_type=saved_path.suffix.lower().lstrip("."),
             file_size=saved_path.stat().st_size,
         )
-        await self.index_document(document.id)
-        refreshed = await KnowledgeDocumentCRUD(self.auth).get_or_404(id=document.id)
-        return self._document_output(refreshed)
+        if background_tasks is None:
+            await self.index_document(document.id)
+            document = await KnowledgeDocumentCRUD(self.auth).get_or_404(id=document.id)
+        else:
+            background_tasks.add_task(
+                index_document_in_background,
+                document.id,
+                getattr(getattr(self.auth, "user", None), "id", None),
+            )
+        return self._document_output(document)
 
     async def index_document(self, document_id: int) -> KnowledgeDocumentOutSchema:
         document = await KnowledgeDocumentCRUD(self.auth).get_or_404(id=document_id, msg="knowledge document not found")
@@ -412,17 +447,17 @@ class KnowledgeService:
 
     def _get_store(self) -> ChromaKnowledgeStore:
         if self.store is None:
-            self.store = ChromaKnowledgeStore()
+            self.store = get_cached_chroma_store()
         return self.store
 
     def _get_embedding_client(self) -> EmbeddingClient:
         if self.embedding_client is None:
-            self.embedding_client = create_embedding_client()
+            self.embedding_client = get_cached_embedding_client()
         return self.embedding_client
 
     def _get_bm25_index(self) -> BM25KnowledgeIndex:
         if self.bm25_index is None:
-            self.bm25_index = BM25KnowledgeIndex()
+            self.bm25_index = get_cached_bm25_index()
         return self.bm25_index
 
     @staticmethod

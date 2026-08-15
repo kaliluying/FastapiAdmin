@@ -1,7 +1,6 @@
 import io
 from typing import Any
 
-import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, PatternFill
 from openpyxl.utils import get_column_letter
@@ -10,26 +9,8 @@ from openpyxl.worksheet.datavalidation import DataValidation
 
 class ExcelUtil:
     """
-    Excel 模板生成与列表导出（openpyxl / pandas）。
+    Excel 模板生成与列表导出（openpyxl）。
     """
-
-    @classmethod
-    def __mapping_list(cls, list_data: list[dict[str, Any]], mapping_dict: dict) -> list:
-        """
-        工具方法：将列表数据中的字段名映射为对应的中文字段名。
-
-        参数:
-        - list_data (list[dict[str, Any]]): 数据列表。
-        - mapping_dict (dict): 字段名映射字典。
-
-        返回:
-        - list: 映射后的数据列表。
-        """
-        mapping_data = [
-            {mapping_dict.get(key): item.get(key) for key in mapping_dict} for item in list_data
-        ]
-
-        return mapping_data
 
     @classmethod
     def get_excel_template(
@@ -102,9 +83,14 @@ class ExcelUtil:
         返回:
         - bytes: Excel 文件的二进制数据。
         """
-        mapping_data = cls.__mapping_list(list_data, mapping_dict)
-        df = pd.DataFrame(mapping_data)
+        # write_only avoids building a second DataFrame-sized object for large exports.
+        workbook = Workbook(write_only=True)
+        worksheet = workbook.create_sheet()
+        keys = list(mapping_dict)
+        worksheet.append([mapping_dict[key] for key in keys])
+        for item in list_data:
+            worksheet.append([item.get(key) for key in keys])
         buffer = io.BytesIO()
-        df.to_excel(buffer, index=False, engine="openpyxl")  # pyright: ignore[reportArgumentType]
+        workbook.save(buffer)
         binary_data = buffer.getvalue()
         return binary_data

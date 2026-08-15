@@ -13,6 +13,10 @@ from app.core.logger import logger
 from .model import ChatSessionModel
 from .schema import ChatSessionCreateSchema, ChatSessionUpdateSchema
 
+MAX_STORED_MESSAGE_CHARS = 8_000
+MAX_STORED_RESPONSE_CHARS = 16_000
+MAX_STORED_RUNS = 50
+
 
 @dataclass(slots=True)
 class ChatSession:
@@ -130,12 +134,13 @@ class ChatSessionCRUD:
                     "content": response,
                     "created_at": int(time.time()),
                     "messages": [
-                        {"role": "user", "content": message},
-                        {"role": "assistant", "content": response},
+                        {"role": "user", "content": message[:MAX_STORED_MESSAGE_CHARS]},
+                        {"role": "assistant", "content": response[:MAX_STORED_RESPONSE_CHARS]},
                     ],
                 }
             )
-            obj.runs = runs
+            # ponytail: keep the JSON transcript bounded; add archival storage when full history is required.
+            obj.runs = runs[-MAX_STORED_RUNS:]
             await self.db.flush()
             return True
         except Exception as e:

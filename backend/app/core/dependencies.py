@@ -1,8 +1,9 @@
 ﻿import json
 from collections.abc import AsyncGenerator
 from dataclasses import replace
+from typing import Any
 
-from fastapi import Depends, Query, Request
+from fastapi import Depends, Query, Request, WebSocket
 from redis.asyncio.client import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,17 +20,39 @@ from app.core.request_context import RequestContext
 from app.core.security import OAuth2Schema, decode_access_token
 
 WS_TICKET_PREFIX = "auth:ws_ticket:"
+PERMISSION_CACHE_PREFIX = "auth:permissions:"
+PERMISSION_CACHE_VERSION_KEY = "auth:permissions:version"
+PERMISSION_CACHE_TTL = 300
 
 
-async def db_getter() -> AsyncGenerator[AsyncSession, None]:
-    """数据库会话 — 请求级生命周期管理。
+def _write_request_transaction(method: str) -> bool:
+    return method.upper() in {"POST", "PUT", "PATCH", "DELETE"}
 
-    一个 HTTP 请求内所有 SQL 共享同一个事务：要么全成功，要么全失败。
-    读操作也走这个事务（牺牲一点 MVCC 隔离换取读已写一致性）。
-    """
+
+async def _db_getter(write: bool) -> AsyncGenerator[AsyncSession, None]:
     async with async_db_session() as session:
-        async with session.begin():
+        try:
             yield session
+        except Exception:
+            await session.rollback()
+            raise
+        else:
+            if write:
+                await session.commit()
+            else:
+                await session.rollback()
+
+
+async def db_getter(request: Request) -> AsyncGenerator[AsyncSession, None]:
+    """按 HTTP 方法提交写请求、回滚读请求，释放无用读事务。"""
+    async for session in _db_getter(_write_request_transaction(request.method)):
+        yield session
+
+
+async def ws_db_getter(websocket: WebSocket) -> AsyncGenerator[AsyncSession, None]:
+    """WebSocket 认证使用只读会话，避免依赖 HTTP Request 类型。"""
+    async for session in _db_getter(False):
+        yield session
 
 
 async def redis_getter(request: Request) -> Redis:
@@ -110,6 +133,47 @@ async def _try_sliding_refresh(redis: Redis, session_id: str) -> None:
             key=f"{RedisInitKeyConfig.REFRESH_TOKEN.key}:{session_id}",
             expire=settings.REFRESH_TOKEN_EXPIRE_MINUTES,
         )
+
+
+def _build_permission_map(user: Any) -> dict[str, int]:
+    permissions: dict[str, int] = {}
+    for role in getattr(user, "roles", []) or []:
+        if getattr(role, "status", None) != 0:
+            continue
+        for menu in getattr(role, "menus", []) or []:
+            permission = getattr(menu, "permission", None)
+            if getattr(menu, "status", None) == 0 and permission:
+                permissions[permission] = menu.id
+    return permissions
+
+
+async def _load_permission_map(redis: Redis, user: Any) -> dict[str, int]:
+    """Load permission IDs from Redis, rebuilding after a global version bump."""
+    try:
+        version = await RedisCURD(redis).get(PERMISSION_CACHE_VERSION_KEY) or "0"
+        raw = await RedisCURD(redis).get(f"{PERMISSION_CACHE_PREFIX}{version}:{user.id}")
+        if raw:
+            if isinstance(raw, bytes):
+                raw = raw.decode("utf-8")
+            parsed = json.loads(raw) if isinstance(raw, str) else raw
+            if isinstance(parsed, dict):
+                return {str(key): int(value) for key, value in parsed.items()}
+        permissions = _build_permission_map(user)
+        await RedisCURD(redis).set(f"{PERMISSION_CACHE_PREFIX}{version}:{user.id}", permissions, expire=PERMISSION_CACHE_TTL)
+        return permissions
+    except Exception as exc:
+        logger.debug("权限缓存不可用，回退到用户关系: {}", exc)
+        return _build_permission_map(user)
+
+
+async def invalidate_permission_cache(redis: Redis | None) -> None:
+    """Invalidate all derived permission maps after RBAC writes."""
+    if redis is None:
+        return
+    try:
+        await redis.incr(PERMISSION_CACHE_VERSION_KEY)
+    except Exception as exc:
+        logger.debug("权限缓存失效失败: {}", exc)
 
 async def _load_user_from_db(db: AsyncSession, username: str):
     """从数据库加载用户（含角色、菜单等关联的全量预加载）
@@ -197,9 +261,8 @@ async def get_current_user(
     if not username:
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
 
-    # 用户查询使用独立只读会话（不参与请求事务，查询后立即释放快照）
-    async with async_db_session() as lookup_db:
-        user = await _load_user_from_db(lookup_db, username)
+    user = await _load_user_from_db(db, username)
+    permission_map = await _load_permission_map(redis, user)
 
     # 设置请求上下文（仅在当前 request 对象上，业务方通过 request.state.ctx 读取）
     request.state.ctx = replace(
@@ -211,14 +274,14 @@ async def get_current_user(
     )
 
     # 返回的 auth.db 指向请求级事务会话，供后续读写操作使用
-    auth = AuthSchema(db=db, check_data_scope=False)
+    auth = AuthSchema(db=db, redis=redis, permission_map=permission_map, check_data_scope=False)
     auth.user = user
     return auth
 
 
 async def get_current_user_ws(
     ticket: str = Query(..., description="一次性 WebSocket ticket"),
-    db: AsyncSession = Depends(db_getter),
+    db: AsyncSession = Depends(ws_db_getter),
     redis: Redis = Depends(redis_getter),
 ) -> AuthSchema:
     """获取当前用户（WebSocket专用，从查询参数获取一次性 ticket）
@@ -276,7 +339,7 @@ async def _verify_ws_ticket(ticket: str, db: AsyncSession, redis: Redis) -> Auth
     if not username:
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
     user = await _load_user_from_db(db, username)
-    auth = AuthSchema(db=db, check_data_scope=False)
+    auth = AuthSchema(db=db, redis=redis, permission_map=await _load_permission_map(redis, user), check_data_scope=False)
     auth.user = user
     return auth
 
@@ -313,7 +376,7 @@ async def _verify_token(
 
     user = await _load_user_from_db(db, username)
 
-    auth = AuthSchema(db=db, check_data_scope=False)
+    auth = AuthSchema(db=db, redis=redis, permission_map=await _load_permission_map(redis, user), check_data_scope=False)
     auth.user = user
     return auth
 
@@ -365,13 +428,7 @@ class AuthPermission:
             raise CustomException(msg="无权限操作", code=10403, status_code=403)
 
         # 收集角色菜单权限。
-        role_perms: dict[str, int] = {}
-        for role in auth.user.roles:
-            if role.status != 0:
-                continue
-            for menu in role.menus:
-                if menu.status == 0 and menu.permission:
-                    role_perms[menu.permission] = menu.id
+        role_perms = auth.permission_map or _build_permission_map(auth.user)
 
         if not role_perms:
             raise CustomException(msg="无权限操作", code=10403, status_code=403)

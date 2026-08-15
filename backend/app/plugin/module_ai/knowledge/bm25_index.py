@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -252,3 +253,9 @@ class BM25KnowledgeIndex:
                 self._index.close()
             except Exception:
                 pass
+
+
+@lru_cache(maxsize=4)
+def get_cached_bm25_index(index_dir: str | None = None, tokenizer: str | None = None) -> BM25KnowledgeIndex:
+    """Reuse the process-local Whoosh index for the same configuration."""
+    return BM25KnowledgeIndex(index_dir=index_dir, tokenizer=tokenizer)

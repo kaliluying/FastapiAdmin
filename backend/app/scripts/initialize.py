@@ -16,7 +16,7 @@ from app.api.v1.module_system.params.model import ParamsModel
 from app.api.v1.module_system.role.model import RoleMenusModel, RoleModel
 from app.api.v1.module_system.user.model import UserModel, UserRolesModel
 from app.config.path_conf import SCRIPT_DIR
-from app.core.database import async_db_session, create_tables
+from app.core.database import async_db_session, create_tables, ensure_schema_indexes
 from app.core.logger import logger
 from app.core.plugins import filter_ai_seed_data, load_ai_models
 
@@ -64,6 +64,7 @@ class InitializeData:
         try:
             load_ai_models()
             await create_tables()
+            await ensure_schema_indexes()
         except asyncio.exceptions.TimeoutError:
             logger.error("❌️ 数据库表结构初始化超时")
             raise

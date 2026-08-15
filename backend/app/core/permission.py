@@ -93,10 +93,13 @@ class Permission:
                 return id_attr == -1
             return None
 
-        menu_ids = set()
-        for role in roles:
-            if hasattr(role, "menus") and role.menus:
-                menu_ids.update(menu.id for menu in role.menus if menu.status == 0)
+        menu_ids = {
+            menu.id
+            for role in roles
+            if hasattr(role, "menus") and role.menus
+            for menu in role.menus
+            if menu.status == 0
+        }
 
         if menu_ids:
             id_attr = getattr(self.model, "id", None)

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from redis import exceptions
 from redis.asyncio import Redis
-from sqlalchemy import Engine, create_engine
+from sqlalchemy import Engine, Index, create_engine, inspect
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -146,6 +146,85 @@ async def create_optional_plugin_tables() -> None:
                 tables=plugin_tables,
             )
         )
+
+
+_CORE_SCHEMA_INDEXES: list[Index] | None = None
+_AI_SCHEMA_INDEXES: list[Index] | None = None
+
+
+def _get_schema_indexes(include_ai: bool) -> list[Index]:
+    """Return one stable set of optional composite index definitions."""
+    global _AI_SCHEMA_INDEXES, _CORE_SCHEMA_INDEXES
+    if _CORE_SCHEMA_INDEXES is None:
+        from app.api.v1.module_system.role.model import RoleMenusModel
+        from app.api.v1.module_system.user.model import UserRolesModel
+
+        _CORE_SCHEMA_INDEXES = [
+            Index("ix_opt_sys_user_roles_role_user", UserRolesModel.role_id, UserRolesModel.user_id),
+            Index("ix_opt_sys_role_menus_menu_role", RoleMenusModel.menu_id, RoleMenusModel.role_id),
+        ]
+
+    if include_ai and _AI_SCHEMA_INDEXES is None:
+        from app.plugin.module_ai.chat.model import ChatSessionModel
+        from app.plugin.module_ai.knowledge.model import KnowledgeChunkModel, KnowledgeDocumentModel
+        from app.plugin.module_ai.memory.model import AiMemoryModel
+
+        _AI_SCHEMA_INDEXES = [
+            Index(
+                "ix_opt_ai_document_base_status_deleted",
+                KnowledgeDocumentModel.knowledge_base_id,
+                KnowledgeDocumentModel.index_status,
+                KnowledgeDocumentModel.is_deleted,
+            ),
+            Index(
+                "ix_opt_ai_chunk_document_deleted_index",
+                KnowledgeChunkModel.document_id,
+                KnowledgeChunkModel.is_deleted,
+                KnowledgeChunkModel.chunk_index,
+            ),
+            Index(
+                "ix_opt_ai_session_user_deleted_updated",
+                ChatSessionModel.user_id,
+                ChatSessionModel.is_deleted,
+                ChatSessionModel.updated_time,
+            ),
+            Index(
+                "ix_opt_ai_memory_user_active_deleted_priority",
+                AiMemoryModel.user_id,
+                AiMemoryModel.is_active,
+                AiMemoryModel.is_deleted,
+                AiMemoryModel.priority,
+            ),
+            Index(
+                "ix_opt_ai_memory_user_key_deleted",
+                AiMemoryModel.user_id,
+                AiMemoryModel.key,
+                AiMemoryModel.is_deleted,
+            ),
+        ]
+
+    return [*_CORE_SCHEMA_INDEXES, *(_AI_SCHEMA_INDEXES or [])]
+
+
+async def ensure_schema_indexes() -> None:
+    """Create the small set of composite indexes missing from old databases.
+
+    ``metadata.create_all`` does not add indexes to tables that already exist,
+    so startup keeps these indexes idempotent for the skeleton database and
+    installations that have no committed Alembic head yet.
+    """
+    from app.core.plugins import is_ai_plugin_enabled
+
+    indexes = _get_schema_indexes(is_ai_plugin_enabled())
+
+    async with async_engine.begin() as connection:
+        def create_existing_indexes(sync_connection) -> None:
+            table_names = set(inspect(sync_connection).get_table_names())
+            for index in indexes:
+                if index.table is not None and index.table.name in table_names:
+                    index.create(sync_connection, checkfirst=True)
+
+        await connection.run_sync(create_existing_indexes)
 
 
 async def drop_tables() -> None:

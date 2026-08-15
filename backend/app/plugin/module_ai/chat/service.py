@@ -120,6 +120,8 @@ class ChatService:
                 else self._ensure_runtime_session_id(query.session_id)
             )
             db = crud.db if crud else self._get_db()
+            if crud and query.session_id is None and db:
+                await db.commit()
             chain = create_rag_chain(db=db, auth=self.auth)
 
             has_content = False
@@ -179,6 +181,8 @@ class ChatService:
             crud = ChatSessionCRUD(self.auth) if self._should_persist_session() else None
             active_session_id = await self._ensure_session_id(crud, session_id)
             db = crud.db if crud else self._get_db()
+            if crud and session_id is None and db:
+                await db.commit()
             chain = create_rag_chain(db=db, auth=self.auth)
             response_text = await chain.ainvoke(
                 message=message,

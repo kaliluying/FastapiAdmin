@@ -37,13 +37,7 @@ def _has_ws_permission(auth: AuthSchema, permission: str) -> bool:
     if getattr(user, "is_superuser", False):
         return True
 
-    for role in getattr(user, "roles", []) or []:
-        if getattr(role, "status", None) != 0:
-            continue
-        for menu in getattr(role, "menus", []) or []:
-            if getattr(menu, "status", None) == 0 and getattr(menu, "permission", None) == permission:
-                return True
-    return False
+    return permission in getattr(auth, "permission_map", {})
 
 
 @WS_AI.websocket("/ws", name="WebSocket Chat")
@@ -79,16 +73,15 @@ async def websocket_chat_controller(websocket: WebSocket) -> None:
             logger.info(f"收到聊天查询: {query} - 会话ID: {query.session_id}")
 
             async with async_db_session() as db:
-                async with db.begin():
-                    auth.db = db
-                    async for chunk in ChatService(auth).chat_query(query=query):
-                        if not chunk:
-                            continue
-                        try:
-                            await websocket.send_text(chunk)
-                        except RuntimeError:
-                            logger.warning("WebSocket connection closed; stopping response stream")
-                            return
+                auth.db = db
+                async for chunk in ChatService(auth).chat_query(query=query):
+                    if not chunk:
+                        continue
+                    try:
+                        await websocket.send_text(chunk)
+                    except RuntimeError:
+                        logger.warning("WebSocket connection closed; stopping response stream")
+                        return
         except json.JSONDecodeError:
             logger.warning(f"收到非 JSON 消息: {data}")
             try:

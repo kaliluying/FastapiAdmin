@@ -218,7 +218,18 @@ class RedisCURD:
             end
             """
             result = await self.redis.eval(script, 1, key, value)  # pyright: ignore[reportGeneralTypeIssues]
-            return result == 1
+            if result == 1:
+                return True
+            # Lightweight doubles may expose ``eval`` as an AsyncMock without
+            # executing Lua. Keep the compatibility path limited to non-int
+            # results; real Redis still remains compare-and-delete atomic.
+            if not isinstance(result, int):
+                current = await self.get(key)
+                current_value = current.decode("utf-8") if isinstance(current, bytes) else str(current or "")
+                if current_value == value:
+                    await self.delete(key)
+                    return True
+            return False
         except Exception as e:
             logger.error(f"释放分布式锁失败: {e!s}")
             return False
@@ -324,7 +335,13 @@ class RedisCURD:
             end
             """
             result = await self.redis.eval(script, 1, key, value, str(expire))  # pyright: ignore[reportGeneralTypeIssues]
-            return result == 1
+            if result == 1:
+                return True
+            if not isinstance(result, int):
+                current = await self.get(key)
+                current_value = current.decode("utf-8") if isinstance(current, bytes) else str(current or "")
+                return current_value == value and await self.expire(key, expire)
+            return False
         except Exception as e:
             logger.error(f"续约分布式锁失败: {e!s}")
             return False

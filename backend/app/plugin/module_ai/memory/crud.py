@@ -196,7 +196,7 @@ class MemoryCRUD:
             )
             if memory_type:
                 stmt = stmt.where(AiMemoryModel.memory_type == memory_type)
-            stmt = stmt.order_by(AiMemoryModel.priority.desc())
+            stmt = stmt.order_by(AiMemoryModel.priority.desc()).limit(50)
             result = await self.db.execute(stmt)
             return [self._to_entry(obj) for obj in result.scalars().all()]
         except Exception as e:

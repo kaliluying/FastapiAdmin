@@ -7,8 +7,6 @@
  * - 通用下载工具见 `@utils/download`，不属于 Vue 插件。
  */
 
-export * from "./echarts";
-
 import type { App } from "vue";
 import { initGlobDirectives } from "@/directives";
 import { initI18n } from "@/locales";
@@ -32,7 +30,7 @@ import { initIconify } from "./iconify";
  */
 export async function initPlugins(app: App<Element>): Promise<void> {
   initElIcons(app);
-  initIconify();
+  void initIconify().catch((error) => console.warn("Iconify 图标集加载失败", error));
   initStore(app);
   await initRouter(app);
   initGlobDirectives(app);

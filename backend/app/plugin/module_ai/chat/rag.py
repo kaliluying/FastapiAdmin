@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncGenerator
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import Any, Protocol
 
 from langchain_anthropic import ChatAnthropic
@@ -10,10 +11,22 @@ from langchain_openai import ChatOpenAI
 
 from app.core.logger import logger
 from app.plugin.module_ai.config import settings
-from app.plugin.module_ai.knowledge.chroma_store import ChromaKnowledgeStore
-from app.plugin.module_ai.knowledge.embedding import EmbeddingClient, create_embedding_client
+from app.plugin.module_ai.knowledge.chroma_store import ChromaKnowledgeStore, get_cached_chroma_store
+from app.plugin.module_ai.knowledge.embedding import EmbeddingClient, get_cached_embedding_client
 
 from .model_config_service import get_active_chat_model_config
+
+MAX_QUERY_CHARS = 8_000
+MAX_DOCUMENT_CHARS = 6_000
+MAX_CONTEXT_CHARS = 16_000
+MAX_HISTORY_CHARS = 6_000
+MAX_MEMORY_CHARS = 4_000
+
+
+def _clip(value: Any, limit: int) -> str:
+    """Limit untrusted text before it enters the prompt or persisted JSON."""
+    text = str(value or "")
+    return text if len(text) <= limit else f"{text[:limit]}\n[内容已截断]"
 
 
 @dataclass(slots=True)
@@ -117,7 +130,7 @@ class KeywordKnowledgeRetriever:
             name = file.get("name") or file.get("filename") or f"file-{index + 1}"
             documents.append(
                 RagDocument(
-                    content=content.strip(),
+                    content=_clip(content.strip(), MAX_DOCUMENT_CHARS),
                     metadata={"source": "uploaded-file", "name": str(name)},
                 )
             )
@@ -186,12 +199,12 @@ class ChromaKnowledgeRetriever:
 
     def _get_store(self) -> ChromaKnowledgeStore:
         if self.store is None:
-            self.store = ChromaKnowledgeStore()
+            self.store = get_cached_chroma_store()
         return self.store
 
     def _get_embedding_client(self) -> EmbeddingClient:
         if self.embedding_client is None:
-            self.embedding_client = create_embedding_client()
+            self.embedding_client = get_cached_embedding_client()
         return self.embedding_client
 
     @staticmethod
@@ -221,6 +234,7 @@ class RagPromptBuilder:
         memories: list[dict[str, Any]] | None = None,
         user_profile: dict[str, Any] | None = None,
     ) -> str:
+        message = _clip(message, MAX_QUERY_CHARS)
         context = self._format_context(documents)
         prompt_parts = [
             "你是通用知识库智能助手。\n"
@@ -241,16 +255,26 @@ class RagPromptBuilder:
         # ── 长期记忆：用户偏好/事实/工作规则 ──
         if memories:
             prompt_parts.append("\n【长期记忆——请始终遵循】\n")
-            for m in memories:
-                prompt_parts.append(f"- {m['key']}: {m['value']}\n")
+            memory_chars = 0
+            for memory in memories:
+                line = f"- {_clip(memory.get('key'), 256)}: {_clip(memory.get('value'), MAX_MEMORY_CHARS)}\n"
+                if memory_chars + len(line) > MAX_MEMORY_CHARS:
+                    break
+                prompt_parts.append(line)
+                memory_chars += len(line)
             prompt_parts.append("\n")
 
         # ── 短期记忆：最近对话历史 ──
         if session_history:
             prompt_parts.append("\n【近期对话历史】\n")
+            history_chars = 0
             for turn in session_history[-6:]:  # 最近 3 轮 = 6 条消息
                 role_tag = "用户" if turn.get("role") == "user" else "助手"
-                prompt_parts.append(f"{role_tag}: {turn.get('content', '')}\n")
+                line = f"{role_tag}: {_clip(turn.get('content'), MAX_HISTORY_CHARS)}\n"
+                if history_chars + len(line) > MAX_HISTORY_CHARS:
+                    break
+                prompt_parts.append(line)
+                history_chars += len(line)
             prompt_parts.append("\n")
 
         prompt_parts.extend(
@@ -279,8 +303,8 @@ class RagPromptBuilder:
         for key, label, formatter in field_specs:
             value = profile.get(key)
             if has_value(value):
-                lines.append(f"- {label}: {formatter(value)}")
-        return "\n".join(lines)
+                lines.append(f"- {label}: {_clip(formatter(value), 1_000)}")
+        return _clip("\n".join(lines), 2_000)
 
     @staticmethod
     def _format_context(documents: list[RagDocument]) -> str:
@@ -314,8 +338,8 @@ class RagPromptBuilder:
                 flat = ", ".join(f"{key}={value}" for key, value in meta.items() if key not in ("distance", "chunk_index", "document_id", "knowledge_base_id"))
                 header = f"[{index}]" + (f" ({flat})" if flat else "")
 
-            lines.append(f"{header}\n{doc.content}")
-        return "\n\n".join(lines)
+            lines.append(f"{header}\n{_clip(doc.content, MAX_DOCUMENT_CHARS)}")
+        return _clip("\n\n".join(lines), MAX_CONTEXT_CHARS)
 
 
 class LangChainChatModel:
@@ -364,6 +388,17 @@ class LangChainChatModel:
                 yield text
 
 
+@lru_cache(maxsize=4)
+def _cached_chat_model(config: Any, factory: Any) -> ChatModel:
+    """Cache model clients by runtime config and factory identity."""
+    return factory()
+
+
+def get_cached_chat_model() -> ChatModel:
+    """Reuse the process-local chat client until runtime config changes."""
+    return _cached_chat_model(get_active_chat_model_config(), LangChainChatModel)
+
+
 class RagChatChain:
     def __init__(
         self,
@@ -402,6 +437,7 @@ class RagChatChain:
             knowledge_base_ids=knowledge_base_ids,
             files=files,
         )
+        await self._release_db_transaction()
         return await self.chat_model.complete(prompt)
 
     async def astream(
@@ -422,8 +458,15 @@ class RagChatChain:
             knowledge_base_ids=knowledge_base_ids,
             files=files,
         )
+        await self._release_db_transaction()
         async for chunk in self.chat_model.stream(prompt):
             yield chunk
+
+    async def _release_db_transaction(self) -> None:
+        """End prompt-read transactions before waiting on the model provider."""
+        rollback = getattr(self.db, "rollback", None)
+        if callable(rollback):
+            await rollback()
 
     async def _build_prompt(
         self,
@@ -493,7 +536,7 @@ class RagChatChain:
                         continue
                     role = msg.get("role")
                     if role in ("user", "assistant"):
-                        messages.append({"role": role, "content": msg.get("content", "")})
+                        messages.append({"role": role, "content": _clip(msg.get("content"), MAX_HISTORY_CHARS)})
             return messages
         except Exception as e:
             logger.warning(f"获取会话历史失败 (非致命): {e}")
@@ -565,7 +608,7 @@ def create_rag_chain(db: Any | None = None, auth: Any | None = None) -> RagChatC
     return RagChatChain(
         retriever=retriever,
         prompt_builder=RagPromptBuilder(),
-        chat_model=LangChainChatModel(),
+        chat_model=get_cached_chat_model(),
         db=db,
         user_id=str(getattr(user, "id", None)) if getattr(user, "id", None) is not None else "",
         team_id=None,

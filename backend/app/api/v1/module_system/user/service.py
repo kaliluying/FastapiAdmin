@@ -7,6 +7,7 @@ from fastapi import UploadFile
 from app.api.v1.module_platform.menu.crud import MenuCRUD
 from app.api.v1.module_platform.menu.schema import MenuOutSchema
 from app.core.base_schema import AuthSchema, BatchSetAvailable
+from app.core.dependencies import invalidate_permission_cache
 from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.utils.common_util import traversal_to_tree
@@ -85,6 +86,7 @@ class UserService:
         new_user = await UserCRUD(self.auth).create(data=user_dict)
         if data.role_ids and len(data.role_ids) > 0:
             await UserCRUD(self.auth).set_user_roles(user_ids=[new_user.id], role_ids=data.role_ids)
+            await invalidate_permission_cache(getattr(self.auth, "redis", None))
         return UserOutSchema.model_validate(new_user)
 
     async def update(self, id: int, data: UserUpdateSchema) -> UserOutSchema:
@@ -112,6 +114,7 @@ class UserService:
 
         if "role_ids" in data.model_fields_set:
             await UserCRUD(self.auth).set_user_roles(user_ids=[id], role_ids=data.role_ids or [])
+            await invalidate_permission_cache(getattr(self.auth, "redis", None))
 
         return UserOutSchema.model_validate(new_user)
 
@@ -133,6 +136,7 @@ class UserService:
 
         await UserCRUD(self.auth).set_user_roles(user_ids=ids, role_ids=[])
         await UserCRUD(self.auth).delete(ids=ids)
+        await invalidate_permission_cache(getattr(self.auth, "redis", None))
 
     async def current_info(self) -> UserOutSchema:
         if not self.auth.user or not self.auth.user.id:
@@ -325,6 +329,7 @@ class UserService:
                         new_user = await UserCRUD(self.auth).create(data=user_create_data)
                         if user_create_schema.role_ids and len(user_create_schema.role_ids) > 0:
                             await UserCRUD(self.auth).set_user_roles(user_ids=[new_user.id], role_ids=user_create_schema.role_ids)
+                            await invalidate_permission_cache(getattr(self.auth, "redis", None))
                         success_count += 1
 
                 except Exception as e:

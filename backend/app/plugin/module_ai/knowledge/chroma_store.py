@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Any
 
 import anyio
@@ -61,3 +62,12 @@ class ChromaKnowledgeStore:
 
     async def delete_document(self, document_id: int) -> None:
         await anyio.to_thread.run_sync(lambda: self.collection.delete(where={"document_id": document_id}))
+
+
+@lru_cache(maxsize=4)
+def get_cached_chroma_store(
+    persist_dir: str | None = None,
+    collection_name: str | None = None,
+) -> ChromaKnowledgeStore:
+    """Reuse one Chroma client per local collection configuration."""
+    return ChromaKnowledgeStore(persist_dir=persist_dir, collection_name=collection_name)

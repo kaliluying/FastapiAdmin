@@ -1,6 +1,8 @@
 import asyncio
 from collections.abc import AsyncGenerator
+from contextlib import suppress
 from typing import Any
+from uuid import uuid4
 
 from fastapi import Depends, FastAPI
 from fastapi.concurrency import asynccontextmanager
@@ -17,6 +19,7 @@ from .core.exceptions import handle_exception
 from .core.http_limit import http_limit_callback, ws_limit_callback
 from .core.logger import logger
 from .core.plugins import get_ai_routers, get_ai_websocket_routers, initialize_ai_plugin
+from .core.redis_crud import RedisCURD
 from .scripts.initialize import InitializeData
 from .scripts.migrate import upgrade_database
 from .utils.common_util import import_module, import_modules_async
@@ -43,17 +46,51 @@ async def run_startup_migration() -> bool:
 
 
 @asynccontextmanager
+async def _startup_schema_lock(redis) -> AsyncGenerator[None, None]:
+    """Serialize schema and seed work when several workers start together."""
+    lock_key = "fastapiadmin:startup:schema"
+    lock_value = uuid4().hex
+    redis_crud = RedisCURD(redis)
+    deadline = asyncio.get_running_loop().time() + 120
+    acquired = False
+    while not acquired:
+        acquired, _ = await redis_crud.lock(lock_key, expire=300, value=lock_value)
+        if acquired:
+            break
+        if asyncio.get_running_loop().time() >= deadline:
+            raise TimeoutError("等待数据库启动锁超时")
+        await asyncio.sleep(1)
+
+    async def renew() -> None:
+        while True:
+            await asyncio.sleep(30)
+            if not await redis_crud.renew_lock(lock_key, expire=300, value=lock_value):
+                logger.error("❌ 数据库启动锁续期失败，后续启动可能需要人工检查")
+                return
+
+    renewal_task = asyncio.create_task(renew())
+    try:
+        yield
+    finally:
+        renewal_task.cancel()
+        with suppress(asyncio.CancelledError):
+            await renewal_task
+        await redis_crud.unlock(lock_key, lock_value)
+
+
+@asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
     from app.api.v1.module_system.dict.service import DictDataService
     from app.api.v1.module_system.params.service import ParamsService
 
     try:
-        await run_startup_migration()
-        await InitializeData().init_db()
-        logger.info("✅ {}数据库初始化完成", settings.DATABASE_TYPE)
-        await initialize_ai_plugin()
         await import_modules_async(modules=settings.EVENT_LIST, desc="全局事件", app=app, status=True)
         logger.info("✅ 全局事件模块加载完成")
+        async with _startup_schema_lock(app.state.redis):
+            await run_startup_migration()
+            await InitializeData().init_db()
+        logger.info("✅ {}数据库初始化完成", settings.DATABASE_TYPE)
+        await initialize_ai_plugin()
         await ParamsService.init_cache(redis=app.state.redis)
         logger.info("✅ Redis系统参数初始化完成")
         await DictDataService.init_cache(redis=app.state.redis)

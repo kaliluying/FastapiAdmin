@@ -1,7 +1,7 @@
 from typing import Any
 
 from app.core.base_schema import AuthSchema, BatchSetAvailable
-from app.core.dependencies import require_superadmin
+from app.core.dependencies import invalidate_permission_cache, require_superadmin
 from app.core.exceptions import CustomException
 from app.core.plugins import filter_ai_seed_data
 from app.utils.common_util import (
@@ -173,6 +173,7 @@ class MenuService:
         await self._validate_menu_definition(data)
 
         new_menu = await MenuCRUD(self.auth).create(data=data)
+        await invalidate_permission_cache(getattr(self.auth, "redis", None))
         return MenuOutSchema.model_validate(new_menu)
 
     @require_superadmin
@@ -195,6 +196,8 @@ class MenuService:
 
         if candidate.status != current.status:
             await self.set_available(data=BatchSetAvailable(ids=[id], status=candidate.status))
+        else:
+            await invalidate_permission_cache(getattr(self.auth, "redis", None))
 
         menu_out = MenuOutSchema.model_validate(new_menu)
         if menu_out.parent_id:
@@ -218,6 +221,7 @@ class MenuService:
 
         delete_ids = list(delete_ids_set)
         await MenuCRUD(self.auth).delete(ids=delete_ids)
+        await invalidate_permission_cache(getattr(self.auth, "redis", None))
 
     @require_superadmin
     async def set_available(self, data: BatchSetAvailable) -> None:
@@ -241,3 +245,4 @@ class MenuService:
                 total_ids.update(disable_ids)
 
         await MenuCRUD(self.auth).set(ids=list(total_ids), status=data.status)
+        await invalidate_permission_cache(getattr(self.auth, "redis", None))

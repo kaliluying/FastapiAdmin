@@ -7,6 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.api.v1.module_platform.menu import service as menu_service
+from app.api.v1.module_platform.menu.model import MenuModel
 from app.api.v1.module_platform.menu.schema import MenuCreateSchema
 from app.api.v1.module_system.role.schema import RolePermissionSettingSchema
 from app.api.v1.module_system.role.service import RoleService
@@ -14,6 +15,7 @@ from app.api.v1.module_system.user import service as user_service
 from app.api.v1.module_system.user.schema import UserUpdateSchema
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
+from app.core.permission import Permission
 from app.core.router_class import _serialize_log_value
 from app.utils.common_util import get_child_recursion
 
@@ -57,6 +59,23 @@ def _directory(**overrides) -> MenuCreateSchema:
     }
     data.update(overrides)
     return MenuCreateSchema(**data)
+
+
+@pytest.mark.asyncio
+async def test_menu_permission_filter_keeps_active_directory_nodes() -> None:
+    """Menu data-scope filtering must retain directory nodes without permissions."""
+    root = SimpleNamespace(id=1, status=0, permission=None)
+    page = SimpleNamespace(id=2, status=0, permission="module:page:query")
+    role = SimpleNamespace(id=1, status=0, data_scope=1, menus=[root, page])
+    user = SimpleNamespace(is_superuser=False, roles=[role])
+
+    condition = await Permission(
+        MenuModel,
+        AuthSchema(user=user, permission_map={"module:page:query": page.id}),
+    ).permission_condition()
+
+    assert condition is not None
+    assert set(condition.right.value) == {root.id, page.id}
 
 
 def test_menu_schema_rejects_wildcards_unsafe_links_and_button_routes() -> None:
