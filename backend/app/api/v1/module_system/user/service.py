@@ -301,7 +301,6 @@ class UserService:
                         "mobile": str(row["mobile"]).strip() if pd.notna(row["mobile"]) else None,
                         "gender": str(row["gender"]).strip() if pd.notna(row["gender"]) else "1",
                         "status": 0 if str(row["status"]).strip() == "正常" else 1,
-                        "password": PwdUtil.hash_password(password="123456"),
                     }
 
                     exists_user = await UserCRUD(self.auth).get(username=user_data["username"])
@@ -310,13 +309,18 @@ class UserService:
                             error_msgs.append(f"第{i}行: 超级管理员不允许修改")
                             continue
                         if update_support:
+                            # 更新导入只同步资料字段，不能把统一初始密码带入已有账户。
                             user_update_data = UserUpdateSchema(**user_data)
                             await UserCRUD(self.auth).update(id=exists_user.id, data=user_update_data)
                             success_count += 1
                         else:
                             error_msgs.append(f"第{i}行: 用户 {user_data['username']} 已存在")
                     else:
-                        user_create_schema = UserCreateSchema(**user_data)
+                        new_user_data = {
+                            **user_data,
+                            "password": PwdUtil.hash_password(password="123456"),
+                        }
+                        user_create_schema = UserCreateSchema(**new_user_data)
                         user_create_data = user_create_schema.model_dump(exclude_unset=True, exclude={"role_ids"})
                         new_user = await UserCRUD(self.auth).create(data=user_create_data)
                         if user_create_schema.role_ids and len(user_create_schema.role_ids) > 0:

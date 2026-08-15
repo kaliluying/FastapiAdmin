@@ -56,7 +56,7 @@ class ChatSessionCRUD:
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth
         self.db = auth.db
-        self.user_id = auth.user.username if auth and auth.user else "user"
+        self.user_id = str(auth.user.id) if auth and auth.user and auth.user.id is not None else "anonymous"
         self.team_id = None
 
     async def get_by_id_crud(self, session_id: str) -> ChatSession | None:

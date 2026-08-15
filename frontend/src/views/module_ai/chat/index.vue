@@ -87,7 +87,7 @@ import { useMediaQuery } from "@vueuse/core";
 import { ElMessage, ElMessageBox } from "element-plus";
 import AiChatAPI, { ChatSession } from "@/api/module_ai/chat";
 import KnowledgeAPI, { type KnowledgeBase } from "@/api/module_ai/knowledge";
-import { Auth } from "@utils/auth";
+import AuthAPI from "@/api/module_system/auth";
 import type { ChatMessage, UploadedFile } from "./types";
 import FaSidebar from "./components/FaSidebar.vue";
 import FaChatNavbar from "./components/FaChatNavbar.vue";
@@ -132,16 +132,18 @@ let ws: WebSocket | null = null;
 const WS_URL = import.meta.env.VITE_APP_WS_ENDPOINT;
 
 // ============ WebSocket 操作 ============
-const connectWebSocket = () => {
+const connectWebSocket = async () => {
   if (ws?.readyState === WebSocket.OPEN) return;
 
   connectionStatus.value = "connecting";
   error.value = "";
 
   try {
+    const ticketResponse = await AuthAPI.createWsTicket();
+    const ticket = ticketResponse.data.data?.ticket;
+    if (!ticket) throw new Error("WebSocket 认证凭证缺失");
     const url = new URL("/api/v1/ai/chat/ws", WS_URL);
-    const token = Auth.getAccessToken();
-    if (token) url.searchParams.append("token", token);
+    url.searchParams.append("ticket", ticket);
 
     ws = new WebSocket(url.toString());
 

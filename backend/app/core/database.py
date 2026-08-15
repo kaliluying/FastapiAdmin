@@ -121,6 +121,33 @@ async def create_tables() -> None:
         await coon.run_sync(MappedBase.metadata.create_all)
 
 
+async def create_optional_plugin_tables() -> None:
+    """Create missing tables owned by optional plugins.
+
+    The core schema is managed by Alembic in production. Optional plugins can
+    be enabled after the database has already reached the current Alembic
+    head, so their tables need a narrowly scoped ``create_all`` pass at
+    startup. Disabled plugins contribute no models and therefore no tables.
+
+    Returns:
+        None.
+    """
+    from app.core.plugins import load_ai_models
+
+    plugin_models = load_ai_models()
+    if not plugin_models:
+        return
+
+    plugin_tables = [model.__table__ for model in plugin_models]
+    async with async_engine.begin() as connection:
+        await connection.run_sync(
+            lambda sync_connection: MappedBase.metadata.create_all(
+                bind=sync_connection,
+                tables=plugin_tables,
+            )
+        )
+
+
 async def drop_tables() -> None:
     """
     删除数据库表（根据 ORM metadata）。

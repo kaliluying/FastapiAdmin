@@ -41,14 +41,17 @@ class Permission:
         返回:
         - Any: 附加条件后的查询对象（无权限条件时原样返回）。
         """
-        condition = await self.__permission_condition()
+        condition = await self.permission_condition()
         return query.where(condition) if condition is not None else query
 
-    async def __permission_condition(self) -> ColumnElement | None:
-        """
-        应用数据范围权限隔离
+    async def permission_condition(self) -> ColumnElement | None:
+        """Build the current user's data-scope predicate.
 
-        根据模型的权限过滤策略，选择合适的过滤方法
+        根据模型的权限过滤策略选择合适的过滤方法。
+
+        Returns:
+            A SQLAlchemy predicate, or ``None`` when the current context is
+            explicitly allowed to access every row.
         """
         # 如果不需要检查数据权限,则不限制
         if not self.auth.user:

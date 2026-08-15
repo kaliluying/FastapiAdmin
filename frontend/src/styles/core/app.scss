@@ -12,7 +12,7 @@
   z-index: 2400;
   width: 100%;
   height: 2px;
-  background: color-mix(in srgb, var(--theme-color) 70%, white);
+  background: var(--theme-color);
 }
 
 #nprogress .peg {
@@ -21,9 +21,7 @@
   display: block;
   width: 100px;
   height: 100%;
-  box-shadow:
-    0 0 10px var(--theme-color),
-    0 0 5px var(--theme-color);
+  box-shadow: none;
   opacity: 1;
   transform: rotate(3deg) translate(0, -4px);
 }
@@ -130,14 +128,13 @@
 
 // 盒子默认边框
 .page-content {
-  border: 1px solid var(--fa-card-border) !important;
-  box-shadow: var(--fa-panel-shadow);
+  background: var(--fa-color-surface);
+  border: 1px solid var(--fa-color-border) !important;
+  box-shadow: none;
 }
 
-@mixin fa-card-base($border-color, $shadow: var(--fa-panel-shadow), $radius: 8px) {
-  background:
-    linear-gradient(180deg, var(--fa-surface-sheen-top), var(--fa-surface-sheen-bottom)),
-    var(--default-box-color);
+@mixin fa-card-base($border-color, $shadow: none, $radius: var(--fa-radius-panel)) {
+  background: var(--fa-color-surface);
   border: 1px solid #{$border-color} !important;
   border-radius: #{$radius} !important;
   box-shadow: #{$shadow} !important;
@@ -147,44 +144,43 @@
 
 // 全局统一 ElCard 卡片圆角，与 dashboard 首页一致
 .el-card {
-  --el-card-border-radius: 8px;
+  --el-card-border-radius: var(--fa-radius-panel);
 }
 
 .fa-card,
 .fa-card-sm,
 .fa-card-xs {
-  border: 1px solid var(--fa-card-border);
-  box-shadow: var(--fa-panel-shadow);
+  background: var(--fa-color-surface);
+  border: 1px solid var(--fa-color-border);
+  box-shadow: none;
   transition:
-    border-color 0.16s ease,
-    box-shadow 0.16s ease,
-    transform 0.16s ease;
+    border-color var(--fa-motion-control) ease,
+    background-color var(--fa-motion-control) ease;
 }
 
 .fa-card:hover,
 .fa-card-sm:hover,
 .fa-card-xs:hover {
-  border-color: color-mix(in srgb, var(--theme-color) 18%, var(--fa-card-border));
-  box-shadow: 0 20px 46px rgb(11 18 32 / 9%);
+  border-color: color-mix(in srgb, var(--theme-color) 28%, var(--fa-color-border));
 }
 
 // 盒子边框
 [data-box-mode="border-mode"] {
   .page-content,
   .fa-table-card {
-    border: 1px solid var(--fa-card-border) !important;
+    border: 1px solid var(--fa-color-border) !important;
   }
 
   .fa-card {
-    @include fa-card-base(var(--fa-card-border));
+    @include fa-card-base(var(--fa-color-border));
   }
 
   .fa-card-sm {
-    @include fa-card-base(var(--fa-card-border));
+    @include fa-card-base(var(--fa-color-border));
   }
 
   .fa-card-xs {
-    @include fa-card-base(var(--fa-card-border), none);
+    @include fa-card-base(var(--fa-color-border), none);
   }
 }
 
@@ -192,24 +188,24 @@
 [data-box-mode="shadow-mode"] {
   .page-content,
   .fa-table-card {
-    border: 1px solid var(--fa-card-border) !important;
-    box-shadow: var(--fa-panel-shadow) !important;
+    border: 1px solid var(--fa-color-border) !important;
+    box-shadow: none !important;
   }
 
   .layout-sidebar {
-    border-right: 1px solid var(--fa-card-border) !important;
+    border-right: 1px solid var(--fa-color-border) !important;
   }
 
   .fa-card {
-    @include fa-card-base(var(--fa-card-border), var(--fa-panel-shadow));
+    @include fa-card-base(var(--fa-color-border));
   }
 
   .fa-card-sm {
-    @include fa-card-base(var(--fa-card-border), var(--fa-panel-shadow));
+    @include fa-card-base(var(--fa-color-border));
   }
 
   .fa-card-xs {
-    @include fa-card-base(var(--fa-card-border), var(--fa-soft-shadow));
+    @include fa-card-base(var(--fa-color-border));
   }
 }
 
@@ -227,7 +223,7 @@
   height: 100% !important;
   padding: 15px;
   margin-top: 0;
-  background-color: var(--default-box-color);
+  background-color: var(--fa-color-surface);
 }
 
 // 管理页容器：作为 `.fa-full-height` 与 `.fa-table-card` 之间的 flex 中间层。
@@ -248,12 +244,11 @@
   min-width: 0;
   min-height: 0;
   margin-top: 12px;
+  border: 1px solid var(--fa-color-border);
+  border-radius: var(--fa-radius-panel) !important;
   overflow: hidden;
-  background:
-    linear-gradient(180deg, var(--fa-surface-sheen-top), var(--fa-surface-sheen-bottom)),
-    var(--default-box-color);
-  border-radius: 8px !important;
-  box-shadow: var(--fa-panel-shadow);
+  background: var(--fa-color-surface);
+  box-shadow: none;
 
   .el-card__body {
     display: flex;
@@ -298,7 +293,7 @@
   margin: auto;
   background: #ff3860;
   border-radius: 50%;
-  animation: breathe 1.5s ease-in-out infinite;
+  animation: none;
 
   &.fa-badge-horizontal {
     right: 0;
@@ -333,23 +328,6 @@
   border-radius: 4px;
 }
 
-@keyframes breathe {
-  0% {
-    opacity: 0.7;
-    transform: scale(1);
-  }
-
-  50% {
-    opacity: 1;
-    transform: scale(1.1);
-  }
-
-  100% {
-    opacity: 0.7;
-    transform: scale(1);
-  }
-}
-
 // 修复老机型 loading 定位问题
 .fa-loading-fix {
   position: fixed !important;
@@ -371,9 +349,7 @@
 // 表格按钮悬浮效果
 .hover-btn {
   &:hover {
-    box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
-    filter: brightness(1.1);
-    transform: translateY(-2px) scale(1.05);
+    filter: brightness(0.96);
   }
 }
 

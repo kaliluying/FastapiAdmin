@@ -12,11 +12,11 @@ LOG_DIR = BASE_DIR / "logs"
 # 静态资源目录
 STATIC_DIR = BASE_DIR / "static"
 
-# 上传文件目录
-UPLOAD_DIR = STATIC_DIR / "upload"
+# 上传文件目录（私有存储，不随 STATIC_DIR 对外挂载）
+UPLOAD_DIR = BASE_DIR / "storage" / "upload"
 
-# 下载文件目录
-DOWNLOAD_DIR = STATIC_DIR / "download"
+# 下载文件目录（私有存储，不随 STATIC_DIR 对外挂载）
+DOWNLOAD_DIR = BASE_DIR / "storage" / "download"
 
 # 环境配置目录
 ENV_DIR = BASE_DIR / "env"

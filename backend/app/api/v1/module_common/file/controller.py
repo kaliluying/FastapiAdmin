@@ -38,8 +38,12 @@ async def upload_controller(
     ] = "file",
     target_path: Annotated[str | None, Form(description="目标目录路径（仅 resource 类型支持）")] = None,
 ) -> JSONResponse:
+    base_url = str(request.base_url).rstrip("/")
+    root_path = request.scope.get("root_path", "").rstrip("/")
+    if root_path and not base_url.endswith(root_path):
+        base_url += root_path
     result = await FileService.upload_service(
-        base_url=str(request.base_url),
+        base_url=f"{base_url}/",
         file=file,
         upload_type=upload_type or "file",
         target_path=target_path,
@@ -60,3 +64,34 @@ async def download_controller(
     if delete:
         background_tasks.add_task(UploadUtil.delete_file, Path(result.file_path))
     return UploadFileResponse(file_path=result.file_path, filename=result.file_name)
+
+
+@FileRouter.get(
+    "/private-upload/{relative_path:path}",
+    summary="预览私有文件",
+    dependencies=[Depends(AuthPermission(["module_common:file:download"]))],
+    response_class=FileResponse,
+)
+async def private_upload_preview_controller(relative_path: str) -> FileResponse:
+    """Serve a private upload only to a user with download permission."""
+    file_path, media_type = await FileService.preview_service(relative_path)
+    return FileResponse(
+        path=file_path,
+        media_type=media_type,
+        headers={"Content-Disposition": "inline", "X-Content-Type-Options": "nosniff"},
+    )
+
+
+@FileRouter.get(
+    "/public-upload/{relative_path:path}",
+    summary="预览公开图片",
+    response_class=FileResponse,
+)
+async def public_upload_preview_controller(relative_path: str) -> FileResponse:
+    """Serve only validated avatar and site-parameter images anonymously."""
+    file_path, media_type = await FileService.preview_service(relative_path, public_images_only=True)
+    return FileResponse(
+        path=file_path,
+        media_type=media_type,
+        headers={"Content-Disposition": "inline", "X-Content-Type-Options": "nosniff"},
+    )

@@ -41,22 +41,23 @@ describe("brand and setting defaults", () => {
       default: {},
     }));
 
-    const [{ default: AppConfig }, { SETTING_DEFAULT_CONFIG }] = await Promise.all([
+    const [{ default: AppConfig }, { SETTING_DEFAULT_CONFIG, themeColorPresets }] = await Promise.all([
       import("./index"),
       import("./setting"),
     ]);
 
-    return { AppConfig, SETTING_DEFAULT_CONFIG };
+    return { AppConfig, SETTING_DEFAULT_CONFIG, themeColorPresets };
   }
 
   it("uses generic admin brand and premium console defaults", async () => {
-    const { AppConfig, SETTING_DEFAULT_CONFIG } = await loadConfig();
+    const { AppConfig, SETTING_DEFAULT_CONFIG, themeColorPresets } = await loadConfig();
 
     expect(AppConfig.systemInfo.name).toBe("FastAPI Admin");
     expect(SETTING_DEFAULT_CONFIG.title).toBe("FastAPI Admin");
     expect(SETTING_DEFAULT_CONFIG.layout).toBe(LayoutMode.LEFT);
     expect(SETTING_DEFAULT_CONFIG.theme).toBe(ThemeMode.LIGHT);
     expect(SETTING_DEFAULT_CONFIG.themeColor).toBe("#2d7d72");
+    expect(themeColorPresets[0]).toBe("#2d7d72");
     expect(SETTING_DEFAULT_CONFIG.sidebarColorScheme).toBe(SidebarColor.CLASSIC_BLUE);
     expect(SETTING_DEFAULT_CONFIG.menuType).toBe(MenuTypeEnum.LEFT);
     expect(SETTING_DEFAULT_CONFIG.menuThemeType).toBe(MenuThemeEnum.DARK);

@@ -70,9 +70,19 @@ uv sync --extra ai
 
 `requirements.txt` exports the core backend profile. Use `requirements-ai.txt` for deployments that enable AI.
 
-The Alembic baseline manages core admin tables only. Run `uv run main.py upgrade --env=prod` before production startup; the explicit deployment command also creates missing tables for enabled optional plugins. Development startup may create tables automatically; production startup never calls `create_all`.
+Alembic revision `000000000001` manages the core admin tables, and revision
+`000000000003` creates the optional AI tables when `AI_ENABLE=True` and the AI
+dependencies are installed. Set the target environment before running
+`uv run main.py upgrade --env=prod`, then start production with automatic table
+creation disabled. Development startup may create enabled-plugin tables only
+when `DATABASE_AUTO_CREATE_TABLES=True`.
 
 Application startup seeds base data when tables are empty. Optional AI tables still require the AI models to be installed and included in the deployment migration workflow.
+
+Uploaded files are stored under the private `storage/upload` directory. Generic
+files are served through an authenticated preview route, while avatar and
+parameter images use the validated public-image route; API responses expose
+root-relative paths instead of server filesystem paths.
 
 ## Verification
 
@@ -88,5 +98,6 @@ uv run --extra ai python -c "import chromadb, fastembed, openai, pypdf, docx"
 
 - The Chroma persist directory must be writable for document indexing and retrieval.
 - Knowledge document upload supports `.txt`, `.md`, `.pdf`, and `.docx`.
+- User-edited model endpoints are blocked when they resolve to local/private networks; configure `MODEL_ALLOWED_HOSTS` only for explicitly trusted provider hosts.
 - API keys are not exposed by the model-config endpoint; it only reports whether the key is configured.
 - When `AI_ENABLE=True` but the `ai` extra is absent, the backend logs the missing modules and starts without the AI plugin.

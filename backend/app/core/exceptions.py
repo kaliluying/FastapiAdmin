@@ -57,7 +57,7 @@ def handle_exception(app: FastAPI) -> None:
             request.method, request.url.path,
             _tb_source(exc), exc.code, exc.msg, exc.data,
         )
-        return ErrorResponse(msg=exc.msg, code=exc.code, status_code=exc.status_code, data=exc.data)
+        return ErrorResponse(msg=exc.msg, code=exc.code, status_code=exc.status_code)
 
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
@@ -77,7 +77,7 @@ def handle_exception(app: FastAPI) -> None:
             "[参数验证异常] {} {} | msg={} | errors={}",
             request.method, request.url.path, msg, exc.errors(),
         )
-        return ErrorResponse(msg=str(msg), status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, data=exc.body)
+        return ErrorResponse(msg=str(msg), status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
 
     @app.exception_handler(ResponseValidationError)
     async def response_validation_handler(request: Request, exc: ResponseValidationError) -> JSONResponse:
@@ -85,7 +85,7 @@ def handle_exception(app: FastAPI) -> None:
             "[响应验证异常] {} {} | errors={}",
             request.method, request.url.path, exc.errors(),
         )
-        return ErrorResponse(msg="服务器响应格式错误", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, data=exc.body)
+        return ErrorResponse(msg="服务器响应格式错误", status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @app.exception_handler(SQLAlchemyError)
     async def sqlalchemy_exception_handler(request: Request, exc: SQLAlchemyError) -> JSONResponse:
@@ -98,22 +98,22 @@ def handle_exception(app: FastAPI) -> None:
         if isinstance(exc, IntegrityError):
             detail = str(exc.orig) if exc.orig else str(exc)
             if "Duplicate entry" in detail:
-                return ErrorResponse(msg="数据重复，请检查唯一字段", status_code=status.HTTP_409_CONFLICT, data=detail)
+                return ErrorResponse(msg="数据重复，请检查唯一字段", status_code=status.HTTP_409_CONFLICT)
             if "foreign key constraint" in detail:
-                return ErrorResponse(msg="存在关联数据，无法删除", status_code=status.HTTP_409_CONFLICT, data=detail)
+                return ErrorResponse(msg="存在关联数据，无法删除", status_code=status.HTTP_409_CONFLICT)
             if "cannot be null" in detail:
-                return ErrorResponse(msg="必填字段缺失", status_code=status.HTTP_409_CONFLICT, data=detail)
-            return ErrorResponse(msg="数据已存在或违反完整性约束", status_code=status.HTTP_409_CONFLICT, data=detail)
+                return ErrorResponse(msg="必填字段缺失", status_code=status.HTTP_409_CONFLICT)
+            return ErrorResponse(msg="数据已存在或违反完整性约束", status_code=status.HTTP_409_CONFLICT)
 
         lower = str(exc).lower()
         if "connect" in lower or "connection" in lower:
-            return ErrorResponse(msg="数据库连接失败", status_code=status.HTTP_503_SERVICE_UNAVAILABLE, data=exc_type)
-        return ErrorResponse(msg=f"数据库操作失败: {exc_type}", status_code=status.HTTP_400_BAD_REQUEST, data=str(exc))
+            return ErrorResponse(msg="数据库连接失败", status_code=status.HTTP_503_SERVICE_UNAVAILABLE)
+        return ErrorResponse(msg="数据库操作失败，请稍后重试", status_code=status.HTTP_400_BAD_REQUEST)
 
     @app.exception_handler(ValueError)
     async def value_exception_handler(request: Request, exc: ValueError) -> JSONResponse:
         logger.error("[值异常] {} {} | msg={}", request.method, request.url.path, exc)
-        return ErrorResponse(msg=str(exc), status_code=status.HTTP_400_BAD_REQUEST)
+        return ErrorResponse(msg="请求参数或配置不合法", status_code=status.HTTP_400_BAD_REQUEST)
 
 
     @app.exception_handler(Exception)

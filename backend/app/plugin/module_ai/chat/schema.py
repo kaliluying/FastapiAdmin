@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 from typing import Any, Literal
-from urllib.parse import urlparse
 
 from fastapi import Query
 from pydantic import BaseModel, Field, field_validator
 
 from app.core.base_params import BaseQueryParam, UserByQueryParam
+from app.plugin.module_ai.config import validate_model_base_url
 
 
 class ChatQuerySchema(BaseModel):
@@ -14,7 +14,7 @@ class ChatQuerySchema(BaseModel):
     message: str = Field(..., min_length=1, description="Message content")
     session_id: str | None = Field(None, description="Session ID")
     files: list[dict[str, Any]] | None = Field(None, description="Ad-hoc file context")
-    knowledge_base_ids: list[int] = Field(default_factory=list, description="Knowledge base IDs")
+    knowledge_base_ids: list[int] = Field(default_factory=list, max_length=20, description="Knowledge base IDs")
 
 
 class ChatSessionCreateSchema(BaseModel):
@@ -57,7 +57,7 @@ class AiChatRequestSchema(BaseModel):
 
     message: str = Field(..., min_length=1, description="User message")
     session_id: str | None = Field(None, description="Session ID; creates a new session when omitted")
-    knowledge_base_ids: list[int] = Field(default_factory=list, description="Knowledge base IDs")
+    knowledge_base_ids: list[int] = Field(default_factory=list, max_length=20, description="Knowledge base IDs")
 
     @field_validator("message")
     @classmethod
@@ -102,11 +102,7 @@ class AiModelConfigUpdateSchema(BaseModel):
     @field_validator("openai_base_url")
     @classmethod
     def validate_base_url(cls, value: str) -> str:
-        normalized = value.strip().rstrip("/")
-        parsed = urlparse(normalized)
-        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-            raise ValueError("API 地址必须是有效的 http/https URL")
-        return normalized
+        return validate_model_base_url(value)
 
     @field_validator("openai_model")
     @classmethod

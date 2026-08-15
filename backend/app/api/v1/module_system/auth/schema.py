@@ -39,3 +39,8 @@ class LoginSchema(JWTOutSchema):
     user_info: dict = Field(default_factory=dict, description="用户信息")
 
 
+class OAuthTicketSchema(BaseModel):
+    """One-time OAuth browser callback ticket."""
+
+    ticket: str = Field(..., min_length=20, max_length=256)
+

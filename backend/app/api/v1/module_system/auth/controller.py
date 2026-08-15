@@ -12,7 +12,6 @@ from app.config.setting import settings
 from app.core.base_schema import (
     AuthSchema,
     JWTOutSchema,
-    LogoutPayloadSchema,
     RefreshTokenPayloadSchema,
 )
 from app.core.dependencies import db_getter, get_current_user, redis_getter
@@ -27,15 +26,19 @@ from .oauth_service import (
     _callback_url,
     build_authorize_url,
     complete_oauth_login,
+    exchange_oauth_ticket,
     oauth_service_error_redirect,
-    oauth_service_frontend_redirect_from_token,
+    oauth_service_frontend_redirect_from_ticket,
+    safe_frontend_redirect,
     save_oauth_state,
+    save_oauth_ticket,
 )
 from .schema import (
     AutoLoginTokenSchema,
     AutoLoginUserSchema,
     CaptchaOutSchema,
     LoginSchema,
+    OAuthTicketSchema,
 )
 from .service import (
     AutoLoginService,
@@ -99,13 +102,30 @@ async def get_captcha_for_login_controller(
     response_model=ResponseSchema[None],
 )
 async def logout_controller(
-    payload: LogoutPayloadSchema,
+    request: Request,
+    auth: Annotated[AuthSchema, Depends(get_current_user)],
     redis: Annotated[Redis, Depends(redis_getter)],
 ) -> JSONResponse:
-    if await LoginService.logout(redis=redis, token=payload):
+    session_id = getattr(getattr(request.state, "ctx", None), "session_id", None)
+    if await LoginService.logout(redis=redis, session_id=session_id or ""):
         logger.info("退出成功")
         return SuccessResponse(msg="退出成功")
     return ErrorResponse(msg="退出失败")
+
+
+@AuthRouter.post(
+    "/ws-ticket",
+    summary="创建 WebSocket 一次性认证凭证",
+    dependencies=[Depends(get_current_user)],
+)
+async def create_ws_ticket_controller(
+    request: Request,
+    redis: Annotated[Redis, Depends(redis_getter)],
+) -> JSONResponse:
+    """Issue a one-time WebSocket ticket without exposing the JWT in a URL."""
+    session_id = getattr(getattr(request.state, "ctx", None), "session_id", None)
+    ticket = await LoginService.create_ws_ticket(redis=redis, session_id=session_id or "")
+    return SuccessResponse(data={"ticket": ticket, "expires_in": 60}, msg="创建成功")
 
 
 @AuthRouter.get(
@@ -172,7 +192,12 @@ async def oauth_login_redirect_controller(
     ] = None,
 ) -> RedirectResponse:
     allowed = {"wechat", "qq", "github", "gitee"}
-    fe = redirect_uri or settings.OAUTH_FRONTEND_FALLBACK
+    fe = safe_frontend_redirect(redirect_uri)
+    if redirect_uri and fe == settings.OAUTH_FRONTEND_FALLBACK and redirect_uri.strip() != fe:
+        return RedirectResponse(
+            url=oauth_service_error_redirect(settings.OAUTH_FRONTEND_FALLBACK, "非法的回调地址"),
+            status_code=302,
+        )
     if provider not in allowed:
         return RedirectResponse(
             url=oauth_service_error_redirect(fe, "不支持的 OAuth 渠道"),
@@ -180,7 +205,7 @@ async def oauth_login_redirect_controller(
         )
     if not redirect_uri:
         return RedirectResponse(
-            url=oauth_service_error_redirect(fe, "缺少 redirect_uri 参数"),
+            url=oauth_service_error_redirect(settings.OAUTH_FRONTEND_FALLBACK, "缺少 redirect_uri 参数"),
             status_code=302,
         )
     try:
@@ -189,14 +214,14 @@ async def oauth_login_redirect_controller(
             redis=redis,
             state=state,
             provider=provider,
-            frontend_redirect=redirect_uri,
+            frontend_redirect=fe,
         )
         cb = _callback_url(request, provider)
         url = build_authorize_url(provider=provider, callback_url=cb, state=state)
         return RedirectResponse(url=url, status_code=302)
     except CustomException as e:
         return RedirectResponse(
-            url=oauth_service_error_redirect(redirect_uri, e.msg),
+            url=oauth_service_error_redirect(fe, e.msg),
             status_code=302,
         )
 
@@ -245,9 +270,23 @@ async def oauth_callback_controller(
             code=code,
             state=state,
         )
-        success_url = oauth_service_frontend_redirect_from_token(fe, token)
+        ticket = await save_oauth_ticket(redis, token)
+        success_url = oauth_service_frontend_redirect_from_ticket(fe, ticket)
         return RedirectResponse(url=success_url, status_code=302)
     except CustomException as e:
         fe = await resolve_frontend()
         return RedirectResponse(url=oauth_service_error_redirect(fe, e.msg), status_code=302)
 
+
+@AuthRouter.post(
+    "/oauth/exchange",
+    summary="兑换 OAuth 一次性登录凭证",
+    response_model=ResponseSchema[JWTOutSchema],
+)
+async def oauth_ticket_exchange_controller(
+    payload: OAuthTicketSchema,
+    redis: Annotated[Redis, Depends(redis_getter)],
+) -> JSONResponse:
+    """Exchange the browser-safe OAuth ticket for JWTs once."""
+    token = await exchange_oauth_ticket(redis=redis, ticket=payload.ticket)
+    return SuccessResponse(data=token, msg="OAuth 登录成功")

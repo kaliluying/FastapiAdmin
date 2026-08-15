@@ -9,8 +9,10 @@ from uuid import uuid4
 
 from app.common.request import paginate
 from app.core.base_schema import AuthSchema
+from app.core.database import async_db_session
 from app.core.exceptions import CustomException
 from app.core.logger import logger
+from app.plugin.module_ai.config import validate_model_base_url
 
 from .crud import ChatSession, ChatSessionCRUD
 from .memory_extractor import MemoryExtractor
@@ -104,6 +106,7 @@ class ChatService:
 
     async def chat_query(self, query: ChatQuerySchema) -> AsyncGenerator[str, None]:
         try:
+            knowledge_base_ids = await self._accessible_knowledge_base_ids(query.knowledge_base_ids)
             await load_runtime_chat_model_config(self.auth)
             config_error = self._validate_ai_config()
             if config_error:
@@ -127,7 +130,7 @@ class ChatService:
                 scope_id=self._get_scope_id(),
                 session_id=active_session_id,
                 files=query.files,
-                knowledge_base_ids=query.knowledge_base_ids,
+                knowledge_base_ids=knowledge_base_ids,
             ):
                 if chunk:
                     has_content = True
@@ -153,12 +156,12 @@ class ChatService:
                     user_message=query.message,
                     assistant_response=full_response,
                 )
-        except Exception as e:
-            logger.error(f"聊天查询失败: {e}")
+        except Exception:
+            logger.exception("聊天查询失败")
             db = self._get_db()
             if db:
                 await db.rollback()
-            yield f"抱歉，处理您的请求时出现错误：{e}"
+            yield "抱歉，处理您的请求时出现错误，请稍后重试。"
 
     async def chat_non_stream(
         self,
@@ -167,6 +170,7 @@ class ChatService:
         knowledge_base_ids: list[int] | None = None,
     ) -> dict[str, Any]:
         try:
+            knowledge_base_ids = await self._accessible_knowledge_base_ids(knowledge_base_ids or [])
             await load_runtime_chat_model_config(self.auth)
             config_error = self._validate_ai_config()
             if config_error:
@@ -181,7 +185,7 @@ class ChatService:
                 user_id=self._get_user_id(),
                 scope_id=self._get_scope_id(),
                 session_id=active_session_id,
-                knowledge_base_ids=knowledge_base_ids or [],
+                knowledge_base_ids=knowledge_base_ids,
             )
             action = self._extract_action(response_text) if response_text else None
             if response_text and crud:
@@ -195,12 +199,12 @@ class ChatService:
                     assistant_response=response_text,
                 )
             return {"response": response_text, "session_id": active_session_id, "function_calls": None, "action": action}
-        except Exception as e:
-            logger.error(f"聊天查询失败: {e}")
+        except Exception:
+            logger.exception("聊天查询失败")
             db = self._get_db()
             if db:
                 await db.rollback()
-            return {"response": f"抱歉，处理您的请求时出现错误：{e}", "session_id": session_id, "function_calls": None, "action": None}
+            return {"response": "抱歉，处理您的请求时出现错误，请稍后重试。", "session_id": session_id, "function_calls": None, "action": None}
 
     async def _ensure_session_id(self, crud: ChatSessionCRUD | None, session_id: str | None) -> str:
         if session_id:
@@ -222,30 +226,35 @@ class ChatService:
     ) -> None:
         """Fire-and-forget 触发记忆提取，不阻塞主流程。"""
         auth = self.auth
-        db = self._get_db()
-        if not auth or not db:
+        user = getattr(auth, "user", None)
+        user_id = getattr(user, "id", None)
+        if not auth or user_id is None:
             return
         try:
-            from app.plugin.module_ai.memory.crud import MemoryCRUD
-
             async def _extract() -> None:
                 try:
-                    crud = MemoryCRUD(auth)
-                    extractor = MemoryExtractor()
-                    saved = await extractor.extract_and_save(
-                        crud=crud,
-                        user_message=user_message,
-                        assistant_response=assistant_response,
-                    )
-                    if saved > 0:
-                        await db.commit()
-                        logger.info(f"记忆提取完成: 已保存 {saved} 条")
+                    from types import SimpleNamespace
+
+                    from app.plugin.module_ai.memory.crud import MemoryCRUD
+
+                    async with async_db_session() as background_db:
+                        async with background_db.begin():
+                            background_auth = AuthSchema(
+                                user=SimpleNamespace(id=user_id),
+                                db=background_db,
+                                check_data_scope=False,
+                            )
+                            crud = MemoryCRUD(background_auth)
+                            extractor = MemoryExtractor()
+                            saved = await extractor.extract_and_save(
+                                crud=crud,
+                                user_message=user_message,
+                                assistant_response=assistant_response,
+                            )
+                            if saved > 0:
+                                logger.info(f"记忆提取完成: 已保存 {saved} 条")
                 except Exception as e:
                     logger.warning(f"记忆提取后台任务失败: {e}")
-                    try:
-                        await db.rollback()
-                    except Exception:
-                        pass
 
             asyncio.create_task(_extract())
         except Exception as e:
@@ -273,14 +282,33 @@ class ChatService:
             return "AI 服务未配置对话模型，请先在模型配置中填写模型名称。"
         if not base_url:
             return "AI 服务未配置接口地址，请先在模型配置中填写。"
+        try:
+            validate_model_base_url(base_url)
+        except ValueError:
+            return "AI 服务接口地址不符合安全策略，请检查主机白名单配置。"
         return None
 
     def _get_user_id(self) -> str:
-        username = getattr(getattr(self.auth, "user", None), "username", None)
-        return str(username) if username else "anonymous"
+        user_id = getattr(getattr(self.auth, "user", None), "id", None)
+        return str(user_id) if user_id is not None else "anonymous"
 
     def _get_scope_id(self) -> str:
         return self._get_user_id()
+
+    async def _accessible_knowledge_base_ids(self, ids: list[int]) -> list[int]:
+        """Validate that every requested knowledge base is user-accessible."""
+        normalized = list(dict.fromkeys(ids))
+        if not normalized or not getattr(self.auth, "user", None) or not self._get_db():
+            return normalized
+        from app.plugin.module_ai.knowledge.crud import KnowledgeBaseCRUD
+
+        visible = await KnowledgeBaseCRUD(self.auth).get_list(
+            search={"id": ("in", normalized)},
+        )
+        visible_ids = {item.id for item in visible}
+        if visible_ids != set(normalized):
+            raise CustomException(msg="知识库不存在或无权访问", status_code=403)
+        return normalized
 
     async def get_model_config(self) -> AiModelConfigOutSchema:
         return await get_runtime_model_config(self.auth)

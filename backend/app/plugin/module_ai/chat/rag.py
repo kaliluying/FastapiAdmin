@@ -475,6 +475,7 @@ class RagChatChain:
             result = await self.db.execute(
                 select(ChatSessionModel).where(
                     ChatSessionModel.session_id == session_id,
+                    ChatSessionModel.user_id == self.user_id,
                     ChatSessionModel.is_deleted == False,  # noqa: E712
                 )
             )
@@ -506,7 +507,7 @@ class RagChatChain:
 
             # Build a minimal auth object for MemoryCRUD
             class _FakeUser:
-                username = self.user_id
+                id = int(self.user_id) if self.user_id.isdigit() else self.user_id
 
             auth = AuthSchema(user=_FakeUser(), db=self.db)
             crud = MemoryCRUD(auth)
@@ -566,7 +567,7 @@ def create_rag_chain(db: Any | None = None, auth: Any | None = None) -> RagChatC
         prompt_builder=RagPromptBuilder(),
         chat_model=LangChainChatModel(),
         db=db,
-        user_id=getattr(user, "username", None) or "",
+        user_id=str(getattr(user, "id", None)) if getattr(user, "id", None) is not None else "",
         team_id=None,
         user_profile=_extract_user_profile(user),
     )

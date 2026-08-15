@@ -4,7 +4,7 @@
 *
 * 本文件合并了原 dark.scss + el-dark.scss：
 * - 顶部 @use 引入 Element Plus 暗色 CSS 变量（取代独立 el-dark.scss）
-* - 下方覆盖项目级 html.dark CSS 变量
+* - 下方覆盖项目级 html.dark CSS 变量与 wangEditor 在暗色模式下的样式
 */
 
 // 引入 Element Plus 暗黑主题 CSS 变量
@@ -24,9 +24,19 @@ $font-color: rgba(#fff, 0.85);
 
 /* 覆盖element-plus默认深色背景色 */
 html.dark {
-  // element-plus 通用背景/文本
+  // Element Plus consumes the semantic dark hierarchy.
+  --el-bg-color-page: var(--fa-color-canvas);
   --el-bg-color: var(--default-box-color);
+  --el-bg-color-overlay: var(--fa-color-surface-raised);
+  --el-border-color: var(--fa-color-border);
+  --el-border-color-light: var(--fa-color-border);
+  --el-fill-color: var(--fa-color-surface-raised);
+  --el-fill-color-blank: var(--fa-color-surface);
+  --el-text-color-primary: var(--fa-color-text);
   --el-text-color-regular: #{$font-color};
+  --el-text-color-secondary: var(--fa-color-text-muted);
+  // 表格头在深色下避免使用默认浅色背景。
+  --el-table-header-bg-color: #11171d;
 
   // element-plus 功能性色（与 light 模式一致 —— 用户未要求 dark 模式独立色板）
   // 用 SCSS 插值强制解析变量（避免被字面量输出）。
@@ -36,14 +46,80 @@ html.dark {
   --el-color-success: #{$fa-success};
   --el-color-warning: #{$fa-warning};
   --el-color-danger: #{$fa-danger};
-  --el-color-error: #{$fa-error};
+  --el-color-error: #{$fa-danger};
   --el-color-info: #{$fa-info};
 
+  // 富文本编辑器
+  // 工具栏背景颜色
+  --w-e-toolbar-bg-color: var(--fa-color-surface-raised);
+  // 输入区域背景颜色
+  --w-e-textarea-bg-color: var(--fa-color-surface);
+  // 工具栏文字颜色
+  --w-e-toolbar-color: var(--fa-color-text-muted);
+  // 选中菜单颜色
+  --w-e-toolbar-active-bg-color: var(--fa-color-surface-raised);
+  // 弹窗边框颜色
+  --w-e-toolbar-border-color: var(--fa-color-border);
+  // 分割线颜色
+  --w-e-textarea-border-color: var(--fa-color-border);
+  // 链接输入框边框颜色
+  --w-e-modal-button-border-color: var(--fa-color-border);
+  // 表格头颜色
+  --w-e-textarea-slight-bg-color: var(--fa-color-surface);
+  // 按钮背景颜色
+  --w-e-modal-button-bg-color: var(--fa-color-surface);
+  // hover toolbar 背景颜色
+  --w-e-toolbar-active-color: var(--fa-color-text);
 }
 
 .dark {
   .page-content .article-list .item .left .outer > div {
     border-right-color: var(--dark-border-color) !important;
+  }
+
+  // 富文本编辑器
+  .editor-wrapper {
+    *:not(pre code *) {
+      color: inherit !important;
+    }
+
+    .w-e-text-container [data-slate-editor] .table-container th:last-of-type {
+      border-right: 1px solid var(--default-border-dashed) !important;
+    }
+
+    .w-e-modal {
+      background-color: var(--fa-color);
+    }
+  }
+
+  .w-e-bar-divider {
+    background-color: var(--fa-gray-300) !important;
+  }
+
+  .w-e-select-list,
+  .w-e-drop-panel,
+  .w-e-bar-item-group .w-e-bar-item-menus-container,
+  .w-e-text-container [data-slate-editor] pre > code {
+    border: 1px solid var(--default-border) !important;
+  }
+
+  .w-e-select-list {
+    background-color: var(--default-box-color) !important;
+  }
+
+  .w-e-select-list ul li:hover,
+  .w-e-bar-item button:hover {
+    background-color: #090909 !important;
+  }
+
+  .w-e-text-container [data-slate-editor] pre > code {
+    text-shadow: none !important;
+    background-color: #25262b !important;
+  }
+
+  .w-e-text-container [data-slate-editor] blockquote {
+    background-color: var(--fa-color);
+    border-left: 4px solid var(--default-border-dashed) !important;
   }
 }
 

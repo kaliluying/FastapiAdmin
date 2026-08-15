@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     # ================================================= #
     # ******************* API文档配置 ****************** #
     # ================================================= #
-    DEBUG: bool = True  # 调试模式
+    DEBUG: bool = False  # 调试模式
     TITLE: str = "FastapiAdmin"  # 文档标题
     VERSION: str = "0.1.0"  # 版本号
     DESCRIPTION: str = "单组织后台服务，提供 RBAC、系统配置、审计日志和可选 AI/RAG 插件。"
@@ -53,10 +53,10 @@ class Settings(BaseSettings):
     # ******************** 跨域配置 ******************** #
     # ================================================= #
     CORS_ORIGIN_ENABLE: bool = True  # 是否启用跨域
-    ALLOW_ORIGINS: list[str] = ["*"]  # 允许的域名列表
-    ALLOW_METHODS: list[str] = ["*"]  # 允许的HTTP方法
-    ALLOW_HEADERS: list[str] = ["*"]  # 允许的请求头
-    ALLOW_CREDENTIALS: bool = True  # 是否允许携带cookie
+    ALLOW_ORIGINS: list[str] = ["http://127.0.0.1:5173", "http://localhost:5173"]  # 允许的域名列表
+    ALLOW_METHODS: list[str] = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]  # 允许的HTTP方法
+    ALLOW_HEADERS: list[str] = ["Authorization", "Content-Type", "X-Requested-With"]  # 允许的请求头
+    ALLOW_CREDENTIALS: bool = False  # 是否允许携带cookie
     CORS_EXPOSE_HEADERS: list[str] = ["X-Request-ID"]
 
     # ================================================= #
@@ -69,6 +69,11 @@ class Settings(BaseSettings):
     TOKEN_TYPE: str = "Bearer"  # token类型（RFC 6750 标准大小写）
     TOKEN_REQUEST_PATH_EXCLUDE: list[str] = ["api/v1/auth/login"]  # JWT / RBAC 路由白名单
     TOKEN_SLIDING_EXPIRE: bool = True  # 是否启用滑动过期(用户操作时自动续期)
+    TRUSTED_PROXY_IPS: list[str] = []  # 仅这些反向代理网段的 X-Forwarded-For 才会被信任
+    LOGIN_FAILURE_WINDOW_SECONDS: int = 15 * 60
+    LOGIN_MAX_FAILURES: int = 5
+    LOGIN_LOCK_SECONDS: int = 15 * 60
+    LOGIN_CAPTCHA_AFTER_FAILURES: int = 3
 
     # ================================================= #
     # ******************** 数据库配置 ******************* #
@@ -183,7 +188,7 @@ class Settings(BaseSettings):
     # ================================================= #
     # ***************** 动态文件配置 ***************** #
     # ================================================= #
-    UPLOAD_FILE_PATH: Path = Path("static/upload")  # 上传目录
+    UPLOAD_FILE_PATH: Path = BASE_DIR / "storage" / "upload"  # 私有上传目录，不挂载到静态文件
     UPLOAD_MACHINE: str = "A"  # 上传机器标识
     ALLOWED_EXTENSIONS: list[str] = [  # 允许的文件类型
         ".gif",
@@ -191,7 +196,6 @@ class Settings(BaseSettings):
         ".jpeg",
         ".png",
         ".ico",
-        ".svg",
         ".xls",
         ".xlsx",
     ]
@@ -302,6 +306,12 @@ class Settings(BaseSettings):
             raise ValueError("必须通过 SECRET_KEY 配置 JWT 密钥")
         if self.ENVIRONMENT == EnvironmentEnum.PROD and len(self.SECRET_KEY) < 32:
             raise ValueError("生产环境必须通过 SECRET_KEY 配置至少 32 个字符的 JWT 密钥")
+        if not self.UPLOAD_FILE_PATH.is_absolute():
+            self.UPLOAD_FILE_PATH = BASE_DIR / self.UPLOAD_FILE_PATH
+        if self.ENVIRONMENT == EnvironmentEnum.PROD:
+            # 生产环境不允许通过环境变量误关掉基础登录挑战和 HSTS。
+            self.CAPTCHA_ENABLE = True
+            self.HSTS_ENABLE = True
         return self
 
 

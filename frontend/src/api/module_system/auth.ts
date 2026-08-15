@@ -34,10 +34,34 @@ const AuthAPI = {
     });
   },
 
-  logout(body: LogoutBody) {
+  getCaptcha() {
+    return request<ApiResponse<CaptchaResult>>({
+      url: `${API_PATH}/captcha/get`,
+      method: "get",
+      headers: { Authorization: "no-auth" },
+      showErrorMessage: false,
+    });
+  },
+
+  logout() {
     return request<ApiResponse>({
       url: `${API_PATH}/logout`,
       method: "post",
+    });
+  },
+
+  createWsTicket() {
+    return request<ApiResponse<{ ticket: string; expires_in: number }>>({
+      url: `${API_PATH}/ws-ticket`,
+      method: "post",
+    });
+  },
+
+  exchangeOAuthTicket(body: OAuthTicketBody) {
+    return request<ApiResponse<JWTOut>>({
+      url: `${API_PATH}/oauth/exchange`,
+      method: "post",
+      headers: { Authorization: "no-auth" },
       data: body,
     });
   },
@@ -53,6 +77,15 @@ export interface LoginFormData {
   password: string;
   remember?: boolean;
   login_type?: string;
+  captcha_key?: string;
+  captcha?: string;
+}
+
+/** Login CAPTCHA challenge. */
+export interface CaptchaResult {
+  enable: boolean;
+  key: string;
+  img_base: string;
 }
 
 /** JWT 响应 (JWTOutSchema) */
@@ -81,7 +114,7 @@ export interface RefreshToekenBody {
   refresh_token: string;
 }
 
-/** 退出登录请求体 */
-export interface LogoutBody {
-  token: string;
+/** OAuth 回调的一次性 ticket */
+export interface OAuthTicketBody {
+  ticket: string;
 }

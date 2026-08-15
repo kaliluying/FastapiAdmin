@@ -42,6 +42,28 @@
         </ElFormItem>
       </ElTooltip>
 
+      <ElFormItem v-if="captchaEnabled" prop="captcha">
+        <div class="captcha-row flex w-full items-center gap-3">
+          <ElInput
+            v-model.trim="loginForm.captcha"
+            class="custom-height min-w-0 flex-1"
+            autocomplete="off"
+            maxlength="8"
+            placeholder="请输入验证码"
+          />
+          <button
+            type="button"
+            class="captcha-image shrink-0 overflow-hidden rounded border border-(--el-border-color)"
+            :disabled="captchaLoading"
+            aria-label="刷新验证码"
+            @click="emit('refresh-captcha')"
+          >
+            <img v-if="captchaImage" :src="captchaImage" alt="验证码" />
+            <span v-else>刷新</span>
+          </button>
+        </div>
+      </ElFormItem>
+
       <div class="login-form-tail flex flex-col gap-[1.1rem]">
         <ElCheckbox v-model="loginForm.remember" class="login-remember self-start text-sm">
           {{ $t("login.rememberPwd") }}
@@ -75,12 +97,20 @@ interface Props {
   rules: FormRules;
   formKey: number | string;
   loading: boolean;
+  captchaEnabled?: boolean;
+  captchaImage?: string;
+  captchaLoading?: boolean;
 }
 
-withDefaults(defineProps<Props>(), {});
+withDefaults(defineProps<Props>(), {
+  captchaEnabled: false,
+  captchaImage: "",
+  captchaLoading: false,
+});
 
 interface Emits {
   submit: [];
+  "refresh-captcha": [];
 }
 
 const emit = defineEmits<Emits>();

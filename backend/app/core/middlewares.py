@@ -12,6 +12,7 @@ from starlette.types import ASGIApp
 from app.api.v1.module_system.params.service import ParamsService
 from app.common.response import ErrorResponse
 from app.config.setting import settings
+from app.core.client_ip import get_client_ip
 from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.core.request_context import RequestContext, reset_correlation_id, set_correlation_id
@@ -86,11 +87,7 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
                      request.client.host if request.client else "unknown")
 
         try:
-            request_ip = (
-                (x_forwarded_for.split(",")[0].strip())
-                if (x_forwarded_for := request.headers.get("X-Forwarded-For"))
-                else request.client.host if request.client else None
-            )
+            request_ip = get_client_ip(request)
 
             try:
                 redis = request.app.state.redis
@@ -109,7 +106,7 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
             return response
         except CustomException as e:
             logger.exception(f"中间件异常: {e!s}")
-            return ErrorResponse(msg="系统异常，请联系管理员", data=str(e))
+            return ErrorResponse(msg="系统异常，请联系管理员")
 
 
 class CustomGZipMiddleware(GZipMiddleware):

@@ -1,5 +1,7 @@
 ﻿
+import hashlib
 import json
+import secrets
 import uuid
 from datetime import datetime, timedelta
 from typing import NewType
@@ -17,9 +19,9 @@ from app.core.base_schema import (
     AuthSchema,
     JWTOutSchema,
     JWTPayloadSchema,
-    LogoutPayloadSchema,
     RefreshTokenPayloadSchema,
 )
+from app.core.client_ip import get_client_ip
 from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.core.redis_crud import RedisCURD
@@ -78,10 +80,80 @@ async def _write_login_log(
 
 def _resolve_request_ip(request: Request) -> str:
     """从请求中解析客户端真实 IP"""
-    x_forwarded_for = request.headers.get("X-Forwarded-For")
-    if x_forwarded_for:
-        return x_forwarded_for.split(",")[0].strip()
-    return request.client.host if request.client else "127.0.0.1"
+    return get_client_ip(request)
+
+
+def _login_subject_digest(username: str, request_ip: str) -> str:
+    """Hash the login subject and trusted client address for Redis keys."""
+    subject = f"{username.strip().lower()}\x00{request_ip.strip()}"
+    return hashlib.sha256(subject.encode("utf-8")).hexdigest()
+
+
+def _login_failure_key(username: str, request_ip: str) -> str:
+    """Return a Redis key that does not expose raw login input."""
+    digest = _login_subject_digest(username, request_ip)
+    return f"auth:login:failure:{digest}"
+
+
+def _login_lock_key(username: str, request_ip: str) -> str:
+    """Return the short-lived Redis account-lock key."""
+    digest = _login_subject_digest(username, request_ip)
+    return f"auth:login:lock:{digest}"
+
+
+async def _get_login_failure_count(redis: Redis, username: str, request_ip: str) -> int:
+    """Read the current failed-login counter for one account/client pair."""
+    if await RedisCURD(redis).exists(_login_lock_key(username, request_ip)):
+        return settings.LOGIN_MAX_FAILURES
+    value = await RedisCURD(redis).get(_login_failure_key(username, request_ip))
+    if isinstance(value, bytes):
+        value = value.decode("utf-8", errors="ignore")
+    try:
+        return int(value or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+async def _record_login_failure(redis: Redis, username: str, request_ip: str) -> int:
+    """Increment and expire an account failure counter.
+
+    Redis' atomic ``INCR`` is preferred; the fallback keeps lightweight test
+    doubles and nonstandard Redis clients functional.
+    """
+    key = _login_failure_key(username, request_ip)
+    try:
+        count = int(await redis.incr(key))
+        await redis.expire(key, settings.LOGIN_FAILURE_WINDOW_SECONDS)
+        if count >= settings.LOGIN_MAX_FAILURES:
+            await RedisCURD(redis).set(
+                _login_lock_key(username, request_ip),
+                "1",
+                expire=settings.LOGIN_LOCK_SECONDS,
+            )
+        return count
+    except (AttributeError, TypeError, ValueError):
+        count = await _get_login_failure_count(redis, username, request_ip) + 1
+        await RedisCURD(redis).set(key, str(count), expire=settings.LOGIN_FAILURE_WINDOW_SECONDS)
+        if count >= settings.LOGIN_MAX_FAILURES:
+            await RedisCURD(redis).set(
+                _login_lock_key(username, request_ip),
+                "1",
+                expire=settings.LOGIN_LOCK_SECONDS,
+            )
+        return count
+
+
+async def _clear_login_failures(redis: Redis, username: str, request_ip: str) -> None:
+    """Clear the account/client failure counter after a successful login."""
+    await RedisCURD(redis).delete(
+        _login_failure_key(username, request_ip),
+        _login_lock_key(username, request_ip),
+    )
+
+
+def _locked_message() -> str:
+    """Return the stable client-facing account lock message."""
+    return "登录失败次数过多，请稍后再试"
 
 
 class LoginService:
@@ -106,22 +178,30 @@ class LoginService:
         _login_browser = ua_result.user_agent.family if ua_result.user_agent else "Unknown"
         _login_username = login_form.username
 
-        referer = request.headers.get("referer", "")
-        request_from_docs = referer.endswith(("docs", "redoc"))
+        failure_count = await _get_login_failure_count(redis, _login_username, request_ip)
+        if failure_count >= settings.LOGIN_MAX_FAILURES:
+            raise CustomException(msg=_locked_message(), status_code=429)
 
-        if settings.CAPTCHA_ENABLE and not request_from_docs:
+        captcha_required = settings.CAPTCHA_ENABLE or failure_count >= settings.LOGIN_CAPTCHA_AFTER_FAILURES
+        if captcha_required:
             if not login_form.captcha_key or not login_form.captcha:
-                raise CustomException(msg="验证码不能为空")
-            await CaptchaService.check_captcha(
-                redis=redis,
-                key=login_form.captcha_key,
-                captcha=login_form.captcha,
-            )
+                await _record_login_failure(redis, _login_username, request_ip)
+                raise CustomException(msg="验证码不能为空", status_code=429 if failure_count + 1 >= settings.LOGIN_MAX_FAILURES else 400)
+            try:
+                await CaptchaService.check_captcha(
+                    redis=redis,
+                    key=login_form.captcha_key,
+                    captcha=login_form.captcha,
+                )
+            except CustomException:
+                await _record_login_failure(redis, _login_username, request_ip)
+                raise
 
         auth = AuthSchema(db=db, check_data_scope=False)
         user = await UserCRUD(auth).get(username=login_form.username)
 
         if not user:
+            failure_count = await _record_login_failure(redis, _login_username, request_ip)
             await _write_login_log(
                 username=_login_username,
                 status=2,
@@ -131,9 +211,13 @@ class LoginService:
                 request_browser=_login_browser,
                 msg="用户不存在",
             )
-            raise CustomException(msg="用户不存在")
+            raise CustomException(
+                msg=_locked_message() if failure_count >= settings.LOGIN_MAX_FAILURES else "账号或密码错误",
+                status_code=429 if failure_count >= settings.LOGIN_MAX_FAILURES else 401,
+            )
 
         if not PwdUtil.verify_password(plain_password=login_form.password, password_hash=user.password):
+            failure_count = await _record_login_failure(redis, _login_username, request_ip)
             await _write_login_log(
                 username=_login_username,
                 status=2,
@@ -143,7 +227,10 @@ class LoginService:
                 request_browser=_login_browser,
                 msg="账号或密码错误",
             )
-            raise CustomException(msg="账号或密码错误")
+            raise CustomException(
+                msg=_locked_message() if failure_count >= settings.LOGIN_MAX_FAILURES else "账号或密码错误",
+                status_code=429 if failure_count >= settings.LOGIN_MAX_FAILURES else 401,
+            )
         if user.status == 1:
             await _write_login_log(
                 username=_login_username,
@@ -155,6 +242,7 @@ class LoginService:
                 msg="用户已被停用",
             )
             raise CustomException(msg="用户已被停用")
+        await _clear_login_failures(redis, _login_username, request_ip)
         await UserCRUD(auth).update_last_login(id=user.id)
 
         if not user:
@@ -231,6 +319,7 @@ class LoginService:
                 sub=session_id,
                 is_refresh=False,
                 exp=now + access_expires,
+                jti=secrets.token_urlsafe(16),
             )
         )
         refresh_token = create_access_token(
@@ -238,6 +327,7 @@ class LoginService:
                 sub=session_id,
                 is_refresh=True,
                 exp=now + refresh_expires,
+                jti=secrets.token_urlsafe(16),
             )
         )
 
@@ -285,17 +375,12 @@ class LoginService:
         if not session_info:
             raise CustomException(msg="会话已过期，请重新登录")
 
-        # 校验传入的 refresh_token 与 Redis 中存储的一致，防止重放攻击
-        stored_rt = await RedisCURD(redis).get(
-            f"{RedisInitKeyConfig.REFRESH_TOKEN.key}:{session_id}"
-        )
-        if not stored_rt:
-            raise CustomException(msg="会话已过期，请重新登录")
-        stored_rt_str = stored_rt.decode("utf-8") if isinstance(stored_rt, bytes) else str(stored_rt)
-        if stored_rt_str != refresh_token.refresh_token:
-            raise CustomException(msg="刷新令牌已失效，请重新登录")
+        try:
+            session_data = json.loads(session_info)
+        except (TypeError, json.JSONDecodeError):
+            raise CustomException(msg="会话已失效，请重新登录")
 
-        user_id = json.loads(session_info).get("user_id")
+        user_id = session_data.get("user_id")
 
         if not session_id or not user_id:
             raise CustomException(msg="非法凭证,无法获取会话编号或用户ID")
@@ -306,6 +391,10 @@ class LoginService:
             raise CustomException(msg="刷新token失败，用户不存在")
         if user.status == 1:
             raise CustomException(msg="用户已被停用")
+
+        refresh_key = f"{RedisInitKeyConfig.REFRESH_TOKEN.key}:{session_id}"
+        if not await RedisCURD(redis).compare_and_delete(refresh_key, refresh_token.refresh_token):
+            raise CustomException(msg="刷新令牌已失效，请重新登录")
 
         access_expires = timedelta(seconds=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         refresh_expires = timedelta(seconds=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
@@ -322,6 +411,7 @@ class LoginService:
                 sub=session_id,
                 is_refresh=False,
                 exp=now + access_expires,
+                jti=secrets.token_urlsafe(16),
             )
         )
 
@@ -330,6 +420,7 @@ class LoginService:
                 sub=session_id,
                 is_refresh=True,
                 exp=now + refresh_expires,
+                jti=secrets.token_urlsafe(16),
             )
         )
 
@@ -340,7 +431,7 @@ class LoginService:
         )
 
         await RedisCURD(redis).set(
-            key=f"{RedisInitKeyConfig.REFRESH_TOKEN.key}:{session_id}",
+            key=refresh_key,
             value=refresh_token_new,
             expire=int(refresh_expires.total_seconds()),
         )
@@ -353,11 +444,8 @@ class LoginService:
         )
 
     @staticmethod
-    async def logout(redis: Redis, token: LogoutPayloadSchema) -> bool:
-        """退出登录"""
-        payload: JWTPayloadSchema = decode_access_token(token=token.token)
-        session_id = payload.sub
-
+    async def logout(redis: Redis, session_id: str) -> bool:
+        """Revoke only the session authenticated by the current request."""
         if not session_id:
             raise CustomException(msg="非法凭证,无法获取会话编号")
 
@@ -369,15 +457,40 @@ class LoginService:
 
         return True
 
+    @staticmethod
+    async def create_ws_ticket(redis: Redis, session_id: str) -> str:
+        """Issue a short-lived, one-time ticket for a WebSocket upgrade.
+
+        Args:
+            redis: Redis connection used for the ticket store.
+            session_id: Session belonging to the already authenticated request.
+
+        Returns:
+            Opaque ticket value that may be consumed exactly once.
+        """
+        if not session_id:
+            raise CustomException(msg="认证已失效", code=10401, status_code=401)
+        ticket = secrets.token_urlsafe(32)
+        ok = await RedisCURD(redis).set(
+            f"auth:ws_ticket:{ticket}",
+            {"session_id": session_id},
+            expire=60,
+        )
+        if not ok:
+            raise CustomException(msg="创建 WebSocket ticket 失败")
+        return ticket
+
 
 class CaptchaService:
     """验证码服务"""
 
     @staticmethod
     async def get_captcha(redis: Redis) -> CaptchaOutSchema:
-        """获取验证码"""
-        if not settings.CAPTCHA_ENABLE:
-            raise CustomException(msg="未开启验证码服务")
+        """Generate a challenge for enabled or adaptive CAPTCHA flows.
+
+        The endpoint remains callable while the global switch is disabled so
+        the login page can reveal a challenge after repeated failures.
+        """
 
         captcha_base64, captcha_value = CaptchaUtil.captcha_arithmetic()
         captcha_key = get_random_character()
@@ -505,7 +618,7 @@ class AutoLoginService:
         from app.api.v1.module_system.user.model import UserModel
 
         token_key = f"{cls.AUTO_LOGIN_PREFIX}{token}"
-        token_data_str = await RedisCURD(redis).get(token_key)
+        token_data_str = await RedisCURD(redis).getdel(token_key)
 
         if not token_data_str:
             raise CustomException(msg="免登录Token已过期或无效")

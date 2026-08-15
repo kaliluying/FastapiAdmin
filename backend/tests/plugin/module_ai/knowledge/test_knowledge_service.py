@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.core.base_schema import AuthSchema
+from app.core.exceptions import CustomException
 from app.plugin.module_ai.knowledge.schema import KnowledgeBaseOutSchema, RetrievalTestSchema
 from app.plugin.module_ai.knowledge.service import KnowledgeService, build_chroma_metadata
 
@@ -43,15 +44,21 @@ def test_knowledge_base_output_exposes_index_status_counts():
 
 
 @pytest.mark.asyncio
-async def test_bm25_indexing_skips_vector_dependencies_and_uses_chroma_ids(monkeypatch):
+async def test_bm25_indexing_skips_vector_dependencies_and_uses_chroma_ids(monkeypatch, tmp_path):
     """Verify BM25-only indexing avoids embeddings and retains shared chunk IDs."""
     from app.plugin.module_ai.knowledge import service as service_module
+
+    knowledge_root = tmp_path / "knowledge"
+    knowledge_root.mkdir()
+    document_path = knowledge_root / "handbook.md"
+    document_path.write_text("test document", encoding="utf-8")
+    monkeypatch.setattr(service_module, "UPLOAD_DIR", knowledge_root)
 
     document = SimpleNamespace(
         id=9,
         knowledge_base_id=7,
         file_name="handbook.md",
-        file_path="/tmp/handbook.md",
+        file_path=str(document_path),
         file_type="md",
         file_size=12,
         parse_status="pending",
@@ -130,6 +137,70 @@ async def test_bm25_indexing_skips_vector_dependencies_and_uses_chroma_ids(monke
     assert result.id == document.id
     assert bm25_index.operations[0] == ("delete", document.id)
     assert [chunk["id"] for chunk in bm25_index.operations[1][1]] == chunk_crud.chroma_ids
+
+
+@pytest.mark.asyncio
+async def test_delete_document_validates_all_ids_before_deleting_external_indexes(monkeypatch):
+    """Reject mixed-scope deletes before touching Chroma, BM25, or database rows."""
+    from app.plugin.module_ai.knowledge import service as service_module
+
+    class DocumentCrud:
+        def __init__(self):
+            self.deleted_ids = []
+
+        async def get_list(self, **_kwargs):
+            return [SimpleNamespace(id=41)]
+
+        async def delete(self, ids):
+            self.deleted_ids.append(ids)
+
+    class ChunkCrud:
+        def __init__(self):
+            self.deleted_ids = []
+
+        async def get_list(self, **_kwargs):
+            return [SimpleNamespace(id=501)]
+
+        async def delete(self, ids):
+            self.deleted_ids.append(ids)
+
+    class Store:
+        def __init__(self):
+            self.deleted_document_ids = []
+
+        async def delete_document(self, document_id):
+            self.deleted_document_ids.append(document_id)
+
+    class Bm25Index:
+        def __init__(self):
+            self.deleted_document_ids = []
+
+        async def delete_by_document(self, document_id):
+            self.deleted_document_ids.append(document_id)
+
+    document_crud = DocumentCrud()
+    chunk_crud = ChunkCrud()
+    store = Store()
+    bm25_index = Bm25Index()
+    monkeypatch.setattr(service_module, "KnowledgeDocumentCRUD", lambda _auth: document_crud)
+    monkeypatch.setattr(service_module, "KnowledgeChunkCRUD", lambda _auth: chunk_crud)
+    monkeypatch.setattr(service_module.settings, "RETRIEVAL_MODE", "hybrid")
+
+    service = KnowledgeService(AuthSchema(), store=store, bm25_index=bm25_index)
+    with pytest.raises(CustomException) as error:
+        await service.delete_document([41, 99])
+
+    assert error.value.status_code == 403
+    assert store.deleted_document_ids == []
+    assert bm25_index.deleted_document_ids == []
+    assert chunk_crud.deleted_ids == []
+    assert document_crud.deleted_ids == []
+
+    await service.delete_document([41])
+    assert store.deleted_document_ids == [41]
+    assert bm25_index.deleted_document_ids == [41]
+    assert chunk_crud.deleted_ids == [[501]]
+    assert document_crud.deleted_ids == [[41]]
 
 
 @pytest.mark.asyncio

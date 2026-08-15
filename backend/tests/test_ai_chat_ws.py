@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from typing import Any
 
 
-async def test_websocket_chat_rejects_missing_token(monkeypatch) -> None:
+async def test_websocket_chat_rejects_missing_ticket(monkeypatch) -> None:
     from app.plugin.module_ai.chat import ws
 
     class FakeWebSocket:
@@ -49,11 +49,11 @@ async def test_websocket_chat_rejects_invalid_token(monkeypatch) -> None:
     async def fake_db_session():
         yield FakeDb()
 
-    async def fake_verify_token(token: str, db: object, redis: object) -> Any:
+    async def fake_resolve_auth(websocket: object, db: object) -> Any:
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
 
     class FakeWebSocket:
-        query_params = {"token": "bad-token"}
+        query_params = {"ticket": "bad-ticket"}
         app = SimpleNamespace(state=SimpleNamespace(redis=object()))
         client = "test-client"
         state = SimpleNamespace()
@@ -69,7 +69,7 @@ async def test_websocket_chat_rejects_invalid_token(monkeypatch) -> None:
             self.closed_code = code
 
     monkeypatch.setattr(ws, "async_db_session", fake_db_session)
-    monkeypatch.setattr(ws, "_verify_token", fake_verify_token)
+    monkeypatch.setattr(ws, "_resolve_ws_auth", fake_resolve_auth)
 
     websocket = FakeWebSocket()
     await ws.websocket_chat_controller(websocket)
@@ -98,8 +98,8 @@ async def test_websocket_chat_uses_authenticated_service_instance(monkeypatch) -
     async def fake_db_session():
         yield FakeDb()
 
-    async def fake_verify_token(token: str, db: object, redis: object) -> Any:
-        assert token == "token"
+    async def fake_resolve_auth(websocket: object, db: object) -> Any:
+        assert websocket.query_params["ticket"] == "ticket"
         return auth
 
     async def fake_chat_query(self, query):
@@ -108,7 +108,7 @@ async def test_websocket_chat_uses_authenticated_service_instance(monkeypatch) -
         yield "ok"
 
     class FakeWebSocket:
-        query_params = {"token": "token"}
+        query_params = {"ticket": "ticket"}
         app = SimpleNamespace(state=SimpleNamespace(redis=object()))
         client = "test-client"
         state = SimpleNamespace()
@@ -134,7 +134,7 @@ async def test_websocket_chat_uses_authenticated_service_instance(monkeypatch) -
             self.closed = True
 
     monkeypatch.setattr(ws, "async_db_session", fake_db_session)
-    monkeypatch.setattr(ws, "_verify_token", fake_verify_token)
+    monkeypatch.setattr(ws, "_resolve_ws_auth", fake_resolve_auth)
     monkeypatch.setattr(ws.ChatService, "chat_query", fake_chat_query)
 
     websocket = FakeWebSocket()
@@ -178,7 +178,7 @@ async def test_websocket_chat_commits_message_history_per_received_message(monke
     async def fake_db_session():
         yield fake_db
 
-    async def fake_verify_token(token: str, db: object, redis: object) -> Any:
+    async def fake_resolve_auth(websocket: object, db: object) -> Any:
         auth.db = db
         return auth
 
@@ -187,7 +187,7 @@ async def test_websocket_chat_commits_message_history_per_received_message(monke
         yield "ok"
 
     class FakeWebSocket:
-        query_params = {"token": "token"}
+        query_params = {"ticket": "ticket"}
         app = SimpleNamespace(state=SimpleNamespace(redis=object()))
         client = "test-client"
         state = SimpleNamespace()
@@ -212,7 +212,7 @@ async def test_websocket_chat_commits_message_history_per_received_message(monke
             pass
 
     monkeypatch.setattr(ws, "async_db_session", fake_db_session)
-    monkeypatch.setattr(ws, "_verify_token", fake_verify_token)
+    monkeypatch.setattr(ws, "_resolve_ws_auth", fake_resolve_auth)
     monkeypatch.setattr(ws.ChatService, "chat_query", fake_chat_query)
 
     websocket = FakeWebSocket()
@@ -245,11 +245,11 @@ async def test_websocket_chat_rejects_user_without_chat_ws_permission(monkeypatc
     role = SimpleNamespace(status=0, menus=[denied_menu])
     auth = SimpleNamespace(user=SimpleNamespace(username="user", is_superuser=False, roles=[role]))
 
-    async def fake_verify_token(token: str, db: object, redis: object) -> Any:
+    async def fake_resolve_auth(websocket: object, db: object) -> Any:
         return auth
 
     class FakeWebSocket:
-        query_params = {"token": "token"}
+        query_params = {"ticket": "ticket"}
         app = SimpleNamespace(state=SimpleNamespace(redis=object()))
         client = "test-client"
         state = SimpleNamespace()
@@ -265,7 +265,7 @@ async def test_websocket_chat_rejects_user_without_chat_ws_permission(monkeypatc
             self.closed_code = code
 
     monkeypatch.setattr(ws, "async_db_session", fake_db_session)
-    monkeypatch.setattr(ws, "_verify_token", fake_verify_token)
+    monkeypatch.setattr(ws, "_resolve_ws_auth", fake_resolve_auth)
 
     websocket = FakeWebSocket()
     await ws.websocket_chat_controller(websocket)
