@@ -1,0 +1,108 @@
+[data-v-2adc79dc]:root {
+  --fa-color-canvas: #f3f5f6;
+  --fa-color-surface: #fff;
+  --fa-color-surface-raised: #fff;
+  --fa-color-sidebar: #18232d;
+  --fa-color-sidebar-active: #263842;
+  --fa-color-accent: #2d7d72;
+  --fa-color-text: #26333d;
+  --fa-color-text-muted: #68747c;
+  --fa-color-border: #dfe5e8;
+  --fa-radius-control: 5px;
+  --fa-radius-panel: 6px;
+  --fa-radius-overlay: 8px;
+  --fa-control-height: 36px;
+  --fa-motion-control: 0.15s;
+  --fa-motion-page: 0.2s;
+}
+
+html.dark[data-v-2adc79dc] {
+  --fa-color-canvas: #0d1318;
+  --fa-color-surface: #151d23;
+  --fa-color-surface-raised: #1b252c;
+  --fa-color-text: #e7edef;
+  --fa-color-text-muted: #9cabb3;
+  --fa-color-border: #2c3941;
+}
+
+.home-card[data-v-2adc79dc] {
+  position: relative;
+  overflow: hidden;
+  border-color: var(--fa-card-border);
+  box-shadow: var(--fa-elevation-1);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.home-card[data-v-2adc79dc]:hover {
+  border-color: color-mix(in srgb, var(--theme-color) 18%, var(--fa-card-border));
+  box-shadow: var(--fa-elevation-3);
+  transform: translateY(-3px);
+}
+
+.home-card[data-v-2adc79dc] .el-card__body {
+  height: 100%;
+  padding: 18px;
+}
+
+.online-card[data-v-2adc79dc] {
+  background:
+    linear-gradient(180deg, var(--fa-surface-sheen-top), var(--fa-surface-sheen-bottom)),
+    var(--default-box-color);
+}
+
+.online-signal[data-v-2adc79dc] {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #0f9f8f;
+  text-transform: uppercase;
+}
+
+.online-signal i[data-v-2adc79dc] {
+  width: 7px;
+  height: 7px;
+  background: #2dd4bf;
+  border-radius: 999px;
+  box-shadow: 0 0 0 5px #2dd4bf24;
+}
+
+.metric-label[data-v-2adc79dc] {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--fa-gray-600);
+}
+
+.metric-value[data-v-2adc79dc] {
+  font-size: var(--fa-text-3xl);
+  font-weight: var(--fa-weight-bold);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--fa-gray-900);
+}
+
+.icon-box[data-v-2adc79dc] {
+  display: flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  font-size: 22px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px #ffffff94;
+}
+
+.stat-box[data-v-2adc79dc] {
+  min-width: 0;
+  padding: 10px 8px;
+  background: var(--fa-gray-200);
+  border: 1px solid var(--fa-card-border);
+  border-radius: 8px;
+}

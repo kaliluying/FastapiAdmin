@@ -1,0 +1,83 @@
+[data-v-d0a47db4]:root {
+  --fa-color-canvas: #f3f5f6;
+  --fa-color-surface: #fff;
+  --fa-color-surface-raised: #fff;
+  --fa-color-sidebar: #18232d;
+  --fa-color-sidebar-active: #263842;
+  --fa-color-accent: #2d7d72;
+  --fa-color-text: #26333d;
+  --fa-color-text-muted: #68747c;
+  --fa-color-border: #dfe5e8;
+  --fa-radius-control: 5px;
+  --fa-radius-panel: 6px;
+  --fa-radius-overlay: 8px;
+  --fa-control-height: 36px;
+  --fa-motion-control: 0.15s;
+  --fa-motion-page: 0.2s;
+}
+
+html.dark[data-v-d0a47db4] {
+  --fa-color-canvas: #0d1318;
+  --fa-color-surface: #151d23;
+  --fa-color-surface-raised: #1b252c;
+  --fa-color-text: #e7edef;
+  --fa-color-text-muted: #9cabb3;
+  --fa-color-border: #2c3941;
+}
+
+.edit-icon[data-v-d0a47db4] {
+  font-size: 12px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.editable-cell[data-v-d0a47db4] {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.editable-cell[data-v-d0a47db4]:hover {
+  color: var(--el-color-primary);
+}
+
+.editable-cell:hover .edit-icon[data-v-d0a47db4] {
+  opacity: 1;
+}
+
+.message-item .message-header[data-v-d0a47db4] {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.message-item .message-time[data-v-d0a47db4] {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+.message-item .message-content[data-v-d0a47db4] {
+  padding: 8px 12px;
+  word-break: break-all;
+  white-space: pre-wrap;
+  background: var(--el-fill-color-light);
+  border-radius: 4px;
+}
+
+pre[data-v-d0a47db4] {
+  max-height: 200px;
+  padding: 8px;
+  margin: 0;
+  overflow: auto;
+  font-size: 12px;
+  background: var(--el-fill-color-light);
+  border-radius: 4px;
+}
+
+[data-v-d0a47db4] .session-detail-dialog .el-dialog__body {
+  max-height: 60vh;
+  padding: 20px;
+  overflow-y: auto;
+}

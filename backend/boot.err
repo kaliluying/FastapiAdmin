@@ -1,0 +1,322 @@
+--- Logging error in Loguru Handler #1 ---
+Record was: {'elapsed': datetime.timedelta(microseconds=7796), 'exception': None, 'extra': {'ctx': ''}, 'file': (name='main.py', path='D:\\pythonWork\\pythonWork\\FastapiAdmin-master\\backend\\main.py'), 'function': 'run', 'level': (name='INFO', no=20, icon='\u2139\ufe0f'), 'line': 70, 'message': '\U0001f680 当前运行环境: dev\n\u2597▄▄▄\u2596 \u2597▄\u2596  \u2597▄▄\u2596\u2597▄▄▄\u2596\u2597▄\u2596 \u2597▄▄\u2596\u2597▄▄▄\u2596 \u2597▄\u2596 \u2597▄▄▄ \u2597\u2596  \u2597\u2596\u2597▄▄▄\u2596\u2597\u2596  \u2597\u2596\n\u2590▌   \u2590▌ \u2590▌\u2590▌     █ \u2590▌ \u2590▌\u2590▌ \u2590▌ █  \u2590▌ \u2590▌\u2590▌  █\u2590\u259b\u259a\u259e\u259c▌  █  \u2590\u259b\u259a\u2596\u2590▌\n\u2590\u259b\u2580\u2580\u2598\u2590\u259b\u2580\u259c▌ \u259d\u2580\u259a\u2596  █ \u2590\u259b\u2580\u259c▌\u2590\u259b\u2580\u2598  █  \u2590\u259b\u2580\u259c▌\u2590▌  █\u2590▌  \u2590▌  █  \u2590▌ \u259d\u259c▌\n\u2590▌   \u2590▌ \u2590▌\u2597▄▄\u259e\u2598  █ \u2590▌ \u2590▌\u2590▌  \u2597▄█▄\u2596\u2590▌ \u2590▌\u2590\u2599▄▄\u2580\u2590▌  \u2590▌\u2597▄█▄\u2596\u2590▌  \u2590▌\n', 'module': 'main', 'name': '__main__', 'process': (id=40560, name='MainProcess'), 'thread': (id=49172, name='MainThread'), 'time': datetime(2026, 7, 11, 14, 35, 56, 638524, tzinfo=datetime.timezone(datetime.timedelta(seconds=28800), '中国标准时间'))}
+Traceback (most recent call last):
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_handler.py", line 206, in emit
+    self._sink.write(str_record)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_simple_sinks.py", line 16, in write
+    self._stream.write(message)
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f680' in position 55: illegal multibyte sequence
+--- End of logging error ---
+--- Logging error in Loguru Handler #1 ---
+Record was: {'elapsed': datetime.timedelta(seconds=2, microseconds=867589), 'exception': None, 'extra': {'ctx': ''}, 'file': (name='discover.py', path='D:\\pythonWork\\pythonWork\\FastapiAdmin-master\\backend\\app\\core\\discover.py'), 'function': '_build_dynamic_router', 'level': (name='INFO', no=20, icon='\u2139\ufe0f'), 'line': 50, 'message': '\U0001f680 开始动态路由发现与注册', 'module': 'discover', 'name': 'app.core.discover', 'process': (id=15380, name='SpawnProcess-1'), 'thread': (id=44428, name='MainThread'), 'time': datetime(2026, 7, 11, 14, 36, 0, 541499, tzinfo=datetime.timezone(datetime.timedelta(seconds=28800), '中国标准时间'))}
+Traceback (most recent call last):
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_handler.py", line 206, in emit
+    self._sink.write(str_record)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_simple_sinks.py", line 16, in write
+    self._stream.write(message)
+UnicodeEncodeError: 'gbk' codec can't encode character '\U0001f680' in position 82: illegal multibyte sequence
+--- End of logging error ---
+--- Logging error in Loguru Handler #1 ---
+Record was: {'elapsed': datetime.timedelta(seconds=2, microseconds=885529), 'exception': None, 'extra': {'ctx': ''}, 'file': (name='discover.py', path='D:\\pythonWork\\pythonWork\\FastapiAdmin-master\\backend\\app\\core\\discover.py'), 'function': '_build_dynamic_router', 'level': (name='INFO', no=20, icon='\u2139\ufe0f'), 'line': 93, 'message': '  \u21b3 注册 APIRouter 变量 `ChatRouter` ← app.plugin.module_ai.chat.controller', 'module': 'discover', 'name': 'app.core.discover', 'process': (id=15380, name='SpawnProcess-1'), 'thread': (id=44428, name='MainThread'), 'time': datetime(2026, 7, 11, 14, 36, 0, 559439, tzinfo=datetime.timezone(datetime.timedelta(seconds=28800), '中国标准时间'))}
+Traceback (most recent call last):
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_handler.py", line 206, in emit
+    self._sink.write(str_record)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_simple_sinks.py", line 16, in write
+    self._stream.write(message)
+UnicodeEncodeError: 'gbk' codec can't encode character '\u21b3' in position 84: illegal multibyte sequence
+--- End of logging error ---
+--- Logging error in Loguru Handler #1 ---
+Record was: {'elapsed': datetime.timedelta(seconds=2, microseconds=995037), 'exception': None, 'extra': {'ctx': ''}, 'file': (name='discover.py', path='D:\\pythonWork\\pythonWork\\FastapiAdmin-master\\backend\\app\\core\\discover.py'), 'function': '_build_dynamic_router', 'level': (name='INFO', no=20, icon='\u2139\ufe0f'), 'line': 93, 'message': '  \u21b3 注册 APIRouter 变量 `KnowledgeRouter` ← app.plugin.module_ai.knowledge.controller', 'module': 'discover', 'name': 'app.core.discover', 'process': (id=15380, name='SpawnProcess-1'), 'thread': (id=44428, name='MainThread'), 'time': datetime(2026, 7, 11, 14, 36, 0, 668947, tzinfo=datetime.timezone(datetime.timedelta(seconds=28800), '中国标准时间'))}
+Traceback (most recent call last):
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_handler.py", line 206, in emit
+    self._sink.write(str_record)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_simple_sinks.py", line 16, in write
+    self._stream.write(message)
+UnicodeEncodeError: 'gbk' codec can't encode character '\u21b3' in position 84: illegal multibyte sequence
+--- End of logging error ---
+--- Logging error in Loguru Handler #1 ---
+Record was: {'elapsed': datetime.timedelta(seconds=3, microseconds=7037), 'exception': None, 'extra': {'ctx': ''}, 'file': (name='discover.py', path='D:\\pythonWork\\pythonWork\\FastapiAdmin-master\\backend\\app\\core\\discover.py'), 'function': '_build_dynamic_router', 'level': (name='INFO', no=20, icon='\u2139\ufe0f'), 'line': 93, 'message': '  \u21b3 注册 APIRouter 变量 `MemoryRouter` ← app.plugin.module_ai.memory.controller', 'module': 'discover', 'name': 'app.core.discover', 'process': (id=15380, name='SpawnProcess-1'), 'thread': (id=44428, name='MainThread'), 'time': datetime(2026, 7, 11, 14, 36, 0, 680947, tzinfo=datetime.timezone(datetime.timedelta(seconds=28800), '中国标准时间'))}
+Traceback (most recent call last):
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_handler.py", line 206, in emit
+    self._sink.write(str_record)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_simple_sinks.py", line 16, in write
+    self._stream.write(message)
+UnicodeEncodeError: 'gbk' codec can't encode character '\u21b3' in position 84: illegal multibyte sequence
+--- End of logging error ---
+--- Logging error in Loguru Handler #1 ---
+Record was: {'elapsed': datetime.timedelta(seconds=3, microseconds=24036), 'exception': None, 'extra': {'ctx': ''}, 'file': (name='discover.py', path='D:\\pythonWork\\pythonWork\\FastapiAdmin-master\\backend\\app\\core\\discover.py'), 'function': '_build_dynamic_router', 'level': (name='INFO', no=20, icon='\u2139\ufe0f'), 'line': 115, 'message': '\u2705 注册容器: /ai (子路由数: 21)', 'module': 'discover', 'name': 'app.core.discover', 'process': (id=15380, name='SpawnProcess-1'), 'thread': (id=44428, name='MainThread'), 'time': datetime(2026, 7, 11, 14, 36, 0, 697946, tzinfo=datetime.timezone(datetime.timedelta(seconds=28800), '中国标准时间'))}
+Traceback (most recent call last):
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_handler.py", line 206, in emit
+    self._sink.write(str_record)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_simple_sinks.py", line 16, in write
+    self._stream.write(message)
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 83: illegal multibyte sequence
+--- End of logging error ---
+--- Logging error in Loguru Handler #1 ---
+Record was: {'elapsed': datetime.timedelta(seconds=3, microseconds=25036), 'exception': None, 'extra': {'ctx': ''}, 'file': (name='discover.py', path='D:\\pythonWork\\pythonWork\\FastapiAdmin-master\\backend\\app\\core\\discover.py'), 'function': '_build_dynamic_router', 'level': (name='INFO', no=20, icon='\u2139\ufe0f'), 'line': 121, 'message': '\u2705 动态路由发现完成: 共 1 个容器前缀', 'module': 'discover', 'name': 'app.core.discover', 'process': (id=15380, name='SpawnProcess-1'), 'thread': (id=44428, name='MainThread'), 'time': datetime(2026, 7, 11, 14, 36, 0, 698946, tzinfo=datetime.timezone(datetime.timedelta(seconds=28800), '中国标准时间'))}
+Traceback (most recent call last):
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_handler.py", line 206, in emit
+    self._sink.write(str_record)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_simple_sinks.py", line 16, in write
+    self._stream.write(message)
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 83: illegal multibyte sequence
+--- End of logging error ---
+--- Logging error in Loguru Handler #1 ---
+Record was: {'elapsed': datetime.timedelta(seconds=3, microseconds=310067), 'exception': None, 'extra': {'ctx': ''}, 'file': (name='initialize.py', path='D:\\pythonWork\\pythonWork\\FastapiAdmin-master\\backend\\app\\scripts\\initialize.py'), 'function': '__init_data', 'level': (name='INFO', no=20, icon='\u2139\ufe0f'), 'line': 98, 'message': '\u2705\ufe0f 已向 platform_menu 写入初始化数据', 'module': 'initialize', 'name': 'app.scripts.initialize', 'process': (id=15380, name='SpawnProcess-1'), 'thread': (id=44428, name='MainThread'), 'time': datetime(2026, 7, 11, 14, 36, 0, 983977, tzinfo=datetime.timezone(datetime.timedelta(seconds=28800), '中国标准时间'))}
+Traceback (most recent call last):
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_handler.py", line 206, in emit
+    self._sink.write(str_record)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_simple_sinks.py", line 16, in write
+    self._stream.write(message)
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2705' in position 77: illegal multibyte sequence
+--- End of logging error ---
+--- Logging error in Loguru Handler #1 ---
+Record was: {'elapsed': datetime.timedelta(seconds=3, microseconds=316066), 'exception': None, 'extra': {'ctx': ''}, 'file': (name='initialize.py', path='D:\\pythonWork\\pythonWork\\FastapiAdmin-master\\backend\\app\\scripts\\initialize.py'), 'function': '__init_data', 'level': (name='ERROR', no=40, icon='\u274c'), 'line': 159, 'message': '\u274c\ufe0f 初始化 sys_param 表数据失败', 'module': 'initialize', 'name': 'app.scripts.initialize', 'process': (id=15380, name='SpawnProcess-1'), 'thread': (id=44428, name='MainThread'), 'time': datetime(2026, 7, 11, 14, 36, 0, 989976, tzinfo=datetime.timezone(datetime.timedelta(seconds=28800), '中国标准时间'))}
+Traceback (most recent call last):
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\connectors\asyncio.py", line 230, in execute
+    self._adapt_connection._handle_exception(error)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\dialects\mysql\asyncmy.py", line 94, in _handle_exception
+    raise error
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\connectors\asyncio.py", line 228, in execute
+    return self.await_(self._execute_async(operation, parameters))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\connectors\asyncio.py", line 251, in _execute_async
+    result = await self._cursor.execute(operation, parameters)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncmy/cursors.pyx", line 179, in execute
+  File "asyncmy/cursors.pyx", line 364, in _query
+  File "asyncmy/connection.pyx", line 500, in query
+  File "asyncmy/connection.pyx", line 688, in _read_query_result
+  File "asyncmy/connection.pyx", line 1075, in read
+  File "asyncmy/connection.pyx", line 650, in read_packet
+  File "asyncmy/protocol.pyx", line 190, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/protocol.pyx", line 194, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/errors.pyx", line 128, in asyncmy.errors.raise_mysql_exception
+  File "asyncmy/errors.pyx", line 137, in asyncmy.errors.raise_mysql_exception
+asyncmy.errors.OperationalError: (1054, "Unknown column 'created_id' in 'field list'")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\app\scripts\initialize.py", line 155, in __init_data
+    await db.flush()
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 786, in flush
+    await greenlet_spawn(self.sync_session.flush, objects=objects)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 203, in greenlet_spawn
+    result = context.switch(value)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4353, in flush
+    self._flush(objects)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4488, in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 122, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4449, in _flush
+    flush_context.execute()
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py", line 465, in execute
+    rec.execute(self)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py", line 641, in execute
+    util.preloaded.orm_persistence.save_obj(
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py", line 94, in save_obj
+    _emit_insert_statements(
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py", line 1234, in _emit_insert_statements
+    result = connection.execute(
+             ^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2365, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\connectors\asyncio.py", line 230, in execute
+    self._adapt_connection._handle_exception(error)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\dialects\mysql\asyncmy.py", line 94, in _handle_exception
+    raise error
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\connectors\asyncio.py", line 228, in execute
+    return self.await_(self._execute_async(operation, parameters))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\connectors\asyncio.py", line 251, in _execute_async
+    result = await self._cursor.execute(operation, parameters)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncmy/cursors.pyx", line 179, in execute
+  File "asyncmy/cursors.pyx", line 364, in _query
+  File "asyncmy/connection.pyx", line 500, in query
+  File "asyncmy/connection.pyx", line 688, in _read_query_result
+  File "asyncmy/connection.pyx", line 1075, in read
+  File "asyncmy/connection.pyx", line 650, in read_packet
+  File "asyncmy/protocol.pyx", line 190, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/protocol.pyx", line 194, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/errors.pyx", line 128, in asyncmy.errors.raise_mysql_exception
+  File "asyncmy/errors.pyx", line 137, in asyncmy.errors.raise_mysql_exception
+sqlalchemy.exc.OperationalError: (asyncmy.errors.OperationalError) (1054, "Unknown column 'created_id' in 'field list'")
+[SQL: INSERT INTO sys_param (config_name, config_key, config_value, config_type, status, description, uuid, is_deleted, created_time, updated_time, deleted_time, created_id, updated_id, deleted_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)]
+[parameters: ('演示模式启用', 'demo_enable', 'false', 1, 0, '是否启用演示模式', '8c9ea1e1-1e52-4ac1-a8ab-2a4ee4a79bf7', 0, datetime.datetime(2026, 7, 11, 14, 36, 0, 987976), datetime.datetime(2026, 7, 11, 14, 36, 0, 987976), None, None, None, None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_handler.py", line 206, in emit
+    self._sink.write(str_record)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_simple_sinks.py", line 16, in write
+    self._stream.write(message)
+UnicodeEncodeError: 'gbk' codec can't encode character '\u274c' in position 78: illegal multibyte sequence
+--- End of logging error ---
+--- Logging error in Loguru Handler #1 ---
+Record was: {'elapsed': datetime.timedelta(seconds=3, microseconds=327066), 'exception': None, 'extra': {'ctx': ''}, 'file': (name='init_app.py', path='D:\\pythonWork\\pythonWork\\FastapiAdmin-master\\backend\\app\\init_app.py'), 'function': 'lifespan', 'level': (name='ERROR', no=40, icon='\u274c'), 'line': 47, 'message': '\u274c 应用初始化失败: (asyncmy.errors.OperationalError) (1054, "Unknown column \'created_id\' in \'field list\'")\n[SQL: INSERT INTO sys_param (config_name, config_key, config_value, config_type, status, description, uuid, is_deleted, created_time, updated_time, deleted_time, created_id, updated_id, deleted_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)]\n[parameters: (\'演示模式启用\', \'demo_enable\', \'false\', 1, 0, \'是否启用演示模式\', \'8c9ea1e1-1e52-4ac1-a8ab-2a4ee4a79bf7\', 0, datetime.datetime(2026, 7, 11, 14, 36, 0, 987976), datetime.datetime(2026, 7, 11, 14, 36, 0, 987976), None, None, None, None)]\n(Background on this error at: https://sqlalche.me/e/20/e3q8)', 'module': 'init_app', 'name': 'app.init_app', 'process': (id=15380, name='SpawnProcess-1'), 'thread': (id=44428, name='MainThread'), 'time': datetime(2026, 7, 11, 14, 36, 1, 976, tzinfo=datetime.timezone(datetime.timedelta(seconds=28800), '中国标准时间'))}
+Traceback (most recent call last):
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\connectors\asyncio.py", line 230, in execute
+    self._adapt_connection._handle_exception(error)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\dialects\mysql\asyncmy.py", line 94, in _handle_exception
+    raise error
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\connectors\asyncio.py", line 228, in execute
+    return self.await_(self._execute_async(operation, parameters))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\connectors\asyncio.py", line 251, in _execute_async
+    result = await self._cursor.execute(operation, parameters)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncmy/cursors.pyx", line 179, in execute
+  File "asyncmy/cursors.pyx", line 364, in _query
+  File "asyncmy/connection.pyx", line 500, in query
+  File "asyncmy/connection.pyx", line 688, in _read_query_result
+  File "asyncmy/connection.pyx", line 1075, in read
+  File "asyncmy/connection.pyx", line 650, in read_packet
+  File "asyncmy/protocol.pyx", line 190, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/protocol.pyx", line 194, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/errors.pyx", line 128, in asyncmy.errors.raise_mysql_exception
+  File "asyncmy/errors.pyx", line 137, in asyncmy.errors.raise_mysql_exception
+asyncmy.errors.OperationalError: (1054, "Unknown column 'created_id' in 'field list'")
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\app\init_app.py", line 29, in lifespan
+    await InitializeData().init_db()
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\app\scripts\initialize.py", line 74, in init_db
+    await self.__init_data(session)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\app\scripts\initialize.py", line 155, in __init_data
+    await db.flush()
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 786, in flush
+    await greenlet_spawn(self.sync_session.flush, objects=objects)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 203, in greenlet_spawn
+    result = context.switch(value)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4353, in flush
+    self._flush(objects)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4488, in _flush
+    with util.safe_reraise():
+         ^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 122, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 4449, in _flush
+    flush_context.execute()
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py", line 465, in execute
+    rec.execute(self)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\orm\unitofwork.py", line 641, in execute
+    util.preloaded.orm_persistence.save_obj(
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py", line 94, in save_obj
+    _emit_insert_statements(
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\orm\persistence.py", line 1234, in _emit_insert_statements
+    result = connection.execute(
+             ^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\sql\elements.py", line 526, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1848, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1988, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 2365, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 1969, in _exec_single_context
+    self.dialect.do_execute(
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\connectors\asyncio.py", line 230, in execute
+    self._adapt_connection._handle_exception(error)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\dialects\mysql\asyncmy.py", line 94, in _handle_exception
+    raise error
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\connectors\asyncio.py", line 228, in execute
+    return self.await_(self._execute_async(operation, parameters))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\sqlalchemy\connectors\asyncio.py", line 251, in _execute_async
+    result = await self._cursor.execute(operation, parameters)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncmy/cursors.pyx", line 179, in execute
+  File "asyncmy/cursors.pyx", line 364, in _query
+  File "asyncmy/connection.pyx", line 500, in query
+  File "asyncmy/connection.pyx", line 688, in _read_query_result
+  File "asyncmy/connection.pyx", line 1075, in read
+  File "asyncmy/connection.pyx", line 650, in read_packet
+  File "asyncmy/protocol.pyx", line 190, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/protocol.pyx", line 194, in asyncmy.protocol.MysqlPacket.raise_for_error
+  File "asyncmy/errors.pyx", line 128, in asyncmy.errors.raise_mysql_exception
+  File "asyncmy/errors.pyx", line 137, in asyncmy.errors.raise_mysql_exception
+sqlalchemy.exc.OperationalError: (asyncmy.errors.OperationalError) (1054, "Unknown column 'created_id' in 'field list'")
+[SQL: INSERT INTO sys_param (config_name, config_key, config_value, config_type, status, description, uuid, is_deleted, created_time, updated_time, deleted_time, created_id, updated_id, deleted_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)]
+[parameters: ('演示模式启用', 'demo_enable', 'false', 1, 0, '是否启用演示模式', '8c9ea1e1-1e52-4ac1-a8ab-2a4ee4a79bf7', 0, datetime.datetime(2026, 7, 11, 14, 36, 0, 987976), datetime.datetime(2026, 7, 11, 14, 36, 0, 987976), None, None, None, None)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_handler.py", line 206, in emit
+    self._sink.write(str_record)
+  File "D:\pythonWork\pythonWork\FastapiAdmin-master\backend\.venv\Lib\site-packages\loguru\_simple_sinks.py", line 16, in write
+    self._stream.write(message)
+UnicodeEncodeError: 'gbk' codec can't encode character '\u274c' in position 64: illegal multibyte sequence
+--- End of logging error ---

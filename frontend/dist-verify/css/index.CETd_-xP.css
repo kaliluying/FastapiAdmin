@@ -1,0 +1,98 @@
+[data-v-d1551d62]:root {
+  --fa-color-canvas: #f3f5f6;
+  --fa-color-surface: #fff;
+  --fa-color-surface-raised: #fff;
+  --fa-color-sidebar: #18232d;
+  --fa-color-sidebar-active: #263842;
+  --fa-color-accent: #2d7d72;
+  --fa-color-text: #26333d;
+  --fa-color-text-muted: #68747c;
+  --fa-color-border: #dfe5e8;
+  --fa-radius-control: 5px;
+  --fa-radius-panel: 6px;
+  --fa-radius-overlay: 8px;
+  --fa-control-height: 36px;
+  --fa-motion-control: 0.15s;
+  --fa-motion-page: 0.2s;
+}
+
+html.dark[data-v-d1551d62] {
+  --fa-color-canvas: #0d1318;
+  --fa-color-surface: #151d23;
+  --fa-color-surface-raised: #1b252c;
+  --fa-color-text: #e7edef;
+  --fa-color-text-muted: #9cabb3;
+  --fa-color-border: #2c3941;
+}
+
+.main-chat[data-v-d1551d62] {
+  height: 100%;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 55% 0%,
+      color-mix(in srgb, var(--theme-color) 10%, transparent),
+      transparent 32%
+    ),
+    var(--default-box-color);
+  border: 1px solid var(--fa-card-border);
+  border-radius: 8px;
+  box-shadow: var(--fa-panel-shadow);
+}
+
+.main-chat .sidebar-container[data-v-d1551d62] {
+  width: 200px;
+  background: transparent;
+  transition: width 0.3s ease;
+}
+
+.main-chat .sidebar-container.collapsed[data-v-d1551d62] {
+  width: 64px;
+}
+
+.main-chat .chat-container[data-v-d1551d62] {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.main-chat .chat-header[data-v-d1551d62] {
+  height: auto;
+  padding: 0;
+  background: color-mix(in srgb, var(--default-box-color) 78%, transparent);
+  border-bottom: 1px solid var(--fa-card-border);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.main-chat .chat-main[data-v-d1551d62] {
+  flex: 1;
+  overflow: hidden;
+}
+
+.main-chat .chat-footer[data-v-d1551d62] {
+  height: auto;
+  min-height: 80px;
+  padding: 0;
+  background: color-mix(in srgb, var(--default-box-color) 88%, transparent);
+  border-top: 1px solid var(--fa-card-border);
+}
+
+.main-chat .evidence-panel[data-v-d1551d62] {
+  width: 240px;
+  padding: 12px;
+  overflow-y: auto;
+  background: color-mix(in srgb, var(--default-box-color) 60%, transparent);
+  border-left: 1px solid var(--fa-card-border);
+}
+@media (width<=1024px) {
+  .main-chat .evidence-panel[data-v-d1551d62] {
+    display: none;
+  }
+}
+@media (width<=768px) {
+  .main-chat .sidebar-container[data-v-d1551d62] {
+    display: none;
+  }
+}

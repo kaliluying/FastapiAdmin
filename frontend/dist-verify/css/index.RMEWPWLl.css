@@ -1,0 +1,84 @@
+[data-v-73df8002]:root {
+  --fa-color-canvas: #f3f5f6;
+  --fa-color-surface: #fff;
+  --fa-color-surface-raised: #fff;
+  --fa-color-sidebar: #18232d;
+  --fa-color-sidebar-active: #263842;
+  --fa-color-accent: #2d7d72;
+  --fa-color-text: #26333d;
+  --fa-color-text-muted: #68747c;
+  --fa-color-border: #dfe5e8;
+  --fa-radius-control: 5px;
+  --fa-radius-panel: 6px;
+  --fa-radius-overlay: 8px;
+  --fa-control-height: 36px;
+  --fa-motion-control: 0.15s;
+  --fa-motion-page: 0.2s;
+}
+
+html.dark[data-v-73df8002] {
+  --fa-color-canvas: #0d1318;
+  --fa-color-surface: #151d23;
+  --fa-color-surface-raised: #1b252c;
+  --fa-color-text: #e7edef;
+  --fa-color-text-muted: #9cabb3;
+  --fa-color-border: #2c3941;
+}
+
+.fa-async-state[data-v-73df8002] {
+  width: 100%;
+}
+
+.fa-async-state--empty[data-v-73df8002] {
+  padding: 0;
+}
+
+.fa-async-state--alert[data-v-73df8002] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.fa-async-state--alert[data-v-73df8002] {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  text-align: left;
+  background: var(--el-color-danger-light-9, #fef0f0);
+  border: 1px solid var(--el-color-danger-light-5, #fab6b6);
+  border-radius: var(--fa-radius-panel, 6px);
+}
+
+.fa-async-state--forbidden[data-v-73df8002],
+.fa-async-state--partial[data-v-73df8002] {
+  background: var(--el-color-warning-light-9, #fdf6ec);
+  border-color: var(--el-color-warning-light-5, #f3d19e);
+}
+
+.fa-async-state__alert-body[data-v-73df8002] {
+  flex: 1;
+  min-width: 0;
+}
+
+.fa-async-state__alert-title[data-v-73df8002] {
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+}
+
+.fa-async-state__alert-desc[data-v-73df8002] {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
+}
+
+.fa-async-state__action[data-v-73df8002] {
+  flex-shrink: 0;
+  margin-top: 12px;
+  margin-left: 16px;
+}
+
+.fa-empty .fa-async-state__action[data-v-73df8002] {
+  margin-left: 0;
+}

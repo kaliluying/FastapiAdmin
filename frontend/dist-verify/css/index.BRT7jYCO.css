@@ -1,0 +1,83 @@
+.knowledge-page[data-v-30d72838] {
+  height: 100%;
+}
+
+.toolbar[data-v-30d72838] {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.query-form[data-v-30d72838] {
+  flex: 1;
+}
+
+.status-select[data-v-30d72838] {
+  width: 120px;
+}
+
+.index-status[data-v-30d72838] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.action-buttons[data-v-30d72838] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.action-buttons[data-v-30d72838] .el-button {
+  margin-left: 0;
+}
+
+.action-button[data-v-30d72838] {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #315efb;
+  background: #f8fbff;
+  border-color: #c9d8ff;
+  border-radius: 7px;
+  box-shadow: 0 2px 8px #315efb14;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+.action-button[data-v-30d72838]:hover,
+.action-button[data-v-30d72838]:focus {
+  color: #2448d8;
+  background: #eef4ff;
+  border-color: #7f9cff;
+  box-shadow: 0 6px 14px #315efb29;
+  transform: translateY(-1px);
+}
+
+.action-button-danger[data-v-30d72838] {
+  color: #e5484d;
+  background: #fff8f8;
+  border-color: #ffc9c9;
+  box-shadow: 0 2px 8px #e5484d14;
+}
+
+.action-button-danger[data-v-30d72838]:hover,
+.action-button-danger[data-v-30d72838]:focus {
+  color: #c92a2f;
+  background: #fff0f0;
+  border-color: #ff9f9f;
+  box-shadow: 0 6px 14px #e5484d24;
+}
+
+.pagination[data-v-30d72838] {
+  justify-content: flex-end;
+  margin-top: 12px;
+}

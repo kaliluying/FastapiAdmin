@@ -1,0 +1,59 @@
+.retrieval-form[data-v-9a284320] {
+  max-width: 920px;
+}
+
+.base-select[data-v-9a284320] {
+  width: 360px;
+}
+
+.advanced-toggle[data-v-9a284320] {
+  padding: 0;
+  font-size: 13px;
+}
+
+.toggle-icon[data-v-9a284320] {
+  margin-left: 4px;
+  font-size: 10px;
+}
+
+.advanced-panel[data-v-9a284320] {
+  padding-left: 8px;
+  margin-bottom: 8px;
+  border-left: 2px solid var(--el-border-color-light);
+}
+
+.results-title[data-v-9a284320] {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--el-text-color-primary);
+}
+
+.result-list[data-v-9a284320] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.result-rank[data-v-9a284320] {
+  width: 100%;
+}
+
+.result-card[data-v-9a284320] {
+  border-radius: 6px;
+}
+
+.result-meta[data-v-9a284320] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 8px;
+  color: var(--el-text-color-secondary);
+}
+
+.result-content[data-v-9a284320] {
+  margin: 0;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}

@@ -1,0 +1,243 @@
+.vjs-tree-brackets {
+  cursor: pointer;
+}
+
+.vjs-tree-brackets:hover {
+  color: #1890ff;
+}
+
+.vjs-check-controller {
+  position: absolute;
+  left: 0;
+}
+
+.vjs-check-controller.is-checked .vjs-check-controller-inner {
+  background-color: #1890ff;
+  border-color: #0076e4;
+}
+
+.vjs-check-controller.is-checked .vjs-check-controller-inner.is-checkbox::after {
+  -webkit-transform: rotate(45deg) scaleY(1);
+  transform: rotate(45deg) scaleY(1);
+}
+
+.vjs-check-controller.is-checked .vjs-check-controller-inner.is-radio::after {
+  -webkit-transform: translate(-50%, -50%) scale(1);
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.vjs-check-controller .vjs-check-controller-inner {
+  position: relative;
+  z-index: 1;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+  cursor: pointer;
+  background-color: #fff;
+  border: 1px solid #bfcbd9;
+  border-radius: 2px;
+  -webkit-transition:
+    border-color 0.25s cubic-bezier(0.71, -0.46, 0.29, 1.46),
+    background-color 0.25s cubic-bezier(0.71, -0.46, 0.29, 1.46);
+  transition:
+    border-color 0.25s cubic-bezier(0.71, -0.46, 0.29, 1.46),
+    background-color 0.25s cubic-bezier(0.71, -0.46, 0.29, 1.46);
+}
+
+.vjs-check-controller .vjs-check-controller-inner::after {
+  position: absolute;
+  top: 1px;
+  left: 4px;
+  -webkit-box-sizing: content-box;
+  box-sizing: content-box;
+  width: 4px;
+  height: 8px;
+  content: "";
+  border: 2px solid #fff;
+  border-top: 0;
+  border-left: 0;
+  -webkit-transform: rotate(45deg) scaleY(0);
+  transform: rotate(45deg) scaleY(0);
+  -webkit-transform-origin: center;
+  transform-origin: center;
+  -webkit-transition: -webkit-transform 0.15s cubic-bezier(0.71, -0.46, 0.88, 0.6) 0.05s;
+  transition: -webkit-transform 0.15s cubic-bezier(0.71, -0.46, 0.88, 0.6) 0.05s;
+  transition: transform 0.15s cubic-bezier(0.71, -0.46, 0.88, 0.6) 0.05s;
+  transition:
+    transform 0.15s cubic-bezier(0.71, -0.46, 0.88, 0.6) 0.05s,
+    -webkit-transform 0.15s cubic-bezier(0.71, -0.46, 0.88, 0.6) 0.05s;
+}
+
+.vjs-check-controller .vjs-check-controller-inner.is-radio {
+  border-radius: 100%;
+}
+
+.vjs-check-controller .vjs-check-controller-inner.is-radio::after {
+  top: 50%;
+  left: 50%;
+  height: 4px;
+  background-color: #fff;
+  border-radius: 100%;
+}
+
+.vjs-check-controller .vjs-check-controller-original {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  margin: 0;
+  outline: none;
+  opacity: 0;
+}
+
+.vjs-carets {
+  position: absolute;
+  right: 0;
+  cursor: pointer;
+}
+
+.vjs-carets svg {
+  -webkit-transition: -webkit-transform 0.3s;
+  transition: -webkit-transform 0.3s;
+  transition: transform 0.3s;
+  transition:
+    transform 0.3s,
+    -webkit-transform 0.3s;
+}
+
+.vjs-carets:hover {
+  color: #1890ff;
+}
+
+.vjs-carets-close {
+  -webkit-transform: rotate(-90deg);
+  transform: rotate(-90deg);
+}
+
+.vjs-tree-node {
+  position: relative;
+  display: -webkit-box;
+  display: flexbox;
+  display: flex;
+  line-height: 20px;
+}
+
+.vjs-tree-node.has-carets {
+  padding-left: 15px;
+}
+
+.vjs-tree-node.has-carets.has-selector,
+.vjs-tree-node.has-selector {
+  padding-left: 30px;
+}
+
+.vjs-tree-node.is-highlight,
+.vjs-tree-node:hover {
+  background-color: #e6f7ff;
+  border-radius: 4px;
+}
+
+.vjs-tree-node.is-highlight .vjs-tree-node-actions,
+.vjs-tree-node:hover .vjs-tree-node-actions {
+  display: block;
+}
+
+.vjs-tree-node .vjs-indent {
+  position: relative;
+  display: -webkit-box;
+  display: flexbox;
+  display: flex;
+}
+
+.vjs-tree-node .vjs-indent-unit.has-line {
+  border-left: 1px dashed #bfcbd9;
+}
+
+.vjs-tree-node .vjs-tree-node-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: none;
+  padding: 0 4px;
+  background-color: #e6f7ff;
+  border-radius: 4px;
+}
+
+.vjs-tree-node .vjs-tree-node-actions .vjs-tree-node-actions-item {
+  cursor: pointer;
+}
+
+.vjs-tree-node .vjs-tree-node-actions .vjs-tree-node-actions-item:hover {
+  color: #1890ff;
+}
+
+.vjs-tree-node.dark.is-highlight,
+.vjs-tree-node.dark .vjs-tree-node-actions,
+.vjs-tree-node.dark:hover {
+  background-color: #2e4558;
+}
+
+.vjs-node-index {
+  position: absolute;
+  right: 100%;
+  margin-right: 4px;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.vjs-colon {
+  white-space: pre;
+}
+
+.vjs-comment {
+  color: #bfcbd9;
+}
+
+.vjs-key {
+  white-space: nowrap;
+}
+
+.vjs-value {
+  word-break: break-word;
+}
+
+.vjs-tree-node.dynamic-height .vjs-value {
+  white-space: pre-wrap;
+}
+
+.vjs-value-null,
+.vjs-value-undefined {
+  color: #d55fde;
+}
+
+.vjs-value-boolean,
+.vjs-value-number {
+  color: #1d8ce0;
+}
+
+.vjs-value-string {
+  color: #13ce66;
+}
+
+.vjs-tree {
+  font-family:
+    Monaco,
+    Menlo,
+    Consolas,
+    "Bitstream Vera Sans Mono",
+    monospace;
+  font-size: 14px;
+  text-align: left;
+}
+
+.vjs-tree.is-virtual {
+  overflow: auto;
+}
+
+.vjs-tree.is-virtual .vjs-tree-node {
+  white-space: nowrap;
+}

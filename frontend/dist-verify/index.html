@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <title>FastapiAdmin</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Vue3 + Vite + TypeScript + Element-Plus 的后台管理模板" />
+    <meta
+      name="keywords"
+      content="vue,element-plus,typescript,vue-element-admin,vue3-element-admin"
+    />
+    <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico" />
+
+    <!-- 品牌字体（Inter / JetBrains Mono）；离线环境可改为自托管 @font-face -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* 防止 Vue 加载前出现白屏：背景色与主题初始 class 同步 */
+      html {
+        background-color: #fafbfc;
+      }
+
+      html.dark {
+        background-color: #070707;
+      }
+    </style>
+
+    <script>
+      /**
+       * 在 Vue 挂载前同步主题 class。
+       *
+       * Vue 初始化后 useTheme 会接管主题管理，
+       * 但在此之前若用户之前选择了暗色主题，html 缺少 "dark" class 会导致闪烁。
+       * 此处直接从 localStorage 读取主题偏好并提前设置 class。
+       *
+       * key "sys-theme" 须与 StorageConfig.THEME_KEY 保持一致。
+       */
+      (function () {
+        try {
+          if (typeof Storage === "undefined" || !window.localStorage) {
+            return;
+          }
+
+          const themeType = localStorage.getItem("sys-theme");
+          if (themeType === "dark") {
+            document.documentElement.classList.add("dark");
+          }
+        } catch (e) {
+          console.warn("Failed to apply initial theme:", e);
+        }
+      })();
+    </script>
+    <script type="module" crossorigin src="/js/index.CJ_YH8gZ.js"></script>
+    <link rel="modulepreload" crossorigin href="/js/@intlify.CbtlSmdZ.js" />
+    <link rel="modulepreload" crossorigin href="/js/vue-vendor.Dwx3gfQr.js" />
+    <link rel="modulepreload" crossorigin href="/js/lodash-es.Yxq608wb.js" />
+    <link rel="modulepreload" crossorigin href="/js/async-validator.j0i5Y79Y.js" />
+    <link rel="modulepreload" crossorigin href="/js/@sxzz.DxtSUbXb.js" />
+    <link rel="modulepreload" crossorigin href="/js/@ctrl.BEgk5vdO.js" />
+    <link rel="modulepreload" crossorigin href="/js/dayjs.BHSg66Ch.js" />
+    <link rel="modulepreload" crossorigin href="/js/memoize-one.BAtLgO95.js" />
+    <link rel="modulepreload" crossorigin href="/js/normalize-wheel-es.BhHBPXsK.js" />
+    <link rel="modulepreload" crossorigin href="/js/@floating-ui.DIiyYkmY.js" />
+    <link rel="modulepreload" crossorigin href="/js/element-plus.BPg5EhXK.js" />
+    <link rel="modulepreload" crossorigin href="/js/file-saver.CjVB4eGa.js" />
+    <link rel="modulepreload" crossorigin href="/js/axios.Da-QW0H8.js" />
+    <link rel="modulepreload" crossorigin href="/js/es-errors.DK26Ybqf.js" />
+    <link rel="modulepreload" crossorigin href="/js/object-inspect.Ju1NJVd1.js" />
+    <link rel="modulepreload" crossorigin href="/js/side-channel-list.BNQ44_ba.js" />
+    <link rel="modulepreload" crossorigin href="/js/es-object-atoms.CyiuHMUS.js" />
+    <link rel="modulepreload" crossorigin href="/js/math-intrinsics.BOBeVm3z.js" />
+    <link rel="modulepreload" crossorigin href="/js/gopd.BudZp56J.js" />
+    <link rel="modulepreload" crossorigin href="/js/es-define-property.F0aoeP8o.js" />
+    <link rel="modulepreload" crossorigin href="/js/has-symbols.BcO-SUVM.js" />
+    <link rel="modulepreload" crossorigin href="/js/function-bind.DrnB-baK.js" />
+    <link rel="modulepreload" crossorigin href="/js/call-bind-apply-helpers.ubnPuw6U.js" />
+    <link rel="modulepreload" crossorigin href="/js/dunder-proto.CgDtQ3qe.js" />
+    <link rel="modulepreload" crossorigin href="/js/get-proto.CBibeOPY.js" />
+    <link rel="modulepreload" crossorigin href="/js/hasown.BXcyoiLU.js" />
+    <link rel="modulepreload" crossorigin href="/js/get-intrinsic.BMeuD2ey.js" />
+    <link rel="modulepreload" crossorigin href="/js/call-bound.Dizy2Qs1.js" />
+    <link rel="modulepreload" crossorigin href="/js/side-channel-map.ulHsYLML.js" />
+    <link rel="modulepreload" crossorigin href="/js/side-channel-weakmap.CxmbhinV.js" />
+    <link rel="modulepreload" crossorigin href="/js/side-channel.DybIsWO5.js" />
+    <link rel="modulepreload" crossorigin href="/js/qs.USnEJzjK.js" />
+    <link rel="modulepreload" crossorigin href="/js/mitt.BHPWSuhB.js" />
+    <link rel="modulepreload" crossorigin href="/js/nprogress.E6tsCBSO.js" />
+    <link rel="modulepreload" crossorigin href="/js/echarts.r3cQDZl7.js" />
+    <link rel="modulepreload" crossorigin href="/js/highlight.Cxq3ZXHl.js" />
+    <link rel="modulepreload" crossorigin href="/js/diff-match-patch.B0ZLOaK6.js" />
+    <link rel="modulepreload" crossorigin href="/js/codemirror.CwY4WcCn.js" />
+    <link rel="modulepreload" crossorigin href="/js/iconify-icons.PLu8Rxye.js" />
+    <link rel="modulepreload" crossorigin href="/js/vue-web-terminal.B__atI2c.js" />
+    <link rel="stylesheet" crossorigin href="/css/element-plus.CZS_qOxe.css" />
+    <link rel="stylesheet" crossorigin href="/css/highlight.kfZccHYO.css" />
+    <link rel="stylesheet" crossorigin href="/css/codemirror.DapkoJKR.css" />
+    <link rel="stylesheet" crossorigin href="/css/index.Dji_fiOa.css" />
+    <link rel="stylesheet" crossorigin href="/css/animate.Dk0W35pl.css" />
+  </head>
+
+  <body>
+    <div id="app"></div>
+  </body>
+</html>

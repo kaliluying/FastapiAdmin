@@ -1,0 +1,121 @@
+[data-v-f7a7d8c3]:root {
+  --fa-color-canvas: #f3f5f6;
+  --fa-color-surface: #fff;
+  --fa-color-surface-raised: #fff;
+  --fa-color-sidebar: #18232d;
+  --fa-color-sidebar-active: #263842;
+  --fa-color-accent: #2d7d72;
+  --fa-color-text: #26333d;
+  --fa-color-text-muted: #68747c;
+  --fa-color-border: #dfe5e8;
+  --fa-radius-control: 5px;
+  --fa-radius-panel: 6px;
+  --fa-radius-overlay: 8px;
+  --fa-control-height: 36px;
+  --fa-motion-control: 0.15s;
+  --fa-motion-page: 0.2s;
+}
+
+html.dark[data-v-f7a7d8c3] {
+  --fa-color-canvas: #0d1318;
+  --fa-color-surface: #151d23;
+  --fa-color-surface-raised: #1b252c;
+  --fa-color-text: #e7edef;
+  --fa-color-text-muted: #9cabb3;
+  --fa-color-border: #2c3941;
+}
+
+.chat-navbar[data-v-f7a7d8c3] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+.chat-navbar .navbar-left[data-v-f7a7d8c3] {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.chat-navbar .navbar-left .collapse-btn[data-v-f7a7d8c3] {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.chat-navbar .navbar-left .collapse-btn[data-v-f7a7d8c3]:hover {
+  color: var(--el-color-primary);
+  background: var(--el-color-primary-light-9);
+}
+
+.chat-navbar .navbar-left .collapse-btn[data-v-f7a7d8c3]:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+}
+
+.chat-navbar .navbar-left .collapse-btn > div[data-v-f7a7d8c3] {
+  color: inherit;
+}
+
+.chat-navbar .navbar-left .collapse-btn .collapse-icon[data-v-f7a7d8c3] {
+  width: 20px;
+  height: 20px;
+  color: inherit;
+}
+
+.chat-navbar .navbar-right[data-v-f7a7d8c3] {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.chat-navbar .navbar-right .knowledge-select[data-v-f7a7d8c3] {
+  width: 240px;
+}
+
+.chat-navbar .navbar-right[data-v-f7a7d8c3] .el-button {
+  margin: 0;
+}
+
+.chat-navbar .navbar-right .connection-status[data-v-f7a7d8c3] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 12px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.chat-navbar .navbar-right .connection-status[data-v-f7a7d8c3] .el-tag__content {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.chat-navbar .navbar-right .connection-status .status-icon.connected[data-v-f7a7d8c3] {
+  color: var(--el-color-success);
+}
+
+.chat-navbar .navbar-right .connection-status .status-icon.connecting[data-v-f7a7d8c3] {
+  color: var(--el-color-warning);
+}
+
+.chat-navbar .navbar-right .connection-status .status-icon.disconnected[data-v-f7a7d8c3] {
+  color: var(--el-color-danger);
+}
+
+.chat-navbar .navbar-right .connection-status .status-text[data-v-f7a7d8c3] {
+  color: var(--el-text-color-secondary);
+}
