@@ -18,7 +18,7 @@ from app.api.v1.module_system.user.model import UserModel, UserRolesModel
 from app.config.path_conf import SCRIPT_DIR
 from app.core.database import async_db_session, create_tables, ensure_schema_indexes
 from app.core.logger import logger
-from app.core.plugins import filter_ai_seed_data, load_ai_models
+from app.core.plugins import load_ai_models
 
 
 class InitializeData:
@@ -28,7 +28,7 @@ class InitializeData:
     _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
     _TIME_RE = re.compile(r"^\d{2}:\d{2}:\d{2}(\.\d+)?$")
 
-    # 按依赖关系排序：先基础表，再关联表。已启用插件模型在运行时追加。
+    # 按依赖关系排序：先基础表，再关联表。核心 AI 模型在运行时追加。
     prepare_init_models: list[type] = [
         # ── 平台管理：基础表 ──
         MenuModel,
@@ -49,7 +49,7 @@ class InitializeData:
 
     @classmethod
     def get_prepare_init_models(cls) -> list[type]:
-        """返回核心模型与已启用插件模型组成的初始化列表。
+        """返回核心模型与 AI 模型组成的初始化列表。
 
         返回:
         - list[type]: 按外键依赖顺序排列的初始化模型列表。
@@ -133,11 +133,7 @@ class InitializeData:
                     added = await self.__seed_unique_rows(db, model, data, ("code",))
                     rows = (await db.execute(select(RoleModel))).scalars().all()
                     roles_by_code = {row.code: row for row in rows}
-                    role_seed_mapping = {
-                        index: roles_by_code[item["code"]]
-                        for index, item in enumerate(data, start=1)
-                        if item.get("code") in roles_by_code
-                    }
+                    role_seed_mapping = {index: roles_by_code[item["code"]] for index, item in enumerate(data, start=1) if item.get("code") in roles_by_code}
                     logger.info(f"✅️ 已向 {table_name} 补齐 {added} 条初始化数据")
                     continue
 
@@ -150,10 +146,7 @@ class InitializeData:
                 if table_name == "sys_role_menus":
                     roles = (await db.execute(select(RoleModel))).scalars().all()
                     roles_by_code = {role.code: role for role in roles}
-                    existing_links = {
-                        (row.role_id, row.menu_id)
-                        for row in (await db.execute(select(RoleMenusModel))).scalars().all()
-                    }
+                    existing_links = {(row.role_id, row.menu_id) for row in (await db.execute(select(RoleMenusModel))).scalars().all()}
                     links = []
                     for item in data:
                         role = roles_by_code.get(item["role_code"])
@@ -180,10 +173,7 @@ class InitializeData:
                     continue
 
                 if table_name == "sys_user_roles":
-                    existing_links = {
-                        (row.user_id, row.role_id)
-                        for row in (await db.execute(select(UserRolesModel))).scalars().all()
-                    }
+                    existing_links = {(row.user_id, row.role_id) for row in (await db.execute(select(UserRolesModel))).scalars().all()}
                     links = []
                     for item in data:
                         user = user_seed_mapping.get(int(item["user_id"]))
@@ -274,10 +264,7 @@ class InitializeData:
         副作用:
         - 只为新用户写入种子密码；已有用户的密码和业务字段不会被覆盖。
         """
-        users_by_username = {
-            user.username: user
-            for user in (await db.execute(select(UserModel))).scalars().all()
-        }
+        users_by_username = {user.username: user for user in (await db.execute(select(UserModel))).scalars().all()}
         new_users: list[tuple[UserModel, dict[str, Any]]] = []
         added = 0
         for item in data:
@@ -285,11 +272,7 @@ class InitializeData:
             user = users_by_username.get(username)
             if user:
                 continue
-            values = {
-                key: value
-                for key, value in item.items()
-                if key not in {"id", "created_id", "updated_id", "deleted_id"}
-            }
+            values = {key: value for key, value in item.items() if key not in {"id", "created_id", "updated_id", "deleted_id"}}
             user = UserModel(**values)
             db.add(user)
             new_users.append((user, item))
@@ -299,11 +282,7 @@ class InitializeData:
         if new_users:
             await db.flush()
 
-        users_by_seed_id = {
-            index: users_by_username[item["username"]]
-            for index, item in enumerate(data, start=1)
-            if item.get("username") in users_by_username
-        }
+        users_by_seed_id = {index: users_by_username[item["username"]] for index, item in enumerate(data, start=1) if item.get("username") in users_by_username}
         for user, item in new_users:
             for field in ("created_id", "updated_id", "deleted_id"):
                 seed_id = item.get(field)
@@ -366,7 +345,7 @@ class InitializeData:
             with open(json_path, encoding="utf-8") as f:
                 raw = json.loads(f.read())
             data = [self._parse_date_strings(item) for item in raw]
-            return filter_ai_seed_data(filename, data)
+            return data
         except json.JSONDecodeError as e:
             logger.error(f"❌️ 解析 {json_path} 失败: {e!s}")
             raise

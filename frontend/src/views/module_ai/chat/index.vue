@@ -82,7 +82,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated } from "vue";
 import { useMediaQuery } from "@vueuse/core";
 import { ElMessage, ElMessageBox } from "element-plus";
 import AiChatAPI, { ChatSession } from "@/api/module_ai/chat";
@@ -130,10 +130,14 @@ const isMobileViewport = useMediaQuery("(max-width: 768px)");
 // WebSocket
 let ws: WebSocket | null = null;
 const WS_URL = import.meta.env.VITE_APP_WS_ENDPOINT;
+let connectionGeneration = 0;
 
 // ============ WebSocket 操作 ============
 const connectWebSocket = async () => {
-  if (ws?.readyState === WebSocket.OPEN) return;
+  // CONNECTING / OPEN / CLOSING 期间一律拒绝重入，避免握手期间覆盖旧连接引用。
+  if (ws && ws.readyState !== WebSocket.CLOSED) return;
+
+  const generation = ++connectionGeneration;
 
   connectionStatus.value = "connecting";
   error.value = "";
@@ -145,38 +149,55 @@ const connectWebSocket = async () => {
     const url = new URL("/api/v1/ai/chat/ws", WS_URL);
     url.searchParams.append("ticket", ticket);
 
-    ws = new WebSocket(url.toString());
+    if (generation !== connectionGeneration) return;
 
-    ws.onopen = () => {
+    const socket = new WebSocket(url.toString());
+    ws = socket;
+
+    socket.onopen = () => {
+      if (ws !== socket) return;
       isConnected.value = true;
       connectionStatus.value = "connected";
       ElMessage.success("连接成功");
     };
 
-    ws.onmessage = (event) => handleWebSocketMessage(event.data);
+    socket.onmessage = (event) => {
+      if (ws === socket) handleWebSocketMessage(event.data);
+    };
 
-    ws.onclose = () => {
+    socket.onclose = () => {
+      if (ws !== socket) return;
+      ws = null;
       isConnected.value = false;
       connectionStatus.value = "disconnected";
       finishLoadingMessages();
     };
 
-    ws.onerror = () => {
+    socket.onerror = () => {
+      if (ws !== socket) return;
       isConnected.value = false;
       connectionStatus.value = "disconnected";
       ElMessage.error("连接失败，请检查服务器状态");
       finishLoadingMessages();
     };
   } catch {
+    if (generation !== connectionGeneration) return;
     connectionStatus.value = "disconnected";
     error.value = "无法创建连接";
   }
 };
 
 const disconnectWebSocket = () => {
+  connectionGeneration += 1;
   if (ws) {
-    ws.close(1000, "用户主动断开");
+    const socket = ws;
     ws = null;
+    // 先摘除回调，避免关闭竞态再次修改状态或弹出提示。
+    socket.onopen = null;
+    socket.onmessage = null;
+    socket.onerror = null;
+    socket.onclose = null;
+    socket.close(1000, "用户主动断开");
   }
   isConnected.value = false;
   connectionStatus.value = "disconnected";
@@ -388,6 +409,11 @@ onMounted(() => {
   connectWebSocket();
 });
 onUnmounted(disconnectWebSocket);
+// KeepAlive 缓存切换：离开视图即断开，回到视图按需重连。
+onActivated(() => {
+  if (!isConnected.value) connectWebSocket();
+});
+onDeactivated(disconnectWebSocket);
 </script>
 
 <style lang="scss" scoped>

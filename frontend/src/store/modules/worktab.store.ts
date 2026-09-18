@@ -525,9 +525,23 @@ export const useWorktabStore = defineStore(
      * 清空所有状态（用于登出等场景）
      */
     const clearAll = (): void => {
-      current.value = {};
-      opened.value = [];
-      keepAliveExclude.value = [];
+      // opened 清空后 include 会变为 undefined；KeepAlive 不会因此主动驱逐旧实例。
+      // 先把旧标签对应的组件名加入 exclude，确保登出/切换账号时释放页面副作用。
+      const removedTabs = opened.value.filter((tab) => !tab.fixedTab);
+      const excludeNames = new Set<string>();
+      for (const tab of removedTabs) {
+        if (tab.name && tab.keepAlive !== false) excludeNames.add(String(tab.name));
+      }
+
+      const fixedTabs = opened.value.filter((tab) => tab.fixedTab);
+      if (fixedTabs.length > 0) {
+        opened.value = fixedTabs;
+        current.value = { ...fixedTabs[0] };
+      } else {
+        current.value = {};
+        opened.value = [];
+      }
+      keepAliveExclude.value = Array.from(excludeNames);
     };
 
     /**

@@ -29,7 +29,6 @@ _TEST_DB_PATH = tempfile.NamedTemporaryFile(suffix=".db", delete=False).name
 os.environ["DATABASE_TYPE"] = "sqlite"
 os.environ["DATABASE_NAME"] = _TEST_DB_PATH
 os.environ["REDIS_ENABLE"] = "true"
-os.environ["AI_ENABLE"] = "false"
 os.environ["SECRET_KEY"] = "test-secret-key-for-backend-tests-32-chars"
 os.environ["POOL_SIZE"] = "1"
 os.environ["MAX_OVERFLOW"] = "1"
@@ -104,12 +103,12 @@ async def _redis_expire(name: bytes, time: int) -> bool:
     return name in _mock_redis_store
 
 
-async def _redis_flushall( asynchronous: bool = False) -> bool:
+async def _redis_flushall(asynchronous: bool = False) -> bool:
     _mock_redis_store.clear()
     return True
 
 
-async def _redis_flushdb( asynchronous: bool = False) -> bool:
+async def _redis_flushdb(asynchronous: bool = False) -> bool:
     _mock_redis_store.clear()
     return True
 
@@ -133,7 +132,7 @@ async def _redis_hset(name: bytes, key: bytes, value: bytes) -> int:
 
 async def _redis_hgetall(name: bytes) -> dict[bytes, bytes]:
     prefix = name + b":"
-    return {k[len(prefix):]: v for k, v in _mock_redis_store.items() if k.startswith(prefix)}
+    return {k[len(prefix) :]: v for k, v in _mock_redis_store.items() if k.startswith(prefix)}
 
 
 async def _redis_hdel(name: bytes, *keys: bytes) -> int:
@@ -217,35 +216,16 @@ async def _initialize_test_app(app) -> None:
     from app.utils.hash_bcrpy_util import PwdUtil
 
     async with async_db_session() as db:
-        await db.execute(
-            update(UserModel)
-            .where(UserModel.username == "admin")
-            .values(password=PwdUtil.hash_password("admin123"))
-        )
+        await db.execute(update(UserModel).where(UserModel.username == "admin").values(password=PwdUtil.hash_password("admin123")))
         await db.commit()
 
 
 @asynccontextmanager
 async def _test_lifespan(app) -> AsyncGenerator[Any, None]:
-    """Start the core-only test application."""
+    """Start the test application with all core modules."""
     await _initialize_test_app(app)
 
     yield
-
-
-@asynccontextmanager
-async def _ai_test_lifespan(app) -> AsyncGenerator[Any, None]:
-    """Start an AI-enabled test application without changing the core fixture."""
-    previous_value = os.environ.get("AI_ENABLE")
-    os.environ["AI_ENABLE"] = "true"
-    try:
-        await _initialize_test_app(app)
-        yield
-    finally:
-        if previous_value is None:
-            os.environ.pop("AI_ENABLE", None)
-        else:
-            os.environ["AI_ENABLE"] = previous_value
 
 
 from main import create_app
@@ -253,10 +233,8 @@ from main import create_app
 _app = create_app()
 _app.router.lifespan_context = _test_lifespan
 
-os.environ["AI_ENABLE"] = "true"
 _ai_app = create_app()
-os.environ["AI_ENABLE"] = "false"
-_ai_app.router.lifespan_context = _ai_test_lifespan
+_ai_app.router.lifespan_context = _test_lifespan
 
 # ============================================================
 # Fixtures
@@ -334,10 +312,6 @@ def assert_route(
         return
 
     if expected_status is not None:
-        assert response.status_code == expected_status, (
-            f"{method} {path} 期望 {expected_status}，实际 {response.status_code}"
-        )
+        assert response.status_code == expected_status, f"{method} {path} 期望 {expected_status}，实际 {response.status_code}"
     else:
-        assert response.status_code != 404, (
-            f"{method} {path} 返回 404，路由未注册"
-        )
+        assert response.status_code != 404, f"{method} {path} 返回 404，路由未注册"

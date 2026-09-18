@@ -92,18 +92,21 @@ export class RouteValidator {
         return;
       }
 
+      // 目录节点作为 RootLayout 的无组件子路由存在，RouterView 会跳过目录并直达叶子。
+      // 只有没有子菜单的一级记录才必须直接提供可渲染组件。
+      if (hasChildren) {
+        const fullPath = this.resolvePath(parentPath, route.path || "");
+        this.checkComponents(route.children!, errors, warnings, fullPath);
+        return;
+      }
+
       if (parentPath === "" && !hasExternalLink && !isIframe) {
-        errors.push(`一级菜单(${routePath}) 缺少 component，必须指向 ${ROUTE_COMPONENT_LAYOUT}`);
+        errors.push(`一级菜单(${routePath}) 缺少可渲染 component 配置`);
         return;
       }
 
       if (!hasExternalLink && !isIframe && !hasChildren) {
         errors.push(`路由(${routePath}) 缺少 component 配置`);
-      }
-
-      if (route.children?.length) {
-        const fullPath = this.resolvePath(parentPath, route.path || "");
-        this.checkComponents(route.children, errors, warnings, fullPath);
       }
     });
   }

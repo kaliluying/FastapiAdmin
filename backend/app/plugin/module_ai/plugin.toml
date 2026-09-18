@@ -2,9 +2,7 @@ name = "ai"
 package = "module_ai"
 title = "AI 子系统"
 version = "1.0.0"
-description = "对话、检索增强生成（LangChain/RAG 风格）等能力。"
-optional = true
-enabled_env = "AI_ENABLE"
+description = "核心对话、检索增强生成（LangChain/RAG 风格）等能力。"
 route_prefix = "/ai"
 tags = ["ai", "chat", "rag", "langchain-style"]
 
@@ -55,9 +53,3 @@ permissions = [
   "module_ai:session:detail",
   "module_ai:session:query",
 ]
-
-[seed]
-route_names = ["AI"]
-route_paths = ["ai"]
-component_prefixes = ["module_ai"]
-permission_prefixes = ["module_ai:"]

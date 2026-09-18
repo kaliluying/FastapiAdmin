@@ -70,6 +70,9 @@ export class RouteRegistry {
     if (!validationResult.valid) {
       throw new Error(`路由配置验证失败: ${validationResult.errors.join(", ")}`);
     }
+    validationResult.warnings.forEach((warning) => {
+      console.warn(`[路由配置警告] ${warning}`);
+    });
 
     const removeRouteFns: (() => void)[] = [];
 

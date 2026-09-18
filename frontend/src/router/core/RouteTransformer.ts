@@ -1,11 +1,12 @@
 /**
  * 路由转换器 —— 菜单树 → vue-router 记录。
  * 处理 iframe、一级叶子路由、普通路由三种形态，支持 shellChild 模式。
+ * 目录只保留 children，不挂中间层组件；RouterView 会直接渲染叶子页面。
  */
 import type { RouteRecordRaw } from "vue-router";
 import type { AppRouteRecord } from "@/types/router";
 import { ComponentLoader } from "./ComponentLoader";
-import { IframeRouteManager, ROUTE_COMPONENT_LAYOUT } from "../staticRoutes";
+import { IframeRouteManager } from "../staticRoutes";
 
 interface ConvertedRoute extends Omit<RouteRecordRaw, "children"> {
   id?: number;
@@ -32,11 +33,12 @@ export class RouteTransformer {
     const converted: ConvertedRoute = { ...routeConfig, path: pathOut, component: undefined };
 
     if (route.meta.isIframe) {
-      this.handleIframeRoute(converted, route, depth);
-    } else if (this.isFirstLevelLeaf(route, depth)) {
-      this.handleFirstLevelLeaf(converted, route, component as string);
+      this.handleIframeRoute(converted, route);
+    } else if (children?.length) {
+      // 中间层不挂组件，避免外层 RouterView 把目录壳缓存成多个实例。
+      converted.component = undefined;
     } else {
-      this.handleNormalRoute(converted, component as string, depth);
+      this.handleLeafRoute(converted, route, component as string, depth);
     }
 
     converted.path = pathOut;
@@ -65,64 +67,18 @@ export class RouteTransformer {
     return absPath.split("/").filter(Boolean).pop() ?? absPath;
   }
 
-  private isFirstLevelLeaf(route: AppRouteRecord, depth: number): boolean {
-    return depth === 0 && (!route.children || route.children.length === 0);
-  }
-
-  private handleIframeRoute(
-    targetRoute: ConvertedRoute,
-    sourceRoute: AppRouteRecord,
-    depth: number
-  ): void {
-    if (depth === 0) {
-      targetRoute.component = this.shellChild
-        ? this.componentLoader.loadNestedParent()
-        : this.componentLoader.loadLayout();
-      targetRoute.name = "";
-      const leafPath = this.shellChild ? "" : sourceRoute.path || "";
-      targetRoute.children = [
-        {
-          ...sourceRoute,
-          path: leafPath,
-          component: this.componentLoader.loadIframe(),
-        } as ConvertedRoute,
-      ];
-    } else {
-      targetRoute.component = this.componentLoader.loadIframe();
-    }
+  private handleIframeRoute(targetRoute: ConvertedRoute, sourceRoute: AppRouteRecord): void {
+    targetRoute.component = this.componentLoader.loadIframe();
     this.iframeManager.add(sourceRoute);
   }
 
-  private handleFirstLevelLeaf(
+  private handleLeafRoute(
     converted: ConvertedRoute,
     route: AppRouteRecord,
-    component: string | undefined
-  ): void {
-    converted.component = this.shellChild
-      ? this.componentLoader.loadNestedParent()
-      : this.componentLoader.loadLayout();
-    converted.name = "";
-    route.meta.isFirstLevel = true;
-    const leafPath = this.shellChild ? "" : route.path || "";
-    converted.children = [
-      {
-        ...route,
-        path: leafPath,
-        component: component ? this.componentLoader.load(component) : undefined,
-      } as ConvertedRoute,
-    ];
-  }
-
-  private handleNormalRoute(
-    converted: ConvertedRoute,
     component: string | undefined,
     depth: number
   ): void {
-    if (!component) return;
-    if (this.shellChild && depth === 0 && component === ROUTE_COMPONENT_LAYOUT) {
-      converted.component = this.componentLoader.loadNestedParent();
-      return;
-    }
-    converted.component = this.componentLoader.load(component);
+    converted.component = component ? this.componentLoader.load(component) : undefined;
+    if (depth === 0) route.meta.isFirstLevel = true;
   }
 }

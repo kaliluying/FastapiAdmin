@@ -121,39 +121,12 @@ async def create_tables() -> None:
         await coon.run_sync(MappedBase.metadata.create_all)
 
 
-async def create_optional_plugin_tables() -> None:
-    """Create missing tables owned by optional plugins.
-
-    The core schema is managed by Alembic in production. Optional plugins can
-    be enabled after the database has already reached the current Alembic
-    head, so their tables need a narrowly scoped ``create_all`` pass at
-    startup. Disabled plugins contribute no models and therefore no tables.
-
-    Returns:
-        None.
-    """
-    from app.core.plugins import load_ai_models
-
-    plugin_models = load_ai_models()
-    if not plugin_models:
-        return
-
-    plugin_tables = [model.__table__ for model in plugin_models]
-    async with async_engine.begin() as connection:
-        await connection.run_sync(
-            lambda sync_connection: MappedBase.metadata.create_all(
-                bind=sync_connection,
-                tables=plugin_tables,
-            )
-        )
-
-
 _CORE_SCHEMA_INDEXES: list[Index] | None = None
 _AI_SCHEMA_INDEXES: list[Index] | None = None
 
 
-def _get_schema_indexes(include_ai: bool) -> list[Index]:
-    """Return one stable set of optional composite index definitions."""
+def _get_schema_indexes() -> list[Index]:
+    """Return one stable set of core composite index definitions."""
     global _AI_SCHEMA_INDEXES, _CORE_SCHEMA_INDEXES
     if _CORE_SCHEMA_INDEXES is None:
         from app.api.v1.module_system.role.model import RoleMenusModel
@@ -164,7 +137,7 @@ def _get_schema_indexes(include_ai: bool) -> list[Index]:
             Index("ix_opt_sys_role_menus_menu_role", RoleMenusModel.menu_id, RoleMenusModel.role_id),
         ]
 
-    if include_ai and _AI_SCHEMA_INDEXES is None:
+    if _AI_SCHEMA_INDEXES is None:
         from app.plugin.module_ai.chat.model import ChatSessionModel
         from app.plugin.module_ai.knowledge.model import KnowledgeChunkModel, KnowledgeDocumentModel
         from app.plugin.module_ai.memory.model import AiMemoryModel
@@ -213,11 +186,10 @@ async def ensure_schema_indexes() -> None:
     so startup keeps these indexes idempotent for the skeleton database and
     installations that have no committed Alembic head yet.
     """
-    from app.core.plugins import is_ai_plugin_enabled
-
-    indexes = _get_schema_indexes(is_ai_plugin_enabled())
+    indexes = _get_schema_indexes()
 
     async with async_engine.begin() as connection:
+
         def create_existing_indexes(sync_connection) -> None:
             table_names = set(inspect(sync_connection).get_table_names())
             for index in indexes:

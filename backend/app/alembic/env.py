@@ -1,5 +1,4 @@
 import asyncio
-from logging.config import fileConfig
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
@@ -21,11 +20,6 @@ print(f"📊 已加载 {len(loaded_models)} 个核心或已启用插件模型")
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 alembic_config = context.config
-
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
-if alembic_config.config_file_name is not None:
-    fileConfig(alembic_config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support

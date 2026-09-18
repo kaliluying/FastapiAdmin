@@ -1,4 +1,4 @@
-"""Runtime settings owned by the optional AI plugin."""
+"""Runtime settings owned by the core AI module."""
 
 import ipaddress
 import os
@@ -13,7 +13,7 @@ from app.config.path_conf import BASE_DIR, ENV_DIR
 
 
 class AiPluginSettings(BaseSettings):
-    """Read AI and retrieval settings without adding them to the core backend."""
+    """Read AI and retrieval settings as part of the core backend."""
 
     model_config = SettingsConfigDict(env_file_encoding="utf-8", extra="ignore", case_sensitive=True)
 
@@ -93,10 +93,7 @@ def validate_model_base_url(value: str, *, resolve_dns: bool = True) -> str:
         return normalized
 
     try:
-        addresses = {
-            ipaddress.ip_address(result[4][0])
-            for result in socket.getaddrinfo(hostname, None, type=socket.SOCK_STREAM)
-        }
+        addresses = {ipaddress.ip_address(result[4][0]) for result in socket.getaddrinfo(hostname, None, type=socket.SOCK_STREAM)}
     except (OSError, ValueError) as exc:
         raise ValueError("API 地址主机无法解析") from exc
     if not addresses or any(_is_blocked_address(item) for item in addresses):
@@ -106,12 +103,4 @@ def validate_model_base_url(value: str, *, resolve_dns: bool = True) -> str:
 
 def _is_blocked_address(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     """Return whether a resolved model endpoint address is non-public."""
-    return bool(
-        address.is_private
-        or address.is_loopback
-        or address.is_link_local
-        or address.is_reserved
-        or address.is_multicast
-        or address.is_unspecified
-        or not address.is_global
-    )
+    return bool(address.is_private or address.is_loopback or address.is_link_local or address.is_reserved or address.is_multicast or address.is_unspecified or not address.is_global)

@@ -1,15 +1,15 @@
 # FastapiAdmin
 
-FastapiAdmin 是一个面向单组织内部使用的后台管理系统。它提供 RBAC、系统配置、审计日志和文件管理；AI 知识库、文档索引和 RAG 对话通过可选依赖组启用。
+FastapiAdmin 是一个面向单组织内部使用的 AI 核心后台管理系统。它提供 RBAC、系统配置、审计日志、AI 知识库、文档索引和 RAG 对话。
 
 ## 项目定位
 
 - **使用场景**：单组织内部后台、知识库管理、RAG 问答、基础系统管理。
 - **组织边界**：当前版本不支持多租户，也不保留多租户字段或切换入口。
-- **后端栈**：FastAPI、SQLAlchemy、Alembic、Redis、MySQL；启用 AI 后增加 ChromaDB 与 OpenAI-compatible API。
+- **后端栈**：FastAPI、SQLAlchemy、Alembic、Redis、MySQL、ChromaDB 与 OpenAI-compatible API。
 - **前端栈**：Vue 3、Vite、TypeScript、Element Plus、Pinia、Vue Router。
-- **向量检索**：启用 AI 后使用 ChromaDB 本地持久化目录存储向量和文本块索引。
-- **模型接入**：启用 AI 后通过 OpenAI-compatible chat 和 embedding endpoint 接入模型能力。
+- **向量检索**：使用 ChromaDB 本地持久化目录存储向量和文本块索引。
+- **模型接入**：通过 OpenAI-compatible chat 和 embedding endpoint 接入模型能力。
 
 ## 功能范围
 
@@ -18,7 +18,7 @@ FastapiAdmin 是一个面向单组织内部使用的后台管理系统。它提�
 - 系统管理：用户、角色、菜单、字典、参数配置、操作日志。
 - 公共能力：认证、RBAC、动态菜单、文件上传、Redis 缓存。
 - AI 对话：会话记录、模型配置、普通对话、结合知识库的 RAG 对话。
-- AI 知识库：知识库管理、文档上传、文本抽取、分块、embedding、Chroma 写入、召回验证（安装 `ai` 可选组后启用）。
+- AI 知识库：知识库管理、文档上传、文本抽取、分块、embedding、Chroma 写入、召回验证。
 
 ### 已移除或禁用
 
@@ -61,8 +61,8 @@ FastapiAdmin 是一个面向单组织内部使用的后台管理系统。它提�
 - pnpm
 - MySQL 8+
 - Redis 6+
-- 启用 AI 时需要 OpenAI-compatible chat endpoint
-- 启用 AI 时需要 OpenAI-compatible embedding endpoint
+- AI 运行需要 OpenAI-compatible chat endpoint
+- AI 运行需要 OpenAI-compatible embedding endpoint
 
 ## 后端配置
 
@@ -91,7 +91,6 @@ REDIS_DB_NAME = 1
 
 SECRET_KEY = "dev-only-change-this-secret-before-sharing"
 
-AI_ENABLE = False
 OPENAI_BASE_URL = "https://api.example.com"
 OPENAI_API_KEY = "your_api_key"
 OPENAI_MODEL = "your_chat_model"
@@ -115,18 +114,13 @@ CHROMA_COLLECTION_NAME = "knowledge_base"
 
 ```powershell
 cd backend
-# 基础后台
 uv sync
 uv run main.py run --env=dev
-
-# 启用 AI 知识库与 RAG
-uv sync --extra ai
-# 在 env/.env.dev 中设置 AI_ENABLE = True
 ```
 
 应用启动时会先执行已提交的 Alembic 迁移；当前骨架没有 revision 文件时，会按 ORM 模型创建表并写入种子数据。修改模型后仍可运行 `uv run main.py revision --env=dev` 生成并审核迁移文件；应用启动不会自动生成迁移。多副本生产部署仍建议使用单独的迁移任务。
 
-`backend/requirements.txt` 仅包含基础后台依赖；启用 AI 的部署使用 `backend/requirements-ai.txt`。
+`backend/requirements.txt` 包含后台与 AI 核心依赖，部署无需额外安装 AI 依赖组。
 
 默认开发配置中的 API 前缀为 `/api/v1`。Swagger 和 ReDoc 路径由 `backend/env/.env.dev` 中的 `DOCS_URL`、`REDOC_URL` 控制。
 
@@ -176,7 +170,7 @@ pnpm run build
 
 ## AI 知识库流程
 
-先执行 `uv sync --extra ai` 并设置 `AI_ENABLE=True`，再进行以下操作：
+完成 `uv sync` 并配置模型与向量库参数后，即可进行以下操作：
 
 1. 在“AI 知识库 / 知识库管理”创建知识库。
 2. 在“文档管理”上传 `.txt`、`.md`、`.pdf`、`.docx` 文件。
@@ -208,11 +202,11 @@ frontend/src/views/module_ai/
 
 ```powershell
 cd backend
-uv run pytest tests\core\test_optional_ai_plugin.py -q
-uv run --extra ai pytest tests\plugin\module_ai -q
+uv run pytest tests\core\test_ai_core_module.py -q
+uv run pytest tests\plugin\module_ai -q
 python -m compileall -q app tests
 uv run ruff check app\plugin\module_ai app\scripts\initialize.py app\api\v1\module_system\__init__.py app\config\setting.py app\init_app.py tests --output-format concise
-uv run --extra ai python -c "import chromadb, openai, pypdf, docx"
+uv run python -c "import chromadb, openai, pypdf, docx"
 ```
 
 前端：

@@ -3,7 +3,6 @@ from typing import Any
 from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.dependencies import invalidate_permission_cache, require_superadmin
 from app.core.exceptions import CustomException
-from app.core.plugins import filter_ai_seed_data
 from app.utils.common_util import (
     get_child_id_map,
     get_child_recursion,
@@ -21,9 +20,7 @@ from .schema import (
     MenuUpdateSchema,
 )
 
-_RESERVED_ROOT_ROUTE_SEGMENTS = frozenset(
-    {"auth", "changelog", "home", "login", "outside", "profile", "redirect", "401", "403", "404", "500"}
-)
+_RESERVED_ROOT_ROUTE_SEGMENTS = frozenset({"auth", "changelog", "home", "login", "outside", "profile", "redirect", "401", "403", "404", "500"})
 
 
 class MenuService:
@@ -100,11 +97,7 @@ class MenuService:
 
         if data.route_name:
             duplicate_name = next(
-                (
-                    menu
-                    for menu in menus
-                    if menu.id != existing_id and menu.route_name == data.route_name
-                ),
+                (menu for menu in menus if menu.id != existing_id and menu.route_name == data.route_name),
                 None,
             )
             if duplicate_name:
@@ -112,13 +105,7 @@ class MenuService:
 
         if data.route_path:
             duplicate_path = next(
-                (
-                    menu
-                    for menu in menus
-                    if menu.id != existing_id
-                    and menu.parent_id == data.parent_id
-                    and menu.route_path == data.route_path
-                ),
+                (menu for menu in menus if menu.id != existing_id and menu.parent_id == data.parent_id and menu.route_path == data.route_path),
                 None,
             )
             if duplicate_path:
@@ -127,11 +114,7 @@ class MenuService:
         # Type changes must remain compatible with every existing direct child.
         if existing_id is not None:
             invalid_child = next(
-                (
-                    menu
-                    for menu in menus
-                    if menu.parent_id == existing_id and not self._is_child_type_allowed(data.type, menu.type)
-                ),
+                (menu for menu in menus if menu.parent_id == existing_id and not self._is_child_type_allowed(data.type, menu.type)),
                 None,
             )
             if invalid_child:
@@ -155,8 +138,6 @@ class MenuService:
     ) -> list[dict]:
         menu_list = await MenuCRUD(self.auth).tree_list(search=vars(search) if search else None, order_by=order_by)
         menu_dict_list = [MenuTreeOutSchema.model_validate(menu).model_dump() for menu in menu_list]
-        # Existing databases can retain AI menus after the optional plugin is disabled.
-        menu_dict_list = filter_ai_seed_data("platform_menu", menu_dict_list)
         return traversal_to_tree(menu_dict_list)
 
     @require_superadmin
@@ -186,10 +167,7 @@ class MenuService:
 
         if {"title", "parent_id"} & data.model_fields_set and candidate.title is not None:
             siblings = await MenuCRUD(self.auth).get_list()
-            if any(
-                menu.id != id and menu.parent_id == candidate.parent_id and menu.title == candidate.title
-                for menu in siblings
-            ):
+            if any(menu.id != id and menu.parent_id == candidate.parent_id and menu.title == candidate.title for menu in siblings):
                 raise CustomException(msg="更新失败，菜单标题重复")
 
         new_menu = await MenuCRUD(self.auth).update(id=id, data=candidate)

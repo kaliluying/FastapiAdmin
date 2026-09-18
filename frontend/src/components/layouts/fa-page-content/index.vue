@@ -17,25 +17,14 @@
     <RouterView v-if="isRefresh" v-slot="{ Component, route: router }" :style="contentStyle">
       <Transition :name="actualTransition" mode="out-in">
         <div v-if="Component" class="route-view-shell flex min-h-0 min-w-0 w-full flex-1 flex-col">
-          <!-- 是否缓存以后端菜单 keep_alive → meta.keepAlive 为准；此处 !== false 即包 KeepAlive（与 MenuProcessor 一致） -->
-          <KeepAlive
-            v-if="wrapPageWithKeepAlive"
-            :max="10"
-            :include="keepAliveInclude"
-            :exclude="keepAliveExclude"
-          >
+          <!-- KeepAlive 必须常驻；缓存取舍由 include/exclude 表达，不能按当前路由 v-if 卸载整个缓存容器。 -->
+          <KeepAlive :max="10" :include="keepAliveInclude" :exclude="effectiveKeepAliveExclude">
             <component
               class="fa-page-view min-h-0 min-w-0 w-full flex-1"
               :is="Component"
               :key="routeLeafCacheKey(router)"
             />
           </KeepAlive>
-          <component
-            v-else
-            class="fa-page-view min-h-0 min-w-0 w-full flex-1"
-            :is="Component"
-            :key="routeLeafCacheKey(router)"
-          />
         </div>
       </Transition>
     </RouterView>
@@ -83,8 +72,6 @@ function routeLeafCacheKey(r: RouteLocationNormalizedLoaded): string {
 }
 
 const route = useRoute();
-/** 动态菜单 meta.keepAlive（后端 keep_alive）；仅显式 false 时不包 KeepAlive */
-const wrapPageWithKeepAlive = computed(() => route.meta.keepAlive !== false);
 
 const isNarrowViewport = useMediaQuery("(max-width: 800px)");
 const backtopScrollTarget = computed(() => (isNarrowViewport.value ? "" : "#app-content"));
@@ -100,7 +87,20 @@ const keepAliveInclude = computed(() => {
   for (const t of opened.value) {
     if (t.name && t.keepAlive !== false) names.add(String(t.name));
   }
+  // 首次导航时工作栏可能尚未完成同步，当前页面仍应进入缓存白名单。
+  if (route.name != null && route.meta.keepAlive !== false) {
+    names.add(String(route.name));
+  }
   return names.size ? Array.from(names) : undefined;
+});
+
+/** 保留 `meta.keepAlive === false` 的语义：即使关闭工作栏白名单，也不能缓存当前页面。 */
+const effectiveKeepAliveExclude = computed(() => {
+  const names = new Set(keepAliveExclude.value);
+  if (route.meta.keepAlive === false && route.name != null) {
+    names.add(String(route.name));
+  }
+  return Array.from(names);
 });
 
 const isRefresh = shallowRef(true);

@@ -4,12 +4,7 @@
  */
 import { defineComponent, h, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
-import {
-  IframeRouteManager,
-  NestedRouterParent,
-  ROUTE_COMPONENT_LAYOUT,
-  ROUTE_COMPONENT_NESTED_PARENT,
-} from "../staticRoutes";
+import { IframeRouteManager, ROUTE_COMPONENT_LAYOUT } from "../staticRoutes";
 
 export class ComponentLoader {
   private modules: Record<string, () => Promise<any>>;
@@ -25,16 +20,12 @@ export class ComponentLoader {
     if (componentPath === ROUTE_COMPONENT_LAYOUT || componentPath === "/layouts/index") {
       return this.loadLayout();
     }
-    if (componentPath === ROUTE_COMPONENT_NESTED_PARENT) {
-      return this.loadNestedParent();
-    }
-
     const normalized = componentPath.startsWith("/")
       ? componentPath
       : `/${componentPath.replace(/^\/+/, "")}`;
     const fullPath = `../../views${normalized}.vue`;
     const fullPathWithIndex = `../../views${normalized}/index.vue`;
-    let module = this.modules[fullPath] || this.modules[fullPathWithIndex];
+    const module = this.modules[fullPath] || this.modules[fullPathWithIndex];
 
     if (!module) {
       console.error(
@@ -84,10 +75,6 @@ export class ComponentLoader {
           },
         })
       );
-  }
-
-  loadNestedParent(): () => Promise<any> {
-    return () => Promise.resolve(NestedRouterParent);
   }
 
   private createEmptyComponent(): () => Promise<any> {

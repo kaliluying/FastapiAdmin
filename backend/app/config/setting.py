@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False  # 调试模式
     TITLE: str = "FastapiAdmin"  # 文档标题
     VERSION: str = "0.1.0"  # 版本号
-    DESCRIPTION: str = "单组织后台服务，提供 RBAC、系统配置、审计日志和可选 AI/RAG 插件。"
+    DESCRIPTION: str = "单组织后台服务，提供 RBAC、系统配置、审计日志和核心 AI/RAG 能力。"
     SUMMARY: str = "管理接口"
     DOCS_URL: str = "/docs"  # Swagger UI路径
     REDOC_URL: str = "/redoc"  # ReDoc路径

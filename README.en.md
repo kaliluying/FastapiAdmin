@@ -4,7 +4,7 @@
      </p>
      <h1>FastApiAdmin <sup style="background-color: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 0.4em; vertical-align: super; margin-left: 5px;">v3.0.0</sup></h1>
      <h3>Single-organization administration foundation</h3>
-     <p>FastAPI + Vue 3 + TypeScript for RBAC, system configuration, audit logs, and an optional AI/RAG plugin.</p>
+     <p>FastAPI + Vue 3 + TypeScript for RBAC, system configuration, audit logs, and core AI/RAG capabilities.</p>
      <p align="center">
           <img src="https://img.shields.io/badge/License-MIT-orange" alt="License">
           <img src="https://img.shields.io/badge/Python-≥3.12-blue">
@@ -27,12 +27,8 @@ git clone <repository-url>
 cp backend/env/.env.dev.example backend/env/.env.dev
 cp frontend/.env.example frontend/.env
 
-# 3. Start the core backend (auto-creates tables + seed data on first run)
+# 3. Start the backend (auto-creates tables + seed data on first run)
 cd backend && uv sync && uv run main.py run --env=dev
-
-# Optional: enable AI knowledge-base and RAG
-cd backend && uv sync --extra ai
-# Set AI_ENABLE=true in backend/env/.env.dev
 
 # 4. Start frontend
 cd ../frontend && pnpm install && pnpm run dev
@@ -65,7 +61,7 @@ FastapiAdmin/            # Monorepo full-stack project
 | ⚙️ System | Users, roles, menus, dictionaries, and parameters |
 | 📝 Audit | Login and operation logs |
 | 📁 Files | File upload and download |
-| 🤖 Optional AI/RAG plugin | Chat, knowledge bases, documents, retrieval, memory, and model configuration |
+| 🤖 AI/RAG core | Chat, knowledge bases, documents, retrieval, memory, and model configuration |
 
 ## 🔧 Screenshots
 

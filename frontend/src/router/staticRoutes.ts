@@ -9,7 +9,7 @@
 import type { AppRouteRecordRaw } from "@utils";
 import type { AppRouteRecord } from "@/types/router";
 import { defineComponent, h, onMounted, ref } from "vue";
-import { RouterView, useRoute } from "vue-router";
+import { useRoute } from "vue-router";
 
 /** 首页 meta（侧栏、静态子路由共用） */
 export const HOME_MENU_META = {
@@ -76,19 +76,8 @@ export const ROOT_LAYOUT_ROUTE_NAME = "RootLayout" as const;
 /** 静态首页子路由 name（面包屑等） */
 export const HOME_ROUTE_NAME = "Home" as const;
 
-/** 目录占位：仅嵌一层 RouterView（与 ComponentLoader 中占位同源） */
-export const NestedRouterParent = defineComponent({
-  name: "NestedRouterParent",
-  setup() {
-    return () => h(RouterView);
-  },
-});
-
 /** 后端菜单 / 动态路由里 `component` 占位（与 ComponentLoader 约定一致） */
 export const ROUTE_COMPONENT_LAYOUT = "/index/index";
-
-/** 多级目录父级占位（`views/nested/router-view-parent`） */
-export const ROUTE_COMPONENT_NESTED_PARENT = "/nested/router-view-parent";
 
 /** 登录页备用 path（与静态 `/login` 并存，守卫与白名单用） */
 export const ROUTE_PATH_LOGIN_ALT = "/auth/login";
