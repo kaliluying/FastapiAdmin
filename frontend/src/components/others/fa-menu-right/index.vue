@@ -1,41 +1,23 @@
 <!-- 右键菜单 -->
 <template>
-  <div class="menu-right">
-    <Transition name="context-menu" @before-enter="onBeforeEnter" @after-leave="onAfterLeave">
-      <div
-        v-show="visible"
-        :style="menuStyle"
-        class="context-menu fa-card-xs shadow-xl! min-w-(--menu-width) w-(--menu-width)"
-      >
-        <ul class="menu-list m-0 list-none" :style="menuListStyle">
-          <template v-for="item in menuItems" :key="item.key">
-            <!-- 普通菜单项 -->
-            <li
-              v-if="!item.children"
-              class="menu-item relative flex items-center cursor-pointer select-none rounded text-xs transition-colors duration-150 hover:bg-(--el-color-primary-light-9)"
-              :class="{ 'is-disabled': item.disabled, 'has-line': item.showLine }"
-              :style="menuItemStyle"
-              @click="handleMenuClick(item)"
-            >
-              <FaSvgIcon
-                v-if="item.icon"
-                class="mr-2 shrink-0 text-base text-g-800"
-                :icon="item.icon"
-              />
-              <span
-                class="menu-label flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-g-800"
+  <Teleport to="body">
+    <div class="menu-right">
+      <Transition name="context-menu" @before-enter="onBeforeEnter" @after-leave="onAfterLeave">
+        <div
+          v-show="visible"
+          :style="menuStyle"
+          class="context-menu fa-card-xs shadow-xl! min-w-(--menu-width) w-(--menu-width)"
+        >
+          <ul class="menu-list m-0 list-none" :style="menuListStyle">
+            <template v-for="item in menuItems" :key="item.key">
+              <!-- 普通菜单项 -->
+              <li
+                v-if="!item.children"
+                class="menu-item relative flex items-center cursor-pointer select-none rounded text-xs transition-colors duration-150 hover:bg-(--el-color-primary-light-9)"
+                :class="{ 'is-disabled': item.disabled, 'has-line': item.showLine }"
+                :style="menuItemStyle"
+                @click="handleMenuClick(item)"
               >
-                {{ item.label }}
-              </span>
-            </li>
-
-            <!-- 子菜单 -->
-            <li
-              v-else
-              class="menu-item submenu relative flex items-center cursor-pointer select-none rounded text-xs transition-colors duration-150 hover:bg-(--el-color-primary-light-9)"
-              :style="menuItemStyle"
-            >
-              <div class="submenu-title flex items-center w-full">
                 <FaSvgIcon
                   v-if="item.icon"
                   class="mr-2 shrink-0 text-base text-g-800"
@@ -46,41 +28,61 @@
                 >
                   {{ item.label }}
                 </span>
-                <FaSvgIcon
-                  icon="ri:arrow-right-s-line"
-                  class="ubmenu-arrow ml-auto mr-0 text-base text-g-500 transition-transform duration-150"
-                />
-              </div>
-              <ul
-                class="submenu-list fa-card-xs absolute left-full top-0 z-2001 hidden w-max min-w-max list-none shadow-xl!"
-                :style="submenuListStyle"
+              </li>
+
+              <!-- 子菜单 -->
+              <li
+                v-else
+                class="menu-item submenu relative flex items-center cursor-pointer select-none rounded text-xs transition-colors duration-150 hover:bg-(--el-color-primary-light-9)"
+                :style="menuItemStyle"
               >
-                <li
-                  v-for="child in item.children"
-                  :key="child.key"
-                  class="menu-item relative mx-1.5 flex items-center cursor-pointer select-none rounded text-xs transition-colors duration-150 hover:bg-(--el-color-primary-light-9)"
-                  :class="{ 'is-disabled': child.disabled, 'has-line': child.showLine }"
-                  :style="menuItemStyle"
-                  @click="handleMenuClick(child)"
-                >
+                <div class="submenu-title flex items-center w-full">
                   <FaSvgIcon
-                    v-if="child.icon"
-                    class="r-2 shrink-0 text-base text-g-800 mr-1"
-                    :icon="child.icon"
+                    v-if="item.icon"
+                    class="mr-2 shrink-0 text-base text-g-800"
+                    :icon="item.icon"
                   />
                   <span
                     class="menu-label flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-g-800"
                   >
-                    {{ child.label }}
+                    {{ item.label }}
                   </span>
-                </li>
-              </ul>
-            </li>
-          </template>
-        </ul>
-      </div>
-    </Transition>
-  </div>
+                  <FaSvgIcon
+                    icon="ri:arrow-right-s-line"
+                    class="ubmenu-arrow ml-auto mr-0 text-base text-g-500 transition-transform duration-150"
+                  />
+                </div>
+                <ul
+                  class="submenu-list fa-card-xs absolute left-full top-0 z-2001 hidden w-max min-w-max list-none shadow-xl!"
+                  :style="submenuListStyle"
+                >
+                  <li
+                    v-for="child in item.children"
+                    :key="child.key"
+                    class="menu-item relative mx-1.5 flex items-center cursor-pointer select-none rounded text-xs transition-colors duration-150 hover:bg-(--el-color-primary-light-9)"
+                    :class="{ 'is-disabled': child.disabled, 'has-line': child.showLine }"
+                    :style="menuItemStyle"
+                    @click="handleMenuClick(child)"
+                  >
+                    <FaSvgIcon
+                      v-if="child.icon"
+                      class="r-2 shrink-0 text-base text-g-800 mr-1"
+                      :icon="child.icon"
+                    />
+                    <span
+                      class="menu-label flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-g-800"
+                    >
+                      {{ child.label }}
+                    </span>
+                  </li>
+                </ul>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </Transition>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">

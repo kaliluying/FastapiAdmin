@@ -153,8 +153,8 @@ import { useConfigStore, useSettingsStore, useMenuStore } from "@stores";
 import { MenuTypeEnum, MenuWidth } from "@/enums/appEnum";
 import { isIframe, handleMenuJump } from "@utils";
 import SidebarSubmenu from "./widgets/FaSidebarSubmenu.vue";
-import { useCommon } from "@/hooks/core/useCommon";
 import { useWindowSize, useTimeoutFn } from "@vueuse/core";
+import { navigateToHome as navigateToHomeRoute } from "@/router/homeNavigation";
 
 defineOptions({ name: "FaSidebarMenu" });
 
@@ -350,13 +350,11 @@ const findIframeMenuList = (currentPath: string, menuList: any[]) => {
   return [];
 };
 
-const { homePath } = useCommon();
-
 /**
  * 导航到首页
  */
 const navigateToHome = (): void => {
-  router.push(homePath.value);
+  void navigateToHomeRoute(router);
 };
 
 /**

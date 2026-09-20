@@ -155,6 +155,7 @@ import { languageOptions } from "@/locales";
 import { mittBus, themeAnimation } from "@utils";
 import { useCommon } from "@/hooks/core/useCommon";
 import { useHeaderBar } from "@/hooks/core/useHeaderBar";
+import { navigateToHome as navigateToHomeRoute } from "@/router/homeNavigation";
 import FaUserMenu from "./widgets/FaUserMenu.vue";
 
 defineOptions({ name: "FaHeaderBar" });
@@ -226,14 +227,13 @@ const visibleMenu = (): void => {
   settingStore.setMenuOpen(!menuOpen.value);
 };
 
-const { homePath } = useCommon();
 const { refresh } = useCommon();
 
 /**
  * 跳转到首页
  */
 const toHome = (): void => {
-  router.push(homePath.value);
+  void navigateToHomeRoute(router);
 };
 
 /**

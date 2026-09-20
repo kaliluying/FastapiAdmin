@@ -16,6 +16,11 @@ import { ResultEnum } from "@/enums/api/result.enum";
 import { ElNotification } from "element-plus";
 import { store, useDictStore } from "@stores";
 import type { UserInfo } from "@/api/module_system/user";
+import {
+  clearLegacyUserRouteCache,
+  USER_STORE_PERSISTED_FIELDS,
+  USER_STORE_PERSIST_KEY,
+} from "./userPersistence";
 
 /** Lazily import router guard helpers to avoid a store/guard circular dependency. */
 let _routerUtilsPromise: Promise<typeof import("@/router/beforeEach")> | null = null;
@@ -400,22 +405,18 @@ export const useUserStore = defineStore(
   },
   {
     persist: {
-      key: "user",
+      key: USER_STORE_PERSIST_KEY,
       storage: localStorage,
       // accessToken/refreshToken 由 Auth 类按 rememberMe 分别存入 localStorage/sessionStorage，
       // 这里不重复持久化，否则 rememberMe=false 时 token 仍会残留在 localStorage["user"] 里。
-      pick: [
-        "language",
-        "isLogin",
-        "isLock",
-        "lockPassword",
-        "info",
-        "searchHistory",
-        "routeList",
-        "prems",
-        "hasGetRoute",
-        "rememberMe",
-      ],
+      // 动态路由必须随当前用户信息重新从后端获取，不能跨刷新复用旧项目菜单。
+      pick: USER_STORE_PERSISTED_FIELDS,
+      afterHydrate: ({ store }) => {
+        const hydratedState = store.$state as { routeList: MenuTable[]; hasGetRoute: boolean };
+        hydratedState.routeList = [];
+        hydratedState.hasGetRoute = false;
+        clearLegacyUserRouteCache(localStorage);
+      },
     },
   }
 );
