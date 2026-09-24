@@ -55,19 +55,23 @@
             </div>
           </div>
           <ul class="py-4 mt-3 border-t border-g-300/80">
-            <li
-              class="flex items-center p-2 mb-3 select-none rounded-md cursor-pointer last:mb-0 hover:bg-(--fa-gray-200)"
-              @click="lockScreen()"
-            >
-              <FaSvgIcon icon="ri:lock-line" class="mr-2 text-base" />
-              <span class="text-sm">{{ $t("topBar.user.lockScreen") }}</span>
+            <li>
+              <button type="button" class="user-menu-action" @click="openProfile()">
+                <FaSvgIcon icon="ri:user-3-line" class="mr-2 text-base" />
+                <span class="text-sm">{{ $t("topBar.user.userCenter") }}</span>
+              </button>
             </li>
-            <div class="w-full h-px my-2 bg-g-300/80"></div>
-            <li
-              class="flex p-2 select-none rounded-md cursor-pointer last:mb-0 hover:bg-(--fa-gray-200) justify-center mt-5 mb-0 py-1.5 text-xs border border-g-400 hover:text-(--el-color-danger) hover:border-(--el-color-danger-light-3)"
-              @click="handleLogout"
-            >
-              {{ $t("topBar.user.logout") }}
+            <li>
+              <button type="button" class="user-menu-action" @click="openPasswordChange()">
+                <FaSvgIcon icon="ri:key-2-line" class="mr-2 text-base" />
+                <span class="text-sm">{{ $t("topBar.user.changePassword") }}</span>
+              </button>
+            </li>
+            <li class="w-full h-px my-2 bg-g-300/80" aria-hidden="true"></li>
+            <li>
+              <button type="button" class="user-menu-action user-menu-action--logout" @click="handleLogout">
+                {{ $t("topBar.user.logout") }}
+              </button>
             </li>
           </ul>
         </div>
@@ -80,13 +84,14 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import { ElMessageBox } from "element-plus";
+import { useRouter } from "vue-router";
 import { useUserStore } from "@stores";
-import { mittBus } from "@utils";
 
 defineOptions({ name: "FaUserMenu" });
 
 const { t } = useI18n();
 const userStore = useUserStore();
+const router = useRouter();
 
 const { info: userInfo } = storeToRefs(userStore);
 const userMenuPopover = ref();
@@ -105,8 +110,14 @@ const displayName = computed(
 
 const displayEmail = computed(() => (userInfo.value as { email?: string })?.email || "");
 
-function lockScreen(): void {
-  mittBus.emit("openLockScreen");
+function openProfile(): void {
+  closeUserMenu();
+  void router.push({ name: "Profile" });
+}
+
+function openPasswordChange(): void {
+  closeUserMenu();
+  void router.push({ name: "Profile", query: { tab: "password" } });
 }
 
 function handleLogout(): void {
@@ -157,5 +168,41 @@ function closeUserMenu(): void {
   background-color: var(--el-color-success);
   border-radius: 50%;
   box-shadow: 0 0 2px rgb(0 0 0 / 20%);
+}
+
+.user-menu-action {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 8px;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 5px;
+}
+
+.user-menu-action:hover,
+.user-menu-action:focus-visible {
+  background: var(--el-fill-color-light);
+}
+
+.user-menu-action:focus-visible {
+  outline: 2px solid var(--fa-color-accent, var(--el-color-primary));
+  outline-offset: 2px;
+}
+
+.user-menu-action--logout {
+  justify-content: center;
+  padding: 6px;
+  margin-top: 12px;
+  font-size: 12px;
+  border: 1px solid var(--fa-color-border, var(--el-border-color));
+}
+
+.user-menu-action--logout:hover {
+  color: var(--el-color-danger);
+  border-color: var(--el-color-danger);
 }
 </style>

@@ -38,7 +38,7 @@ export interface LogoutOptions {
 }
 
 /**
- * User state: auth tokens, profile, permissions, dynamic routes, and lock state.
+ * User state: auth tokens, profile, permissions, and dynamic routes.
  */
 export const useUserStore = defineStore(
   "userStore",
@@ -47,10 +47,6 @@ export const useUserStore = defineStore(
     const language = ref(LanguageEnum.ZH);
     // 登录状态。
     const isLogin = ref(false);
-    // 锁屏状态。
-    const isLock = ref(false);
-    // 锁屏密码。
-    const lockPassword = ref("");
     // 用户信息。
     const info = ref<Partial<UserInfo>>({});
     // 搜索历史记录。
@@ -118,22 +114,6 @@ export const useUserStore = defineStore(
      */
     const setSearchHistory = (list: AppRouteRecord[]) => {
       searchHistory.value = list;
-    };
-
-    /**
-     * 设置锁屏状态。
-     * @param status 锁屏状态。
-     */
-    const setLockStatus = (status: boolean) => {
-      isLock.value = status;
-    };
-
-    /**
-     * 设置锁屏密码。
-     * @param password 锁屏密码。
-     */
-    const setLockPassword = (password: string) => {
-      lockPassword.value = password;
     };
 
     /**
@@ -312,8 +292,6 @@ export const useUserStore = defineStore(
       routeList.value = [];
       hasGetRoute.value = false;
       isLogin.value = false;
-      isLock.value = false;
-      lockPassword.value = "";
       accessToken.value = "";
       refreshToken.value = "";
       prems.value = [];
@@ -362,8 +340,6 @@ export const useUserStore = defineStore(
     return {
       language,
       isLogin,
-      isLock,
-      lockPassword,
       info,
       searchHistory,
       accessToken,
@@ -383,8 +359,6 @@ export const useUserStore = defineStore(
       setLoginStatus,
       setLanguage,
       setSearchHistory,
-      setLockStatus,
-      setLockPassword,
       setToken,
       setAvatar,
       setRoute,

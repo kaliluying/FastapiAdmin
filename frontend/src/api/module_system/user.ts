@@ -30,7 +30,7 @@ export const UserAPI = {
 
   changeCurrentUserPassword(body: PasswordFormState) {
     return request<ApiResponse>({
-      url: `${API_PATH}/current/password/change`,
+      url: `${API_PATH}/password/change`,
       method: "put",
       data: body,
     });
@@ -172,9 +172,9 @@ export interface roleSelectorType {
 export interface InfoFormState {
   id?: number;
   name?: string;
-  gender?: number;
-  mobile?: string;
-  email?: string;
+  gender?: string | null;
+  mobile?: string | null;
+  email?: string | null;
   username?: string;
   roles?: roleSelectorType[];
   avatar?: string;
@@ -185,7 +185,6 @@ export interface InfoFormState {
 export interface PasswordFormState {
   old_password: string;
   new_password: string;
-  confirm_password: string;
 }
 
 export interface ResetPasswordForm {
@@ -209,7 +208,7 @@ export interface UserForm extends BaseFormType {
 
 export interface CurrentUserFormState {
   name?: string;
-  gender?: number;
+  gender?: string | null;
   mobile?: string;
   email?: string;
   avatar?: string;

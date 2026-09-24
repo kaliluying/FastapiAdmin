@@ -4,8 +4,6 @@ export const USER_STORE_PERSIST_KEY = "user";
 export const USER_STORE_PERSISTED_FIELDS = [
   "language",
   "isLogin",
-  "isLock",
-  "lockPassword",
   "info",
   "searchHistory",
   "prems",
@@ -15,7 +13,7 @@ export const USER_STORE_PERSISTED_FIELDS = [
 type UserPersistenceStorage = Pick<Storage, "getItem" | "setItem">;
 
 /**
- * 清理旧版本写入的动态路由缓存，保留同一个存储项中的登录信息。
+ * 清理旧版本写入的动态路由缓存与已移除的锁屏状态，保留登录信息。
  *
  * 旧版本把 routeList/hasGetRoute 持久化后，刷新页面会跳过当前菜单接口，
  * 导致已删除或其他项目的菜单继续出现在侧栏。解析失败时保持原值，避免误删认证状态。
@@ -37,7 +35,7 @@ export function clearLegacyUserRouteCache(storage: UserPersistenceStorage): bool
 
   const state = persisted as Record<string, unknown>;
   let changed = false;
-  for (const key of ["routeList", "hasGetRoute"]) {
+  for (const key of ["routeList", "hasGetRoute", "isLock", "lockPassword"]) {
     if (Object.prototype.hasOwnProperty.call(state, key)) {
       delete state[key];
       changed = true;

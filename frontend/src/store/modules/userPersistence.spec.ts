@@ -18,6 +18,8 @@ describe("用户 Store 持久化", () => {
   it("不再持久化动态路由状态", () => {
     expect(USER_STORE_PERSISTED_FIELDS).not.toContain("routeList");
     expect(USER_STORE_PERSISTED_FIELDS).not.toContain("hasGetRoute");
+    expect(USER_STORE_PERSISTED_FIELDS).not.toContain("isLock");
+    expect(USER_STORE_PERSISTED_FIELDS).not.toContain("lockPassword");
   });
 
   it("清理旧版本留下的菜单路由缓存，但保留登录信息", () => {
@@ -28,6 +30,8 @@ describe("用户 Store 持久化", () => {
         info: { id: 1, username: "admin" },
         routeList: [{ name: "旧项目菜单" }],
         hasGetRoute: true,
+        isLock: true,
+        lockPassword: "legacy-lock-hash",
       })
     );
 

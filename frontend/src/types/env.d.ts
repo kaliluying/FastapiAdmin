@@ -41,9 +41,6 @@ interface ImportMetaEnv {
   /** 是否在控制台输出路由信息 */
   VITE_OPEN_ROUTE_INFO: string;
 
-  /** 锁屏加密密钥 */
-  VITE_LOCK_ENCRYPT_KEY: string;
-
   /** 是否删除控制台输出 */
   VITE_DROP_CONSOLE: string;
 

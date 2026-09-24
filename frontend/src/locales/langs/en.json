@@ -34,11 +34,11 @@
     },
     "user": {
       "userCenter": "User center",
+      "changePassword": "Change password",
       "changeLog": "Release notes",
       "paramConfig": "Config center",
       "docs": "Document",
       "tour": "Guided tour",
-      "lockScreen": "Lock screen",
       "logout": "Log out"
     },
     "guide": {
@@ -420,35 +420,6 @@
   "loginForm": {
     "remember": "Remember me"
   },
-  "lock": {
-    "unlock": "Click to unlock",
-    "placeholder": "Please enter lock screen password",
-    "message": "Password error",
-    "backToLogin": "Back to login",
-    "entrySystem": "Enter system",
-    "lockScreen": "Lock screen",
-    "required": "Please enter password"
-  },
-  "lockScreen": {
-    "pwdError": "Password error",
-    "lock": {
-      "inputPlaceholder": "Please input lock screen password",
-      "btnText": "Lock"
-    },
-    "unlock": {
-      "inputPlaceholder": "Please input unlock password",
-      "btnText": "Unlock",
-      "backBtnText": "Back to login"
-    },
-    "lockScreen": "Lock screen",
-    "lockPassword": "Lock screen password",
-    "unlockText": "Click to unlock",
-    "backToLogin": "Back to login",
-    "entrySystem": "Entry the system",
-    "placeholder": "Please enter the lock screen password",
-    "required": "Please enter the lock screen password",
-    "message": "Lock screen password error"
-  },
   "greeting": {
     "dawn": "Good morning!",
     "morning": "Good morning!",
@@ -562,8 +533,6 @@
     "dashboard": "Home",
     "logout": "Logout",
     "document": "Document",
-    "lock": "Lock",
-    "unlock": "Unlock",
     "profile": "User Profile",
     "config": "Config Center",
     "tour": "Project Tour",

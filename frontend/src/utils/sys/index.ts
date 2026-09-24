@@ -16,7 +16,6 @@ export function printConsoleBanner(): void {
 type SysEvents = {
   triggerFireworks: string | undefined;
   openSearchDialog: void;
-  openLockScreen: void;
 };
 
 export const mittBus: Emitter<SysEvents> = mitt<SysEvents>();

@@ -28,6 +28,16 @@ class CurrentUserUpdateSchema(BaseModel):
     gender: str | None = Field(default=None, max_length=1, description="性别(0:男 1:女 2:未知)")
     avatar: str | None = Field(default=None, max_length=255, description="头像")
 
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("姓名不能为空")
+        return normalized
+
     @field_validator("mobile")
     @classmethod
     def validate_mobile(cls, value: str | None):

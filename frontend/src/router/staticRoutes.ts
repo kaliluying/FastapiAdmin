@@ -255,6 +255,12 @@ export const staticRoutes: AppRouteRecordRaw[] = [
         component: () => import("@views/home/index.vue"),
         meta: HOME_MENU_META,
       },
+      {
+        path: "profile",
+        name: "Profile",
+        component: () => import("@views/profile/index.vue"),
+        meta: { title: "个人中心", hidden: true, keepAlive: false },
+      },
     ],
   },
   {

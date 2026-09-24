@@ -29,12 +29,6 @@ export const globalComponentsConfig: GlobalComponentConfig[] = [
     enabled: true,
   },
   {
-    name: "锁屏",
-    key: "screen-lock",
-    component: defineAsyncComponent(() => import("@/components/layouts/fa-screen-lock/index.vue")),
-    enabled: true,
-  },
-  {
     name: "礼花效果",
     key: "fireworks-effect",
     component: defineAsyncComponent(

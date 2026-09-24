@@ -198,8 +198,6 @@ class UserService:
         user = await UserCRUD(self.auth).get(id=self.auth.user.id)
         if not user:
             raise CustomException(msg="该数据不存在")
-        if user.is_superuser:
-            raise CustomException(msg="超级管理员不能修改个人信息")
         if data.mobile:
             exist_mobile_user = await UserCRUD(self.auth).get(mobile=data.mobile)
             if exist_mobile_user and exist_mobile_user.id != self.auth.user.id:
@@ -208,7 +206,7 @@ class UserService:
             exist_email_user = await UserCRUD(self.auth).get(email=data.email)
             if exist_email_user and exist_email_user.id != self.auth.user.id:
                 raise CustomException(msg="该数据已存在")
-        user_update_data = UserUpdateSchema(**data.model_dump())
+        user_update_data = UserUpdateSchema(**data.model_dump(exclude_unset=True))
         new_user = await UserCRUD(self.auth).update(id=self.auth.user.id, data=user_update_data)
         return UserOutSchema.model_validate(new_user)
 

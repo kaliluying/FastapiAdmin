@@ -36,8 +36,8 @@ flowchart LR
 
 1. 从 `backend/` 运行 `uv run main.py run --env=dev`。CLI 先设置 `ENVIRONMENT`，再导入配置；`app/config/setting.py` 和 `app/plugin/module_ai/config.py` 读取对应 `backend/env/.env.dev`。
 2. `create_app()` 注册异常处理、中间件、通用路由、AI 路由和静态资源。通用路由在 `app/init_app.py:register_routers()` 显式挂载；AI 的 HTTP/WebSocket 路由、模型和启动钩子由 `app/plugin/module_ai/plugin.toml` 声明，交给 `app/core/plugins.py` 装配。当前没有目录扫描式插件发现。
-3. 应用生命周期先连接 Redis，再在 Redis 锁下应用已有 Alembic 迁移、按 ORM 创建缺失表并补齐种子数据，随后初始化 AI 模块、参数/字典缓存及限流器。**启动可能修改目标数据库**，先确认环境文件与连接目标。
-4. 前端使用 Hash 路由。登录后用户信息中的菜单进入 `MenuProcessor`，由 `menuRoutes.ts` 转换，再经 `RouteRegistry` 校验并注册；`beforeEach.ts` 负责权限与导航。前端隐藏路由不代替后端 `AuthPermission` 校验。
+3. 应用生命周期先连接 Redis，再在 Redis 锁下应用已有 Alembic 迁移、按 ORM 创建缺失表并补齐种子数据，随后初始化 AI 模块、通用缓存及限流器。**启动可能修改目标数据库**，先确认环境文件与连接目标。
+4. 前端使用 Hash 路由。登录后用户信息中的菜单进入 `MenuProcessor`，由 `menuRoutes.ts` 转换，再经 `RouteRegistry` 校验并注册；`beforeEach.ts` 负责权限与导航。个人中心是静态隐藏路由，资料与密码操作仍由后端登录态校验。
 
 前端 API 请求通过 `frontend/src/utils/http/` 发送。开发代理由 `frontend/vite.config.ts` 配置：`VITE_APP_BASE_API` 是浏览器使用的 API 前缀，`VITE_API_BASE_URL` 是代理目标；WebSocket 另用 `VITE_APP_WS_ENDPOINT`。Vite 会加载 `.env` 和对应模式的 `.env.development`，后者可覆盖同名值。仓库模板与当前开发文件可能不同，联调前以实际加载值和后端监听地址核对。
 
