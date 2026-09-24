@@ -100,8 +100,8 @@
   overflow: hidden auto;
   background: var(--default-box-color);
   border: 1px solid var(--fa-card-border);
-  border-radius: 8px;
-  box-shadow: var(--fa-panel-shadow);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgb(24 35 45 / 10%);
 }
 
 .login-auth-split--center .auth-right-wrap .form {
@@ -189,12 +189,12 @@ html.dark .login-page-footer--floating-layout {
   width: 440px;
   height: auto;
   max-height: calc(100dvh - 9rem);
-  padding: 1.5rem;
+  padding: 2rem;
   overflow: hidden auto;
   background: var(--el-bg-color);
   border: 1px solid var(--fa-card-border);
-  border-radius: 8px;
-  box-shadow: var(--fa-panel-shadow);
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgb(24 35 45 / 9%);
   animation: slideInRight 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
 
   @media (width <= 640px) {
@@ -221,7 +221,7 @@ html.dark .login-page-footer--floating-layout {
     font-size: 1.875rem;
     font-weight: 650;
     line-height: 2.25rem;
-    color: var(--fa-gray-900);
+    color: var(--fa-color-text);
 
     @media (width <= 768px) {
       font-size: 1.875rem;
@@ -237,7 +237,7 @@ html.dark .login-page-footer--floating-layout {
     margin-top: 0.5rem;
     font-size: 0.875rem;
     line-height: 1.25rem;
-    color: var(--fa-gray-600);
+    color: var(--fa-color-text-muted);
   }
 
   .custom-height {

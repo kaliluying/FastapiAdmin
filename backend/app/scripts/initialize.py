@@ -10,9 +10,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.module_platform.menu.model import MenuModel
-from app.api.v1.module_system.dict.model import DictDataModel, DictTypeModel
 from app.api.v1.module_system.log.model import LoginLogModel, OperationLogModel
-from app.api.v1.module_system.params.model import ParamsModel
 from app.api.v1.module_system.role.model import RoleMenusModel, RoleModel
 from app.api.v1.module_system.user.model import UserModel, UserRolesModel
 from app.config.path_conf import SCRIPT_DIR
@@ -33,10 +31,7 @@ class InitializeData:
         # ── 平台管理：基础表 ──
         MenuModel,
         # ── 系统管理：基础表 ──
-        ParamsModel,
         RoleModel,
-        DictTypeModel,
-        DictDataModel,
         UserModel,
         # ── 关联表 ──
         RoleMenusModel,
@@ -75,7 +70,6 @@ class InitializeData:
 
     async def __init_data(self, db: AsyncSession) -> None:
         """按依赖顺序初始化各表种子数据"""
-        dict_type_mapping: dict[str, DictTypeModel] = {}
         role_seed_mapping: dict[int, RoleModel] = {}
         user_seed_mapping: dict[int, UserModel] = {}
 
@@ -91,40 +85,6 @@ class InitializeData:
                 # 树形菜单表：递归创建含 children 的对象
                 if table_name in self._RECURSIVE_TABLES:
                     added = await self.__seed_menus(db, data)
-                    logger.info(f"✅️ 已向 {table_name} 补齐 {added} 条初始化数据")
-                    continue
-
-                # 字典类型表：存储类型映射供字典数据使用
-                if table_name == "sys_dict_type":
-                    added = await self.__seed_unique_rows(db, model, data, ("dict_type",))
-                    rows = (await db.execute(select(DictTypeModel))).scalars().all()
-                    dict_type_mapping = {row.dict_type: row for row in rows}
-                    logger.info(f"✅️ 已向 {table_name} 补齐 {added} 条初始化数据")
-                    continue
-
-                # 字典数据表：关联 dict_type_id
-                if table_name == "sys_dict_data":
-                    added = 0
-                    for item in data:
-                        dict_type_str = item.get("dict_type")
-                        dict_type_obj = dict_type_mapping.get(dict_type_str)
-                        if not dict_type_obj:
-                            logger.warning(f"⚠️  未找到字典类型 {dict_type_str}，跳过")
-                            continue
-                        existing = await db.scalar(
-                            select(DictDataModel).where(
-                                DictDataModel.dict_type_id == dict_type_obj.id,
-                                DictDataModel.dict_value == item["dict_value"],
-                            )
-                        )
-                        if existing:
-                            continue
-                        values = {**item, "dict_type_id": dict_type_obj.id}
-                        values.pop("id", None)
-                        db.add(model(**values))
-                        added += 1
-                    if added:
-                        await db.flush()
                     logger.info(f"✅️ 已向 {table_name} 补齐 {added} 条初始化数据")
                     continue
 

@@ -5,13 +5,12 @@
         <span class="ai-mark__core">
           <ElIcon size="34"><ChatDotRound /></ElIcon>
         </span>
-        <span class="ai-mark__pulse"></span>
       </div>
 
       <div class="welcome-heading">
-        <span>Knowledge Copilot</span>
-        <h1>FA智能助手</h1>
-        <p>连接内部知识库、系统权限与操作上下文，帮你把问题变成可执行的后台动作。</p>
+        <span>知识助手</span>
+        <h1>从知识库开始提问</h1>
+        <p>输入问题并选择知识库；回答中的引用会标明所依据的内容。</p>
       </div>
 
       <div class="example-prompts">
@@ -19,7 +18,6 @@
           v-for="card in promptCards"
           :key="card.prompt"
           class="prompt-card"
-          :class="`prompt-card--${card.tone}`"
           role="button"
           tabindex="0"
           @click="handlePromptClick(card.prompt)"
@@ -51,31 +49,27 @@ const emit = defineEmits<Emits>();
 const promptCards = [
   {
     title: "系统介绍",
-    body: "请介绍一下 FastApiAdmin 的模块和能力",
+    body: "了解这个工作台的主要功能",
     prompt: "请介绍一下FastApiAdmin系统",
     icon: "ri:dashboard-3-line",
-    tone: "blue",
   },
   {
-    title: "开发指导",
-    body: "生成新模块的目录、接口与页面清单",
-    prompt: "如何在系统中创建新的模块？",
-    icon: "ri:code-box-line",
-    tone: "cyan",
+    title: "知识库使用",
+    body: "了解如何整理和检索内部资料",
+    prompt: "如何使用知识库查找文档？",
+    icon: "ri:book-open-line",
   },
   {
     title: "权限管理",
     body: "解释角色、菜单和接口权限的协作关系",
     prompt: "系统的权限管理是如何工作的？",
     icon: "ri:shield-keyhole-line",
-    tone: "violet",
   },
   {
-    title: "性能优化",
-    body: "定位接口、检索和前端渲染的优化机会",
-    prompt: "如何优化FA系统的性能？",
-    icon: "ri:speed-up-line",
-    tone: "amber",
+    title: "查看依据",
+    body: "了解回答中的引用与来源",
+    prompt: "如何查看 AI 回答所依据的文档？",
+    icon: "ri:file-search-line",
   },
 ];
 
@@ -91,11 +85,9 @@ const handlePromptClick = (prompt: string) => {
   align-items: center;
   justify-content: flex-start;
   height: 100%;
-  padding: 20px 24px 14px;
+  padding: 36px 24px 24px;
   text-align: center;
-  background:
-    radial-gradient(circle at 50% 12%, rgb(93 135 255 / 12%), transparent 30%),
-    linear-gradient(180deg, rgb(248 251 255 / 62%), transparent 42%);
+  background: var(--fa-color-surface);
 }
 
 .welcome-content {
@@ -103,43 +95,23 @@ const handlePromptClick = (prompt: string) => {
 }
 
 .ai-mark {
-  position: relative;
   display: inline-grid;
   place-items: center;
-  width: 50px;
-  height: 50px;
-  margin-bottom: 10px;
-}
-
-.ai-mark__core,
-.ai-mark__pulse {
-  position: absolute;
-  border-radius: 999px;
+  width: 54px;
+  height: 54px;
+  margin-bottom: 18px;
 }
 
 .ai-mark__core {
-  z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
-  color: var(--el-color-primary);
-  background: var(--default-box-color);
-  border: 1px solid rgb(93 135 255 / 18%);
-  box-shadow: 0 16px 42px rgb(93 135 255 / 20%);
-}
-
-.ai-mark__pulse {
-  inset: 0;
-  background: conic-gradient(
-    from 140deg,
-    rgb(93 135 255 / 0%),
-    rgb(93 135 255 / 35%),
-    rgb(45 212 191 / 34%),
-    rgb(93 135 255 / 0%)
-  );
-  opacity: 0.72;
+  width: 54px;
+  height: 54px;
+  color: var(--theme-color);
+  background: var(--fa-color-canvas);
+  border: 1px solid var(--fa-color-border);
+  border-radius: 14px;
 }
 
 .welcome-heading span {
@@ -147,14 +119,13 @@ const handlePromptClick = (prompt: string) => {
   margin-bottom: 7px;
   font-size: 12px;
   font-weight: 750;
-  color: #4070d8;
-  text-transform: uppercase;
+  color: var(--theme-color);
 }
 
 .welcome-heading h1 {
   margin: 0;
   font-size: 28px;
-  font-weight: 760;
+  font-weight: 680;
   line-height: 1.2;
   color: var(--el-text-color-primary);
 }
@@ -170,8 +141,8 @@ const handlePromptClick = (prompt: string) => {
 .example-prompts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin-top: 16px;
+  gap: 10px;
+  margin-top: 28px;
 }
 
 .prompt-card {
@@ -182,35 +153,26 @@ const handlePromptClick = (prompt: string) => {
   gap: 12px;
   min-height: 76px;
   padding: 14px 16px;
-  overflow: visible;
+  overflow: hidden;
   text-align: left;
   cursor: pointer;
   background: var(--default-box-color);
   border: 1px solid var(--fa-card-border);
-  border-radius: 8px;
-  box-shadow: var(--fa-soft-shadow);
+  border-radius: 10px;
+  box-shadow: none;
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
     transform 0.2s ease;
 }
 
-.prompt-card::before {
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 3px;
-  content: "";
-  background: var(--prompt-color);
-}
-
 .prompt-card:hover {
-  border-color: color-mix(in srgb, var(--prompt-color) 36%, transparent);
-  box-shadow: 0 18px 38px rgb(23 32 51 / 10%);
-  transform: translateY(-2px);
+  background: var(--fa-color-canvas);
+  border-color: color-mix(in srgb, var(--theme-color) 42%, var(--fa-color-border));
 }
 
 .prompt-card:focus-visible {
-  outline: 2px solid var(--prompt-color);
+  outline: 2px solid var(--theme-color);
   outline-offset: 2px;
 }
 
@@ -221,8 +183,8 @@ const handlePromptClick = (prompt: string) => {
   width: 32px;
   height: 32px;
   font-size: 18px;
-  color: var(--prompt-color);
-  background: color-mix(in srgb, var(--prompt-color) 12%, var(--default-box-color));
+  color: var(--theme-color);
+  background: color-mix(in srgb, var(--theme-color) 10%, var(--fa-color-surface));
   border-radius: 8px;
 }
 
@@ -238,22 +200,6 @@ const handlePromptClick = (prompt: string) => {
   font-size: 12px;
   line-height: 1.4;
   color: var(--el-text-color-secondary);
-}
-
-.prompt-card--blue {
-  --prompt-color: #5d87ff;
-}
-
-.prompt-card--cyan {
-  --prompt-color: #2dd4bf;
-}
-
-.prompt-card--violet {
-  --prompt-color: #8b5cf6;
-}
-
-.prompt-card--amber {
-  --prompt-color: #f59e0b;
 }
 
 @media (width <= 720px) {

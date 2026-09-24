@@ -420,16 +420,10 @@ onDeactivated(disconnectWebSocket);
 .main-chat {
   height: 100%;
   overflow: hidden;
-  background:
-    radial-gradient(
-      circle at 55% 0%,
-      color-mix(in srgb, var(--theme-color) 10%, transparent),
-      transparent 32%
-    ),
-    var(--default-box-color);
+  background: var(--fa-color-surface);
   border: 1px solid var(--fa-card-border);
-  border-radius: 8px;
-  box-shadow: var(--fa-panel-shadow);
+  border-radius: 10px;
+  box-shadow: none;
 
   .chat-split-panel {
     min-width: 0;
@@ -463,8 +457,8 @@ onDeactivated(disconnectWebSocket);
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100%;
     min-width: 0;
+    height: 100%;
     min-height: 0;
     overflow: hidden;
   }
@@ -472,9 +466,8 @@ onDeactivated(disconnectWebSocket);
   .chat-header {
     height: auto;
     padding: 0;
-    background: color-mix(in srgb, var(--default-box-color) 78%, transparent);
+    background: var(--fa-color-surface);
     border-bottom: 1px solid var(--fa-card-border);
-    backdrop-filter: blur(10px);
   }
 
   .chat-main {
@@ -487,14 +480,14 @@ onDeactivated(disconnectWebSocket);
     height: auto;
     min-height: 80px;
     padding: 0;
-    background: color-mix(in srgb, var(--default-box-color) 88%, transparent);
+    background: var(--fa-color-surface);
     border-top: 1px solid var(--fa-card-border);
   }
 
   .evidence-panel {
     padding: 12px;
     overflow-y: auto;
-    background: color-mix(in srgb, var(--default-box-color) 60%, transparent);
+    background: var(--fa-color-canvas);
   }
 
   :deep(.el-splitter-bar__dragger) {

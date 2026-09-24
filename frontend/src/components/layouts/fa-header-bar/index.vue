@@ -149,7 +149,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { useFullscreen, useWindowSize } from "@vueuse/core";
 import { LanguageEnum, MenuTypeEnum } from "@/enums/appEnum";
-import { useSettingsStore, useMenuStore, useUserStore, useConfigStore } from "@stores";
+import { useSettingsStore, useMenuStore, useUserStore } from "@stores";
 import AppConfig from "@/config";
 import { languageOptions } from "@/locales";
 import { mittBus, themeAnimation } from "@utils";
@@ -170,19 +170,11 @@ const { width } = useWindowSize();
 const settingStore = useSettingsStore();
 const userStore = useUserStore();
 const menuStore = useMenuStore();
-const configStore = useConfigStore();
 
-/** 系统配置：system_logo / system_name */
-const headerLogoSrc = computed(() => {
-  const raw = configStore.configData.system_logo?.config_value;
-  return typeof raw === "string" && raw.trim() ? raw.trim() : undefined;
-});
+/** 使用应用内置站点名称与 Logo */
+const headerLogoSrc = computed(() => undefined);
 
-const headerSystemName = computed(() => {
-  const raw = configStore.configData.system_name?.config_value;
-  if (typeof raw === "string" && raw.trim()) return raw.trim();
-  return AppConfig.systemInfo.name;
-});
+const headerSystemName = computed(() => AppConfig.systemInfo.name);
 
 // 顶部栏功能配置
 const {
@@ -274,32 +266,28 @@ const openSearchDialog = (): void => {
 
 <style lang="scss" scoped>
 .w-full {
-  padding: 10px 16px 0;
-  background: linear-gradient(180deg, rgb(246 248 252 / 92%), rgb(246 248 252 / 68%));
-  border-bottom: 0;
+  padding: 0 20px;
+  background: var(--fa-color-surface);
+  border-bottom: 1px solid var(--fa-color-border);
   box-shadow: none;
-  backdrop-filter: blur(16px);
 }
 
 html.dark .w-full {
-  background: linear-gradient(180deg, rgb(9 15 28 / 92%), rgb(9 15 28 / 64%));
+  background: var(--fa-color-surface);
 }
 
 .relative.box-border {
-  height: 56px;
-  padding: 0 12px;
-  line-height: 56px;
-  background: rgb(255 255 255 / 78%);
-  border: 1px solid rgb(11 18 32 / 7%);
-  border-radius: 8px;
-  box-shadow: 0 14px 36px rgb(11 18 32 / 8%);
-  backdrop-filter: blur(16px);
+  height: 60px;
+  padding: 0 4px;
+  line-height: 60px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 html.dark .relative.box-border {
-  background: rgb(16 24 39 / 72%);
-  border-color: rgb(255 255 255 / 8%);
-  box-shadow: 0 14px 36px rgb(0 0 0 / 22%);
+  background: transparent;
 }
 
 /* Custom animations */

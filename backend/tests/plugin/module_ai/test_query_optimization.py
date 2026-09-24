@@ -8,7 +8,7 @@
 
 import pytest
 
-from app.plugin.module_ai.chat.query_analyzer import QueryAnalyzer
+from app.plugin.module_ai.knowledge.query_analyzer import QueryAnalyzer
 
 
 class TestQueryAnalyzer:
@@ -140,9 +140,9 @@ class TestDynamicAlphaRetrieval:
 
     async def test_auto_adjust_enabled(self):
         """测试启用自动调整"""
-        from app.plugin.module_ai.chat.hybrid_retriever import HybridKnowledgeRetriever
+        from app.plugin.module_ai.knowledge.retrieval import KnowledgeRetriever
 
-        retriever = HybridKnowledgeRetriever(
+        retriever = KnowledgeRetriever(
             alpha=0.5,
             auto_adjust_alpha=True,
         )
@@ -157,9 +157,9 @@ class TestDynamicAlphaRetrieval:
 
     async def test_auto_adjust_disabled(self):
         """测试禁用自动调整"""
-        from app.plugin.module_ai.chat.hybrid_retriever import HybridKnowledgeRetriever
+        from app.plugin.module_ai.knowledge.retrieval import KnowledgeRetriever
 
-        retriever = HybridKnowledgeRetriever(
+        retriever = KnowledgeRetriever(
             alpha=0.5,
             auto_adjust_alpha=False,
         )

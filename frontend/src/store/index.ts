@@ -2,8 +2,6 @@ import type { App } from "vue";
 import { createPinia } from "pinia";
 import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 import { useUserStore } from "./modules/user.store";
-import { useDictStore } from "./modules/dict.store";
-import { useConfigStore } from "./modules/config.store";
 import { useWorktabStore } from "./modules/worktab.store";
 
 const store = createPinia();
@@ -15,8 +13,6 @@ export function initStore(app: App<Element>) {
 }
 
 export * from "./modules/app.store";
-export * from "./modules/config.store";
-export * from "./modules/dict.store";
 export * from "./modules/menu.store";
 export * from "./modules/setting.store";
 export * from "./modules/table.store";
@@ -26,41 +22,25 @@ export * from "./modules/worktab.store";
 export { store };
 
 export interface RefreshCacheOptions {
-  dictTypes?: string[];
   refreshUser?: boolean;
   refreshRoutes?: boolean;
-  refreshConfig?: boolean;
   clearTags?: boolean;
-  clearDictBefore?: boolean;
 }
 
 export async function refreshAppCaches(opts: RefreshCacheOptions = {}) {
   const {
-    dictTypes,
     refreshUser = true,
     refreshRoutes = true,
-    refreshConfig = true,
     clearTags = false,
-    clearDictBefore = false,
   } = opts;
 
   const userStore = useUserStore(store);
-  const dictStore = useDictStore(store);
-  const configStore = useConfigStore(store);
 
   const tasks: Promise<any>[] = [];
 
   if (refreshUser) {
     tasks.push(userStore.getUserInfo());
   }
-  if (refreshConfig) {
-    tasks.push(configStore.getConfig(true));
-  }
-  if (dictTypes && dictTypes.length > 0) {
-    if (clearDictBefore) dictStore.clearDictData();
-    tasks.push(dictStore.getDict(dictTypes));
-  }
-
   await Promise.allSettled(tasks);
 
   if (refreshRoutes) {

@@ -68,7 +68,7 @@
       flex: 1;
       flex-direction: column;
       min-height: 0;
-      padding: 16px;
+      padding: 24px 28px;
       overflow: auto;
       background: transparent;
 
@@ -125,7 +125,7 @@ html.dark .app-layout {
       overflow: visible;
 
       #app-content {
-        padding: 12px;
+        padding: 16px;
 
         :deep(.layout-content) {
           width: 100%;

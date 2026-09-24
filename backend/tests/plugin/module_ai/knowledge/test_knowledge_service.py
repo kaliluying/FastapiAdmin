@@ -250,3 +250,95 @@ async def test_bm25_retrieval_test_skips_vector_dependencies(monkeypatch):
             }
         ],
     }
+
+
+@pytest.mark.asyncio
+async def test_public_access_check_deduplicates_and_rejects_inaccessible_ids(monkeypatch):
+    from app.plugin.module_ai.knowledge import public
+
+    requested = []
+
+    class BaseCrud:
+        async def get_list(self, *, search):
+            requested.append(search)
+            return [SimpleNamespace(id=1), SimpleNamespace(id=2)]
+
+    monkeypatch.setattr(public, "KnowledgeBaseCRUD", lambda _auth: BaseCrud())
+    auth = SimpleNamespace(user=SimpleNamespace(id=7), db=object())
+
+    assert await public.accessible_knowledge_base_ids(auth, [1, 1, 2]) == [1, 2]
+    assert requested == [{"id": ("in", [1, 2])}]
+
+    class RestrictedBaseCrud:
+        async def get_list(self, *, search):
+            return [SimpleNamespace(id=1)]
+
+    monkeypatch.setattr(public, "KnowledgeBaseCRUD", lambda _auth: RestrictedBaseCrud())
+    with pytest.raises(CustomException) as error:
+        await public.accessible_knowledge_base_ids(auth, [1, 3])
+    assert error.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_hybrid_retrieval_response_uses_knowledge_search_results(monkeypatch):
+    from app.plugin.module_ai.knowledge import service as service_module
+
+    class EmbeddingClient:
+        async def embed_texts(self, texts):
+            assert texts == ["合同解除依据"]
+            return [[0.25, 0.75]]
+
+    class ChromaStore:
+        async def query(self, *, query_embedding, knowledge_base_ids, top_k):
+            assert query_embedding == [0.25, 0.75]
+            assert knowledge_base_ids == [1]
+            assert top_k == 20
+            return {
+                "ids": [["chunk-1"]],
+                "documents": [["向量召回内容"]],
+                "metadatas": [[{"knowledge_base_id": 1, "document_id": 8}]],
+                "distances": [[0.12]],
+            }
+
+    class Bm25Index:
+        async def search(self, *, query, knowledge_base_ids, top_k):
+            assert query == "合同解除依据"
+            assert knowledge_base_ids == [1]
+            assert top_k == 20
+            return [
+                {
+                    "chunk_id": "chunk-1",
+                    "content": "关键词召回内容",
+                    "score": 6.5,
+                    "knowledge_base_id": 1,
+                    "document_id": 8,
+                    "chunk_index": 0,
+                    "file_name": "contract.md",
+                }
+            ]
+
+    monkeypatch.setattr(service_module.settings, "RETRIEVAL_MODE", "hybrid")
+    monkeypatch.setattr(service_module.settings, "HYBRID_ALPHA", 0.5)
+    monkeypatch.setattr(service_module.settings, "RETRIEVAL_CANDIDATE_MULTIPLIER", 4)
+    monkeypatch.setattr(service_module.settings, "RETRIEVAL_AUTO_ADJUST_ALPHA", False)
+    result = await KnowledgeService(
+        AuthSchema(),
+        store=ChromaStore(),
+        embedding_client=EmbeddingClient(),
+        bm25_index=Bm25Index(),
+    ).query_retrieval(RetrievalTestSchema(query="合同解除依据", knowledge_base_ids=[1], top_k=5))
+
+    assert result["retrieval_mode"] == "hybrid"
+    assert result["results"] == [
+        {
+            "content": "向量召回内容",
+            "metadata": {
+                "knowledge_base_id": 1,
+                "document_id": 8,
+                "vector_distance": 0.12,
+                "bm25_score": 6.5,
+            },
+            "distance": 0.12,
+            "score": 6.5,
+        }
+    ]

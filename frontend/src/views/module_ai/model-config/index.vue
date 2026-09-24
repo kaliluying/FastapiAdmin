@@ -21,7 +21,8 @@
       <ElForm ref="formRef" v-loading="loading" :model="form" :rules="rules" class="model-form" label-width="104px">
         <ElFormItem label="接口协议" prop="chat_protocol">
           <ElSelect v-model="form.chat_protocol" :disabled="!canEdit" class="form-control">
-            <ElOption label="OpenAI-compatible" value="openai" />
+            <ElOption label="OpenAI · Chat Completions" value="openai" />
+            <ElOption label="OpenAI · Responses" value="openai_responses" />
             <ElOption label="Anthropic Claude" value="anthropic" />
           </ElSelect>
         </ElFormItem>
@@ -29,7 +30,18 @@
           <ElInput v-model="form.openai_base_url" :disabled="!canEdit" autocomplete="url" />
         </ElFormItem>
         <ElFormItem label="模型名称" prop="openai_model">
-          <ElInput v-model="form.openai_model" :disabled="!canEdit" autocomplete="off" />
+          <div class="model-picker">
+            <ElAutocomplete
+              ref="modelInputRef"
+              v-model="form.openai_model"
+              :disabled="!canEdit"
+              :fetch-suggestions="suggestModels"
+              placeholder="输入模型名称，或获取后选择"
+              class="model-picker-input"
+              @input="showAllModels = false"
+            />
+            <ElButton :icon="Refresh" :loading="fetchingModels" :disabled="!canEdit" @click="fetchModels">获取模型</ElButton>
+          </div>
         </ElFormItem>
         <ElFormItem label="API Key" prop="openai_api_key">
           <ElInput v-model="form.openai_api_key" :disabled="!canEdit" type="password" show-password autocomplete="new-password" />
@@ -55,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
 import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
 import { Check, Refresh } from "@element-plus/icons-vue";
@@ -66,6 +78,10 @@ defineOptions({ name: "AiModelConfig" });
 
 const loading = ref(false);
 const saving = ref(false);
+const fetchingModels = ref(false);
+const showAllModels = ref(false);
+const modelOptions = ref<{ value: string }[]>([]);
+const modelInputRef = ref<{ focus: () => void }>();
 const config = ref<AiModelConfig>();
 const formRef = ref<FormInstance>();
 const { hasAuth } = useAuth();
@@ -88,7 +104,45 @@ const embeddingModelLabel = computed(() => {
     : config.value.openai_embedding_model || "-";
 });
 
-const protocolLabel = computed(() => (form.chat_protocol === "anthropic" ? "Anthropic Claude" : "OpenAI-compatible"));
+const protocolLabel = computed(() => ({
+  openai: "OpenAI · Chat Completions",
+  openai_responses: "OpenAI · Responses",
+  anthropic: "Anthropic Claude",
+})[form.chat_protocol]);
+
+const suggestModels = (query: string, callback: (items: { value: string }[]) => void) => {
+  if (showAllModels.value) {
+    callback(modelOptions.value);
+    return;
+  }
+  const normalized = query.trim().toLowerCase();
+  callback(modelOptions.value.filter((item) => item.value.toLowerCase().includes(normalized)));
+};
+
+watch(() => [form.chat_protocol, form.openai_base_url, form.openai_api_key], () => {
+  modelOptions.value = [];
+  showAllModels.value = false;
+});
+
+const fetchModels = async () => {
+  fetchingModels.value = true;
+  const selection = [form.chat_protocol, form.openai_base_url, form.openai_api_key].join("\n");
+  try {
+    const res = await AiChatAPI.listProviderModels({
+      chat_protocol: form.chat_protocol,
+      openai_base_url: form.openai_base_url,
+      ...(form.openai_api_key?.trim() ? { openai_api_key: form.openai_api_key.trim() } : {}),
+    });
+    if (selection !== [form.chat_protocol, form.openai_base_url, form.openai_api_key].join("\n")) return;
+    modelOptions.value = (res.data.data || []).map((value) => ({ value }));
+    showAllModels.value = true;
+    await nextTick();
+    modelInputRef.value?.focus();
+    ElMessage.success(`已获取 ${modelOptions.value.length} 个模型，可输入名称筛选并选择`);
+  } finally {
+    fetchingModels.value = false;
+  }
+};
 
 const applyConfig = (value?: AiModelConfig) => {
   config.value = value;
@@ -137,16 +191,16 @@ onMounted(loadConfig);
 
 .card-header {
   display: flex;
+  gap: 12px;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
 }
 
 .header-title,
 .header-actions {
   display: flex;
-  align-items: center;
   gap: 8px;
+  align-items: center;
 }
 
 .model-form {
@@ -157,19 +211,42 @@ onMounted(loadConfig);
   width: 100%;
 }
 
+.model-picker {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.model-picker-input {
+  flex: 1;
+  min-width: 0;
+}
+
 .key-status {
   margin-top: 8px;
 }
 
-@media (max-width: 640px) {
-  .card-header {
-    align-items: flex-start;
+@media (width <= 640px) {
+  .model-picker {
     flex-direction: column;
   }
 
-  .header-actions {
+  .model-picker-input {
     width: 100%;
+  }
+
+  .model-picker > .el-button {
+    align-self: flex-start;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-actions {
     justify-content: flex-end;
+    width: 100%;
   }
 }
 </style>

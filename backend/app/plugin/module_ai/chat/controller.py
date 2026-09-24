@@ -14,6 +14,7 @@ from .schema import (
     AiChatResponseSchema,
     AiModelConfigOutSchema,
     AiModelConfigUpdateSchema,
+    AiModelListRequestSchema,
     ChatSessionCreateSchema,
     ChatSessionQueryParam,
     ChatSessionUpdateSchema,
@@ -130,6 +131,19 @@ async def model_config_controller(
 ) -> JSONResponse:
     result = await ChatService(auth).get_model_config()
     return SuccessResponse(data=result, msg="query AI model configuration success")
+
+
+@ChatRouter.post(
+    "/model-config/models",
+    summary="获取当前接口可用模型",
+    response_model=ResponseSchema[list[str]],
+)
+async def list_model_options_controller(
+    data: AiModelListRequestSchema,
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:model_config:update"]))],
+) -> JSONResponse:
+    result = await ChatService(auth).list_provider_models(data)
+    return SuccessResponse(data=result, msg="获取模型成功")
 
 
 @ChatRouter.put(

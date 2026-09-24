@@ -9,7 +9,7 @@ describe("Quiet Operations theme contract", () => {
     const tokens = source("styles/core/_fa-tokens.scss");
     expect(tokens).toContain("--fa-color-surface");
     expect(tokens).toContain("--fa-color-sidebar");
-    expect(tokens).toContain("--fa-radius-panel: 6px");
+    expect(tokens).toContain("--fa-radius-panel: 10px");
     expect(tokens).toContain("--fa-control-height: 36px");
     expect(tokens).toContain("--fa-motion-page: 200ms");
   });

@@ -12,7 +12,6 @@ export * from "./oauth";
 
 // 通用
 export * from "./common";
-export * from "./configValue";
 export * from "./download";
 export * from "./constants";
 export * from "./form";

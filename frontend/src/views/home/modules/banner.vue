@@ -1,311 +1,295 @@
 <template>
-  <section class="home-command-hero" aria-label="当前账号和系统状态">
-    <div class="hero-copy">
-      <div class="hero-kicker">
-        <span class="signal-dot"></span>
-        系统运营台
-      </div>
-      <h1>{{ bannerTitle }}</h1>
-      <p>{{ bannerSubtitle }}</p>
+  <section class="home-command-hero" aria-labelledby="workspace-title">
+    <div class="hero-main">
+      <div class="hero-kicker"><span class="hero-kicker__line"></span> FASTAPIADMIN / 工作台</div>
+      <h1 id="workspace-title">{{ greeting }}，{{ currentUser.name }}</h1>
+      <p>从这里查看系统运行状态与当前账号可用的工作范围。</p>
 
-      <div class="operator-card">
-        <ElAvatar v-if="currentUser.avatar" :size="48" :src="currentUser.avatar" class="operator-avatar" />
-        <div v-else class="operator-avatar operator-avatar--fallback">
-          <ElIcon :size="24"><UserFilled /></ElIcon>
-        </div>
-        <div class="operator-meta">
-          <strong>{{ currentUser.name }}</strong>
-          <span>{{ currentUser.description }}</span>
-        </div>
-        <div class="operator-login">最近登录：{{ currentUser.last_login || "暂无记录" }}</div>
+      <div class="operator-line">
+        <ElAvatar v-if="currentUser.avatar" :size="34" :src="currentUser.avatar" />
+        <span v-else class="operator-avatar" aria-hidden="true">
+          <FaSvgIcon icon="ri:user-line" />
+        </span>
+        <span class="operator-line__name">{{ currentUser.username }}</span>
+        <span class="operator-line__divider" aria-hidden="true"></span>
+        <span>最近登录 {{ currentUser.last_login || "暂无记录" }}</span>
       </div>
     </div>
 
-    <div class="hero-status-panel" aria-label="当前系统状态">
-      <div class="status-panel-head">
-        <span class="panel-dot"></span>
-        当前状态
+    <div class="hero-health" :class="'hero-health--' + healthState">
+      <div class="hero-health__top">
+        <span class="hero-health__label">基础服务</span>
+        <button
+          type="button"
+          class="hero-health__refresh"
+          :disabled="healthLoading"
+          aria-label="重新检查系统健康"
+          @click="$emit('refresh')"
+        >
+          <FaSvgIcon icon="ri:refresh-line" />
+        </button>
       </div>
-      <div class="hero-status-grid">
-        <article v-for="item in statusCards" :key="item.label" class="status-chip">
-          <span class="status-icon" :class="`status-icon--${item.tone}`">
-            <FaSvgIcon :icon="item.icon" />
-          </span>
-          <div>
-            <strong>{{ item.value }}</strong>
-            <span>{{ item.label }}</span>
-          </div>
-        </article>
+      <div class="hero-health__state">
+        <span class="hero-health__signal" aria-hidden="true"></span>
+        <strong>{{ healthLabel }}</strong>
       </div>
+      <p>{{ healthDescription }}</p>
+      <span class="hero-health__footnote">数据库 · Redis · 磁盘</span>
     </div>
   </section>
 </template>
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { UserFilled } from "@element-plus/icons-vue";
-import { MenuTypeEnum } from "@/enums/system/menu.enum";
 import { useUserStore } from "@stores";
-import { greetings } from "@utils";
 
 defineOptions({ name: "HomeBanner" });
 
-type HomeUser = {
-  avatar: string;
-  name: string;
-  username: string;
-  description: string;
-  last_login: string;
-};
+type HealthState = "loading" | "healthy" | "degraded" | "unavailable";
 
-const fallbackUser: HomeUser = {
-  avatar: "",
-  name: "当前用户",
-  username: "-",
-  description: "系统后台用户",
-  last_login: "",
-};
+const props = defineProps<{
+  healthState: HealthState;
+  healthDescription: string;
+  healthLoading: boolean;
+}>();
+
+defineEmits<{ refresh: [] }>();
 
 const userStore = useUserStore();
-const timefix = greetings();
-
-const currentUser = computed<HomeUser>(() => {
-  const userInfo = userStore.basicInfo;
-
+const currentUser = computed(() => {
+  const info = userStore.basicInfo;
   return {
-    avatar: userInfo.avatar || fallbackUser.avatar,
-    name: userInfo.name || fallbackUser.name,
-    username: userInfo.username || fallbackUser.username,
-    description: userInfo.description || fallbackUser.description,
-    last_login: userInfo.last_login || fallbackUser.last_login,
+    avatar: info.avatar || "",
+    name: info.name || info.username || "管理员",
+    username: info.username || "当前账号",
+    last_login: info.last_login || "",
   };
 });
-
-const bannerTitle = computed(() => `${currentUser.value.name}（${currentUser.value.username}）${timefix}`);
-const bannerSubtitle = "查看当前账号可用范围、授权状态和后台运行边界。";
-const rootMenuCount = computed(() => userStore.getRouteList.filter((menu) => menu.type !== MenuTypeEnum.BUTTON).length);
-const permissionCount = computed(() => userStore.getPerms.length);
-
-const statusCards = computed(() => [
-  {
-    label: "认证会话",
-    value: userStore.isLogin ? "已登录" : "未登录",
-    icon: "ri:shield-user-line",
-    tone: userStore.isLogin ? "cyan" : "amber",
-  },
-  {
-    label: "可用模块",
-    value: `${rootMenuCount.value} 个`,
-    icon: "ri:layout-grid-line",
-    tone: "blue",
-  },
-  {
-    label: "权限点",
-    value: `${permissionCount.value} 项`,
-    icon: "ri:key-2-line",
-    tone: "green",
-  },
-]);
-
+const hour = new Date().getHours();
+const greeting = hour < 12 ? "早上好" : hour < 18 ? "下午好" : "晚上好";
+const healthLabel = computed(() => {
+  const labels: Record<HealthState, string> = {
+    loading: "检查中",
+    healthy: "运行正常",
+    degraded: "需要检查",
+    unavailable: "暂不可用",
+  };
+  return labels[props.healthState];
+});
 </script>
 
 <style scoped lang="scss">
 .home-command-hero {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
-  gap: 24px;
-  min-height: 204px;
-  padding: 28px 32px;
-  color: var(--el-text-color-primary);
-  background: var(--fa-color-surface, var(--el-bg-color));
-  border: 1px solid var(--fa-color-border, var(--el-border-color));
-  border-radius: 8px;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  min-height: 260px;
+  overflow: hidden;
+  color: #f3f8f7;
+  background: #183a3c;
+  border: 1px solid #24494a;
+  border-radius: 14px;
 }
 
-.hero-copy,
-.hero-status-panel {
+.hero-main {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  padding: 34px 40px 30px;
+  background:
+    linear-gradient(110deg, transparent 55%, rgb(133 184 166 / 8%) 100%),
+    repeating-linear-gradient(135deg, transparent 0 56px, rgb(255 255 255 / 3%) 57px 58px);
 }
 
 .hero-kicker {
-  display: inline-flex;
-  gap: 8px;
+  display: flex;
+  gap: 10px;
   align-items: center;
-  margin-bottom: 12px;
-  font-size: 12px;
+  margin-bottom: 28px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--el-color-primary);
+  color: #a9d5cc;
+  letter-spacing: 0.14em;
 }
 
-.signal-dot,
-.panel-dot {
-  width: 8px;
-  height: 8px;
-  background: var(--el-color-success);
-  border-radius: 50%;
+.hero-kicker__line {
+  width: 22px;
+  height: 1px;
+  background: currentcolor;
 }
 
 h1 {
   margin: 0;
-  font-size: 28px;
-  font-weight: 760;
+  font-size: clamp(26px, 2.5vw, 36px);
+  font-weight: 680;
   line-height: 1.25;
-  color: var(--el-text-color-primary);
+  color: #fff;
+  letter-spacing: -0.035em;
 }
 
-p {
-  max-width: 680px;
-  margin: 10px 0 0;
+.hero-main > p {
+  margin: 12px 0 0;
   font-size: 14px;
-  line-height: 1.7;
-  color: var(--el-text-color-secondary);
+  line-height: 1.6;
+  color: #c4d8d4;
 }
 
-.operator-card {
+.operator-line {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
   align-items: center;
-  margin-top: 24px;
+  padding-top: 28px;
+  margin-top: auto;
+  font-size: 12px;
+  color: #c4d8d4;
 }
 
 .operator-avatar {
-  flex: 0 0 48px;
-  background: transparent;
-}
-
-.operator-avatar--fallback {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9);
-  border: 1px solid var(--el-color-primary-light-7);
-  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  font-size: 17px;
+  color: #d9f5ed;
+  background: rgb(255 255 255 / 12%);
+  border-radius: 50%;
 }
 
-.operator-meta {
-  display: grid;
-  min-width: 0;
+.operator-line__name {
+  font-weight: 650;
+  color: #fff;
 }
 
-.operator-meta strong {
-  color: var(--el-text-color-primary);
+.operator-line__divider {
+  width: 1px;
+  height: 14px;
+  margin: 0 3px;
+  background: rgb(255 255 255 / 26%);
 }
 
-.operator-meta span,
-.operator-login {
-  margin-top: 4px;
-  font-size: 13px;
-  color: var(--el-text-color-secondary);
-}
-
-.operator-login {
-  margin-left: auto;
-  white-space: nowrap;
-}
-
-.hero-status-panel {
-  align-self: center;
-  padding: 14px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  background: var(--el-fill-color-lighter);
-}
-
-.status-panel-head {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 12px;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--el-text-color-primary);
-}
-
-.hero-status-grid {
-  display: grid;
-  gap: 8px;
-}
-
-.status-chip {
+.hero-health {
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  min-width: 0;
+  padding: 30px 30px 24px;
+  background: rgb(4 22 24 / 18%);
+  border-left: 1px solid rgb(255 255 255 / 12%);
+}
+
+.hero-health__top {
+  display: flex;
   align-items: center;
-  min-height: 46px;
-  padding: 8px 10px;
-  background: var(--fa-color-surface, var(--el-bg-color));
-  border: 1px solid var(--el-border-color-lighter);
+  justify-content: space-between;
+}
+
+.hero-health__label,
+.hero-health__footnote {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a9c3be;
+  letter-spacing: 0.06em;
+}
+
+.hero-health__refresh {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  color: #c4d8d4;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgb(255 255 255 / 22%);
   border-radius: 7px;
 }
 
-.status-icon {
-  display: inline-flex;
+.hero-health__refresh:hover:not(:disabled) {
+  color: #fff;
+  background: rgb(255 255 255 / 12%);
+}
+
+.hero-health__refresh:focus-visible {
+  outline: 2px solid #a9d5cc;
+  outline-offset: 3px;
+}
+
+.hero-health__refresh:disabled {
+  cursor: wait;
+  opacity: 0.5;
+}
+
+.hero-health__state {
+  display: flex;
+  gap: 12px;
   align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
+  margin-top: 26px;
 }
 
-.status-icon--cyan,
-.status-icon--green {
-  color: var(--el-color-success);
-  background: var(--el-color-success-light-9);
+.hero-health__state strong {
+  font-size: 25px;
+  font-weight: 650;
+  line-height: 1.2;
+  color: #fff;
 }
 
-.status-icon--blue {
-  color: var(--el-color-primary);
-  background: var(--el-color-primary-light-9);
+.hero-health__signal {
+  width: 11px;
+  height: 11px;
+  background: #93e2b7;
+  border-radius: 50%;
+  box-shadow: 0 0 0 5px rgb(147 226 183 / 14%);
 }
 
-.status-icon--amber {
-  color: var(--el-color-warning);
-  background: var(--el-color-warning-light-9);
+.hero-health--loading .hero-health__signal {
+  background: #b4c8c8;
+  box-shadow: 0 0 0 5px rgb(180 200 200 / 14%);
 }
 
-.status-chip div {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
+.hero-health--degraded .hero-health__signal,
+.hero-health--unavailable .hero-health__signal {
+  background: #f0bd76;
+  box-shadow: 0 0 0 5px rgb(240 189 118 / 14%);
 }
 
-.status-chip strong {
-  color: var(--el-text-color-primary);
-}
-
-.status-chip span:last-child {
+.hero-health p {
+  margin: 14px 0 24px;
   font-size: 12px;
-  color: var(--el-text-color-secondary);
+  line-height: 1.7;
+  color: #d2e2df;
+  overflow-wrap: anywhere;
 }
 
-@media (max-width: 900px) {
+.hero-health__footnote {
+  margin-top: auto;
+}
+
+@media (width <= 900px) {
   .home-command-hero {
     grid-template-columns: 1fr;
+  }
+
+  .hero-health {
+    border-top: 1px solid rgb(255 255 255 / 12%);
+    border-left: 0;
+  }
+}
+
+@media (width <= 560px) {
+  .hero-main,
+  .hero-health {
     padding: 24px;
   }
 
-  .operator-login {
-    margin-left: 0;
-  }
-}
-
-@media (max-width: 560px) {
-  .home-command-hero {
-    padding: 20px;
+  .hero-kicker {
+    margin-bottom: 20px;
   }
 
-  h1 {
-    font-size: 24px;
+  .operator-line__divider {
+    display: none;
   }
 
-  .operator-card {
-    align-items: flex-start;
-    flex-wrap: wrap;
-  }
-
-  .operator-login {
-    flex-basis: 100%;
-    margin-left: 60px;
+  .operator-line {
+    gap: 8px;
   }
 }
 </style>

@@ -6,7 +6,6 @@
  */
 import { watch } from "vue";
 import { useBreakpoints } from "@vueuse/core";
-import { useSiteConfig } from "@/hooks/core/useSiteConfig";
 import { useCeremony } from "@/hooks/core/useCeremony";
 import { useSettingsStore } from "@stores";
 import { MenuTypeEnum } from "@/enums/appEnum";
@@ -14,7 +13,6 @@ import AppConfig from "@/config";
 import { StorageConfig, validateStorageData, toggleTransition, systemUpgrade } from "@utils";
 
 export function useAppBootstrap() {
-  const { initSiteConfig } = useSiteConfig();
   const { openFestival } = useCeremony();
 
   /** 设置面板移除后仍需在启动时应用的 DOM / 布局偏好 */
@@ -81,7 +79,6 @@ export function useAppBootstrap() {
     validateStorageData();
     toggleTransition(false);
     systemUpgrade();
-    initSiteConfig();
     applyLayoutPreferences();
     startResponsiveMenuLayout();
     openFestival();

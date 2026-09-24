@@ -1,6 +1,7 @@
 <template>
   <div class="retrieval-page">
-    <ElCard shadow="never">
+    <FaAiPageHeader title="检索测试" description="选择知识库并输入问题，检查哪些内容会被找到。" />
+    <ElCard shadow="never" class="retrieval-card">
       <!-- 主查询区 -->
       <ElForm :model="form" label-width="80px" class="retrieval-form">
         <ElFormItem label="知识库">
@@ -82,9 +83,7 @@
                 <span v-if="item.distance != null"
                   >距离 {{ Number(item.distance).toFixed(4) }}</span
                 >
-                <span v-if="item.score != null"
-                  >BM25 得分 {{ Number(item.score).toFixed(4) }}</span
-                >
+                <span v-if="item.score != null">BM25 得分 {{ Number(item.score).toFixed(4) }}</span>
               </div>
               <p class="result-content">{{ item.content }}</p>
             </ElCard>
@@ -102,6 +101,7 @@ import { Search } from "@element-plus/icons-vue";
 import { useRoute } from "vue-router";
 import KnowledgeAPI, { type KnowledgeBase, type RetrievalHit } from "@/api/module_ai/knowledge";
 import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
+import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
 
 defineOptions({ name: "AiRetrievalTest" });
 
@@ -163,6 +163,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.retrieval-card {
+  border: 1px solid var(--fa-color-border);
+  border-radius: 10px;
+}
+
+.retrieval-card :deep(.el-card__body) {
+  padding: 24px;
+}
+
 .retrieval-form {
   max-width: 920px;
 }
@@ -189,8 +198,8 @@ onMounted(async () => {
 
 .results-title {
   margin: 0 0 12px;
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 17px;
+  font-weight: 650;
   color: var(--el-text-color-primary);
 }
 
@@ -205,7 +214,8 @@ onMounted(async () => {
 }
 
 .result-card {
-  border-radius: 6px;
+  background: var(--fa-color-canvas);
+  border-radius: 9px;
 }
 
 .result-meta {
@@ -221,5 +231,15 @@ onMounted(async () => {
   margin: 0;
   line-height: 1.7;
   white-space: pre-wrap;
+}
+
+@media (width <= 800px) {
+  .retrieval-card :deep(.el-card__body) {
+    padding: 16px;
+  }
+
+  .base-select {
+    width: 100%;
+  }
 }
 </style>

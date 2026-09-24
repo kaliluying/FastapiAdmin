@@ -1,6 +1,11 @@
 <template>
   <div class="document-page">
-    <ElCard shadow="never">
+    <FaAiPageHeader title="文档" description="查看资料处理状态，上传新文档并在需要时重建索引。">
+      <template #actions>
+        <ElButton type="primary" :icon="Upload" @click="openUploadDialog">上传文档</ElButton>
+      </template>
+    </FaAiPageHeader>
+    <ElCard shadow="never" class="document-card">
       <div class="toolbar">
         <ElForm :inline="true" :model="query">
           <ElFormItem label="知识库">
@@ -26,11 +31,11 @@
             <ElButton :icon="Refresh" @click="resetQuery">重置</ElButton>
           </ElFormItem>
         </ElForm>
-        <ElButton type="primary" :icon="Upload" @click="openUploadDialog">上传文档</ElButton>
       </div>
 
       <FaAsyncState v-if="loading || !rows.length" :state="docListState" />
-      <ElTable v-else :data="rows" row-key="id" border>
+      <p v-else-if="isNarrowViewport" class="table-scroll-hint">左右滑动查看完整列表</p>
+      <ElTable v-if="!loading && rows.length" :data="rows" row-key="id">
         <ElTableColumn prop="file_name" label="文件名" min-width="220" show-overflow-tooltip />
         <ElTableColumn prop="file_type" label="类型" width="90" />
         <ElTableColumn prop="file_size" label="大小" width="110">
@@ -50,7 +55,7 @@
         </ElTableColumn>
         <ElTableColumn prop="chunk_count" label="分块数" width="90" />
         <ElTableColumn prop="created_time" label="创建时间" width="180" show-overflow-tooltip />
-        <ElTableColumn label="操作" width="160" fixed="right">
+        <ElTableColumn label="操作" width="160" :fixed="isNarrowViewport ? false : 'right'">
           <template #default="{ row }">
             <ElButton link type="primary" @click="reindex(row)">重新索引</ElButton>
             <ElButton link type="danger" @click="remove(row)">删除</ElButton>
@@ -112,15 +117,18 @@ import { computed, onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox, type UploadRequestOptions } from "element-plus";
 import { Refresh, Search, Upload } from "@element-plus/icons-vue";
 import { useRoute } from "vue-router";
+import { useMediaQuery } from "@vueuse/core";
 import KnowledgeAPI, {
   type KnowledgeBase,
   type KnowledgeDocument,
 } from "@/api/module_ai/knowledge";
 import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
+import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
 
 defineOptions({ name: "AiKnowledgeDocument" });
 
 const route = useRoute();
+const isNarrowViewport = useMediaQuery("(max-width: 800px)");
 const loading = ref(false);
 const docListState = computed<"loading" | "empty">(() => (loading.value ? "loading" : "empty"));
 const rows = ref<KnowledgeDocument[]>([]);
@@ -251,12 +259,23 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.document-card {
+  border: 1px solid var(--fa-color-border);
+  border-radius: 10px;
+}
+
+.document-card :deep(.el-card__body) {
+  padding: 22px 24px;
+}
+
 .toolbar {
   display: flex;
   gap: 12px;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 12px;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--fa-color-border);
 }
 
 .base-select {
@@ -269,6 +288,18 @@ onMounted(async () => {
 
 .pagination {
   justify-content: flex-end;
-  margin-top: 12px;
+  margin-top: 18px;
+}
+
+.table-scroll-hint {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--fa-color-text-muted);
+}
+
+@media (width <= 800px) {
+  .document-card :deep(.el-card__body) {
+    padding: 16px;
+  }
 }
 </style>

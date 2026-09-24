@@ -1,60 +1,27 @@
-# src/styles/ 目录结构
+# 前端视觉与样式
 
-全局样式按**职责**分目录组织：
+当前界面面向单组织的知识库和后台管理工作。视觉基调是安静、清晰的运营工作台：浅色画布承载内容，深青色强调当前状态；操作密集的页面保持较高信息密度，避免装饰抢占空间。
 
-```
-styles/
-├── index.scss              入口（薄）
-│
-├── core/                   全局基础
-│   ├── _fa-tokens.scss     业务色 hex（partial，不单独编译）
-│   ├── reset.scss          浏览器重置
-│   ├── app.scss            项目级全局 app 样式
-│   └── mixin.scss          SCSS mixin（vite additionalData 注入）
-│
-├── element-plus/           Element Plus 相关
-│   ├── _theme.scss         主题色（@use with 注入 EP common/var）
-│   ├── _overrides.scss     组件样式覆写（按钮 / 弹窗 / 表格 / 表单 ...）
-│   └── _dark.scss          暗黑主题
-│
-└── animations/             全局动画
-    ├── router-transition.scss
-    ├── theme-change.scss
-    └── theme-animation.scss
-```
+## 当前实现
 
-## 命名约定
+- `core/_fa-tokens.scss`：语义颜色、间距、圆角和动效变量，含深色模式表面层级。
+- `core/_fa-type.scss`：中文优先的字体回退、字号和数字排版。
+- `core/app.scss`：通用页面容器、管理页和表格卡片。
+- `element-plus/_overrides.scss`、`element-plus/_dark.scss`：Element Plus 的组件状态与深色模式。
+- `tailwind.css`：Tailwind 入口及主题变量映射。
+- `index.scss`：全局样式入口。
+- 具体页面的布局和状态样式留在对应 Vue 组件或同目录 SCSS 中。
 
-- `_xxx.scss` Sass partial（下划线开头，不单独编译）
-- `xxx.scss` 入口文件（被 `index.scss` `@use` 引入）
+入口文件 `frontend/src/main.ts` 依次加载 `tailwind.css`、`index.scss` 和动画库。运行时主题色由设置模块写入 `--theme-color`；新增强调色应优先使用该变量或现有语义变量。
 
-## 添加新样式的流程
+## 页面约定
 
-1. 找准归属目录
-   - 修改 EP 样式 → `element-plus/_overrides.scss`
-   - 新增动画 → `animations/`
-   - 业务页专属 → **就近放在该组件目录下**（不要放到 styles/）
-2. 跑构建（`pnpm build`）确保 SCSS 编译通过
-3. 全局变量（颜色、圆角、高度）放到 `core/_fa-tokens.scss` 或 `:root` 块
+- 登录页介绍区、首页工作台和 AI 对话页使用同一深青色与中性表面体系。
+- `FaPageHeader` 是管理页面标题与操作按钮的公共入口；系统管理页和 AI 管理页都使用它。
+- 列表页以一个主要操作和紧凑筛选区组织内容。移动端宽表格应能横向滚动，优先显示名称等识别字段。
+- 健康、加载、空态和错误态都必须提供文字说明；颜色只用于辅助区分。
+- 保留键盘焦点、深色模式和减少动态效果设置，避免只在浅色桌面视图下调样式。
 
-## 业务页样式就近原则（重要）
+## 验证
 
-业务页 / 业务组件的样式 **不放到 styles/**，而是放到该组件同目录下：
-
-- `src/components/layouts/_fa-layouts.scss` ← layouts/index.vue 用
-- `src/components/views/fa-login/_fa-login.scss` ← fa-login 组件用
-
-引用方式用相对路径（`@use "./fa-layouts"` 或 `@use "../fa-login"`），
-避免 `@styles/...` 这种"全局别名"误导读代码的人以为它是全局样式。
-
-## 历史
-
-- 原 `element-plus-theme.scss`（位于 `styles/` 根）已迁移到 `element-plus/_theme.scss`
-- 原 `core/el-ui.scss` → `element-plus/_overrides.scss`
-- 原 `core/dark.scss` → `element-plus/_dark.scss`
-- 原 `core/router-transition.scss` / `theme-change.scss` / `theme-animation.scss` → `animations/`
-- 原 `core/highlight.scss` / `md.scss` → `vendors/`（已按需化到具体组件）
-- 原 `core/variables.scss` 已废弃
-- 原 `custom/fa-layouts.scss` → `components/layouts/_fa-layouts.scss`
-- 原 `custom/fa-login.scss` → `components/views/fa-login/_fa-login.scss`
-- 原 `core/tailwind.css` → 移到 `src/styles/tailwind.css`
+从 `frontend/` 执行 `pnpm type-check`、`pnpm test` 和 `pnpm build`。样式改动可对目标文件运行 `pnpm exec stylelint <文件>`。页面视觉需在浏览器检查桌面与窄屏；涉及真实菜单、登录或后端数据的结果还需在连接目标后端的环境中验收.

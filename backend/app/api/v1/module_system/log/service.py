@@ -76,16 +76,6 @@ class OperationLogService:
         from .model import LoginLogModel, OperationLogModel
 
         retention_days = 90
-        try:
-            from app.api.v1.module_system.params.model import ParamsModel
-
-            async with async_db_session() as _s:
-                result = await _s.execute(select(ParamsModel.config_value).where(ParamsModel.config_key == "operation_log_retention_days").limit(1))
-                row = result.scalar()
-                if row is not None:
-                    retention_days = int(row)
-        except Exception:
-            pass
 
         cutoff = datetime.now() - timedelta(days=retention_days)
         async with async_db_session() as session:

@@ -80,9 +80,6 @@ async def _startup_schema_lock(redis) -> AsyncGenerator[None, None]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
-    from app.api.v1.module_system.dict.service import DictDataService
-    from app.api.v1.module_system.params.service import ParamsService
-
     try:
         await import_modules_async(modules=settings.EVENT_LIST, desc="全局事件", app=app, status=True)
         logger.info("✅ 全局事件模块加载完成")
@@ -91,10 +88,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
             await InitializeData().init_db()
         logger.info("✅ {}数据库初始化完成", settings.DATABASE_TYPE)
         await initialize_ai_plugin()
-        await ParamsService.init_cache(redis=app.state.redis)
-        logger.info("✅ Redis系统参数初始化完成")
-        await DictDataService.init_cache(redis=app.state.redis)
-        logger.info("✅ Redis数据字典初始化完成")
         await cache_util.init(redis=app.state.redis)
         logger.info("✅ fastapi-admin-cache 初始化完成")
         await FastAPILimiter.init(

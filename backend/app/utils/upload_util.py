@@ -505,7 +505,6 @@ class UploadUtil:
         - upload_type (str): 上传类型，可选值:
           - "file": 通用文件 (默认)
           - "avatar": 头像图片
-          - "param": 参数配置
           - "resource": 监控资源
         - target_path (str | None): 目标目录路径（相对路径），仅 resource 类型支持。
           例如: "images", "documents/2024"
@@ -535,7 +534,7 @@ class UploadUtil:
         content = await cls.read_upload_prefix(file)
 
         cls.validate_file_content_type(content, extension)
-        if upload_type in {"avatar", "param"}:
+        if upload_type == "avatar":
             if extension not in PUBLIC_IMAGE_EXTENSIONS:
                 raise CustomException(msg="头像和站点图片只允许上传常见图片格式")
             detected_type = cls.detect_file_type(content)
@@ -548,7 +547,6 @@ class UploadUtil:
             # 根据上传类型选择保存目录
             type_subdir = {
                 "avatar": "avatar",
-                "param": "param",
                 "resource": "resource",
             }.get(upload_type, "file")
 
@@ -577,7 +575,7 @@ class UploadUtil:
                 raise CustomException(msg="非法的文件路径")
 
             relative_path = filepath.resolve().relative_to(settings.UPLOAD_FILE_PATH.resolve()).as_posix()
-            route_prefix = "public-upload" if upload_type in {"avatar", "param"} else "private-upload"
+            route_prefix = "public-upload" if upload_type == "avatar" else "private-upload"
             file_url = urljoin(
                 base_url.rstrip("/") + "/",
                 f"common/file/{route_prefix}/{relative_path}",

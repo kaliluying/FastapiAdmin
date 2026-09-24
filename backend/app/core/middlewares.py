@@ -9,10 +9,8 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 
-from app.api.v1.module_system.params.service import ParamsService
 from app.common.response import ErrorResponse
 from app.config.setting import settings
-from app.core.client_ip import get_client_ip
 from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.core.request_context import RequestContext, reset_correlation_id, set_correlation_id
@@ -87,18 +85,6 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
                      request.client.host if request.client else "unknown")
 
         try:
-            request_ip = get_client_ip(request)
-
-            try:
-                redis = request.app.state.redis
-                ip_black_list = await ParamsService.get_ip_blacklist_for_middleware(redis)
-            except Exception:
-                ip_black_list = []
-
-            if request_ip and request_ip in ip_black_list:
-                logger.warning("IP 黑名单拦截: {} {} | ip={}", request.method, request.url.path, request_ip)
-                return ErrorResponse(msg="当前 IP 已被拒绝访问")
-
             response = await call_next(request)
             process_time = round(time.time() - start_time, 5)
             response.headers["X-Process-Time"] = str(process_time)

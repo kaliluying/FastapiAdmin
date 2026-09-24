@@ -13,6 +13,7 @@ from app.core.database import async_db_session
 from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.plugin.module_ai.config import validate_model_base_url
+from app.plugin.module_ai.knowledge.public import accessible_knowledge_base_ids
 
 from .crud import ChatSession, ChatSessionCRUD
 from .memory_extractor import MemoryExtractor
@@ -23,6 +24,7 @@ from .model_config_service import (
 from .model_config_service import (
     get_model_config as get_runtime_model_config,
 )
+from .model_config_service import list_provider_models as list_runtime_provider_models
 from .model_config_service import (
     update_model_config as update_runtime_model_config,
 )
@@ -30,6 +32,7 @@ from .rag import create_rag_chain
 from .schema import (
     AiModelConfigOutSchema,
     AiModelConfigUpdateSchema,
+    AiModelListRequestSchema,
     ChatQuerySchema,
     ChatSessionCreateSchema,
     ChatSessionQueryParam,
@@ -106,7 +109,7 @@ class ChatService:
 
     async def chat_query(self, query: ChatQuerySchema) -> AsyncGenerator[str, None]:
         try:
-            knowledge_base_ids = await self._accessible_knowledge_base_ids(query.knowledge_base_ids)
+            knowledge_base_ids = await accessible_knowledge_base_ids(self.auth, query.knowledge_base_ids)
             await load_runtime_chat_model_config(self.auth)
             config_error = self._validate_ai_config()
             if config_error:
@@ -172,7 +175,7 @@ class ChatService:
         knowledge_base_ids: list[int] | None = None,
     ) -> dict[str, Any]:
         try:
-            knowledge_base_ids = await self._accessible_knowledge_base_ids(knowledge_base_ids or [])
+            knowledge_base_ids = await accessible_knowledge_base_ids(self.auth, knowledge_base_ids or [])
             await load_runtime_chat_model_config(self.auth)
             config_error = self._validate_ai_config()
             if config_error:
@@ -299,23 +302,11 @@ class ChatService:
     def _get_scope_id(self) -> str:
         return self._get_user_id()
 
-    async def _accessible_knowledge_base_ids(self, ids: list[int]) -> list[int]:
-        """Validate that every requested knowledge base is user-accessible."""
-        normalized = list(dict.fromkeys(ids))
-        if not normalized or not getattr(self.auth, "user", None) or not self._get_db():
-            return normalized
-        from app.plugin.module_ai.knowledge.crud import KnowledgeBaseCRUD
-
-        visible = await KnowledgeBaseCRUD(self.auth).get_list(
-            search={"id": ("in", normalized)},
-        )
-        visible_ids = {item.id for item in visible}
-        if visible_ids != set(normalized):
-            raise CustomException(msg="知识库不存在或无权访问", status_code=403)
-        return normalized
-
     async def get_model_config(self) -> AiModelConfigOutSchema:
         return await get_runtime_model_config(self.auth)
+
+    async def list_provider_models(self, data: AiModelListRequestSchema) -> list[str]:
+        return await list_runtime_provider_models(self.auth, data)
 
     async def update_model_config(self, data: AiModelConfigUpdateSchema) -> AiModelConfigOutSchema:
         return await update_runtime_model_config(self.auth, data)
@@ -341,7 +332,6 @@ class ChatService:
             "用户管理": {"path": "/system/user", "name": "用户管理"},
             "角色管理": {"path": "/system/role", "name": "角色管理"},
             "菜单管理": {"path": "/system/menu", "name": "菜单管理"},
-            "字典管理": {"path": "/system/dict", "name": "字典管理"},
             "系统日志": {"path": "/system/log", "name": "系统日志"},
         }
         navigation_keywords = ["跳转", "打开", "进入", "前往", "去", "浏览", "查看"]
@@ -354,7 +344,6 @@ class ChatService:
             "用户": route_config["用户管理"],
             "角色": route_config["角色管理"],
             "菜单": route_config["菜单管理"],
-            "字典": route_config["字典管理"],
             "日志": route_config["系统日志"],
         }
         for keyword, route_info in keyword_mapping.items():

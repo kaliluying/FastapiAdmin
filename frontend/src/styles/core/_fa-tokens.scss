@@ -11,8 +11,8 @@ $fa-info: #39728c;
 
 :root {
   --fa-color-canvas: #f3f5f6;
-  --fa-color-surface: #ffffff;
-  --fa-color-surface-raised: #ffffff;
+  --fa-color-surface: #fff;
+  --fa-color-surface-raised: #fff;
   --fa-color-sidebar: #18232d;
   --fa-color-sidebar-active: #263842;
   --fa-color-accent: #2d7d72;
@@ -30,9 +30,9 @@ $fa-info: #39728c;
   --fa-space-4: 16px;
   --fa-space-5: 20px;
   --fa-space-6: 24px;
-  --fa-radius-control: 5px;
-  --fa-radius-panel: 6px;
-  --fa-radius-overlay: 8px;
+  --fa-radius-control: 7px;
+  --fa-radius-panel: 10px;
+  --fa-radius-overlay: 12px;
   --fa-control-height: 36px;
   --fa-motion-control: 150ms;
   --fa-motion-page: 200ms;

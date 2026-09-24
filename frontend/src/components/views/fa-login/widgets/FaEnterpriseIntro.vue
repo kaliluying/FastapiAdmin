@@ -1,26 +1,31 @@
 <template>
   <section class="fa-enterprise-intro" aria-labelledby="enterprise-intro-title">
     <div class="fa-enterprise-intro__content">
-      <p class="fa-enterprise-intro__badge">Enterprise Ready</p>
-
-      <div class="fa-enterprise-intro__header">
-        <h1 id="enterprise-intro-title">企业级管理系统</h1>
-        <p>提供安全、高效、可扩展的管理解决方案，助力企业数字化转型与业务增长。</p>
+      <div class="fa-enterprise-intro__eyebrow">
+        <span aria-hidden="true"></span>
+        FASTAPIADMIN / 工作空间
       </div>
 
-      <div class="fa-enterprise-intro__highlights" aria-label="Enterprise highlights">
+      <div class="fa-enterprise-intro__header">
+        <h1 id="enterprise-intro-title">让知识进入<br />日常工作。</h1>
+        <p>在一个地方整理内部资料、获取有依据的回答，并管理团队的工作权限。</p>
+      </div>
+
+      <div class="fa-enterprise-intro__highlights" aria-label="主要能力">
         <article
           v-for="highlight in highlights"
-          :key="highlight.code"
+          :key="highlight.title"
           class="fa-enterprise-intro__highlight"
         >
-          <span class="fa-enterprise-intro__highlight-code">{{ highlight.code }}</span>
+          <FaSvgIcon :icon="highlight.icon" aria-hidden="true" />
           <div>
             <h2>{{ highlight.title }}</h2>
             <p>{{ highlight.description }}</p>
           </div>
         </article>
       </div>
+
+      <div class="fa-enterprise-intro__footer">知识库 / AI 对话 / 系统管理</div>
     </div>
   </section>
 </template>
@@ -30,19 +35,19 @@ defineOptions({ name: "FaEnterpriseIntro" });
 
 const highlights = [
   {
-    code: "RBAC",
-    title: "权限",
-    description: "细粒度角色与资源授权，覆盖复杂组织协作场景。",
+    icon: "ri:book-open-line",
+    title: "整理知识",
+    description: "集中管理文档与检索内容",
   },
   {
-    code: "Audit",
-    title: "审计",
-    description: "关键操作留痕可追溯，帮助团队满足安全合规要求。",
+    icon: "ri:chat-3-line",
+    title: "获得回答",
+    description: "在对话中查看回答依据",
   },
   {
-    code: "API",
-    title: "接口优先",
-    description: "以开放接口连接业务系统，支撑快速集成与扩展。",
+    icon: "ri:shield-user-line",
+    title: "控制访问",
+    description: "按角色管理页面和操作权限",
   },
 ];
 </script>
@@ -52,135 +57,116 @@ const highlights = [
   position: relative;
   display: flex;
   align-items: center;
-  justify-content: center;
   width: 100%;
   height: 100%;
   min-height: 100%;
-  padding: clamp(5rem, 8vw, 7.5rem) clamp(2rem, 5vw, 6rem) clamp(2rem, 5vw, 4rem);
+  padding: clamp(5rem, 8vw, 7.5rem) clamp(2rem, 6vw, 7rem) 3rem;
   overflow: hidden;
-  color: #fff;
-  background:
-    linear-gradient(135deg, rgb(13 39 74 / 92%), rgb(33 88 94 / 88%)),
-    radial-gradient(circle at 25% 20%, rgb(74 222 128 / 26%), transparent 34%),
-    radial-gradient(circle at 78% 72%, rgb(56 189 248 / 22%), transparent 35%), #0f2f46;
+  color: #f3f8f7;
+  background: #183a3c;
+}
 
-  &::before,
-  &::after {
-    position: absolute;
-    pointer-events: none;
-    content: "";
-  }
-
-  &::before {
-    inset: 0;
-    background-image:
-      linear-gradient(rgb(255 255 255 / 7%) 1px, transparent 1px),
-      linear-gradient(90deg, rgb(255 255 255 / 7%) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: linear-gradient(120deg, rgb(0 0 0 / 82%), transparent 72%);
-  }
-
-  &::after {
-    right: clamp(1.5rem, 7vw, 7rem);
-    bottom: clamp(2rem, 8vw, 7rem);
-    width: clamp(12rem, 22vw, 22rem);
-    aspect-ratio: 1;
-    border: 1px solid rgb(255 255 255 / 18%);
-    border-radius: 50%;
-    box-shadow:
-      inset 0 0 0 32px rgb(255 255 255 / 4%),
-      inset 0 0 0 72px rgb(255 255 255 / 3%);
-  }
+.fa-enterprise-intro::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background: repeating-linear-gradient(
+    135deg,
+    transparent 0 82px,
+    rgb(255 255 255 / 3%) 83px 84px
+  );
 }
 
 .fa-enterprise-intro__content {
   position: relative;
   z-index: 1;
-  width: min(720px, 100%);
+  display: flex;
+  flex-direction: column;
+  width: min(680px, 100%);
+  min-height: min(650px, 100%);
 }
 
-.fa-enterprise-intro__badge {
-  display: inline-flex;
+.fa-enterprise-intro__eyebrow {
+  display: flex;
+  gap: 12px;
   align-items: center;
-  height: 2rem;
-  padding: 0 0.875rem;
-  margin: 0 0 1.25rem;
-  font-size: 0.8125rem;
+  font-size: 11px;
   font-weight: 700;
-  line-height: 1;
-  color: rgb(209 250 229);
-  text-transform: uppercase;
-  letter-spacing: 0;
-  background: rgb(255 255 255 / 12%);
-  border: 1px solid rgb(255 255 255 / 18%);
-  border-radius: 999px;
+  color: #a9d5cc;
+  letter-spacing: 0.12em;
+}
+
+.fa-enterprise-intro__eyebrow span {
+  width: 24px;
+  height: 1px;
+  background: currentcolor;
 }
 
 .fa-enterprise-intro__header {
-  h1 {
-    margin: 0;
-    font-size: clamp(2.5rem, 4.6vw, 5rem);
-    font-weight: 700;
-    line-height: 1.08;
-    letter-spacing: 0;
-  }
+  margin-top: clamp(2.5rem, 5vw, 5rem);
+}
 
-  p {
-    max-width: 36rem;
-    margin: 1.25rem 0 0;
-    font-size: clamp(1rem, 1.35vw, 1.25rem);
-    line-height: 1.8;
-    color: rgb(236 253 245 / 82%);
-  }
+.fa-enterprise-intro__header h1 {
+  margin: 0;
+  font-size: clamp(3rem, 4.4vw, 5.3rem);
+  font-weight: 670;
+  line-height: 1.12;
+  color: #fff;
+  letter-spacing: -0.055em;
+}
+
+.fa-enterprise-intro__header p {
+  max-width: 30rem;
+  margin: 1.5rem 0 0;
+  font-size: clamp(1rem, 1.2vw, 1.125rem);
+  line-height: 1.8;
+  color: #c4d8d4;
 }
 
 .fa-enterprise-intro__highlights {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-  margin-top: clamp(2.25rem, 4vw, 4rem);
+  gap: 0;
+  margin-top: clamp(3rem, 6vw, 5rem);
+  border-top: 1px solid rgb(255 255 255 / 20%);
 }
 
 .fa-enterprise-intro__highlight {
   min-width: 0;
-  padding: 1.125rem;
-  background: rgb(255 255 255 / 10%);
-  border: 1px solid rgb(255 255 255 / 16%);
-  border-radius: 8px;
-  box-shadow: 0 18px 48px rgb(0 0 0 / 16%);
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
-
-  h2 {
-    margin: 0.875rem 0 0.35rem;
-    font-size: 1rem;
-    font-weight: 700;
-    line-height: 1.35;
-    letter-spacing: 0;
-  }
-
-  p {
-    margin: 0;
-    font-size: 0.875rem;
-    line-height: 1.65;
-    color: rgb(236 253 245 / 74%);
-  }
+  padding: 1.5rem 1.25rem 0 0;
 }
 
-.fa-enterprise-intro__highlight-code {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 3.25rem;
-  height: 1.75rem;
-  padding: 0 0.6rem;
-  font-size: 0.75rem;
-  font-weight: 800;
-  line-height: 1;
-  color: #0f2f46;
-  letter-spacing: 0;
-  background: rgb(167 243 208);
-  border-radius: 999px;
+.fa-enterprise-intro__highlight + .fa-enterprise-intro__highlight {
+  padding-left: 1.25rem;
+  border-left: 1px solid rgb(255 255 255 / 14%);
+}
+
+.fa-enterprise-intro__highlight > .fa-svg-icon {
+  font-size: 20px;
+  color: #a9d5cc;
+}
+
+.fa-enterprise-intro__highlight h2 {
+  margin: 1rem 0 0.35rem;
+  font-size: 14px;
+  font-weight: 650;
+  color: #fff;
+}
+
+.fa-enterprise-intro__highlight p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #b4ceca;
+}
+
+.fa-enterprise-intro__footer {
+  padding-top: 2rem;
+  margin-top: auto;
+  font-size: 11px;
+  color: #8fb3ae;
+  letter-spacing: 0.1em;
 }
 
 @media (width <= 1180px) {
@@ -190,46 +176,29 @@ const highlights = [
   }
 
   .fa-enterprise-intro__content {
-    width: min(860px, 100%);
-  }
-
-  .fa-enterprise-intro__header {
-    h1 {
-      font-size: 2.5rem;
-    }
-
-    p {
-      max-width: 42rem;
-    }
+    min-height: 0;
   }
 }
 
 @media (width <= 760px) {
   .fa-enterprise-intro {
-    align-items: flex-start;
-    min-height: 20rem;
     padding: 4.75rem 1.25rem 1.5rem;
-  }
-
-  .fa-enterprise-intro__header h1 {
-    font-size: 2rem;
   }
 
   .fa-enterprise-intro__highlights {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
-    margin-top: 1.5rem;
+    gap: 1rem;
+    margin-top: 2rem;
   }
 
-  .fa-enterprise-intro__highlight {
-    display: flex;
-    gap: 0.875rem;
-    align-items: flex-start;
-    padding: 0.875rem;
+  .fa-enterprise-intro__highlight,
+  .fa-enterprise-intro__highlight + .fa-enterprise-intro__highlight {
+    padding: 0;
+    border-left: 0;
+  }
 
-    h2 {
-      margin-top: 0;
-    }
+  .fa-enterprise-intro__footer {
+    display: none;
   }
 }
 </style>

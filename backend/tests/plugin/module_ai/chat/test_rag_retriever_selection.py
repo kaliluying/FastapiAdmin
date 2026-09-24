@@ -20,5 +20,5 @@ def test_bm25_mode_keeps_query_weight_fixed(monkeypatch):
 
     chain = rag.create_rag_chain()
 
-    assert chain.retriever.base_alpha == 0.0
+    assert chain.retriever.mode == "bm25"
     assert chain.retriever.auto_adjust_alpha is False

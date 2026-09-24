@@ -6,7 +6,6 @@ import { router } from "@/router";
 import { useSettingsStore } from "./setting.store";
 import { useWorktabStore } from "./worktab.store";
 import { useMenuStore } from "./menu.store";
-import { useConfigStore } from "./config.store";
 import { AppRouteRecord } from "@/types/router";
 import { Auth, setPageTitle, StorageConfig } from "@utils";
 import AuthAPI from "@/api/module_system/auth";
@@ -14,7 +13,7 @@ import UserAPI from "@/api/module_system/user";
 import type { MenuTable } from "@/api/module_platform/menu";
 import { ResultEnum } from "@/enums/api/result.enum";
 import { ElNotification } from "element-plus";
-import { store, useDictStore } from "@stores";
+import { store } from "@stores";
 import type { UserInfo } from "@/api/module_system/user";
 import {
   clearLegacyUserRouteCache,
@@ -253,7 +252,6 @@ export const useUserStore = defineStore(
       }
 
       await getUserInfo();
-      await useConfigStore().getConfig(true);
       setLoginStatus(true);
     }
 
@@ -358,9 +356,6 @@ export const useUserStore = defineStore(
       // 重置用户信息。
       clearUserInfo();
       useWorktabStore().clearAll();
-      // 重置字典。
-      useDictStore(store).clearDictData();
-
       return Promise.resolve();
     }
 

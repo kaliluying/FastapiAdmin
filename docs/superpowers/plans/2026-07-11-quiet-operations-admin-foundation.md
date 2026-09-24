@@ -18,7 +18,7 @@
 - Motion durations are 120–180ms for controls, 160–220ms for page entry, and about 200ms for overlays.
 - All nonessential motion must respect `prefers-reduced-motion`.
 - Verify 375px, 768px, 1024px, and 1440px widths.
-- Do not commit `.superpowers/`, `frontend/web/`, `courseware/`, runtime data, archives, or other unrelated untracked files.
+- Do not commit `.superpowers/`, `frontend/web/`, runtime data, archives, or other unrelated untracked files.
 
 ---
 

@@ -89,7 +89,7 @@
             >
               {{ sidebarTitle }}
             </p>
-            <span class="header-brand__subtitle">OPERATIONS</span>
+            <span class="header-brand__subtitle">管理工作台</span>
           </div>
         </div>
         <!-- 主动折叠/展开按钮（仅在非双列菜单下显示） -->
@@ -149,7 +149,7 @@
 <script setup lang="ts">
 import AppConfig from "@/config";
 import type { AppRouteRecord } from "@/types/router";
-import { useConfigStore, useSettingsStore, useMenuStore } from "@stores";
+import { useSettingsStore, useMenuStore } from "@stores";
 import { MenuTypeEnum, MenuWidth } from "@/enums/appEnum";
 import { isIframe, handleMenuJump } from "@utils";
 import SidebarSubmenu from "./widgets/FaSidebarSubmenu.vue";
@@ -165,19 +165,11 @@ const MENU_CLOSE_WIDTH = MenuWidth.CLOSE;
 const route = useRoute();
 const router = useRouter();
 const settingStore = useSettingsStore();
-const configStore = useConfigStore();
 
-/** 系统配置：system_logo / system_name */
-const sidebarLogoSrc = computed(() => {
-  const raw = configStore.configData.system_logo?.config_value;
-  return typeof raw === "string" && raw.trim() ? raw.trim() : undefined;
-});
+/** 使用应用内置站点名称与 Logo */
+const sidebarLogoSrc = computed(() => undefined);
 
-const sidebarTitle = computed(() => {
-  const raw = configStore.configData.system_name?.config_value;
-  if (typeof raw === "string" && raw.trim()) return raw.trim();
-  return AppConfig.systemInfo.name;
-});
+const sidebarTitle = computed(() => AppConfig.systemInfo.name);
 
 const { getMenuOpenWidth, menuType, dualMenuShowText, menuOpen, getMenuTheme, showAppLogo } =
   storeToRefs(settingStore);
@@ -434,7 +426,7 @@ watch(menuOpen, (isMenuOpen: boolean) => {
   scrollbar-width: none;
   background: var(--fa-color-sidebar, var(--default-box-color));
   border-right: 1px solid rgb(255 255 255 / 8%);
-  box-shadow: 18px 0 42px rgb(11 18 32 / 12%);
+  box-shadow: none;
 
   &.no-border {
     border-right: none !important;
@@ -525,21 +517,6 @@ watch(menuOpen, (isMenuOpen: boolean) => {
     border-right: 1px solid rgb(255 255 255 / 7%);
     transition: width 0.25s ease;
 
-    &::before {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      pointer-events: none;
-      content: "";
-      background:
-        radial-gradient(
-          circle at 20% 4%,
-          color-mix(in srgb, var(--theme-color) 10%, transparent),
-          transparent 24%
-        ),
-        linear-gradient(180deg, rgb(255 255 255 / 2%), transparent 26%);
-    }
-
     > * {
       position: relative;
       z-index: 1;
@@ -602,7 +579,7 @@ watch(menuOpen, (isMenuOpen: boolean) => {
     overflow: hidden;
     line-height: 1.2;
     cursor: pointer;
-    border-bottom: 1px solid rgb(11 18 32 / 6%);
+    border-bottom: 1px solid rgb(255 255 255 / 10%);
 
     .header-brand {
       display: flex;

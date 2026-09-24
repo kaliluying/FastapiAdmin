@@ -5,8 +5,8 @@
 
 import pytest
 
-from app.plugin.module_ai.chat.hybrid_retriever import HybridKnowledgeRetriever
 from app.plugin.module_ai.knowledge.bm25_index import BM25KnowledgeIndex
+from app.plugin.module_ai.knowledge.retrieval import KnowledgeRetriever
 
 
 @pytest.mark.asyncio
@@ -101,7 +101,7 @@ class TestHybridRetriever:
 
     async def test_rrf_fusion(self):
         """测试RRF融合算法"""
-        retriever = HybridKnowledgeRetriever(alpha=0.5, top_k=3)
+        retriever = KnowledgeRetriever(alpha=0.5, top_k=3)
 
         # 模拟向量检索结果
         vector_results = {
@@ -127,7 +127,7 @@ class TestHybridRetriever:
 
     async def test_build_documents(self):
         """测试文档构建"""
-        retriever = HybridKnowledgeRetriever()
+        retriever = KnowledgeRetriever()
 
         vector_results = {
             "ids": [["chunk1", "chunk2"]],
@@ -142,7 +142,7 @@ class TestHybridRetriever:
         ]
 
         fused_ids = ["chunk1", "chunk3", "chunk2"]
-        documents = await retriever._build_documents(fused_ids, vector_results, bm25_results)
+        documents = retriever._build_results(fused_ids, vector_results, bm25_results)
 
         assert len(documents) == 3
         # chunk1应该包含向量距离和BM25得分
@@ -158,18 +158,18 @@ class TestRetrievalModes:
 
     async def test_vector_only_mode(self):
         """测试纯向量检索模式"""
-        retriever = HybridKnowledgeRetriever(alpha=1.0, top_k=5)  # alpha=1.0 纯向量
+        retriever = KnowledgeRetriever(mode="vector", alpha=1.0, top_k=5)
         # 实际测试需要真实数据和索引
         assert retriever.base_alpha == 1.0
 
     async def test_bm25_only_mode(self):
         """测试纯BM25检索模式"""
-        retriever = HybridKnowledgeRetriever(alpha=0.0, top_k=5)  # alpha=0.0 纯BM25
+        retriever = KnowledgeRetriever(mode="bm25", alpha=0.0, top_k=5)
         assert retriever.base_alpha == 0.0
 
     async def test_hybrid_mode(self):
         """测试混合检索模式"""
-        retriever = HybridKnowledgeRetriever(alpha=0.5, top_k=5)  # alpha=0.5 混合
+        retriever = KnowledgeRetriever(mode="hybrid", alpha=0.5, top_k=5)
         assert retriever.base_alpha == 0.5
 
     async def test_bm25_mode_accepts_rag_scope_and_skips_vector_search(self):
@@ -192,18 +192,16 @@ class TestRetrievalModes:
                     }
                 ]
 
-        retriever = HybridKnowledgeRetriever(
+        retriever = KnowledgeRetriever(
+            mode="bm25",
             embedding_client=FailingEmbeddingClient(),
             bm25_index=Bm25Index(),
             alpha=0.0,
             auto_adjust_alpha=False,
         )
 
-        documents = await retriever.retrieve(
+        documents = await retriever.search(
             query="第123条",
-            user_id="user-1",
-            scope_id="user-1",
-            session_id=None,
             knowledge_base_ids=[1],
         )
 

@@ -1,13 +1,14 @@
 <template>
   <div class="home-workspace">
-    <FaPageHeader
-      title="系统总览"
-      description="基于当前登录用户的菜单、权限、账号和基础依赖状态。"
+    <Banner
+      class="home-banner"
+      :health-state="healthState"
+      :health-description="healthDescription"
+      :health-loading="healthLoading"
+      @refresh="loadHealthStatus"
     />
 
-    <Banner class="mb-5" />
-
-    <section class="metrics-grid" aria-label="当前系统状态">
+    <section class="metrics-grid" aria-label="当前账号概况">
       <article v-for="metric in metrics" :key="metric.label" class="metric-card">
         <div class="metric-card__head">
           <div>
@@ -146,7 +147,6 @@ import type { MenuTable } from "@/api/module_platform/menu";
 import { MenuTypeEnum } from "@/enums/system/menu.enum";
 import { useUserStore } from "@stores";
 import { HttpError } from "@utils";
-import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
 import Banner from "./modules/banner.vue";
 import LoginTrend from "./modules/login-trend.vue";
 
@@ -169,20 +169,11 @@ type CheckItem = {
 
 type HealthState = "loading" | "healthy" | "degraded" | "unavailable";
 
-type HealthPresentation = Pick<DashboardMetric, "value" | "icon" | "tone">;
-
 const HEALTH_REFRESH_INTERVAL = 30_000;
 const dependencyLabels: Record<keyof HealthReadiness["dependencies"], string> = {
   database: "数据库",
   redis: "Redis",
 };
-const healthPresentations: Record<HealthState, HealthPresentation> = {
-  loading: { value: "检查中", icon: "ri:heart-pulse-line", tone: "info" },
-  healthy: { value: "正常", icon: "ri:heart-pulse-line", tone: "success" },
-  degraded: { value: "需处理", icon: "ri:error-warning-line", tone: "warning" },
-  unavailable: { value: "不可用", icon: "ri:error-warning-line", tone: "warning" },
-};
-
 const userStore = useUserStore();
 const healthState = ref<HealthState>("loading");
 const healthData = ref<HealthReadiness | null>(null);
@@ -215,29 +206,20 @@ const healthDescription = computed(() => {
     healthData.value.disk_usage >= 0 ? `磁盘 ${healthData.value.disk_usage}%` : "磁盘数据不可用";
   return `${dependencySummary} · ${diskSummary}`;
 });
-const healthMetric = computed<DashboardMetric>(() => {
-  return {
-    label: "系统健康",
-    unit: "",
-    description: healthDescription.value,
-    ...healthPresentations[healthState.value],
-  };
-});
-
 const metrics = computed<DashboardMetric[]>(() => [
   {
-    label: "可见菜单",
+    label: "可用入口",
     value: menuCount.value,
     unit: "项",
-    description: "当前账号可访问的页面入口",
+    description: "当前账号可访问的导航入口",
     icon: "ri:layout-grid-line",
     tone: "primary",
   },
   {
-    label: "权限点",
+    label: "可用操作",
     value: permissionCount.value,
     unit: "项",
-    description: "后端下发并用于 RBAC 校验",
+    description: "当前账号获准执行的操作",
     icon: "ri:shield-check-line",
     tone: "success",
   },
@@ -245,11 +227,10 @@ const metrics = computed<DashboardMetric[]>(() => [
     label: "授权角色",
     value: currentUser.value.is_superuser ? "超管" : roleCount.value,
     unit: currentUser.value.is_superuser ? "" : "个",
-    description: "当前账号的角色授权状态",
+    description: "决定可访问范围与操作权限",
     icon: "ri:user-settings-line",
     tone: "warning",
   },
-  healthMetric.value,
 ]);
 
 const checks = computed<CheckItem[]>(() => [
@@ -387,6 +368,12 @@ onUnmounted(() => {
 <style scoped lang="scss">
 .home-workspace {
   min-width: 0;
+  max-width: 1560px;
+  margin: 0 auto;
+}
+
+.home-banner {
+  margin-bottom: 16px;
 }
 
 .home-login-trend {
@@ -396,22 +383,23 @@ onUnmounted(() => {
 
 .metrics-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-bottom: 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
 }
 
 .metric-card,
 .home-card,
 .checklist-section {
-  border: 1px solid var(--fa-color-border, var(--el-border-color));
-  border-radius: 8px;
   background: var(--fa-color-surface, var(--el-bg-color));
+  border: 1px solid var(--fa-color-border, var(--el-border-color));
+  border-radius: 10px;
 }
 
 .metric-card {
-  min-height: 142px;
-  padding: 18px;
+  min-height: 138px;
+  padding: 20px 22px;
+  background: var(--fa-color-canvas);
 }
 
 .metric-card__head,
@@ -440,9 +428,10 @@ onUnmounted(() => {
 }
 
 .metric-card__value {
-  margin-top: 12px;
-  font-size: 28px;
-  font-weight: 760;
+  margin-top: 15px;
+  font-size: 32px;
+  font-weight: 680;
+  font-variant-numeric: tabular-nums;
   line-height: 1;
   color: var(--el-text-color-primary);
 }
@@ -466,16 +455,16 @@ onUnmounted(() => {
 .module-row__icon,
 .check-item__icon {
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  flex: 0 0 auto;
   border-radius: 7px;
 }
 
 .metric-card__icon {
-  width: 40px;
-  height: 40px;
-  font-size: 20px;
+  width: 34px;
+  height: 34px;
+  font-size: 18px;
 }
 
 .metric-card__icon--primary {
@@ -500,9 +489,9 @@ onUnmounted(() => {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
-  gap: 20px;
-  margin-bottom: 20px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr);
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
 .home-card :deep(.el-card__header) {
@@ -527,6 +516,7 @@ onUnmounted(() => {
 
 .module-list {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -536,9 +526,9 @@ onUnmounted(() => {
   align-items: center;
   min-height: 56px;
   padding: 10px 12px;
+  background: var(--el-fill-color-lighter);
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 7px;
-  background: var(--el-fill-color-lighter);
 }
 
 .module-row__icon {
@@ -550,14 +540,14 @@ onUnmounted(() => {
 
 .module-row__content {
   display: grid;
-  min-width: 0;
   gap: 3px;
+  min-width: 0;
 }
 
 .module-row__content strong {
   overflow: hidden;
-  color: var(--el-text-color-primary);
   text-overflow: ellipsis;
+  color: var(--el-text-color-primary);
   white-space: nowrap;
 }
 
@@ -599,15 +589,15 @@ onUnmounted(() => {
 .account-list dd {
   margin: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
   font-weight: 600;
   color: var(--el-text-color-primary);
   text-align: right;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .checklist-section {
-  padding: 20px;
+  padding: 22px;
 }
 
 .check-summary {
@@ -630,10 +620,10 @@ onUnmounted(() => {
 
 .check-list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin: 18px 0 0;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
   padding: 0;
+  margin: 18px 0 0;
   list-style: none;
 }
 
@@ -663,8 +653,8 @@ onUnmounted(() => {
 
 .check-item__content {
   display: grid;
-  min-width: 0;
   gap: 4px;
+  min-width: 0;
 }
 
 .check-item__content strong {
@@ -677,8 +667,7 @@ onUnmounted(() => {
   color: var(--el-text-color-secondary);
 }
 
-@media (max-width: 1100px) {
-  .metrics-grid,
+@media (width <= 1100px) {
   .check-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -688,9 +677,19 @@ onUnmounted(() => {
   }
 }
 
-@media (max-width: 640px) {
+@media (width <= 640px) {
+  .checklist-section > .section-heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .checklist-section .section-actions {
+    justify-content: space-between;
+  }
+
   .metrics-grid,
-  .check-list {
+  .check-list,
+  .module-list {
     grid-template-columns: 1fr;
   }
 

@@ -71,6 +71,15 @@ export const AiChatAPI = {
       data: body,
     });
   },
+
+  listProviderModels(body: AiModelListRequest) {
+    return request<ApiResponse<string[]>>({
+      url: `${API_PATH}/model-config/models`,
+      method: "post",
+      data: body,
+      showSuccessMessage: false,
+    });
+  },
 };
 
 export default AiChatAPI;
@@ -168,7 +177,13 @@ export interface AiModelConfig {
   chroma_collection_name: string;
 }
 
-export type ChatProtocol = "openai" | "anthropic";
+export type ChatProtocol = "openai" | "openai_responses" | "anthropic";
+
+export interface AiModelListRequest {
+  chat_protocol: ChatProtocol;
+  openai_base_url: string;
+  openai_api_key?: string;
+}
 
 export interface AiModelConfigUpdate {
   chat_protocol: ChatProtocol;

@@ -57,13 +57,6 @@
           <ul class="py-4 mt-3 border-t border-g-300/80">
             <li
               class="flex items-center p-2 mb-3 select-none rounded-md cursor-pointer last:mb-0 hover:bg-(--fa-gray-200)"
-              @click="openParamConfig"
-            >
-              <FaSvgIcon icon="ri:settings-3-line" class="mr-2 text-base" />
-              <span class="text-sm">{{ $t("topBar.user.paramConfig") }}</span>
-            </li>
-            <li
-              class="flex items-center p-2 mb-3 select-none rounded-md cursor-pointer last:mb-0 hover:bg-(--fa-gray-200)"
               @click="lockScreen()"
             >
               <FaSvgIcon icon="ri:lock-line" class="mr-2 text-base" />
@@ -81,7 +74,6 @@
       </template>
     </ElPopover>
 
-    <FaConfigInfoDrawer v-model="paramDrawerVisible" />
   </div>
 </template>
 
@@ -98,7 +90,6 @@ const userStore = useUserStore();
 
 const { info: userInfo } = storeToRefs(userStore);
 const userMenuPopover = ref();
-const paramDrawerVisible = ref(false);
 
 const userAvatar = computed(() => {
   const a = (userInfo.value as { avatar?: string })?.avatar?.trim();
@@ -113,11 +104,6 @@ const displayName = computed(
 );
 
 const displayEmail = computed(() => (userInfo.value as { email?: string })?.email || "");
-
-function openParamConfig(): void {
-  closeUserMenu();
-  paramDrawerVisible.value = true;
-}
 
 function lockScreen(): void {
   mittBus.emit("openLockScreen");

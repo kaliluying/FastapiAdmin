@@ -1,249 +1,40 @@
 # FastapiAdmin
 
-FastapiAdmin 是一个面向单组织内部使用的 AI 核心后台管理系统。它提供 RBAC、系统配置、审计日志、AI 知识库、文档索引和 RAG 对话。
+FastapiAdmin 是面向单组织的后台系统，包含用户与角色权限、菜单、系统配置、审计日志、AI 对话、知识库和文档检索。后端使用 FastAPI，前端使用 Vue 3。
 
-## 项目定位
+**从 [架构与开发指南](docs/ARCHITECTURE_AND_DEVELOPMENT.md) 开始**：其中有跨端模块图、启动与权限链路、数据归属、知识库纵向链路、开发步骤和验收要求。
 
-- **使用场景**：单组织内部后台、知识库管理、RAG 问答、基础系统管理。
-- **组织边界**：当前版本不支持多租户，也不保留多租户字段或切换入口。
-- **后端栈**：FastAPI、SQLAlchemy、Alembic、Redis、MySQL、ChromaDB 与 OpenAI-compatible API。
-- **前端栈**：Vue 3、Vite、TypeScript、Element Plus、Pinia、Vue Router。
-- **向量检索**：使用 ChromaDB 本地持久化目录存储向量和文本块索引。
-- **模型接入**：通过 OpenAI-compatible chat 和 embedding endpoint 接入模型能力。
+## 代码与文档入口
 
-## 功能范围
+| 位置 | 内容 |
+| --- | --- |
+| [`backend/`](backend/README.md) | FastAPI 服务、系统与 AI 模块、数据库初始化和后端测试 |
+| [`frontend/`](frontend/README.md) | Vue 应用、登录状态、授权菜单与动态路由 |
+| [`docs/ARCHITECTURE_AND_DEVELOPMENT.md`](docs/ARCHITECTURE_AND_DEVELOPMENT.md) | 当前整体架构与开发流程 |
 
-### 保留模块
+后端入口是 `backend/main.py`；前端入口是 `frontend/src/main.ts`。AI 路由、模型和启动钩子由 `backend/app/plugin/module_ai/plugin.toml` 声明。实际命令与依赖分别以 `backend/pyproject.toml`、`frontend/package.json` 为准。
 
-- 系统管理：用户、角色、菜单、字典、参数配置、操作日志。
-- 公共能力：认证、RBAC、动态菜单、文件上传、Redis 缓存。
-- AI 对话：会话记录、模型配置、普通对话、结合知识库的 RAG 对话。
-- AI 知识库：知识库管理、文档上传、文本抽取、分块、embedding、Chroma 写入、召回验证。
+## 本地启动
 
-### 已移除或禁用
+需要 Python 3.12+、`uv`、Node.js 20.19+、仓库声明的 `pnpm`，以及按后端环境文件配置的关系数据库和 Redis。先复制并填写 `backend/env/.env.dev.example`；核对前端 `.env` 与 `.env.development` 中的 API 代理和 WebSocket 地址。模板地址只是示例，当前开发文件可能覆盖它们。
 
-- 多租户中间件、组织切换、组织注册、组织运营入口。
-- SaaS 订阅、授权售卖、平台运营类需求文档。
-- 通知、工单、岗位、监控等可选后台产品入口。
-- Dockerfile、docker-compose、Docker nginx/redis/mysql 配置。
+```bash
+# 仓库根目录
+cp backend/env/.env.dev.example backend/env/.env.dev
 
-## 目录结构
-
-```txt
-.
-├── backend/                  # FastAPI 后端
-│   ├── app/
-│   │   ├── api/              # 系统 API 路由
-│   │   ├── core/             # 基础 CRUD、认证、异常、权限等
-│   │   ├── plugin/
-│   │   │   └── module_ai/    # AI 对话与知识库插件
-│   │   └── scripts/          # 初始化和种子数据脚本
-│   ├── env/                  # 环境变量模板
-│   ├── tests/                # 后端测试
-│   └── pyproject.toml
-├── frontend/                  # Vue 3 frontend
-│   ├── src/
-│   │   ├── api/               # Frontend API wrappers
-│   │   ├── router/            # Routes
-│   │   ├── stores/            # Pinia state
-│   │   └── views/             # Pages
-│   └── package.json
-└── docs/                     # 项目文档与实训资料
-```
-
-## 服务依赖
-
-本地开发需要准备：
-
-- Python 3.12+
-- uv
-- Node.js 20.19+
-- pnpm
-- MySQL 8+
-- Redis 6+
-- AI 运行需要 OpenAI-compatible chat endpoint
-- AI 运行需要 OpenAI-compatible embedding endpoint
-
-## 后端配置
-
-进入后端目录并复制开发环境配置：
-
-```powershell
-cd backend
-copy env\.env.dev.example env\.env.dev
-```
-
-重点配置项在 `backend/env/.env.dev`：
-
-```env
-DATABASE_TYPE = "mysql"
-DATABASE_HOST = "localhost"
-DATABASE_PORT = 3306
-DATABASE_USER = "root"
-DATABASE_PASSWORD = "your_database_password"
-DATABASE_NAME = "fastapiadmin"
-
-REDIS_ENABLE = True
-REDIS_HOST = "localhost"
-REDIS_PORT = 6379
-REDIS_PASSWORD = "your_redis_password"
-REDIS_DB_NAME = 1
-
-SECRET_KEY = "dev-only-change-this-secret-before-sharing"
-
-OPENAI_BASE_URL = "https://api.example.com"
-OPENAI_API_KEY = "your_api_key"
-OPENAI_MODEL = "your_chat_model"
-EMBEDDING_PROVIDER = "local"
-LOCAL_EMBEDDING_MODEL = "BAAI/bge-small-zh-v1.5"
-LOCAL_EMBEDDING_CACHE_DIR = "./data/fastembed"
-OPENAI_EMBEDDING_MODEL = ""
-
-CHROMA_PERSIST_DIR = "./data/chroma"
-CHROMA_COLLECTION_NAME = "knowledge_base"
-```
-
-说明：
-
-- 后端使用 `chromadb.PersistentClient` 直接读写本地 Chroma 持久化目录。
-- 向量模型默认使用本地 `fastembed` 小模型 `BAAI/bge-small-zh-v1.5`；如需远程 embedding，可将 `EMBEDDING_PROVIDER` 改为 `openai` 并配置 `OPENAI_EMBEDDING_MODEL`。
-- `CHROMA_PERSIST_DIR` 是当前向量库数据目录，部署或备份时需要保留。
-- 不要提交真实数据库密码、Redis 密码或模型 API key。
-
-## 后端启动
-
-```powershell
+# 终端 1
 cd backend
 uv sync
 uv run main.py run --env=dev
-```
 
-应用启动时会先执行已提交的 Alembic 迁移；当前骨架没有 revision 文件时，会按 ORM 模型创建表并写入种子数据。修改模型后仍可运行 `uv run main.py revision --env=dev` 生成并审核迁移文件；应用启动不会自动生成迁移。多副本生产部署仍建议使用单独的迁移任务。
-
-`backend/requirements.txt` 包含后台与 AI 核心依赖，部署无需额外安装 AI 依赖组。
-
-默认开发配置中的 API 前缀为 `/api/v1`。Swagger 和 ReDoc 路径由 `backend/env/.env.dev` 中的 `DOCS_URL`、`REDOC_URL` 控制。
-
-上传文件默认保存到后端私有目录 `backend/storage/upload`，不会通过静态文件目录直接暴露。通用文件返回的 `file_url` 走需要登录和下载权限的私有预览路由；头像和站点参数图片走仅允许图片格式的公开预览路由。接口返回的是相对存储路径，不要把服务器绝对路径写入业务数据或前端。
-
-## 前端配置
-
-进入前端目录并安装依赖：
-
-```powershell
+# 终端 2，从仓库根目录
 cd frontend
 pnpm install
+pnpm dev
 ```
 
-前端环境模板：
+启动后端会针对配置的数据库应用已有 Alembic 迁移、创建缺失表并补齐种子数据；运行前确认数据库目标。AI 核心依赖已包含在 `uv sync` 中。模型与向量库的配置、测试命令以及知识库上传后的异步索引流程见[架构与开发指南](docs/ARCHITECTURE_AND_DEVELOPMENT.md)。
 
-```powershell
-copy .env.example .env
-```
+## 文档维护
 
-常用配置项：
-
-```env
-VITE_PORT=5180
-VITE_APP_BASE_API=/api/v1
-VITE_API_BASE_URL=http://127.0.0.1:8004
-VITE_APP_WS_ENDPOINT=ws://127.0.0.1:8004
-VITE_ACCESS_MODE=mixed
-```
-
-如果后端端口不是 `8004`，需要同步调整 `VITE_API_BASE_URL` 和 `VITE_APP_WS_ENDPOINT`。
-
-## 前端启动
-
-```powershell
-cd frontend
-pnpm run dev
-```
-
-常用脚本：
-
-```powershell
-pnpm run type-check
-pnpm test
-pnpm run build
-```
-
-## AI 知识库流程
-
-完成 `uv sync` 并配置模型与向量库参数后，即可进行以下操作：
-
-1. 在“AI 知识库 / 知识库管理”创建知识库。
-2. 在“文档管理”上传 `.txt`、`.md`、`.pdf`、`.docx` 文件。
-3. 后端保存文件到 `backend/storage/knowledge`。
-4. 后端抽取文档文本并切分 chunk。
-5. 后端调用 embedding 模型生成向量。
-6. MySQL 保存知识库、文档、chunk 元数据。
-7. ChromaDB 保存向量、chunk 文本和检索 metadata。
-8. 在知识库页面内验证召回效果。
-9. 在“AI 对话”中选择知识库进行 RAG 问答。
-
-核心后端路径：
-
-```txt
-backend/app/plugin/module_ai/chat/
-backend/app/plugin/module_ai/knowledge/
-```
-
-核心前端路径：
-
-```txt
-frontend/src/api/module_ai/
-frontend/src/views/module_ai/
-```
-
-## 验证命令
-
-后端：
-
-```powershell
-cd backend
-uv run pytest tests\core\test_ai_core_module.py -q
-uv run pytest tests\plugin\module_ai -q
-python -m compileall -q app tests
-uv run ruff check app\plugin\module_ai app\scripts\initialize.py app\api\v1\module_system\__init__.py app\config\setting.py app\init_app.py tests --output-format concise
-uv run python -c "import chromadb, openai, pypdf, docx"
-```
-
-前端：
-
-```powershell
-cd frontend
-pnpm vitest run src\__tests__\single-org-user-store.test.ts src\__tests__\knowledge-api.test.ts
-pnpm run type-check
-```
-
-## 常见问题
-
-### 文档上传后索引失败
-
-检查：
-
-- `CHROMA_PERSIST_DIR` 是否可读写，磁盘空间是否充足。
-- `OPENAI_API_KEY`、`OPENAI_BASE_URL`、`OPENAI_EMBEDDING_MODEL` 是否正确。
-- 用户编辑的模型地址不能解析到本机或内网；确需使用受控代理域名时，在服务端配置 `MODEL_ALLOWED_HOSTS` 白名单。
-- 上传文件是否为 `.txt`、`.md`、`.pdf`、`.docx`。
-- 后端日志中的 `error_message` 字段。
-
-### 前端能打开但接口报错
-
-检查：
-
-- 后端是否已启动。
-- `VITE_APP_BASE_API` 是否与后端 `ROOT_PATH` 一致。
-- `VITE_API_BASE_URL` 是否指向正确后端端口。
-- 浏览器网络请求是否命中 `/api/v1`。
-
-### 启动后看不到旧多组织功能
-
-这是当前代码线的预期状态。本分支定位为单组织 AI 知识库后台，旧多组织文档和入口不再维护。
-
-## 文档维护原则
-
-- README 只描述当前分支可运行、可验证的能力。
-- 不在 README 中记录历史长需求；过期需求应移出根目录。
-- 新增运行依赖、环境变量或验证命令时，需要同步更新本文件。
+本 README 只保留项目入口和最短启动步骤。跨端事实维护在架构与开发指南；子项目命令维护在各自 README。遇到差异，以当前源码、包脚本和环境配置为准。历史设计稿及实现报告记录当时的工作，不作为当前运行说明。

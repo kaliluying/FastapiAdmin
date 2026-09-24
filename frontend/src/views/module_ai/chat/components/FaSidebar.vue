@@ -303,6 +303,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   height: 100%;
+  background: var(--fa-color-canvas);
   border-right: 1px solid var(--el-border-color-light);
   transition: width 0.3s ease;
 
@@ -341,7 +342,7 @@ defineExpose({
         align-items: center;
         justify-content: center;
         width: 100%;
-        border-radius: 20px;
+        border-radius: 7px;
         transition: all 0.2s ease;
 
         .btn-icon {
@@ -364,7 +365,7 @@ defineExpose({
         margin-bottom: 16px;
 
         :deep(.el-input__wrapper) {
-          border-radius: 20px;
+          border-radius: 7px;
           box-shadow: 0 0 0 1px var(--el-border-color) inset;
           transition: all 0.2s ease;
 
@@ -436,7 +437,7 @@ defineExpose({
               margin-bottom: 6px;
               cursor: pointer;
               border: 1px solid transparent;
-              border-radius: 14px;
+              border-radius: 7px;
               transition: all 0.2s ease;
 
               &:hover {

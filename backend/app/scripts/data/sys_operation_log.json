@@ -54,15 +54,6 @@
     "description": "查询菜单列表"
   },
   {
-    "request_path": "/api/v1/system/dict/data/list",
-    "request_method": "GET",
-    "request_payload": null,
-    "response_code": 200,
-    "response_json": "{\"code\": 200, \"data\": {\"items\": [...]}}",
-    "process_time": "22ms",
-    "description": "查询字典数据"
-  },
-  {
     "request_path": "/api/v1/system/user/export",
     "request_method": "POST",
     "request_payload": "{\"status\": 0}",

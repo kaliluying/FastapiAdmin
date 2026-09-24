@@ -77,10 +77,13 @@ class AiChatResponseSchema(BaseModel):
     action: dict[str, Any] | None = Field(None, description="Suggested action")
 
 
+ChatProtocol = Literal["openai", "openai_responses", "anthropic"]
+
+
 class AiModelConfigOutSchema(BaseModel):
     """Safe AI runtime configuration status."""
 
-    chat_protocol: Literal["openai", "anthropic"]
+    chat_protocol: ChatProtocol
     openai_base_url: str
     openai_model: str
     openai_embedding_model: str
@@ -94,7 +97,7 @@ class AiModelConfigOutSchema(BaseModel):
 class AiModelConfigUpdateSchema(BaseModel):
     """Editable chat-model configuration; vector settings are intentionally excluded."""
 
-    chat_protocol: Literal["openai", "anthropic"] = "openai"
+    chat_protocol: ChatProtocol = "openai"
     openai_base_url: str = Field(..., min_length=1, max_length=500)
     openai_model: str = Field(..., min_length=1, max_length=200)
     openai_api_key: str | None = Field(default=None, min_length=1, max_length=512)
@@ -102,7 +105,8 @@ class AiModelConfigUpdateSchema(BaseModel):
     @field_validator("openai_base_url")
     @classmethod
     def validate_base_url(cls, value: str) -> str:
-        return validate_model_base_url(value)
+        # The service performs DNS checks after comparing with the configured endpoint.
+        return validate_model_base_url(value, resolve_dns=False)
 
     @field_validator("openai_model")
     @classmethod
@@ -119,3 +123,23 @@ class AiModelConfigUpdateSchema(BaseModel):
             return None
         normalized = value.strip()
         return normalized or None
+
+
+class AiModelListRequestSchema(BaseModel):
+    """Connection settings used for one model-list request without saving them."""
+
+    chat_protocol: ChatProtocol
+    openai_base_url: str = Field(..., min_length=1, max_length=500)
+    openai_api_key: str | None = Field(default=None, max_length=512)
+
+    @field_validator("openai_base_url")
+    @classmethod
+    def validate_base_url(cls, value: str) -> str:
+        # DNS-aware validation happens in the service after it can compare the
+        # submitted URL with the already configured provider endpoint.
+        return validate_model_base_url(value, resolve_dns=False)
+
+    @field_validator("openai_api_key")
+    @classmethod
+    def normalize_api_key(cls, value: str | None) -> str | None:
+        return (value.strip() or None) if value is not None else None

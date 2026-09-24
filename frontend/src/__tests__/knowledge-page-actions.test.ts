@@ -49,6 +49,12 @@ const stubs = {
   ElButton: { template: "<button @click=\"$emit('click')\"><slot /></button>" },
   ElCard: { template: "<section><slot /></section>" },
   ElDialog: true,
+  ElDropdown: {
+    template:
+      "<button data-test=\"more-action\" @click=\"$emit('command', 'retrieve')\">更多</button>",
+  },
+  ElDropdownMenu: true,
+  ElDropdownItem: true,
   ElForm: { template: "<form><slot /></form>" },
   ElFormItem: { template: "<div><slot /></div>" },
   ElInput: true,
@@ -76,6 +82,19 @@ describe("Knowledge page actions", () => {
     expect(routerPush).toHaveBeenCalledWith({
       path: "/module_ai/document",
       query: { knowledge_base_id: 7, upload: "1" },
+    });
+  });
+
+  it("keeps the retrieval action available in the compact menu", async () => {
+    routerPush.mockClear();
+    const wrapper = mount(KnowledgePage, { global: { stubs } });
+    await flushPromises();
+
+    await wrapper.get('[data-test="more-action"]').trigger("click");
+
+    expect(routerPush).toHaveBeenCalledWith({
+      path: "/module_ai/retrieval",
+      query: { knowledge_base_id: 7 },
     });
   });
 });

@@ -1,7 +1,11 @@
 <template>
   <div class="knowledge-page">
-    <FaAiPageHeader title="知识库管理" />
-    <ElCard shadow="never">
+    <FaAiPageHeader title="知识库" description="整理资料、查看索引进度，并决定哪些知识可用于对话。">
+      <template #actions>
+        <ElButton type="primary" :icon="Plus" @click="openCreate">新建知识库</ElButton>
+      </template>
+    </FaAiPageHeader>
+    <ElCard shadow="never" class="knowledge-card">
       <div class="toolbar">
         <ElForm :inline="true" :model="query" class="query-form">
           <ElFormItem label="名称">
@@ -23,7 +27,6 @@
             <ElButton :icon="Refresh" @click="resetQuery">重置</ElButton>
           </ElFormItem>
         </ElForm>
-        <ElButton type="primary" :icon="Plus" @click="openCreate">新建</ElButton>
       </div>
 
       <FaAsyncState
@@ -31,11 +34,12 @@
         :state="loading ? 'loading' : loadError ? 'error' : 'empty'"
       />
       <template v-else>
-        <ElTable :data="rows" row-key="id" border>
+        <p v-if="isNarrowViewport" class="table-scroll-hint">左右滑动查看完整列表</p>
+        <ElTable :data="rows" row-key="id">
           <ElTableColumn prop="name" label="名称" min-width="180" show-overflow-tooltip />
-          <ElTableColumn prop="description" label="描述" min-width="220" show-overflow-tooltip />
+          <ElTableColumn prop="description" label="描述" min-width="180" show-overflow-tooltip />
           <ElTableColumn prop="document_count" label="文档数" width="90" />
-          <ElTableColumn label="索引状态" min-width="210">
+          <ElTableColumn label="索引状态" min-width="180">
             <template #default="{ row }">
               <div class="index-status">
                 <ElTag type="success" effect="plain">成功 {{ row.indexed_document_count }}</ElTag>
@@ -53,54 +57,26 @@
               </ElTag>
             </template>
           </ElTableColumn>
-          <ElTableColumn prop="created_time" label="创建时间" width="180" show-overflow-tooltip />
-          <ElTableColumn label="操作" width="360" fixed="right">
+          <ElTableColumn prop="created_time" label="创建时间" width="165" show-overflow-tooltip />
+          <ElTableColumn label="操作" width="270" :fixed="isNarrowViewport ? false : 'right'">
             <template #default="{ row }">
               <div class="action-buttons">
-                <ElButton
-                  class="action-button action-button-primary"
-                  type="primary"
-                  plain
-                  :icon="Upload"
-                  @click="goUploadDocuments(row)"
-                >
+                <ElButton type="primary" link :icon="Upload" @click="goUploadDocuments(row)">
                   上传文档
                 </ElButton>
-                <ElButton
-                  class="action-button action-button-primary"
-                  type="primary"
-                  plain
-                  :icon="Document"
-                  @click="goViewDocuments(row)"
-                >
+                <ElButton type="primary" link :icon="Document" @click="goViewDocuments(row)">
                   查看文档
                 </ElButton>
-                <ElButton
-                  class="action-button action-button-primary"
-                  type="primary"
-                  plain
-                  :icon="Search"
-                  @click="goRetrievalTest(row)"
-                >
-                  检索测试
-                </ElButton>
-                <ElButton
-                  class="action-button"
-                  type="primary"
-                  plain
-                  :icon="EditPen"
-                  @click="openUpdate(row)"
-                  >编辑</ElButton
-                >
-                <ElButton
-                  class="action-button action-button-danger"
-                  type="danger"
-                  plain
-                  :icon="Delete"
-                  @click="remove(row)"
-                >
-                  删除
-                </ElButton>
+                <ElDropdown trigger="click" @command="(command) => handleRowAction(command, row)">
+                  <ElButton type="primary" link :icon="MoreFilled">更多</ElButton>
+                  <template #dropdown>
+                    <ElDropdownMenu>
+                      <ElDropdownItem command="retrieve" :icon="Search">检索测试</ElDropdownItem>
+                      <ElDropdownItem command="edit" :icon="EditPen">编辑</ElDropdownItem>
+                      <ElDropdownItem command="delete" :icon="Delete" divided>删除</ElDropdownItem>
+                    </ElDropdownMenu>
+                  </template>
+                </ElDropdown>
               </div>
             </template>
           </ElTableColumn>
@@ -151,8 +127,18 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from "vue";
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from "element-plus";
-import { Delete, Document, EditPen, Plus, Refresh, Search, Upload } from "@element-plus/icons-vue";
+import {
+  Delete,
+  Document,
+  EditPen,
+  MoreFilled,
+  Plus,
+  Refresh,
+  Search,
+  Upload,
+} from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
+import { useMediaQuery } from "@vueuse/core";
 import KnowledgeAPI, {
   type KnowledgeBase,
   type KnowledgeBaseForm,
@@ -163,6 +149,7 @@ import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 defineOptions({ name: "AiKnowledge" });
 
 const router = useRouter();
+const isNarrowViewport = useMediaQuery("(max-width: 800px)");
 const loading = ref(false);
 const loadError = ref(false);
 const saving = ref(false);
@@ -273,6 +260,12 @@ const goRetrievalTest = (row: KnowledgeBase) => {
   router.push({ path: "/module_ai/retrieval", query: { knowledge_base_id: row.id } });
 };
 
+const handleRowAction = (command: string, row: KnowledgeBase) => {
+  if (command === "retrieve") goRetrievalTest(row);
+  if (command === "edit") openUpdate(row);
+  if (command === "delete") void remove(row);
+};
+
 const remove = async (row: KnowledgeBase) => {
   if (!row.id) return;
   await ElMessageBox.confirm(`确认删除知识库「${row.name}」？`, "删除确认", { type: "warning" });
@@ -289,12 +282,23 @@ onMounted(loadData);
   height: 100%;
 }
 
+.knowledge-card {
+  border: 1px solid var(--fa-color-border);
+  border-radius: 10px;
+}
+
+.knowledge-card :deep(.el-card__body) {
+  padding: 22px 24px;
+}
+
 .toolbar {
   display: flex;
   gap: 12px;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 12px;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--fa-color-border);
 }
 
 .query-form {
@@ -313,59 +317,33 @@ onMounted(loadData);
 
 .action-buttons {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
+  white-space: nowrap;
 }
 
 .action-buttons :deep(.el-button) {
   margin-left: 0;
 }
 
-.action-button {
-  height: 30px;
-  padding: 0 10px;
-  font-size: 13px;
-  font-weight: 500;
-  color: #315efb;
-  background: #f8fbff;
-  border-color: #c9d8ff;
-  border-radius: 7px;
-  box-shadow: 0 2px 8px rgb(49 94 251 / 8%);
-  transition:
-    color 0.18s ease,
-    background-color 0.18s ease,
-    border-color 0.18s ease,
-    box-shadow 0.18s ease,
-    transform 0.18s ease;
-}
-
-.action-button:hover,
-.action-button:focus {
-  color: #2448d8;
-  background: #eef4ff;
-  border-color: #7f9cff;
-  box-shadow: 0 6px 14px rgb(49 94 251 / 16%);
-  transform: translateY(-1px);
-}
-
-.action-button-danger {
-  color: #e5484d;
-  background: #fff8f8;
-  border-color: #ffc9c9;
-  box-shadow: 0 2px 8px rgb(229 72 77 / 8%);
-}
-
-.action-button-danger:hover,
-.action-button-danger:focus {
-  color: #c92a2f;
-  background: #fff0f0;
-  border-color: #ff9f9f;
-  box-shadow: 0 6px 14px rgb(229 72 77 / 14%);
-}
-
 .pagination {
   justify-content: flex-end;
-  margin-top: 12px;
+  margin-top: 18px;
+}
+
+.table-scroll-hint {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--fa-color-text-muted);
+}
+
+@media (width <= 800px) {
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .knowledge-card :deep(.el-card__body) {
+    padding: 16px;
+  }
 }
 </style>

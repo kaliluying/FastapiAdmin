@@ -45,7 +45,7 @@ class FileService:
 
         parts = Path(relative_path).parts
         if public_images_only:
-            if not parts or parts[0] not in {"avatar", "param"}:
+            if not parts or parts[0] != "avatar":
                 raise CustomException(msg="该文件不允许公开预览", status_code=400)
             if Path(relative_path).suffix.lower() not in {".gif", ".jpg", ".jpeg", ".png", ".ico"}:
                 raise CustomException(msg="该文件不允许公开预览", status_code=400)

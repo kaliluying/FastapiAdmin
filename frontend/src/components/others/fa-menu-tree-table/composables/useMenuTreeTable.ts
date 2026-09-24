@@ -26,11 +26,7 @@ interface MenuTreeTableProps {
  * 负责：搜索过滤、级联勾选、父子联动、展开/收起、初始化选中、对外方法
  */
 export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
-  const props = {
-    menuTree: rawProps.menuTree,
-    checkedIds: rawProps.checkedIds ?? [],
-    loading: rawProps.loading,
-  };
+  const props = rawProps;
   // ---- 状态 ----
   const filterText = ref("");
   const isExpanded = ref(true);
@@ -336,9 +332,9 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
   function refresh() {
     filterText.value = "";
     const tree = props.menuTree;
-    parentChildLinked.value = checkParentChildLinked(props.checkedIds, tree);
+    parentChildLinked.value = checkParentChildLinked(props.checkedIds ?? [], tree);
     tableData.value = filterTableData(tree);
-    nextTick(() => initSelection(props.checkedIds));
+    nextTick(() => initSelection(props.checkedIds ?? []));
   }
 
   // ---- 数据变化监听 ----
@@ -351,7 +347,7 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
   watch(filterText, () => {
     const tree = filteredMenuTree.value;
     tableData.value = filterTableData(tree);
-    nextTick(() => initSelection(props.checkedIds));
+    nextTick(() => initSelection(props.checkedIds ?? []));
     if (filterText.value) setAllRowsExpanded(true);
   });
 

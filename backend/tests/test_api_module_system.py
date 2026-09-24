@@ -1,7 +1,7 @@
 """
 module_system API route tests.
 
-The single-organization build keeps auth, user, role, dict, params, and log routes.
+The single-organization build keeps auth, user, role, and log routes.
 """
 
 from conftest import assert_route
@@ -50,13 +50,9 @@ class TestSystemRoutes:
         assert_route(test_client, "GET", "/system/role/list", auth=auth_headers)
         assert_route(test_client, "GET", "/system/role/detail/1", auth=auth_headers)
 
-    def test_dict_routes(self, test_client: TestClient, auth_headers: dict) -> None:
-        assert_route(test_client, "GET", "/system/dict/type/list", auth=auth_headers)
-        assert_route(test_client, "GET", "/system/dict/data/info/sys_normal_disable", auth=auth_headers)
-
-    def test_params_routes(self, test_client: TestClient, auth_headers: dict) -> None:
-        assert_route(test_client, "GET", "/system/params/list", auth=auth_headers)
-        assert_route(test_client, "GET", "/system/params/info", auth=auth_headers)
+    def test_removed_configuration_routes(self, test_client: TestClient, auth_headers: dict) -> None:
+        assert_route(test_client, "GET", "/system/dict/type/list", expected_status=404, auth=auth_headers)
+        assert_route(test_client, "GET", "/system/params/list", expected_status=404, auth=auth_headers)
 
     def test_log_routes(self, test_client: TestClient, auth_headers: dict) -> None:
         assert_route(test_client, "GET", "/system/log/login/list", auth=auth_headers)

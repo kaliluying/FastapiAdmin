@@ -164,6 +164,45 @@ async def test_langchain_chat_model_uses_anthropic_protocol(monkeypatch) -> None
     }
 
 
+async def test_langchain_chat_model_uses_openai_responses_protocol(monkeypatch) -> None:
+    from app.plugin.module_ai.chat import model_config_service, rag
+
+    captured: dict[str, object] = {}
+
+    class FakeChatOpenAI:
+        def __init__(self, **kwargs) -> None:
+            captured.update(kwargs)
+
+        async def ainvoke(self, _messages):
+            return SimpleNamespace(content=[{"type": "reasoning", "summary": []}, {"type": "text", "text": "responses answer"}])
+
+        async def astream(self, _messages):
+            yield SimpleNamespace(content="responses stream")
+
+    monkeypatch.setattr(rag, "ChatOpenAI", FakeChatOpenAI)
+    monkeypatch.setattr(
+        model_config_service,
+        "_active_config",
+        model_config_service.ChatModelRuntimeConfig(
+            protocol="openai_responses",
+            base_url="https://example.test/v1",
+            model="reasoning-model",
+            api_key="test-key",
+        ),
+    )
+
+    model = rag.LangChainChatModel()
+    assert await model.complete("hello") == "responses answer"
+    assert [chunk async for chunk in model.stream("hello")] == ["responses stream"]
+    assert captured == {
+        "api_key": "test-key",
+        "base_url": "https://example.test/v1",
+        "model": "reasoning-model",
+        "use_responses_api": True,
+        "output_version": "responses/v1",
+    }
+
+
 async def test_chat_session_crud_persists_session_messages_with_sqlalchemy() -> None:
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 

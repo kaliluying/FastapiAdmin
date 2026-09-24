@@ -113,8 +113,8 @@
 import type { LocationQuery, RouteLocationRaw } from "vue-router";
 import type { LoginFormData } from "@/api/module_system/auth";
 import AuthAPI from "@/api/module_system/auth";
-import { useConfigStore, useAppStore, useSettingsStore, useUserStore } from "@stores";
-import { Auth, getConfigValue, HttpError } from "@utils";
+import { useAppStore, useSettingsStore, useUserStore } from "@stores";
+import { Auth, HttpError } from "@utils";
 import { ElNotification, type FormRules } from "element-plus";
 import FaLoginAccountForm from "@/components/views/fa-login/forms/FaLoginAccountForm.vue";
 import FaAuthTopBar from "@/components/views/fa-login/widgets/FaAuthTopBar.vue";
@@ -123,7 +123,6 @@ import { useLoginPanelAlign } from "@/components/views/fa-login/composables/useL
 
 defineOptions({ name: "Login" });
 
-const configStore = useConfigStore();
 const settingStore = useSettingsStore();
 const appStore = useAppStore();
 const { t, locale } = useI18n();
@@ -133,21 +132,11 @@ const { panelAlign } = useLoginPanelAlign();
 const panelTitle = computed(() => t("login.title"));
 const panelSubTitle = computed(() => t("login.subTitle"));
 
-const footerCopyright = computed(() =>
-  getConfigValue(configStore.configData, ["copyright", "sys_web_copyright"])
-);
-const footerHelpDoc = computed(() =>
-  getConfigValue(configStore.configData, ["help_doc", "sys_help_doc"], "#")
-);
-const footerPrivacy = computed(() =>
-  getConfigValue(configStore.configData, ["privacy", "sys_web_privacy"], "#")
-);
-const footerClause = computed(() =>
-  getConfigValue(configStore.configData, ["clause", "sys_web_clause"], "#")
-);
-const footerKeepRecord = computed(() =>
-  getConfigValue(configStore.configData, ["keep_record", "sys_keep_record"])
-);
+const footerCopyright = computed(() => "");
+const footerHelpDoc = computed(() => "#");
+const footerPrivacy = computed(() => "#");
+const footerClause = computed(() => "#");
+const footerKeepRecord = computed(() => "");
 const formKey = ref(0);
 
 watch(locale, () => {
@@ -249,7 +238,6 @@ async function consumeOAuthTicket(): Promise<boolean> {
   Auth.setTokens(data.access_token, data.refresh_token, true);
   userStore.setToken(data.access_token, data.refresh_token);
   await userStore.getUserInfo();
-  await configStore.getConfig(true);
   userStore.setLoginStatus(true);
   const cleanQuery = { ...route.query };
   delete cleanQuery.oauth_ticket;
@@ -259,8 +247,7 @@ async function consumeOAuthTicket(): Promise<boolean> {
 
 onMounted(async () => {
   try {
-    await configStore.getConfig(true);
-    if (await consumeOAuthTicket()) return;
+      if (await consumeOAuthTicket()) return;
     await loadCaptcha();
   } catch (error) {
     console.warn("[Login] 登录初始化失败，继续使用默认渲染", error);

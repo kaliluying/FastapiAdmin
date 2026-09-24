@@ -11,8 +11,6 @@ from langchain_openai import ChatOpenAI
 
 from app.core.logger import logger
 from app.plugin.module_ai.config import settings
-from app.plugin.module_ai.knowledge.chroma_store import ChromaKnowledgeStore, get_cached_chroma_store
-from app.plugin.module_ai.knowledge.embedding import EmbeddingClient, get_cached_embedding_client
 
 from .model_config_service import get_active_chat_model_config
 
@@ -111,10 +109,6 @@ class KeywordKnowledgeRetriever:
                 metadata={"source": "system-menu", "name": "菜单管理"},
             ),
             RagDocument(
-                content="字典管理页面用于维护系统字典类型和字典数据，路由路径是 /system/dict。",
-                metadata={"source": "system-menu", "name": "字典管理"},
-            ),
-            RagDocument(
                 content="系统日志页面用于查看登录日志和操作日志，路由路径是 /system/log。",
                 metadata={"source": "system-menu", "name": "系统日志"},
             ),
@@ -153,72 +147,6 @@ class KeywordKnowledgeRetriever:
         if query and query.lower() in searchable:
             score += 4
         return score
-
-
-class ChromaKnowledgeRetriever:
-    """Retriever backed by ChromaDB for persisted knowledge-base chunks."""
-
-    def __init__(
-        self,
-        *,
-        store: ChromaKnowledgeStore | None = None,
-        embedding_client: EmbeddingClient | None = None,
-        top_k: int = 5,
-    ) -> None:
-        self.store = store
-        self.embedding_client = embedding_client
-        self.top_k = top_k
-        self.file_retriever = KeywordKnowledgeRetriever(documents=[], top_k=top_k)
-
-    async def retrieve(
-        self,
-        *,
-        query: str,
-        user_id: str,
-        scope_id: str,
-        session_id: str | None,
-        knowledge_base_ids: list[int] | None = None,
-        files: list[dict[str, Any]] | None = None,
-    ) -> list[RagDocument]:
-        if not knowledge_base_ids:
-            return await self.file_retriever.retrieve(
-                query=query,
-                user_id=user_id,
-                scope_id=scope_id,
-                session_id=session_id,
-                files=files,
-            )
-
-        embeddings = await self._get_embedding_client().embed_texts([query])
-        raw = await self._get_store().query(
-            query_embedding=embeddings[0],
-            knowledge_base_ids=knowledge_base_ids,
-            top_k=self.top_k,
-        )
-        return self._documents_from_chroma(raw)
-
-    def _get_store(self) -> ChromaKnowledgeStore:
-        if self.store is None:
-            self.store = get_cached_chroma_store()
-        return self.store
-
-    def _get_embedding_client(self) -> EmbeddingClient:
-        if self.embedding_client is None:
-            self.embedding_client = get_cached_embedding_client()
-        return self.embedding_client
-
-    @staticmethod
-    def _documents_from_chroma(raw: dict[str, Any]) -> list[RagDocument]:
-        documents = (raw.get("documents") or [[]])[0] or []
-        metadatas = (raw.get("metadatas") or [[]])[0] or []
-        distances = (raw.get("distances") or [[]])[0] or []
-        result: list[RagDocument] = []
-        for index, content in enumerate(documents):
-            metadata = dict(metadatas[index] if index < len(metadatas) and metadatas[index] else {})
-            if index < len(distances):
-                metadata["distance"] = distances[index]
-            result.append(RagDocument(content=str(content), metadata=metadata))
-        return result
 
 
 class RagPromptBuilder:
@@ -353,6 +281,14 @@ class LangChainChatModel:
                 model_name=self.config.model,
                 temperature=0.7,
             )
+        elif self.config.protocol == "openai_responses":
+            self.llm = ChatOpenAI(
+                api_key=self.config.api_key,
+                base_url=self.config.base_url,
+                model=self.config.model,
+                use_responses_api=True,
+                output_version="responses/v1",
+            )
         else:
             self.llm = ChatOpenAI(
                 api_key=self.config.api_key,
@@ -373,7 +309,7 @@ class LangChainChatModel:
                 parts.append(part)
             elif isinstance(part, dict) and isinstance(part.get("text"), str):
                 parts.append(part["text"])
-            else:
+            elif not isinstance(part, dict):
                 parts.append(str(part))
         return "".join(parts)
 
@@ -579,30 +515,28 @@ def create_rag_chain(db: Any | None = None, auth: Any | None = None) -> RagChatC
     # 根据配置选择检索器
     retrieval_mode = getattr(settings, "RETRIEVAL_MODE", "vector")
 
-    if retrieval_mode == "hybrid":
-        from app.plugin.module_ai.chat.hybrid_retriever import HybridKnowledgeRetriever
+    from app.plugin.module_ai.chat.hybrid_retriever import KnowledgeBaseChatRetriever
 
-        retriever = HybridKnowledgeRetriever(
-            alpha=settings.HYBRID_ALPHA,
-            top_k=settings.RETRIEVAL_TOP_K,
-            candidate_multiplier=settings.RETRIEVAL_CANDIDATE_MULTIPLIER,
-            auto_adjust_alpha=settings.RETRIEVAL_AUTO_ADJUST_ALPHA,
+    search_mode = retrieval_mode if retrieval_mode in {"vector", "bm25", "hybrid"} else "vector"
+    retriever = KnowledgeBaseChatRetriever(
+        mode=search_mode,
+        alpha=0.0 if search_mode == "bm25" else settings.HYBRID_ALPHA,
+        top_k=settings.RETRIEVAL_TOP_K,
+        candidate_multiplier=settings.RETRIEVAL_CANDIDATE_MULTIPLIER,
+        auto_adjust_alpha=(
+            getattr(settings, "RETRIEVAL_AUTO_ADJUST_ALPHA", True)
+            if search_mode == "hybrid"
+            else False
+        ),
+    )
+    if search_mode == "hybrid":
+        logger.info(
+            f"使用混合检索模式: alpha={settings.HYBRID_ALPHA}, "
+            f"auto_adjust={retriever.auto_adjust_alpha}"
         )
-        logger.info(f"使用混合检索模式: alpha={settings.HYBRID_ALPHA}, auto_adjust={getattr(settings, 'RETRIEVAL_AUTO_ADJUST_ALPHA', True)}")
-    elif retrieval_mode == "bm25":
-        from app.plugin.module_ai.chat.hybrid_retriever import HybridKnowledgeRetriever
-
-        retriever = HybridKnowledgeRetriever(
-            alpha=0.0,  # 纯BM25
-            top_k=settings.RETRIEVAL_TOP_K,
-            auto_adjust_alpha=False,
-        )
+    elif search_mode == "bm25":
         logger.info("使用纯BM25检索模式")
     else:
-        # 默认：纯向量检索（向后兼容）
-        retriever = ChromaKnowledgeRetriever(
-            top_k=settings.RETRIEVAL_TOP_K,
-        )
         logger.info("使用纯向量检索模式")
 
     return RagChatChain(

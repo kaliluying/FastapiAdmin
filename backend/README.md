@@ -1,97 +1,43 @@
-# Backend
+# 后端开发
 
-FastAPI backend for the single-organization admin. AI knowledge-base and RAG capabilities are core backend features.
+后端是单组织 FastAPI 服务，提供认证与 RBAC、系统配置、菜单、文件管理，以及 AI 对话、知识库、检索和记忆。跨端架构与知识库链路见[架构与开发指南](../docs/ARCHITECTURE_AND_DEVELOPMENT.md)。本目录的依赖和命令以 `pyproject.toml` 为准。
 
-## Runtime Scope
+## 入口与模块
 
-The backend keeps the admin foundation:
+| 路径 | 职责 |
+| --- | --- |
+| `main.py`、`app/init_app.py` | CLI、应用组装、生命周期、路由与中间件 |
+| `app/api/v1/module_common/` | 通用文件、健康检查与监控 |
+| `app/api/v1/module_platform/` | 菜单 |
+| `app/api/v1/module_system/` | 认证、用户、角色、字典、参数和日志 |
+| `app/plugin/module_ai/` | 对话、知识库、记忆与模型配置 |
+| `app/plugin/module_ai/plugin.toml`、`app/core/plugins.py` | AI 路由、模型与启动钩子的显式组装 |
+| `app/scripts/initialize.py`、`app/scripts/migrate.py` | 种子数据、建表与已有迁移的应用 |
 
-- Auth and current-user APIs
-- RBAC permissions and menu authorization
-- Users, roles, menus, dictionaries, params, and audit logs
-- Common file upload
-- AI chat and session history
-- AI knowledge-base metadata and document indexing
+业务权限由后端 `AuthPermission` 校验，前端菜单只负责导航与可见性。当前 AI 是核心模块，依赖随 `uv sync` 安装；没有额外的 `ai` extra 或目录扫描式路由发现。
 
-Tenant runtime is disabled for this skeleton. Tenant middleware, tenant cache startup, tenant seed models, and tenant route registration are not part of the active application.
+## 本地运行
 
-## Knowledge Base Architecture
+要求 Python 3.12+、`uv`、配置的关系数据库和 Redis。将 `env/.env.dev.example` 复制为 `env/.env.dev`，填写本机数据库、Redis 与模型设置。默认 embedding 使用本地 `fastembed`；AI 对话或远程 embedding 需要可用的模型服务。不要提交真实密钥。
 
-- MySQL stores knowledge bases, documents, chunks, parse/index status, audit fields, and file metadata.
-- ChromaDB stores vectors and chunk documents.
-- `chromadb.PersistentClient` stores vectors in the local Chroma persist directory.
-- Chat completions use the `openai` client through OpenAI-compatible providers.
-- Embeddings default to the local `fastembed` model `BAAI/bge-small-zh-v1.5`; OpenAI-compatible embeddings remain available by setting `EMBEDDING_PROVIDER=openai`.
-
-Key modules:
-
-```txt
-app/plugin/module_ai/chat/
-app/plugin/module_ai/knowledge/
-```
-
-## Environment
-
-Copy and edit the development env file:
-
-```powershell
-copy env\.env.dev.example env\.env.dev
-```
-
-AI/vector settings are part of the core backend configuration:
-
-```env
-OPENAI_API_KEY=
-OPENAI_BASE_URL=
-OPENAI_MODEL=
-EMBEDDING_PROVIDER=local
-LOCAL_EMBEDDING_MODEL=BAAI/bge-small-zh-v1.5
-LOCAL_EMBEDDING_CACHE_DIR=./data/fastembed
-OPENAI_EMBEDDING_MODEL=
-CHROMA_PERSIST_DIR=./data/chroma
-CHROMA_COLLECTION_NAME=knowledge_base
-```
-
-`CHROMA_PERSIST_DIR` is the active local Chroma data directory. Preserve it during deployment, backup, and migration.
-When changing embedding models, clear the existing Chroma collection or use a new `CHROMA_COLLECTION_NAME` to avoid vector dimension conflicts.
-
-## Start
-
-```powershell
+```bash
+# 在 backend/ 下
+cp env/.env.dev.example env/.env.dev
 uv sync
 uv run main.py run --env=dev
 ```
 
-`requirements.txt` exports the complete backend profile, including AI dependencies.
+`main.py` 先设置 `ENVIRONMENT` 再导入配置；独立脚本复用配置时也要保持顺序。启动会针对所选数据库应用已有 Alembic 迁移、创建缺失表和补齐种子数据。执行前确认环境文件指向的数据库。版本文件生成在 `app/alembic/versions/`；`uv run main.py revision --env=dev` 生成新迁移后，先审查脚本及数据影响。
 
-Application startup applies committed Alembic migrations when revision files
-exist. This skeleton currently has no revision files, so startup creates tables
-from the active ORM models before seeding data. Use `uv run main.py revision
---env=dev` to generate migrations when the project begins tracking schema
-history; review and commit them before deployment. Multi-replica production
-deployments should still run one dedicated migration job.
+普通上传在 `storage/upload/`，知识库原件在 `storage/knowledge/`；本地 Chroma 与 BM25 索引目录分别由 `CHROMA_PERSIST_DIR`、`BM25_INDEX_DIR` 决定。数据备份与恢复要同时考虑关系库、文件和索引。
 
-Application startup seeds base data when tables are empty, including the AI tables and menu permissions.
+## 验证
 
-Uploaded files are stored under the private `storage/upload` directory. Generic
-files are served through an authenticated preview route, while avatar and
-parameter images use the validated public-image route; API responses expose
-root-relative paths instead of server filesystem paths.
-
-## Verification
-
-```powershell
-uv run pytest tests\core\test_ai_core_module.py -q
-uv run pytest tests\plugin\module_ai -q
-python -m compileall -q app tests
-uv run ruff check app\plugin\module_ai app\scripts\initialize.py app\api\v1\module_system\__init__.py app\config\setting.py app\init_app.py tests --output-format concise
-uv run python -c "import chromadb, fastembed, openai, pypdf, docx"
+```bash
+# 在 backend/ 下，按改动范围选择
+uv run pytest tests/test_api_module_ai.py -q
+uv run pytest tests/plugin/module_ai -q
+uv run ruff check app tests --no-fix --output-format concise
 ```
 
-## Notes
-
-- The Chroma persist directory must be writable for document indexing and retrieval.
-- Knowledge document upload supports `.txt`, `.md`, `.pdf`, and `.docx`.
-- User-edited model endpoints are blocked when they resolve to local/private networks; configure `MODEL_ALLOWED_HOSTS` only for explicitly trusted provider hosts.
-- API keys are not exposed by the model-config endpoint; it only reports whether the key is configured.
-- Missing AI dependencies are treated as a startup error; run `uv sync` before starting the backend.
+`tests/conftest.py` 使用临时 SQLite、模拟 Redis 和测试生命周期；这些测试不能代替真实数据库、Redis、浏览器与模型服务的端到端验收。跨层功能的实际验收路径见[架构与开发指南](../docs/ARCHITECTURE_AND_DEVELOPMENT.md)。

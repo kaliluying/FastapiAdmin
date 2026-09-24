@@ -717,6 +717,18 @@ html.dark .el-card {
   box-shadow: var(--fa-overlay-shadow) !important;
 }
 
+// Tooltip 使用 dark effect；不要让通用浅色弹层覆盖它的文字对比度。
+.el-tooltip.el-popper.is-dark {
+  color: var(--el-bg-color) !important;
+  background: var(--el-text-color-primary) !important;
+  border-color: var(--el-text-color-primary) !important;
+}
+
+.el-tooltip.el-popper.is-dark > .el-popper__arrow::before {
+  background: var(--el-text-color-primary) !important;
+  border-color: var(--el-text-color-primary) !important;
+}
+
 .el-dialog,
 .el-message-box,
 .login-out-dialog {

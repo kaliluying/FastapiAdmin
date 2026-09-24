@@ -28,10 +28,11 @@ defineProps<Props>();
 <style scoped lang="scss">
 .fa-page-header {
   display: flex;
-  align-items: flex-start;
+  gap: 16px;
+  align-items: flex-end;
   justify-content: space-between;
-  padding: 16px 0 12px;
-  margin-bottom: 16px;
+  padding: 8px 0 20px;
+  margin-bottom: 22px;
   border-bottom: 1px solid var(--fa-color-border, var(--el-border-color));
 
   &__main {
@@ -47,15 +48,17 @@ defineProps<Props>();
 
   &__title {
     margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    line-height: 1.4;
+    font-size: clamp(21px, 1.8vw, 26px);
+    font-weight: 680;
+    line-height: 1.3;
     color: var(--fa-color-text, var(--el-text-color-primary));
+    letter-spacing: -0.025em;
   }
 
   &__description {
-    margin: 4px 0 0;
+    margin: 7px 0 0;
     font-size: 13px;
+    line-height: 1.55;
     color: var(--fa-color-text-muted, var(--el-text-color-secondary));
   }
 
@@ -65,6 +68,17 @@ defineProps<Props>();
     gap: 8px;
     align-items: center;
     margin-left: 16px;
+  }
+}
+
+@media (width <= 640px) {
+  .fa-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .fa-page-header__actions {
+    margin-left: 0;
   }
 }
 </style>

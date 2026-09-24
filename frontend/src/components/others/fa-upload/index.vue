@@ -82,7 +82,7 @@ defineOptions({ name: "FaUpload" });
 
 import { ref, watch } from "vue";
 import { UploadRawFile, UploadRequestOptions, ElMessage, type UploadUserFile } from "element-plus";
-import ParamsAPI from "@/api/module_system/params";
+import FileAPI from "@/api/module_common/file";
 import { dataURLToFile } from "@utils";
 
 interface Props {
@@ -205,7 +205,7 @@ async function uploadFileInternal(file: File | UploadRawFile) {
     formData.append(key, String(value));
   }
 
-  const response = await ParamsAPI.uploadFile(formData);
+  const response = await FileAPI.uploadFile(formData);
 
   if (response.data.code === 0 && response.data) {
     const fileInfo: UploadFilePath = response.data.data;

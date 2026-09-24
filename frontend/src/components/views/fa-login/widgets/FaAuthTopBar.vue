@@ -113,7 +113,7 @@
 import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import { useI18n } from "vue-i18n";
-import { useSettingsStore, useUserStore, useConfigStore } from "@stores";
+import { useSettingsStore, useUserStore } from "@stores";
 import { useHeaderBar } from "@/hooks/core/useHeaderBar";
 import { themeAnimation } from "@utils";
 import { languageOptions } from "@/locales";
@@ -160,7 +160,6 @@ function onPanelAlign(cmd: string) {
   }
 }
 
-const configStore = useConfigStore();
 const settingStore = useSettingsStore();
 const userStore = useUserStore();
 const { isDark, systemThemeColor } = storeToRefs(settingStore);
@@ -171,19 +170,11 @@ const mainColors = AppConfig.systemMainColor;
 /** 与 Element 主题主色同步，供调色盘图标与展开态使用 */
 const themeColorForCss = computed(() => systemThemeColor.value);
 
-const webLogoSrc = computed(
-  () => configStore.configData.system_logo?.config_value?.trim() || undefined
-);
+const webLogoSrc = computed(() => undefined);
 
-const siteTitle = computed(
-  () => configStore.configData.system_name?.config_value?.trim() || AppConfig.systemInfo.name
-);
+const siteTitle = computed(() => AppConfig.systemInfo.name);
 
-const displayVersion = computed(() => {
-  const raw = configStore.configData.system_version?.config_value?.trim();
-  const ver = raw || DEFAULT_APP_VERSION;
-  return ver.startsWith("v") || ver.startsWith("V") ? ver : `v${ver}`;
-});
+const displayVersion = computed(() => `v${DEFAULT_APP_VERSION}`);
 
 const changeLanguage = (lang: LanguageEnum) => {
   if (locale.value === lang) return;

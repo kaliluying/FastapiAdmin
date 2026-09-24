@@ -90,7 +90,6 @@
 import { computed } from "vue";
 import AppConfig from "@/config";
 import loginIcon from "@fa_imgs/background.svg";
-import { useConfigStore } from "@stores";
 import { themeAnimation } from "@utils";
 
 defineOptions({ name: "FaLoginLeftView" });
@@ -106,23 +105,14 @@ withDefaults(defineProps<Props>(), {
   hideTopBranding: false,
 });
 
-const configStore = useConfigStore();
 
-/** 接口 system_logo，空则 FaLogo 内置默认图 */
-const webLogoSrc = computed(
-  () => configStore.configData.system_logo?.config_value?.trim() || undefined
-);
+/** 使用内置 Logo，站点名称取应用默认值 */
+const webLogoSrc = computed(() => undefined);
 
-const siteTitle = computed(
-  () => configStore.configData.system_name?.config_value?.trim() || AppConfig.systemInfo.name
-);
+const siteTitle = computed(() => AppConfig.systemInfo.name);
 
 const DEFAULT_APP_VERSION = "3.0.0";
-const displayVersion = computed(() => {
-  const raw = configStore.configData.system_version?.config_value?.trim();
-  const ver = raw || DEFAULT_APP_VERSION;
-  return ver.startsWith("v") || ver.startsWith("V") ? ver : `v${ver}`;
-});
+const displayVersion = computed(() => `v${DEFAULT_APP_VERSION}`);
 </script>
 
 <style lang="scss" scoped>

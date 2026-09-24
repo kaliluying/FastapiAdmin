@@ -20,6 +20,7 @@ from .chroma_store import ChromaKnowledgeStore, get_cached_chroma_store
 from .crud import KnowledgeBaseCRUD, KnowledgeChunkCRUD, KnowledgeDocumentCRUD
 from .embedding import EmbeddingClient, get_cached_embedding_client
 from .extractors import extract_text
+from .public import KnowledgeRetriever, accessible_knowledge_base_ids
 from .schema import (
     KnowledgeBaseCreateSchema,
     KnowledgeBaseOutSchema,
@@ -308,64 +309,60 @@ class KnowledgeService:
     async def query_retrieval(self, data: RetrievalTestSchema) -> dict[str, Any]:
         if not data.knowledge_base_ids:
             raise CustomException(msg="please select at least one knowledge base")
-        knowledge_base_ids = await self._accessible_knowledge_base_ids(data.knowledge_base_ids)
-
+        knowledge_base_ids = await accessible_knowledge_base_ids(self.auth, data.knowledge_base_ids)
         retrieval_mode = settings.RETRIEVAL_MODE
+        searcher = KnowledgeRetriever(
+            mode=retrieval_mode if retrieval_mode in {"vector", "bm25", "hybrid"} else "vector",
+            chroma_store=self.store,
+            bm25_index=self.bm25_index,
+            embedding_client=self.embedding_client,
+            alpha=settings.HYBRID_ALPHA,
+            top_k=data.top_k,
+            candidate_multiplier=settings.RETRIEVAL_CANDIDATE_MULTIPLIER,
+            auto_adjust_alpha=getattr(settings, "RETRIEVAL_AUTO_ADJUST_ALPHA", True),
+        )
+        results = await searcher.search(query=data.query, knowledge_base_ids=knowledge_base_ids)
+
         if retrieval_mode == "bm25":
-            results = await self._get_bm25_index().search(
-                query=data.query,
-                knowledge_base_ids=knowledge_base_ids,
-                top_k=data.top_k,
-            )
-            return {
-                "query": data.query,
-                "retrieval_mode": retrieval_mode,
-                "results": self._format_bm25_results(results),
-            }
-
-        if retrieval_mode == "hybrid":
-            from app.plugin.module_ai.chat.hybrid_retriever import HybridKnowledgeRetriever
-
-            retriever = HybridKnowledgeRetriever(
-                chroma_store=self._get_store(),
-                bm25_index=self._get_bm25_index(),
-                embedding_client=self._get_embedding_client(),
-                alpha=settings.HYBRID_ALPHA,
-                top_k=data.top_k,
-                candidate_multiplier=settings.RETRIEVAL_CANDIDATE_MULTIPLIER,
-                auto_adjust_alpha=settings.RETRIEVAL_AUTO_ADJUST_ALPHA,
-            )
-            documents = await retriever.retrieve(
-                query=data.query,
-                user_id="retrieval-test",
-                scope_id="retrieval-test",
-                session_id=None,
-                knowledge_base_ids=knowledge_base_ids,
-            )
             return {
                 "query": data.query,
                 "retrieval_mode": retrieval_mode,
                 "results": [
                     {
-                        "content": document.content,
-                        "metadata": document.metadata,
-                        "distance": document.metadata.get("vector_distance"),
-                        "score": document.metadata.get("bm25_score"),
+                        "content": item.content,
+                        "metadata": item.metadata,
+                        "score": item.score,
                     }
-                    for document in documents
+                    for item in results
                 ],
             }
 
-        embeddings = await self._get_embedding_client().embed_texts([data.query])
-        raw = await self._get_store().query(
-            query_embedding=embeddings[0],
-            knowledge_base_ids=knowledge_base_ids,
-            top_k=data.top_k,
-        )
+        if retrieval_mode == "hybrid":
+            return {
+                "query": data.query,
+                "retrieval_mode": retrieval_mode,
+                "results": [
+                    {
+                        "content": item.content,
+                        "metadata": item.metadata,
+                        "distance": item.distance,
+                        "score": item.score,
+                    }
+                    for item in results
+                ],
+            }
+
         return {
             "query": data.query,
             "retrieval_mode": retrieval_mode,
-            "results": self._format_chroma_results(raw),
+            "results": [
+                {
+                    "content": item.content,
+                    "metadata": item.metadata,
+                    "distance": item.distance,
+                }
+                for item in results
+            ],
         }
 
     async def _save_upload_file(self, file: UploadFile) -> Path:
@@ -434,17 +431,6 @@ class KnowledgeService:
         output.file_path = cls._safe_knowledge_path(output.file_path)
         return output
 
-    async def _accessible_knowledge_base_ids(self, ids: list[int]) -> list[int]:
-        """Validate that retrieval IDs belong to the current user's scope."""
-        normalized = list(dict.fromkeys(ids))
-        if not normalized or not self.auth.user or not self.auth.db:
-            return normalized
-        visible = await KnowledgeBaseCRUD(self.auth).get_list(search={"id": ("in", normalized)})
-        visible_ids = {item.id for item in visible}
-        if visible_ids != set(normalized):
-            raise CustomException(msg="知识库不存在或无权访问", status_code=403)
-        return normalized
-
     def _get_store(self) -> ChromaKnowledgeStore:
         if self.store is None:
             self.store = get_cached_chroma_store()
@@ -459,43 +445,3 @@ class KnowledgeService:
         if self.bm25_index is None:
             self.bm25_index = get_cached_bm25_index()
         return self.bm25_index
-
-    @staticmethod
-    def _format_chroma_results(raw: dict[str, Any]) -> list[dict[str, Any]]:
-        documents = (raw.get("documents") or [[]])[0] or []
-        metadatas = (raw.get("metadatas") or [[]])[0] or []
-        distances = (raw.get("distances") or [[]])[0] or []
-        results = []
-        for index, content in enumerate(documents):
-            results.append(
-                {
-                    "content": content,
-                    "metadata": metadatas[index] if index < len(metadatas) else {},
-                    "distance": distances[index] if index < len(distances) else None,
-                }
-            )
-        return results
-
-    @staticmethod
-    def _format_bm25_results(raw: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Format BM25 search hits for the retrieval test response.
-
-        Args:
-            raw: Raw BM25 hits returned by the index adapter.
-
-        Returns:
-            Hits with the same content/metadata shape used by vector retrieval.
-        """
-        return [
-            {
-                "content": item["content"],
-                "metadata": {
-                    "knowledge_base_id": item["knowledge_base_id"],
-                    "document_id": item["document_id"],
-                    "chunk_index": item.get("chunk_index", 0),
-                    "file_name": item.get("file_name", ""),
-                },
-                "score": item["score"],
-            }
-            for item in raw
-        ]
