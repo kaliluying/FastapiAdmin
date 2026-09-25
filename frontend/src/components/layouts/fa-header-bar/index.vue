@@ -266,7 +266,7 @@ const openSearchDialog = (): void => {
 
 <style lang="scss" scoped>
 .w-full {
-  padding: 0 20px;
+  padding: 0 28px;
   background: var(--fa-color-surface);
   border-bottom: 1px solid var(--fa-color-border);
   box-shadow: none;
@@ -277,9 +277,9 @@ html.dark .w-full {
 }
 
 .relative.box-border {
-  height: 60px;
+  height: 64px;
   padding: 0 4px;
-  line-height: 60px;
+  line-height: 64px;
   background: transparent;
   border: 0;
   border-radius: 0;
@@ -375,10 +375,10 @@ html.dark .relative.box-border {
 }
 
 #app-header-toolbar .flex.items-center.justify-between {
-  background: color-mix(in srgb, var(--default-box-color) 84%, var(--default-bg-color));
+  background: var(--fa-color-surface-raised);
   border: 1px solid var(--fa-card-border);
-  border-radius: 8px;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%);
+  border-radius: var(--fa-radius-control);
+  box-shadow: none;
 }
 
 #app-header-toolbar .flex.items-center.justify-between:hover {

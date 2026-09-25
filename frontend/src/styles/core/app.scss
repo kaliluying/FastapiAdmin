@@ -130,7 +130,7 @@
 .page-content {
   background: var(--fa-color-surface);
   border: 1px solid var(--fa-color-border) !important;
-  box-shadow: none;
+  box-shadow: var(--fa-soft-shadow);
 }
 
 @mixin fa-card-base($border-color, $shadow: none, $radius: var(--fa-radius-panel)) {
@@ -152,7 +152,7 @@
 .fa-card-xs {
   background: var(--fa-color-surface);
   border: 1px solid var(--fa-color-border);
-  box-shadow: none;
+  box-shadow: var(--fa-soft-shadow);
   transition:
     border-color var(--fa-motion-control) ease,
     background-color var(--fa-motion-control) ease;
@@ -244,11 +244,11 @@
   min-width: 0;
   min-height: 0;
   margin-top: 12px;
-  border: 1px solid var(--fa-color-border);
-  border-radius: var(--fa-radius-panel) !important;
   overflow: hidden;
   background: var(--fa-color-surface);
-  box-shadow: none;
+  border: 1px solid var(--fa-color-border);
+  border-radius: var(--fa-radius-panel) !important;
+  box-shadow: var(--fa-soft-shadow);
 
   .el-card__body {
     display: flex;

@@ -56,7 +56,7 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 语言 */
   language: LanguageEnum.ZH_CN,
   /** 主题颜色 */
-  themeColor: "#2d7d72",
+  themeColor: "#3b73e8",
   /** 是否显示水印 */
   showWatermark: false,
   /** 水印内容 */
@@ -74,7 +74,7 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 菜单类型 */
   menuType: MenuTypeEnum.LEFT,
   /** 菜单展开宽度 */
-  menuOpenWidth: 210,
+  menuOpenWidth: 256,
   /** 菜单是否展开 */
   menuOpen: true,
   /** 双菜单是否显示文本 */
@@ -84,7 +84,7 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 系统主题模式 */
   systemThemeMode: SystemThemeEnum.LIGHT,
   /** 菜单风格 */
-  menuThemeType: MenuThemeEnum.DARK,
+  menuThemeType: MenuThemeEnum.LIGHT,
   /** 系统主题颜色 */
   systemThemeColor: AppConfig.systemMainColor[0],
   /** 是否显示菜单按钮 */
@@ -155,7 +155,7 @@ export function resetToDefaults(currentSettings: Record<string, any>) {
 // 注意：修改默认主题色时，需要同步修改 src/styles/variables.scss 中的 primary.base 值
 export const themeColorPresets = [
   // === 精选常用颜色 - 多样化色系 ===
-  "#2d7d72", // Quiet Operations 青色 — 默认品牌色
+  "#3b73e8", // Dashboard 蓝 — 默认品牌色
   "#3B82F6", // 操作蓝 - 现代控制台
   "#2DD4BF", // 信号青 - 在线与成功状态
   "#52C41A", // 成功绿 - 活力清新

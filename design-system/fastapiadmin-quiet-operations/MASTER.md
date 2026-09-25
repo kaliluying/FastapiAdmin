@@ -1,157 +1,84 @@
-# FastApiAdmin Quiet Operations Design System
+# FastapiAdmin 前端设计系统
 
-> Page-specific rules under `pages/` override this file. The approved product specification remains authoritative when generated recommendations conflict.
+> 本目录保留历史名称以避免旧链接失效。当前视觉以仓库根目录的 `dashboard-beautify-preview.html` 为参考，以 `frontend/src/styles/core/_fa-tokens.scss` 和实际组件为落地依据。预览稿里的指标、趋势、活动和日志是静态示例，只有真实接口支持的数据才能进入产品页面。
 
-**Product:** reusable enterprise administration skeleton with integrated AI/RAG operations
-**Audience:** enterprise administrators, internal operators, and secondary-development teams
-**Platform:** responsive desktop-first web application
-**Stack:** Vue 3, TypeScript, Element Plus, SCSS, Tailwind utilities, Iconify/Remix Icon
+## 产品与方向
 
-## Direction
+- 面向单组织后台的管理员和知识库、AI 对话使用者；页面首先帮助用户找到工作入口、读取真实状态并完成操作。
+- 默认浅色界面使用淡蓝灰画布、白色面板和蓝色操作强调。层级依靠标题、间距、边框与少量阴影表达，保留预览稿的清晰感。
+- 深色模式和用户自选主题色继续可用。设置面板会在运行时更新 `--theme-color`，不能把默认蓝色写死在所有可交互控件上。
+- 操作密集的表格和表单保持紧凑；首页保持克制，不用菜单数量、角色数量、会话自检等重复信息填满空间。
 
-Quiet Operations is calm, dense, and dependable. The interface should feel like a professional operational tool used for hours at a time, not a marketing page or a futuristic AI demo.
+目前已调整共享样式变量、应用外壳、登录介绍区、首页和异常页。其他管理页与 AI 页面会继承共享变量，但不能因此认定每个页面都已按预览稿逐页验收。
 
-- Default light theme with a graphite navigation rail, cool-white work area, and restrained teal actions.
-- Dark and system themes remain first-class.
-- Hierarchy comes from typography, borders, spacing, and stable grid tracks.
-- Panels use borders before shadows; shadows are reserved for overlays.
-- AI screens make retrieval, citations, generation, and failures legible without decorative effects.
+## 颜色与主题
 
-## Color
+下表是当前默认值。新增页面优先使用语义变量，不复制十六进制颜色到组件内。
 
-### Light
+| 用途       | 浅色值    | 变量                        |
+| ---------- | --------- | --------------------------- |
+| 页面画布   | `#F4F6FB` | `--fa-color-canvas`         |
+| 面板       | `#FFFFFF` | `--fa-color-surface`        |
+| 次级表面   | `#F8FAFC` | `--fa-color-surface-raised` |
+| 侧栏表面   | `#FFFFFF` | `--fa-color-sidebar`        |
+| 选中背景   | `#EAF0FE` | `--fa-color-sidebar-active` |
+| 默认强调色 | `#3B73E8` | `--fa-color-accent`         |
+| 强调色悬停 | `#1F4FC4` | `--fa-color-accent-hover`   |
+| 主要文字   | `#0F172A` | `--fa-color-text`           |
+| 次要文字   | `#647387` | `--fa-color-text-muted`     |
+| 边框       | `#E7ECF2` | `--fa-color-border`         |
+| 成功       | `#0F9D77` | `--fa-color-success`        |
+| 警告       | `#D98A16` | `--fa-color-warning`        |
+| 危险       | `#E0514B` | `--fa-color-danger`         |
 
-| Role | Value | Project token |
-|---|---:|---|
-| Canvas | `#F3F5F6` | `--fa-color-canvas` |
-| Surface | `#FFFFFF` | `--fa-color-surface` |
-| Raised surface | `#FFFFFF` | `--fa-color-surface-raised` |
-| Sidebar | `#18232D` | `--fa-color-sidebar` |
-| Sidebar selected | `#263842` | `--fa-color-sidebar-active` |
-| Primary | `#2D7D72` | `--fa-color-accent` |
-| Primary hover | `#256B62` | `--fa-color-accent-hover` |
-| Text | `#26333D` | `--fa-color-text` |
-| Muted text | `#68747C` | `--fa-color-text-muted` |
-| Border | `#DFE5E8` | `--fa-color-border` |
-| Success | `#25806F` | `--fa-color-success` |
-| Warning | `#B7791F` | `--fa-color-warning` |
-| Danger | `#C2413B` | `--fa-color-danger` |
-| Information | `#39728C` | `--fa-color-info` |
+深色模式由 `html.dark` 覆盖表面层级：画布 `#0C0F15`、面板与侧栏 `#141922`、次级表面 `#181F2A`、文字 `#E7EDF5`、边框 `#232C39`。暗色选中背景为 `#1A2540`。菜单配色也受用户设置影响，因此单个已登录会话的侧栏颜色不代表默认值。
 
-### Dark
+状态色只表示真实状态，并辅以文字或图标。普通操作使用 `--theme-color` 或现有语义变量；图表系列可以使用蓝色与成功色，但不能用颜色作为唯一图例。
 
-| Role | Value |
-|---|---:|
-| Canvas | `#0D1318` |
-| Surface | `#151D23` |
-| Raised surface | `#1B252C` |
-| Sidebar | `#0A1014` |
-| Text | `#E7EDEF` |
-| Muted text | `#9CABB3` |
-| Border | `#2C3941` |
+## 字体、间距与表面
 
-Do not use purple or blue gradients, glowing accents, bokeh, glassmorphism, or color as the only state signal.
+- 中文优先使用现有 `PingFang SC`、`Noto Sans CJK SC` 等本地字体回退；数据可使用 `JetBrains Mono` 回退栈和等宽数字。预览稿引用的在线字体不作为运行依赖。
+- 页面标题约 24–30px，面板标题约 16–18px，正文 13–14px，说明文字通常 12px。长篇 AI 回答另按阅读需要调整。
+- 间距以 4px 为基准；常用 8、12、16、20、24px。当前控制圆角 `10px`，面板和浮层圆角 `14px`，默认控件高度 `36px`。
+- 面板使用 `--fa-color-border` 和 `--fa-soft-shadow`；浮层可使用更明显的 `--fa-overlay-shadow`。不在同一信息层连续嵌套卡片。
+- 图标沿用现有 Remix/Iconify 体系。交互状态不能通过位移或缩放改变布局。
 
-## Typography
+## 页面结构
 
-- Prefer the project's existing locally available sans-serif stack; do not add a remote font dependency solely for the redesign.
-- Page title: 20–24px, 700 weight, compact line height.
-- Panel title: 14–16px, 600–700 weight.
-- Body: 13–14px for dense operational surfaces, 15–16px for long-form AI answers.
-- Metadata: 12px minimum.
-- Numbers use tabular figures where comparison matters.
-- Letter spacing is 0.
+### 应用外壳
 
-## Geometry And Density
+- 侧栏按授权菜单分组，当前项同时通过背景、文字和图标突出。顶部栏只放全局工具和当前上下文；工作台标签保持稳定尺寸。
+- 内容区桌面内边距当前为上 26px、左右 28px、下 40px；在 800px 及以下为 16px，在 640px 及以下为 12px。
+- 800px 及以下固定侧栏占据左侧 64px，主内容须留出同宽空间，避免遮住标题或操作按钮。
 
-- Base spacing unit: 4px.
-- Common gaps: 8px, 12px, 16px, 20px, 24px.
-- Control radius: 5px.
-- Panel radius: 6px.
-- Overlay radius: 8px maximum.
-- Default control height: 36px; compact mode may use 32px.
-- Page padding: 22px desktop, 16px tablet, 12px mobile.
-- Use stable grid tracks, explicit minimum heights, and ellipsis/wrapping so dynamic content never changes toolbar or tab dimensions.
+### 首页工作台
 
-## Component Rules
+- 首页只保留标题、最多四个实际可访问页面的快捷入口，以及有登录日志查询权限时的近七日登录活动。
+- 登录活动显示成功登录和新增账号摘要，并用真实接口数据绘制成功登录、独立用户趋势；保留加载、无数据和请求失败提示。无该权限时不显示趋势卡。
+- 基础服务正常时不占用首页版面；数据库、Redis 等依赖异常或检查不可用时，才显示带文字说明和重试动作的提示。
+- 没有可用入口且看不到趋势时，明确提示联系管理员分配权限。首页不重复展示账号资料、角色和权限计数、模块数量或会话自检清单。
+- 900px 及以下将趋势与快捷入口纵向排列；手机视图不能横向溢出或被侧栏遮挡。
 
-### Navigation
+### 管理与 AI 页面
 
-- Dark sidebar, grouped labels, one icon family, selected state visible through background plus contrast/border.
-- Header contains current context and global tools only.
-- Tabs reserve a stable toolbar track and never resize on hover.
+- 列表页按标题、紧凑筛选、主要操作、表格与分页组织；宽表格在小屏上保留识别字段并提供可用的横向访问方式。
+- 表单的校验紧邻字段，危险操作说明对象和影响；加载、空结果、无权限、失败各有清晰文字。
+- AI 页面沿用共享颜色和表面变量；检索、生成、引用和失败状态应来自实际业务数据，不套用预览稿的演示内容。
 
-### Buttons
+## 交互与可访问性
 
-- One primary action per page section.
-- Use icon-only buttons for familiar tools, with accessible labels and tooltips.
-- Hover/pressed/disabled/loading/focus states are mandatory.
-- Hover must not translate, scale, or change layout dimensions.
+- 控件反馈约 150ms，页面切换约 200ms；尊重 `prefers-reduced-motion`。
+- 键盘焦点清晰可见；图标按钮有可读名称；状态同时由文字或图标表达，不能只靠颜色。
+- 正文和背景应有足够对比度；检查亮色、暗色以及自选主题色下的状态。
+- 页面布局在 375px、768px、1024px、1440px 检查无重叠、裁切和意外横向滚动。
 
-### Tables And Filters
+## 实现与验收入口
 
-- Order: page header, compact filters, batch actions, table, pagination.
-- Keep action columns fixed and concise.
-- More than one row of filters collapses behind “更多筛选”.
-- Empty, no-result, loading, partial-error, and full-error states are distinct.
+- 颜色、圆角、间距和阴影：`frontend/src/styles/core/_fa-tokens.scss`。
+- 字体与排版：`frontend/src/styles/core/_fa-type.scss`。
+- 应用外壳：`frontend/src/components/layouts/_fa-layouts.scss` 与侧栏、顶部栏组件。
+- Element Plus 映射与深色表面：`frontend/src/styles/element-plus/`。
+- 首页信息层级：`frontend/src/views/home/`。
+- 样式入口与开发命令：`frontend/src/styles/README.md`。
 
-### Forms And Overlays
-
-- Simple create/edit flows use right drawers; complex flows may use pages or dialogs.
-- Validation is adjacent to fields.
-- Dangerous confirmations name the object and impact.
-- No nested cards.
-
-### AI/RAG
-
-- Desktop chat uses sessions, conversation, and evidence regions.
-- Retrieval stages are explicit: retrieving, reranking, generating, complete, error.
-- Citations are numbered and expandable; never fabricate missing citations.
-- Document states come only from backend values.
-- Streaming content appears progressively without exaggerated typing animation.
-
-## Motion
-
-- Controls: 120–180ms.
-- Page entry: 160–220ms, opacity plus no more than 6px movement.
-- Drawers/dialogs: about 200ms.
-- Animate state changes only; no ambient or looping decoration.
-- Respect `prefers-reduced-motion` and reduce nonessential motion to near zero.
-
-## Responsive
-
-- 1440px: full navigation, complete tables, three-column AI workspace.
-- 1024px: collapsible navigation and evidence region.
-- 768px: drawer navigation, priority table columns, evidence drawer.
-- 375px: viewing and light operations; complex tables expose core fields without incoherent horizontal overflow.
-
-## Accessibility
-
-- Minimum 4.5:1 contrast for normal text.
-- Visible `:focus-visible` rings.
-- Keyboard access for navigation, dialogs, drawers, forms, table actions, and AI panels.
-- Status must use text/icon in addition to color.
-- Use semantic buttons and headings.
-- Preserve the skip-to-content link.
-
-## Forbidden Patterns
-
-- Marketing hero sections inside the operational app.
-- Decorative gradients, orbs, glow, glass panels, and oversized rounded cards.
-- Cards nested inside cards.
-- Generic purple AI palette.
-- Emoji as structural icons.
-- Layout-shifting hover effects.
-- Static numbers presented as live data.
-- Full secret values rendered in model configuration.
-
-## Delivery Checklist
-
-- [ ] Light and dark themes visually checked.
-- [ ] 375px, 768px, 1024px, and 1440px checked.
-- [ ] No overlap, clipping, unplanned horizontal scroll, or layout shift.
-- [ ] Loading, empty, no-result, forbidden, partial-error, and full-error states checked.
-- [ ] Keyboard path and focus visibility checked.
-- [ ] Reduced motion checked.
-- [ ] One icon family and no emoji structural icons.
-- [ ] `pnpm type-check`, `pnpm test`, and `pnpm build` pass.
+修改视觉规范后，对照上述实现入口核对变量和页面；修改页面后运行目标文件的格式、样式检查，以及适用的类型检查、测试、构建，并在浏览器检查真实数据、交互、空态和窄屏。文档描述当前约定，不以预览稿里的静态数字充当验收证据。

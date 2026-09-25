@@ -3,17 +3,10 @@
     <template #header>
       <div class="section-heading">
         <div>
-          <div class="eyebrow">
-            <span class="eyebrow-mark" aria-hidden="true"></span>
-            访问数据
-          </div>
-          <h2>近 7 日登录活动</h2>
-          <p>近 7 日成功登录与新增账号，按服务器本地时间统计。</p>
+          <h2>登录活动</h2>
+          <p>近 7 日</p>
         </div>
         <div class="section-actions">
-          <ElTag type="info" effect="plain">
-            {{ loading ? "读取中" : hasLoaded ? "每 60 秒更新" : "不可用" }}
-          </ElTag>
           <ElTooltip content="刷新登录趋势" placement="top">
             <ElButton
               size="small"
@@ -42,21 +35,14 @@
       </div>
 
       <template v-else>
-        <div class="trend-summary" aria-label="登录趋势摘要">
+        <div class="trend-summary" aria-label="近七日登录摘要">
           <div class="trend-summary__item">
             <span>成功登录</span>
             <strong>{{ totalLogins }}</strong>
-            <small>近 7 日</small>
-          </div>
-          <div class="trend-summary__item">
-            <span>独立用户峰值</span>
-            <strong>{{ peakUniqueUsers }}</strong>
-            <small>单日</small>
           </div>
           <div class="trend-summary__item">
             <span>新增账号</span>
             <strong>{{ totalNewUsers }}</strong>
-            <small>近 7 日</small>
           </div>
         </div>
 
@@ -65,7 +51,7 @@
             :data="chartSeries"
             :x-axis-data="chartLabels"
             :colors="chartColors"
-            height="220px"
+            height="300px"
             :show-area-color="true"
             :show-legend="true"
             legend-position="top"
@@ -78,8 +64,6 @@
           <FaSvgIcon icon="ri:bar-chart-2-line" class="trend-state__icon" />
           <span>近 7 日暂无成功登录记录</span>
         </div>
-
-        <p class="trend-footnote">成功登录来自登录记录，新增账号按创建时间统计。</p>
       </template>
     </div>
   </ElCard>
@@ -102,9 +86,6 @@ const trendError = ref("");
 
 const totalLogins = computed(() =>
   trendItems.value.reduce((total, item) => total + item.logins, 0)
-);
-const peakUniqueUsers = computed(() =>
-  trendItems.value.reduce((peak, item) => Math.max(peak, item.unique_users), 0)
 );
 const totalNewUsers = computed(() =>
   trendItems.value.reduce((total, item) => total + item.new_users, 0)
@@ -188,16 +169,17 @@ onUnmounted(() => {
 .login-trend-card {
   background: var(--fa-color-surface, var(--el-bg-color));
   border: 1px solid var(--fa-color-border, var(--el-border-color));
-  border-radius: 10px;
+  border-radius: var(--fa-radius-panel);
+  box-shadow: var(--fa-soft-shadow);
 }
 
 .login-trend-card :deep(.el-card__header) {
-  padding: 20px 24px;
+  padding: 18px 22px;
   border-bottom-color: var(--fa-color-border, var(--el-border-color));
 }
 
 .login-trend-card :deep(.el-card__body) {
-  padding: 22px 24px;
+  padding: 20px 22px;
 }
 
 .section-heading {
@@ -205,26 +187,6 @@ onUnmounted(() => {
   gap: 14px;
   align-items: flex-start;
   justify-content: space-between;
-}
-
-.eyebrow {
-  display: inline-flex;
-  gap: 7px;
-  align-items: center;
-  margin-bottom: 7px;
-  font-size: 11px;
-  font-weight: 750;
-  color: var(--el-color-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-}
-
-.eyebrow-mark {
-  width: 6px;
-  height: 6px;
-  background: currentcolor;
-  border-radius: 50%;
-  box-shadow: 0 0 0 4px var(--el-color-primary-light-9);
 }
 
 .section-heading h2 {
@@ -250,7 +212,7 @@ onUnmounted(() => {
 
 .trend-summary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--fa-color-border, var(--el-border-color));
@@ -271,8 +233,7 @@ onUnmounted(() => {
   border-right: 0;
 }
 
-.trend-summary__item span,
-.trend-summary__item small {
+.trend-summary__item span {
   font-size: 12px;
   color: var(--el-text-color-secondary);
 }
@@ -285,12 +246,8 @@ onUnmounted(() => {
   color: var(--el-text-color-primary);
 }
 
-.trend-summary__item small {
-  font-size: 11px;
-}
-
 .trend-chart {
-  height: 220px;
+  height: 300px;
   margin-top: 20px;
 }
 
@@ -303,7 +260,7 @@ onUnmounted(() => {
   gap: 8px;
   align-items: center;
   justify-content: center;
-  min-height: 220px;
+  min-height: 300px;
   color: var(--el-text-color-secondary);
 }
 
@@ -321,12 +278,6 @@ onUnmounted(() => {
   animation: trend-spin 1.1s linear infinite;
 }
 
-.trend-footnote {
-  margin: 8px 0 0;
-  font-size: 11px;
-  color: var(--el-text-color-secondary);
-}
-
 @keyframes trend-spin {
   to {
     transform: rotate(360deg);
@@ -339,19 +290,6 @@ onUnmounted(() => {
     padding: 16px;
   }
 
-  .section-heading {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .section-actions {
-    justify-content: space-between;
-  }
-
-  .trend-summary {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
   .trend-summary__item {
     padding: 4px 10px;
   }
@@ -360,9 +298,16 @@ onUnmounted(() => {
     font-size: 23px;
   }
 
-  .trend-summary__item span,
-  .trend-summary__item small {
+  .trend-summary__item span {
     font-size: 11px;
+  }
+
+  .trend-chart {
+    height: 240px;
+  }
+
+  .trend-state {
+    min-height: 240px;
   }
 }
 

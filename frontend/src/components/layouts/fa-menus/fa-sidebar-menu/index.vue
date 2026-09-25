@@ -425,7 +425,7 @@ watch(menuOpen, (isMenuOpen: boolean) => {
   user-select: none;
   scrollbar-width: none;
   background: var(--fa-color-sidebar, var(--default-box-color));
-  border-right: 1px solid rgb(255 255 255 / 8%);
+  border-right: 1px solid var(--fa-color-border);
   box-shadow: none;
 
   &.no-border {
@@ -514,7 +514,7 @@ watch(menuOpen, (isMenuOpen: boolean) => {
     flex: 0 0 auto;
     min-width: 0;
     height: 100vh;
-    border-right: 1px solid rgb(255 255 255 / 7%);
+    border-right: 1px solid var(--fa-color-border);
     transition: width 0.25s ease;
 
     > * {
@@ -574,12 +574,12 @@ watch(menuOpen, (isMenuOpen: boolean) => {
     display: flex;
     align-items: center;
     width: 100%;
-    height: 68px;
-    padding: 0 14px;
+    height: 76px;
+    padding: 0 20px;
     overflow: hidden;
     line-height: 1.2;
     cursor: pointer;
-    border-bottom: 1px solid rgb(255 255 255 / 10%);
+    border-bottom: 1px solid var(--fa-color-border);
 
     .header-brand {
       display: flex;
@@ -596,7 +596,7 @@ watch(menuOpen, (isMenuOpen: boolean) => {
         height: 36px;
         background: var(--theme-color);
         border-radius: 9px;
-        box-shadow: 0 4px 10px color-mix(in srgb, var(--theme-color) 24%, transparent);
+        box-shadow: var(--fa-soft-shadow);
 
         .logo {
           width: 20px;
@@ -622,8 +622,8 @@ watch(menuOpen, (isMenuOpen: boolean) => {
           margin: 0;
           overflow: hidden;
           text-overflow: ellipsis;
-          font-size: 17px;
-          font-weight: 760;
+          font-size: 15px;
+          font-weight: 650;
           line-height: 1.2;
           letter-spacing: -0.01em;
           white-space: nowrap;
@@ -638,7 +638,7 @@ watch(menuOpen, (isMenuOpen: boolean) => {
       &__subtitle {
         font-size: 10px;
         font-weight: 600;
-        color: var(--fa-gray-500);
+        color: var(--fa-color-text-muted);
         letter-spacing: 0.12em;
       }
     }
@@ -780,18 +780,18 @@ watch(menuOpen, (isMenuOpen: boolean) => {
 .fa-menu-group-title {
   display: flex;
   align-items: center;
-  padding: 18px 14px 6px;
+  padding: 20px 22px 8px;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
-  color: var(--fa-gray-500);
+  color: #94a3b8;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   user-select: none;
 }
 
 /* 菜单样式变量 */
-$menu-height: 40px;
+$menu-height: 46px;
 $menu-icon-size: 20px;
 $menu-font-size: 14px;
 $hover-bg-color: color-mix(in srgb, var(--fa-gray-200) 82%, var(--default-box-color));
@@ -1253,6 +1253,63 @@ $popup-menu-radius: 6px;
   .el-menu--collapse {
     width: v-bind(menuclosewidth);
   }
+}
+
+/* Light navigation follows the dashboard preview's quiet active rail. */
+.layout-sidebar .el-menu-light:not(.el-menu--collapse) {
+  .el-menu-item {
+    width: calc(100% - 20px);
+    padding: 0 11px !important;
+    margin: 2px 10px;
+    color: var(--fa-color-text-muted) !important;
+    border-radius: var(--fa-radius-control);
+
+    &:hover:not(.is-active) {
+      color: var(--fa-color-text) !important;
+      background: var(--fa-color-surface-raised) !important;
+    }
+
+    &.is-active {
+      color: #1f4fc4 !important;
+      background: #eaf0fe !important;
+      border-radius: var(--fa-radius-control);
+
+      &::before {
+        top: 50%;
+        bottom: auto;
+        left: -10px;
+        height: 20px;
+        transform: translateY(-50%);
+      }
+
+      .menu-icon {
+        color: #fff !important;
+        background: var(--theme-color) !important;
+
+        .art-svg-icon,
+        .fa-svg-icon,
+        .menu-route-icon {
+          color: #fff !important;
+        }
+      }
+
+      .menu-name {
+        color: #1f4fc4 !important;
+      }
+    }
+  }
+
+  .menu-icon {
+    width: 28px;
+    height: 28px;
+    background: #eef2f7;
+    border-radius: 8px;
+  }
+}
+
+.dark .layout-sidebar .el-menu-dark:not(.el-menu--collapse) .el-menu-item.is-active {
+  background: #1a2540 !important;
+  border-radius: var(--fa-radius-control);
 }
 
 /* 中等视口（800-1200px）下进一步收紧 sidebar 宽度，释放主区域空间 */

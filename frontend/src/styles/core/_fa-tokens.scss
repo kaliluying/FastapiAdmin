@@ -1,42 +1,42 @@
-// Quiet Operations semantic tokens (partial; never compiled alone).
+// Dashboard preview palette shared by the shell and Element Plus.
 // SCSS modules import this file for Element Plus's compile-time color setup;
 // runtime styles consume the matching CSS custom properties below.
 
-$fa-primary: #2d7d72;
-$fa-success: #25806f;
-$fa-warning: #b7791f;
-$fa-danger: #c2413b;
-$fa-error: #c2413b;
-$fa-info: #39728c;
+$fa-primary: #3b73e8;
+$fa-success: #0f9d77;
+$fa-warning: #d98a16;
+$fa-danger: #e0514b;
+$fa-error: #e0514b;
+$fa-info: #647387;
 
 :root {
-  --fa-color-canvas: #f3f5f6;
+  --fa-color-canvas: #f4f6fb;
   --fa-color-surface: #fff;
-  --fa-color-surface-raised: #fff;
-  --fa-color-sidebar: #18232d;
-  --fa-color-sidebar-active: #263842;
-  --fa-color-accent: #2d7d72;
-  --fa-color-accent-hover: #256b62;
-  --fa-color-text: #26333d;
-  --fa-color-text-muted: #68747c;
-  --fa-color-border: #dfe5e8;
-  --fa-color-success: #25806f;
-  --fa-color-warning: #b7791f;
-  --fa-color-danger: #c2413b;
-  --fa-color-info: #39728c;
+  --fa-color-surface-raised: #f8fafc;
+  --fa-color-sidebar: #fff;
+  --fa-color-sidebar-active: #eaf0fe;
+  --fa-color-accent: #3b73e8;
+  --fa-color-accent-hover: #1f4fc4;
+  --fa-color-text: #0f172a;
+  --fa-color-text-muted: #647387;
+  --fa-color-border: #e7ecf2;
+  --fa-color-success: #0f9d77;
+  --fa-color-warning: #d98a16;
+  --fa-color-danger: #e0514b;
+  --fa-color-info: #647387;
   --fa-space-1: 4px;
   --fa-space-2: 8px;
   --fa-space-3: 12px;
   --fa-space-4: 16px;
   --fa-space-5: 20px;
   --fa-space-6: 24px;
-  --fa-radius-control: 7px;
-  --fa-radius-panel: 10px;
-  --fa-radius-overlay: 12px;
+  --fa-radius-control: 10px;
+  --fa-radius-panel: 14px;
+  --fa-radius-overlay: 14px;
   --fa-control-height: 36px;
   --fa-motion-control: 150ms;
   --fa-motion-page: 200ms;
-  --fa-overlay-shadow: 0 12px 28px rgb(24 35 45 / 16%);
+  --fa-overlay-shadow: 0 18px 40px rgb(15 23 42 / 12%);
 
   // Compatibility aliases retained for existing runtime theme and Tailwind consumers.
   --default-bg-color: var(--fa-color-canvas);
@@ -44,8 +44,8 @@ $fa-info: #39728c;
   --default-border: var(--fa-color-border);
   --default-border-dashed: var(--fa-color-border);
   --fa-card-border: var(--fa-color-border);
-  --fa-soft-shadow: none;
-  --fa-panel-shadow: none;
+  --fa-soft-shadow: 0 1px 3px rgb(15 23 42 / 6%);
+  --fa-panel-shadow: 0 8px 18px rgb(15 23 42 / 6%);
   --fa-focus-ring: 0 0 0 3px color-mix(in srgb, var(--theme-color) 24%, transparent);
   --fa-hover-color: color-mix(in srgb, var(--theme-color) 8%, var(--fa-color-surface));
   --fa-active-color: color-mix(in srgb, var(--theme-color) 14%, var(--fa-color-surface));
@@ -53,13 +53,13 @@ $fa-info: #39728c;
 }
 
 html.dark {
-  --fa-color-canvas: #0d1318;
-  --fa-color-surface: #151d23;
-  --fa-color-surface-raised: #1b252c;
-  --fa-color-sidebar: #0a1014;
-  --fa-color-sidebar-active: #1b252c;
-  --fa-color-text: #e7edef;
-  --fa-color-text-muted: #9cabb3;
-  --fa-color-border: #2c3941;
+  --fa-color-canvas: #0c0f15;
+  --fa-color-surface: #141922;
+  --fa-color-surface-raised: #181f2a;
+  --fa-color-sidebar: #141922;
+  --fa-color-sidebar-active: #1a2540;
+  --fa-color-text: #e7edf5;
+  --fa-color-text-muted: #93a1b3;
+  --fa-color-border: #232c39;
   --fa-overlay-shadow: 0 12px 28px rgb(0 0 0 / 36%);
 }

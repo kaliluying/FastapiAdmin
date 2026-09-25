@@ -4,12 +4,12 @@ import { describe, expect, it } from "vitest";
 
 const source = (path: string) => readFileSync(resolve(__dirname, "..", path), "utf-8");
 
-describe("Quiet Operations theme contract", () => {
+describe("Dashboard theme contract", () => {
   it("defines semantic surface, radius, density, and motion tokens", () => {
     const tokens = source("styles/core/_fa-tokens.scss");
     expect(tokens).toContain("--fa-color-surface");
     expect(tokens).toContain("--fa-color-sidebar");
-    expect(tokens).toContain("--fa-radius-panel: 10px");
+    expect(tokens).toContain("--fa-radius-panel: 14px");
     expect(tokens).toContain("--fa-control-height: 36px");
     expect(tokens).toContain("--fa-motion-page: 200ms");
   });
@@ -21,7 +21,7 @@ describe("Quiet Operations theme contract", () => {
     expect(dark).toContain("--fa-color-border");
   });
 
-  it("uses Quiet Operations teal as the default configurable brand color", () => {
-    expect(source("config/setting.ts")).toContain('"#2d7d72"');
+  it("uses the dashboard preview blue as the default brand color", () => {
+    expect(source("config/setting.ts")).toContain('"#3b73e8"');
   });
 });

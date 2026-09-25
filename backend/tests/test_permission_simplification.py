@@ -310,13 +310,23 @@ def test_seed_roles_are_single_org_baseline_only():
     assert not any(role["code"].startswith(("STAR_", "INNO_")) for role in roles)
 
 
-def test_seed_users_do_not_include_historical_tenant_accounts():
+def test_seed_users_only_include_baseline_accounts():
     users = json.loads((SEED_DIR / "sys_user.json").read_text(encoding="utf-8"))
     user_roles = json.loads((SEED_DIR / "sys_user_roles.json").read_text(encoding="utf-8"))
+    login_logs = json.loads((SEED_DIR / "sys_login_log.json").read_text(encoding="utf-8"))
 
-    assert {user["username"] for user in users} == {"super", "admin", "user", "product", "hr"}
+    assert [user["username"] for user in users] == ["super", "admin", "user"]
     assert not any("tenant_id" in user for user in users)
+    assert {item["user_id"] for item in user_roles} == set(range(1, len(users) + 1))
     assert {item["role_id"] for item in user_roles} <= {1, 2, 3}
+    assert not {"product", "hr"} & {item["username"] for item in login_logs}
+
+
+def test_initialized_user_list_only_contains_baseline_accounts(test_client, auth_headers):
+    response = test_client.get("/system/user/list", params={"page_no": 1, "page_size": 20}, headers=auth_headers)
+
+    assert response.status_code == 200
+    assert {item["username"] for item in response.json()["data"]["items"]} == {"super", "admin", "user"}
 
 
 def test_seed_role_menu_mapping_grants_user_ai_session_access():

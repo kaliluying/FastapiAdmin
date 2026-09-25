@@ -62,8 +62,8 @@ const highlights = [
   min-height: 100%;
   padding: clamp(5rem, 8vw, 7.5rem) clamp(2rem, 6vw, 7rem) 3rem;
   overflow: hidden;
-  color: #f3f8f7;
-  background: #183a3c;
+  color: #e7edf5;
+  background: #152548;
 }
 
 .fa-enterprise-intro::before {
@@ -93,7 +93,7 @@ const highlights = [
   align-items: center;
   font-size: 11px;
   font-weight: 700;
-  color: #a9d5cc;
+  color: #aac3ff;
   letter-spacing: 0.12em;
 }
 
@@ -121,7 +121,7 @@ const highlights = [
   margin: 1.5rem 0 0;
   font-size: clamp(1rem, 1.2vw, 1.125rem);
   line-height: 1.8;
-  color: #c4d8d4;
+  color: #c5d4f4;
 }
 
 .fa-enterprise-intro__highlights {
@@ -144,7 +144,7 @@ const highlights = [
 
 .fa-enterprise-intro__highlight > .fa-svg-icon {
   font-size: 20px;
-  color: #a9d5cc;
+  color: #aac3ff;
 }
 
 .fa-enterprise-intro__highlight h2 {
@@ -158,14 +158,14 @@ const highlights = [
   margin: 0;
   font-size: 12px;
   line-height: 1.55;
-  color: #b4ceca;
+  color: #b7c8e8;
 }
 
 .fa-enterprise-intro__footer {
   padding-top: 2rem;
   margin-top: auto;
   font-size: 11px;
-  color: #8fb3ae;
+  color: #9eb5e2;
   letter-spacing: 0.1em;
 }
 

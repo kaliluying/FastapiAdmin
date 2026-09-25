@@ -110,30 +110,30 @@
 
   /* Theme Colors — 主色跟随运行时主题色（修复漂移）；语义色对齐 SCSS 单源 _fa-tokens.scss */
   --fa-primary: var(--theme-color);
-  --fa-secondary: #2dd4bf;
-  --fa-error: #fa896b;
-  --fa-info: #909399;
-  --fa-success: #13deb9;
-  --fa-warning: #ffae1f;
-  --fa-danger: #ff4d4f;
+  --fa-secondary: #6f9bff;
+  --fa-error: #e0514b;
+  --fa-info: #647387;
+  --fa-success: #0f9d77;
+  --fa-warning: #d98a16;
+  --fa-danger: #e0514b;
 
   /* Gray Scale - Light Mode */
-  --fa-gray-100: #fbfdff;
-  --fa-gray-200: #f4f7fb;
-  --fa-gray-300: #e7edf5;
-  --fa-gray-400: #d3dce9;
-  --fa-gray-500: #8a96a8;
-  --fa-gray-600: #647084;
+  --fa-gray-100: #f8fafc;
+  --fa-gray-200: #eef2f7;
+  --fa-gray-300: #e7ecf2;
+  --fa-gray-400: #d6dee8;
+  --fa-gray-500: #94a3b8;
+  --fa-gray-600: #647387;
   --fa-gray-700: #475569;
   --fa-gray-800: #1e293b;
-  --fa-gray-900: #0b1220;
+  --fa-gray-900: #0f172a;
 
   /* Border Colors */
-  --fa-card-border: rgb(11 18 32 / 9%);
-  --default-border: #d7e0ec;
-  --default-border-dashed: #cfd9e8;
-  --fa-soft-shadow: 0 2px 8px rgb(11 18 32 / 6%);
-  --fa-panel-shadow: 0 18px 48px rgb(11 18 32 / 8%);
+  --fa-card-border: #e7ecf2;
+  --default-border: #e7ecf2;
+  --default-border-dashed: #d6dee8;
+  --fa-soft-shadow: 0 1px 3px rgb(15 23 42 / 6%);
+  --fa-panel-shadow: 0 8px 18px rgb(15 23 42 / 6%);
   --fa-focus-ring: 0 0 0 3px color-mix(in srgb, var(--theme-color) 18%, transparent);
 
   /* 表面高光：浅色为温润白渐变，深色转透明（让底色透出，仅留极淡顶光做纵深） */
@@ -158,17 +158,17 @@
   --fa-elevation-3: 0 18px 48px rgb(11 18 32 / 9%), 0 6px 16px rgb(11 18 32 / 5%);
 
   /* Background Colors */
-  --default-bg-color: #f5f8fc;
+  --default-bg-color: #f4f6fb;
   --default-box-color: #fff;
 
   /* Hover Color */
-  --fa-hover-color: #edf4fb;
+  --fa-hover-color: #f8fafc;
 
   /* Active Color */
-  --fa-active-color: #e5eef9;
+  --fa-active-color: #eaf0fe;
 
   /* Element Component Active Color */
-  --fa-el-active-color: #e9f2ff;
+  --fa-el-active-color: #eaf0fe;
 }
 
 /* ==================== Dark Mode Variables ==================== */
@@ -205,8 +205,8 @@
   --fa-elevation-3: 0 24px 60px rgb(0 0 0 / 38%), 0 6px 18px rgb(0 0 0 / 24%);
 
   /* Background Colors */
-  --default-bg-color: #070707;
-  --default-box-color: #161618;
+  --default-bg-color: #0c0f15;
+  --default-box-color: #141922;
 
   /* Hover Color */
   --fa-hover-color: #252530;

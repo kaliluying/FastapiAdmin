@@ -30,15 +30,31 @@
   --el-border-color: var(--fa-color-border) !important;
   --el-border-color-light: var(--fa-color-border) !important;
   --el-border-color-lighter: color-mix(in srgb, var(--fa-color-border) 70%, transparent) !important;
-  --el-fill-color: color-mix(in srgb, var(--fa-color-canvas) 72%, var(--fa-color-surface)) !important;
-  --el-fill-color-light: color-mix(in srgb, var(--fa-color-canvas) 48%, var(--fa-color-surface)) !important;
-  --el-fill-color-lighter: color-mix(in srgb, var(--fa-color-canvas) 28%, var(--fa-color-surface)) !important;
+  --el-fill-color: color-mix(
+    in srgb,
+    var(--fa-color-canvas) 72%,
+    var(--fa-color-surface)
+  ) !important;
+  --el-fill-color-light: color-mix(
+    in srgb,
+    var(--fa-color-canvas) 48%,
+    var(--fa-color-surface)
+  ) !important;
+  --el-fill-color-lighter: color-mix(
+    in srgb,
+    var(--fa-color-canvas) 28%,
+    var(--fa-color-surface)
+  ) !important;
   --el-fill-color-blank: var(--fa-color-surface) !important;
   --el-text-color-primary: var(--fa-color-text) !important;
   --el-text-color-regular: var(--fa-color-text) !important;
   --el-text-color-secondary: var(--fa-color-text-muted) !important;
   // 按钮样式偏好
-  --el-button-hover-bg-color: color-mix(in srgb, var(--theme-color) 9%, var(--fa-color-surface)) !important;
+  --el-button-hover-bg-color: color-mix(
+    in srgb,
+    var(--theme-color) 9%,
+    var(--fa-color-surface)
+  ) !important;
   --el-button-hover-border-color: var(--el-color-primary) !important;
   --el-button-border-color: var(--el-color-primary) !important;
   --el-button-text-color: var(--el-color-primary) !important;
@@ -562,9 +578,21 @@ html.dark .el-card {
   --el-border-color: var(--fa-color-border) !important;
   --el-border-color-light: var(--fa-color-border) !important;
   --el-border-color-lighter: color-mix(in srgb, var(--fa-color-border) 70%, transparent) !important;
-  --el-fill-color: color-mix(in srgb, var(--fa-color-surface-raised) 68%, var(--fa-color-surface)) !important;
-  --el-fill-color-light: color-mix(in srgb, var(--fa-color-surface-raised) 48%, var(--fa-color-surface)) !important;
-  --el-fill-color-lighter: color-mix(in srgb, var(--fa-color-surface-raised) 28%, var(--fa-color-surface)) !important;
+  --el-fill-color: color-mix(
+    in srgb,
+    var(--fa-color-surface-raised) 68%,
+    var(--fa-color-surface)
+  ) !important;
+  --el-fill-color-light: color-mix(
+    in srgb,
+    var(--fa-color-surface-raised) 48%,
+    var(--fa-color-surface)
+  ) !important;
+  --el-fill-color-lighter: color-mix(
+    in srgb,
+    var(--fa-color-surface-raised) 28%,
+    var(--fa-color-surface)
+  ) !important;
   --el-fill-color-blank: var(--fa-color-surface) !important;
   --el-text-color-primary: var(--fa-color-text) !important;
   --el-text-color-regular: var(--fa-color-text) !important;
@@ -618,7 +646,7 @@ html.dark .el-card {
   background: var(--fa-color-surface) !important;
   border: 1px solid var(--fa-color-border) !important;
   border-radius: var(--fa-radius-panel) !important;
-  box-shadow: none !important;
+  box-shadow: var(--fa-soft-shadow) !important;
   transition:
     border-color var(--fa-motion-control) ease,
     background-color var(--fa-motion-control) ease;
@@ -747,9 +775,17 @@ html.dark .el-card {
 
 .el-table {
   --el-table-border-color: var(--fa-color-border) !important;
-  --el-table-current-row-bg-color: color-mix(in srgb, var(--theme-color) 8%, var(--fa-color-surface)) !important;
+  --el-table-current-row-bg-color: color-mix(
+    in srgb,
+    var(--theme-color) 8%,
+    var(--fa-color-surface)
+  ) !important;
   --el-table-header-bg-color: var(--fa-color-surface-raised) !important;
-  --el-table-row-hover-bg-color: color-mix(in srgb, var(--theme-color) 6%, var(--fa-color-surface)) !important;
+  --el-table-row-hover-bg-color: color-mix(
+    in srgb,
+    var(--theme-color) 6%,
+    var(--fa-color-surface)
+  ) !important;
 
   overflow: hidden;
   border: 1px solid var(--fa-color-border);

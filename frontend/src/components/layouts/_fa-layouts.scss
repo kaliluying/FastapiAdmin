@@ -68,7 +68,7 @@
       flex: 1;
       flex-direction: column;
       min-height: 0;
-      padding: 24px 28px;
+      padding: 26px 28px 40px;
       overflow: auto;
       background: transparent;
 
@@ -83,12 +83,12 @@
           position: relative;
           box-sizing: border-box;
           min-height: 0;
-          padding: 16px;
+          padding: 18px;
           overflow: hidden auto;
           background: var(--fa-color-surface, var(--default-box-color));
-          border: 1px solid rgb(11 18 32 / 7%);
-          border-radius: 8px !important;
-          box-shadow: 0 20px 50px rgb(11 18 32 / 7%);
+          border: 1px solid var(--fa-color-border);
+          border-radius: var(--fa-radius-panel) !important;
+          box-shadow: var(--fa-soft-shadow);
         }
       }
     }
@@ -120,8 +120,10 @@ html.dark .app-layout {
     }
 
     #app-main {
+      box-sizing: border-box;
       width: 100%;
       height: auto;
+      padding-left: 64px;
       overflow: visible;
 
       #app-content {

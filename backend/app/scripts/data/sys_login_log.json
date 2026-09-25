@@ -36,24 +36,6 @@
     "msg": "密码错误，剩余尝试次数: 4"
   },
   {
-    "username": "product",
-    "status": 1,
-    "login_location": "上海市",
-    "login_ip": "10.0.0.88",
-    "request_os": "macOS 14.6",
-    "request_browser": "Safari 17.5",
-    "msg": "登录成功"
-  },
-  {
-    "username": "hr",
-    "status": 2,
-    "login_location": "陕西省西安市",
-    "login_ip": "127.0.0.1",
-    "request_os": "Windows 11",
-    "request_browser": "Chrome 125",
-    "msg": "账号已被锁定，请15分钟后重试"
-  },
-  {
     "username": "super",
     "status": 1,
     "login_location": "日本东京",

@@ -92,7 +92,7 @@ const appConfig: SystemConfig = {
     },
     {
       theme: MenuThemeEnum.DARK,
-      background: "#0B1220",
+      background: "#141922",
       systemNameColor: "#F8FAFC",
       iconColor: "#94A3B8",
       textColor: "#CBD5E1",
@@ -100,10 +100,10 @@ const appConfig: SystemConfig = {
     },
     {
       theme: MenuThemeEnum.LIGHT,
-      background: "#ffffff",
-      systemNameColor: "var(--fa-gray-800)",
-      iconColor: "#6B6B6B",
-      textColor: "#29343D",
+      background: "var(--fa-color-sidebar)",
+      systemNameColor: "var(--fa-color-text)",
+      iconColor: "var(--fa-color-text-muted)",
+      textColor: "var(--fa-color-text-muted)",
       img: configImages.menuStyles.light,
     },
   ],
@@ -119,7 +119,7 @@ const appConfig: SystemConfig = {
   ],
   // 系统主色
   systemMainColor: [
-    "#5D87FF",
+    "#3B73E8",
     "#B48DF3",
     "#1D84FF",
     "#60C041",
