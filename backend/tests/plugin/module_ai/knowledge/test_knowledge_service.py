@@ -123,8 +123,7 @@ async def test_bm25_indexing_skips_vector_dependencies_and_uses_chroma_ids(monke
     monkeypatch.setattr(service_module, "KnowledgeDocumentCRUD", lambda _auth: document_crud)
     monkeypatch.setattr(service_module, "KnowledgeChunkCRUD", lambda _auth: chunk_crud)
     monkeypatch.setattr(service_module, "extract_text", extract_document_text)
-    monkeypatch.setattr(service_module, "split_legal_text", lambda _text: [])
-    monkeypatch.setattr(service_module, "split_text_fallback", lambda _text: ["第一段", "第二段"])
+    monkeypatch.setattr(service_module, "split_text", lambda _text: ["第一段", "第二段"])
     monkeypatch.setattr(service_module.settings, "RETRIEVAL_MODE", "bm25")
 
     result = await KnowledgeService(

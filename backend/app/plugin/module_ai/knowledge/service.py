@@ -30,8 +30,7 @@ from .schema import (
     KnowledgeDocumentQueryParam,
     RetrievalTestSchema,
 )
-from .text_splitter import split_legal_text
-from .text_splitter import split_text as split_text_fallback
+from .text_splitter import split_text
 
 UPLOAD_DIR = BASE_DIR / "storage" / "knowledge"
 
@@ -62,22 +61,13 @@ def build_chroma_metadata(
     document_id: int,
     chunk_index: int,
     file_name: str,
-    extra: dict[str, Any] | None = None,
 ) -> dict[str, int | str]:
-    base = {
+    return {
         "knowledge_base_id": knowledge_base_id,
         "document_id": document_id,
         "chunk_index": chunk_index,
         "file_name": file_name,
     }
-    if extra:
-        # Merge legal metadata, converting list values to strings for ChromaDB compatibility.
-        for key, value in extra.items():
-            if isinstance(value, list):
-                base[key] = ",".join(str(v) for v in value)
-            elif value is not None:
-                base[key] = str(value)
-    return base
 
 
 class KnowledgeService:
@@ -212,19 +202,9 @@ class KnowledgeService:
         doc_crud = KnowledgeDocumentCRUD(self.auth)
         try:
             text = await extract_text(self._resolve_knowledge_path(document.file_path))
-            legal_chunks = split_legal_text(text)
-
-            if legal_chunks:
-                # Legal document: use article-aware chunks with rich metadata.
-                chunks = [c.content for c in legal_chunks]
-                chunk_metas = legal_chunks
-            else:
-                # Non-legal document: fall back to character-based splitting.
-                raw_chunks = split_text_fallback(text)
-                if not raw_chunks:
-                    raise CustomException(msg="document text is empty")
-                chunks = raw_chunks
-                chunk_metas = None
+            chunks = split_text(text)
+            if not chunks:
+                raise CustomException(msg="document text is empty")
 
             now = datetime.now()
             await doc_crud.update_status(document_id, parse_status="success", index_status="indexing", parsed_at=now)
@@ -240,7 +220,6 @@ class KnowledgeService:
                         document_id=document.id,
                         chunk_index=index,
                         file_name=document.file_name,
-                        extra=chunk_metas[index].metadata if chunk_metas else None,
                     )
                     for index in range(len(chunks))
                 ]
