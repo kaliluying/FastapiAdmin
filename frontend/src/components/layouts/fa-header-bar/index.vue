@@ -42,6 +42,8 @@
           <FaIconButton
             v-if="isLeftMenu && shouldShowMenuButton"
             icon="ri:menu-2-fill"
+            :label="menuOpen ? '收起导航' : '展开导航'"
+            :aria-expanded="menuOpen"
             class="ml-3 max-sm:ml-[7px]"
             @click="visibleMenu"
           />
@@ -50,6 +52,7 @@
           <FaIconButton
             v-if="shouldShowRefreshButton"
             icon="ri:refresh-line"
+            label="刷新当前页面"
             class="ml-3! refresh-btn max-sm:hidden!"
             :style="{ marginLeft: !isLeftMenu ? '10px' : '0' }"
             @click="reload"
@@ -69,8 +72,10 @@
 
         <div id="app-header-toolbar" class="fa-header-tools flex items-center gap-2.5">
           <!-- 搜索 -->
-          <div
+          <button
             v-if="shouldShowGlobalSearch"
+            type="button"
+            :aria-label="$t('topBar.search.title')"
             class="flex items-center justify-between w-40 h-9 px-2.5 cursor-pointer border border-g-400 rounded-custom-sm max-md:hidden! transition duration-300 hover:-translate-y-0.5 hover:shadow-md"
             @click="openSearchDialog"
           >
@@ -85,12 +90,13 @@
               <FaSvgIcon v-else icon="ri:command-fill" class="text-xs" />
               <span class="ml-0.5 text-xs">k</span>
             </div>
-          </div>
+          </button>
 
           <!-- 全屏按钮 -->
           <FaIconButton
             v-if="shouldShowFullscreen"
             :icon="isFullscreen ? 'ri:fullscreen-exit-line' : 'ri:fullscreen-fill'"
+            :label="isFullscreen ? '退出全屏' : '进入全屏'"
             :class="[!isFullscreen ? 'full-screen-btn' : 'exit-full-screen-btn', 'ml-3']"
             class="max-md:hidden!"
             @click="toggleFullScreen"
@@ -110,7 +116,7 @@
             popper-class="langDropDownStyle"
             v-if="shouldShowLanguage"
           >
-            <FaIconButton icon="ri:translate-2" class="language-btn text-[19px]" />
+            <FaIconButton icon="ri:translate-2" label="切换语言" class="language-btn text-[19px]" />
             <template #dropdown>
               <ElDropdownMenu>
                 <div v-for="item in languageOptions" :key="item.value" class="lang-btn-item">
@@ -131,6 +137,7 @@
             v-if="shouldShowThemeToggle"
             @click="themeAnimation"
             :icon="isDark ? 'ri:sun-fill' : 'ri:moon-line'"
+            :label="isDark ? '切换浅色主题' : '切换深色主题'"
           />
 
           <!-- 用户头像、菜单 -->
@@ -403,6 +410,19 @@ html.dark .relative.box-border {
 
 /* iPad breakpoint adjustments */
 @media screen and (width <= 768px) {
+  .w-full {
+    padding: 0 12px;
+  }
+
+  .fa-header-tools {
+    gap: 4px;
+  }
+
+  :deep(.fa-icon-button) {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
   .logo2 {
     display: block !important;
   }

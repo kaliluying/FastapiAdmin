@@ -3,11 +3,12 @@ import { computed, defineComponent, onMounted, reactive, ref, watch } from "vue"
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Login from "./index.vue";
 
-const { login, validate, replace, notification } = vi.hoisted(() => ({
+const { login, validate, replace, notification, getCaptcha } = vi.hoisted(() => ({
   login: vi.fn(),
   validate: vi.fn(),
   replace: vi.fn(),
   notification: vi.fn(),
+  getCaptcha: vi.fn(),
 }));
 vi.mock("@stores", () => ({
   useUserStore: () => ({ login, isLogin: false }),
@@ -15,7 +16,7 @@ vi.mock("@stores", () => ({
   useAppStore: () => ({ showGuide: vi.fn() }),
 }));
 vi.mock("@/api/module_system/auth", () => ({
-  default: { getCaptcha: vi.fn().mockResolvedValue({ data: { data: { enable: false } } }) },
+  default: { getCaptcha },
 }));
 vi.mock("@utils", () => ({ Auth: {}, HttpError: class extends Error {} }));
 vi.mock("element-plus", () => ({ ElNotification: notification }));
@@ -51,6 +52,7 @@ describe("login submission locking", () => {
     login.mockResolvedValue(undefined);
     validate.mockResolvedValue(true);
     replace.mockResolvedValue(undefined);
+    getCaptcha.mockResolvedValue({ data: { data: { enable: false } } });
   });
 
   function renderLogin() {
@@ -60,6 +62,11 @@ describe("login submission locking", () => {
           FaLoginAccountForm: AccountForm,
           FaLoginCenterBackdrop: true,
           FaLoginThirdPartySection: true,
+          ElScrollbar: { template: "<div><slot /></div>" },
+          ElButton: {
+            emits: ["click"],
+            template: "<button @click=\"$emit('click')\"><slot /></button>",
+          },
         },
       },
     });
@@ -101,6 +108,36 @@ describe("login submission locking", () => {
     await flushPromises();
     expect(login).toHaveBeenCalledTimes(2);
     expect(replace).toHaveBeenCalledOnce();
+    log.mockRestore();
+    wrapper.unmount();
+  });
+
+  it("keeps a visible error next to the form and clears it when retrying", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    login.mockRejectedValueOnce(new Error("unavailable"));
+    const wrapper = renderLogin();
+    await flushPromises();
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(wrapper.get('[role="alert"]').text()).toContain("登录失败");
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+    expect(login).toHaveBeenCalledTimes(2);
+    log.mockRestore();
+    wrapper.unmount();
+  });
+
+  it("offers captcha recovery instead of leaving a failed challenge silent", async () => {
+    const log = vi.spyOn(console, "warn").mockImplementation(() => {});
+    getCaptcha.mockRejectedValueOnce(new Error("unavailable"));
+    const wrapper = renderLogin();
+    await flushPromises();
+    expect(wrapper.get('[role="alert"]').text()).toContain("验证码加载失败");
+    await wrapper.get('[role="alert"] button').trigger("click");
+    await flushPromises();
+    expect(getCaptcha).toHaveBeenCalledTimes(2);
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     log.mockRestore();
     wrapper.unmount();
   });

@@ -1,9 +1,5 @@
 <template>
-  <div
-    ref="chatWorkspaceRef"
-    class="fa-full-height chat-workspace"
-    :style="isCompactViewport ? { height: compactChatHeight } : undefined"
-  >
+  <div ref="chatWorkspaceRef" class="chat-workspace" :style="{ height: workspaceHeight }">
     <ElSplitter class="main-chat" :lazy="true">
       <ElSplitterPanel
         v-if="!isMobileViewport"
@@ -63,7 +59,7 @@
         </ElContainer>
       </ElSplitterPanel>
       <ElSplitterPanel
-        v-if="!isCompactViewport"
+        v-if="!isCompactViewport && (activeCitations.length || processStage !== 'idle')"
         v-model:size="evidencePanelSize"
         :min="200"
         :max="420"
@@ -151,7 +147,7 @@ const isCompactViewport = useMediaQuery("(max-width: 1024px)");
 const chatWorkspaceRef = ref<HTMLElement>();
 const { top: chatTop } = useElementBounding(chatWorkspaceRef);
 const { height: viewportHeight } = useWindowSize();
-const compactChatHeight = computed(
+const workspaceHeight = computed(
   () => `${Math.max(280, viewportHeight.value - Math.max(0, chatTop.value) - 12)}px`
 );
 let activeRequest: { id: string; messageId: string } | null = null;
@@ -540,8 +536,12 @@ onDeactivated(disconnectWebSocket);
 
 <style lang="scss" scoped>
 .chat-workspace {
-  flex: 1;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
   min-height: 0;
+  overflow: hidden;
 }
 
 .citation-preview {
@@ -555,7 +555,7 @@ onDeactivated(disconnectWebSocket);
   overflow: hidden;
   background: var(--fa-color-surface);
   border: 1px solid var(--fa-card-border);
-  border-radius: 10px;
+  border-radius: var(--fa-radius-panel);
   box-shadow: none;
 
   :deep(.chat-split-panel) {
@@ -597,6 +597,7 @@ onDeactivated(disconnectWebSocket);
   }
 
   .chat-header {
+    flex-shrink: 0;
     height: auto;
     padding: 0;
     background: var(--fa-color-surface);
@@ -606,10 +607,12 @@ onDeactivated(disconnectWebSocket);
   .chat-main {
     flex: 1;
     min-height: 0;
+    padding: 0;
     overflow: hidden;
   }
 
   .chat-footer {
+    flex-shrink: 0;
     height: auto;
     min-height: 80px;
     padding: 0;

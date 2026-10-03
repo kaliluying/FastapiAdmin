@@ -1,9 +1,24 @@
 ﻿<!-- 菜单管理：Art + 树形表格；操作列最多 3 个外露，其余「更多」 -->
 <template>
-  <div class="fa-full-height">
-    <FaPageHeader title="菜单管理" />
+  <div class="fa-full-height management-page">
+    <FaPageHeader
+      title="菜单管理"
+      description="按目录组织菜单、页面和操作按钮，保持导航与权限一致。"
+    >
+      <template #actions>
+        <ElButton
+          :aria-expanded="showSearchBar"
+          aria-controls="menu-filters"
+          @click="showSearchBar = !showSearchBar"
+        >
+          {{ showSearchBar ? "收起筛选" : "展开筛选" }}
+        </ElButton>
+        <ElButton :loading="loading" @click="loadMenuData">刷新列表</ElButton>
+      </template>
+    </FaPageHeader>
     <div class="fa-management-page">
       <FaSearchBar
+        id="menu-filters"
         v-show="showSearchBar"
         ref="searchBarRef"
         v-model="searchForm"
@@ -21,15 +36,18 @@
       />
 
       <ElCard
-        shadow="hover"
+        shadow="never"
         class="fa-table-card"
         :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
       >
+        <div class="management-list-heading">
+          <h2>菜单结构</h2>
+          <span role="status">已选择 {{ selectedIds.length }} 项</span>
+        </div>
         <FaTableHeader
           v-model:columns="columnChecks"
-          v-model:showSearchBar="showSearchBar"
+          layout="size,fullscreen,columns,rowDrag,settings"
           :loading="loading"
-          @refresh="loadMenuData"
         >
           <template #left>
             <div class="inline-flex flex-wrap items-center gap-2">
@@ -45,19 +63,36 @@
                 @delete="handleBatchDelete"
                 @more="handleMoreClick"
               />
-              <ElButton @click="toggleExpand" v-ripple>{{ isExpanded ? "收起" : "展开" }}</ElButton>
+              <ElButton :aria-expanded="isExpanded" @click="toggleExpand" v-ripple>{{
+                isExpanded ? "收起全部" : "展开全部"
+              }}</ElButton>
             </div>
           </template>
         </FaTableHeader>
 
+        <ElAlert
+          v-if="loadError && tableData.length"
+          class="management-load-error"
+          title="菜单加载失败，当前显示上次结果"
+          :closable="false"
+          type="error"
+          show-icon
+        >
+          <p>{{ loadError.message }}</p>
+          <ElButton :loading="loading" @click="loadMenuData">重试</ElButton>
+        </ElAlert>
         <FaTable
           ref="tableRef"
           row-key="id"
           :loading="loading"
-          :columns="columns"
+          :error="loadError"
+          :columns="displayColumns"
           :data="tableData"
+          :scrollbar-tabindex="0"
+          empty-text="暂无匹配菜单，请调整筛选条件"
           :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
           :default-expand-all="false"
+          @retry="loadMenuData"
           @selection-change="onTableSelectionChange"
           @row-click="handleRowClick"
         />
@@ -69,13 +104,14 @@
         :size="drawerSize"
         :form-mode="dialogVisible.type"
         :confirm-loading="submitLoading"
+        :confirm-text="dialogVisible.type === 'detail' ? '关闭' : '保存菜单'"
         @cancel="handleCloseDialog"
         @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
       >
         <!-- 详情 -->
         <template v-if="dialogVisible.type === 'detail'">
           <FaDescriptions
-            :column="4"
+            :column="isCompact ? 2 : 4"
             :data="detailFormData"
             :items="menuDetailItems"
             :scrollbar="false"
@@ -104,12 +140,12 @@
             :rules="rules"
             label-suffix=":"
             :label-width="100"
-            label-position="right"
+            :label-position="isCompact ? 'top' : 'right'"
             :span="12"
             :gutter="16"
             :show-reset="false"
             :show-submit="false"
-            class="crud-dialog-art-form"
+            class="crud-dialog-art-form management-form"
           >
             <!-- 父级菜单(条件显示) -->
             <template #parent_id>
@@ -277,6 +313,7 @@
 <script setup lang="ts">
 import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
 import { h } from "vue";
+import { useWindowSize } from "@vueuse/core";
 defineOptions({
   name: "SysMenu",
   inheritAttrs: false,
@@ -285,6 +322,7 @@ defineOptions({
 import { useAppStore, useUserStore } from "@stores";
 import { DeviceEnum } from "@/enums/settings/device.enum";
 import { useTableColumns } from "@/hooks/core/useTableColumns";
+import type { ColumnOption } from "@/types/component";
 import MenuAPI, {
   type MenuForm,
   type MenuPageQuery,
@@ -305,6 +343,8 @@ import { ElMessage, ElMessageBox } from "element-plus";
 const { hasAuth } = useAuth();
 const appStore = useAppStore();
 const userStore = useUserStore();
+const { width } = useWindowSize();
+const isCompact = computed(() => width.value <= 640);
 
 /**
  * Reload the current administrator's permissions and registered menu routes.
@@ -425,6 +465,7 @@ const tableRef = ref<{
 } | null>(null);
 const tableData = ref<MenuTable[]>([]);
 const loading = ref(false);
+const loadError = ref<{ message: string } | null>(null);
 const isExpanded = ref(false);
 const selectedRows = ref<MenuTable[]>([]);
 const selectedIds = computed(() =>
@@ -636,7 +677,9 @@ const dialogVisible = reactive({
   type: "create" as "create" | "update" | "detail",
 });
 
-const drawerSize = computed(() => (appStore.device === DeviceEnum.DESKTOP ? "900px" : "90%"));
+const drawerSize = computed(() =>
+  appStore.device === DeviceEnum.DESKTOP ? "min(900px, calc(100vw - 24px))" : "calc(100vw - 24px)"
+);
 
 function typesAllowedUnderParent(parentType: MenuTypeEnum): MenuTypeEnum[] {
   switch (parentType) {
@@ -726,6 +769,7 @@ function refreshMenuOptions(): void {
 
 async function loadMenuData() {
   loading.value = true;
+  loadError.value = null;
   try {
     const res = await MenuAPI.listMenu({
       ...buildMenuListQuery(searchForm.value),
@@ -735,6 +779,7 @@ async function loadMenuData() {
     tableData.value = tree;
     refreshMenuOptions();
   } catch (e: unknown) {
+    loadError.value = { message: e instanceof Error ? e.message : "加载失败，请重试" };
     console.error(e);
   } finally {
     loading.value = false;
@@ -989,6 +1034,12 @@ async function resetForm() {
   Object.assign(formData.value, initialFormData);
 }
 
+const displayColumns = computed(() =>
+  isCompact.value
+    ? columns.value.map((column: ColumnOption<MenuTable>) => ({ ...column, fixed: undefined }))
+    : columns.value
+);
+
 async function handleRowClick(row: MenuTable) {
   selectedMenuId.value = row.id;
 }
@@ -1172,6 +1223,71 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
+.management-page {
+  min-width: 0;
+
+  :deep(.data-table__toolbar--left .el-space) {
+    flex-wrap: wrap;
+  }
+
+  :deep(.data-table__toolbar--left .el-button--primary.is-plain) {
+    --el-button-text-color: var(--el-color-white);
+    --el-button-bg-color: var(--el-color-primary);
+    --el-button-hover-text-color: var(--el-color-white);
+    --el-button-hover-bg-color: var(--el-color-primary-dark-2);
+  }
+
+  :deep(.data-table__toolbar--left .el-button--success),
+  :deep(.data-table__toolbar--left .el-button--warning) {
+    --el-button-text-color: var(--fa-color-text);
+    --el-button-bg-color: var(--fa-color-surface);
+    --el-button-border-color: var(--fa-color-border);
+  }
+
+  :deep(button:focus-visible) {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.management-list-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fa-space-2);
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--fa-space-4);
+
+  h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--fa-color-text);
+  }
+
+  span {
+    font-size: 13px;
+    color: var(--fa-color-text-muted);
+  }
+}
+
+@media (width <= 640px) {
+  .management-page {
+    :deep(.el-button + .el-button) {
+      margin-left: 0;
+    }
+  }
+
+  .management-form :deep(.el-radio),
+  .management-form :deep(.el-checkbox) {
+    min-height: 44px;
+  }
+}
+
+.management-load-error {
+  margin-bottom: var(--fa-space-4);
+}
+
 :deep(.menu-table-actions .inline-flex) {
   vertical-align: middle;
 }

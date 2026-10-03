@@ -1,5 +1,5 @@
 import { flushPromises, mount } from "@vue/test-utils";
-import { defineComponent, h, ref } from "vue";
+import { defineComponent, h, nextTick, ref } from "vue";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import ElementPlus from "element-plus";
 import FaTable from "./index.vue";
@@ -22,6 +22,41 @@ vi.mock("@/hooks/core/useTableHeight", () => ({ useTableHeight: vi.fn() }));
 vi.stubGlobal("useResizeObserver", vi.fn());
 
 afterEach(() => vi.restoreAllMocks());
+
+describe("responsive pagination", () => {
+  it("updates its layout after resizing without overriding caller options", async () => {
+    const initialWidth = window.innerWidth;
+    const wrapper = mount(FaTable, {
+      props: { data: [], pagination: { current: 1, size: 10, total: 100 } },
+      global: {
+        plugins: [ElementPlus],
+        stubs: {
+          VueDraggable: { template: "<div><slot /></div>" },
+          FaPagination: {
+            props: ["layout", "pagerCount"],
+            template:
+              '<div class="pagination-probe" :data-layout="layout" :data-count="pagerCount" />',
+          },
+        },
+      },
+    });
+    for (const [width, layout, count] of [
+      [1440, "total, prev, pager, next, sizes, jumper", 7],
+      [375, "prev, next, total", 5],
+    ] as const) {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
+      window.dispatchEvent(new Event("resize"));
+      await nextTick();
+      expect(wrapper.get(".pagination-probe").attributes("data-layout")).toBe(layout);
+      expect(wrapper.get(".pagination-probe").attributes("data-count")).toBe(String(count));
+    }
+    await wrapper.setProps({ paginationOptions: { layout: "prev, next", pagerCount: 9 } });
+    expect(wrapper.get(".pagination-probe").attributes("data-layout")).toBe("prev, next");
+    expect(wrapper.get(".pagination-probe").attributes("data-count")).toBe("9");
+    wrapper.unmount();
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: initialWidth });
+  });
+});
 
 function createTable(apiFn: (params: Record<string, unknown>) => Promise<unknown>) {
   let table!: ReturnType<typeof useTable<typeof apiFn>>;

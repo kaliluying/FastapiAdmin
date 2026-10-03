@@ -32,9 +32,10 @@
           <ElInput
             v-model="inputMessage"
             type="textarea"
+            aria-label="问题或消息"
             :placeholder="placeholder"
             :disabled="disabled || sending"
-            :autosize="{ minRows: 3, maxRows: 8 }"
+            :autosize="{ minRows: isNarrowViewport ? 2 : 3, maxRows: isNarrowViewport ? 4 : 6 }"
             resize="none"
             class="message-input"
             maxlength="8000"
@@ -43,9 +44,7 @@
           />
         </ElForm>
         <div class="input-footer">
-          <span class="input-hint"
-            >Enter 发送 / Shift + Enter 换行；附件选取片段请查看回答依据</span
-          >
+          <span class="input-hint">Enter 发送 · Shift + Enter 换行</span>
           <div class="input-actions">
             <ElUpload
               ref="uploadRef"
@@ -89,6 +88,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useMediaQuery } from "@vueuse/core";
 import { Promotion, Paperclip, Document, Close } from "@element-plus/icons-vue";
 import type { UploadFile, UploadInstance } from "element-plus";
 import type { UploadedFile } from "../types";
@@ -115,6 +115,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 
 const inputMessage = ref("");
+const isNarrowViewport = useMediaQuery("(max-width: 640px)");
 const uploadRef = ref<UploadInstance>();
 const uploadedFiles = ref<UploadedFile[]>([]);
 
@@ -123,7 +124,7 @@ const acceptTypes = computed(() => {
 });
 
 const placeholder = computed(() => {
-  return props.isConnected ? "向FA助手发送消息..." : "请先连接到服务器";
+  return props.isConnected ? "输入问题，或添加文档后提问" : "请先重新连接，再发送问题";
 });
 
 const handleFileChange = (uploadFile: UploadFile) => {
@@ -209,212 +210,136 @@ defineExpose({
 
 <style lang="scss" scoped>
 .chat-input {
+  color: var(--fa-color-text);
+  background: var(--fa-color-surface);
+}
+
+.input-wrapper {
+  max-width: 860px;
+  padding: 14px 20px;
+  margin: 0 auto;
+}
+
+.uploaded-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 88px;
+  margin-bottom: 10px;
+  overflow-y: auto;
+}
+
+.file-item {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  max-width: 100%;
+  padding: 4px 8px;
+  font-size: 12px;
+  background: var(--fa-color-surface-raised);
+  border: 1px solid var(--fa-color-border);
+  border-radius: var(--fa-radius-control);
+}
+
+.file-name {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.input-container {
+  padding: 10px 12px;
+  background: var(--fa-color-surface);
+  border: 1px solid var(--fa-color-border);
+  border-radius: var(--fa-radius-control);
+}
+
+.input-container:focus-within {
+  border-color: var(--theme-color);
+  box-shadow: var(--fa-focus-ring);
+}
+
+.composer-topline,
+.input-footer,
+.input-actions,
+.composer-context {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.composer-topline,
+.input-footer {
+  justify-content: space-between;
+}
+
+.composer-topline {
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--fa-color-text-muted);
+}
+
+.composer-status {
+  color: var(--fa-color-success);
+}
+
+.composer-status--offline {
+  color: var(--fa-color-text-muted);
+}
+
+.message-input :deep(.el-textarea__inner) {
+  max-height: 144px;
+  padding: 4px 0;
+  line-height: 1.6;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.message-input :deep(.el-input__count) {
+  background: var(--fa-color-surface);
+}
+
+.input-footer {
+  padding-top: 8px;
+  margin-top: 6px;
+  border-top: 1px solid var(--fa-color-border);
+}
+
+.input-hint {
+  font-size: 12px;
+  color: var(--fa-color-text-muted);
+}
+
+.input-actions {
+  flex-shrink: 0;
+}
+
+.input-actions :deep(.el-button + .el-button) {
+  margin-left: 0;
+}
+
+@media (width <= 640px) {
   .input-wrapper {
-    max-width: 860px;
-    padding: 16px 24px 18px;
-    margin: 0 auto;
-
-    .uploaded-files {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
-
-      .file-item {
-        display: flex;
-        gap: 6px;
-        align-items: center;
-        padding: 8px 14px;
-        font-size: 13px;
-        background: var(--el-fill-color-light);
-        border: 1px solid var(--el-border-color-light);
-        border-radius: 8px;
-        transition: all 0.2s ease;
-
-        &:hover {
-          background: var(--el-color-primary-light-9);
-          border-color: var(--el-color-primary-light-7);
-        }
-
-        .file-icon {
-          font-size: 16px;
-          color: var(--el-color-primary);
-        }
-
-        .file-name {
-          max-width: 180px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          font-size: 13px;
-          white-space: nowrap;
-        }
-
-        .file-remove {
-          font-size: 14px;
-          color: var(--el-text-color-secondary);
-          cursor: pointer;
-          transition: color 0.2s ease;
-
-          &:hover {
-            color: var(--el-color-danger);
-          }
-        }
-      }
-    }
-
-    .input-container {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      min-height: 112px;
-      padding: 12px 16px 10px;
-      background: var(--el-bg-color-overlay);
-      border: 1px solid color-mix(in srgb, var(--theme-color) 18%, var(--fa-card-border));
-      border-radius: 8px;
-      box-shadow: var(--fa-soft-shadow);
-      transition:
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
-
-      &:hover {
-        border-color: rgb(93 135 255 / 34%);
-        box-shadow: 0 18px 44px rgb(23 32 51 / 12%);
-      }
-
-      &:focus-within {
-        border-color: var(--el-color-primary);
-        box-shadow:
-          0 0 0 3px rgb(93 135 255 / 14%),
-          0 18px 44px rgb(23 32 51 / 12%);
-      }
-
-      .composer-topline {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        min-height: 24px;
-      }
-
-      .composer-context,
-      .composer-status {
-        display: inline-flex;
-        gap: 6px;
-        align-items: center;
-        font-size: 12px;
-        font-weight: 700;
-      }
-
-      .composer-context {
-        color: #4070d8;
-      }
-
-      .composer-status {
-        color: #0f9f8f;
-      }
-
-      .composer-status::before {
-        width: 7px;
-        height: 7px;
-        content: "";
-        background: #2dd4bf;
-        border-radius: 999px;
-        box-shadow: 0 0 0 4px rgb(45 212 191 / 12%);
-      }
-
-      .composer-status--offline {
-        color: var(--el-text-color-secondary);
-      }
-
-      .composer-status--offline::before {
-        background: var(--el-color-warning);
-        box-shadow: 0 0 0 4px rgb(245 158 11 / 12%);
-      }
-
-      .message-input {
-        flex: 1;
-        min-width: 0;
-
-        :deep(.el-textarea__inner) {
-          min-height: 72px !important;
-          max-height: 120px;
-          padding: 2px 4px;
-          line-height: 1.6;
-          color: var(--el-text-color-primary);
-          resize: none;
-          background: transparent;
-          border: none;
-          box-shadow: none;
-        }
-
-        :deep(.el-textarea) {
-          padding: 0;
-        }
-      }
-
-      .input-footer {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding-top: 8px;
-        border-top: 1px solid var(--fa-card-border);
-
-        .input-actions {
-          display: flex;
-          gap: 10px;
-          align-items: center;
-
-          .upload-btn {
-            font-size: 18px;
-            color: var(--el-text-color-secondary);
-            border-radius: 8px;
-            transition: all 0.2s ease;
-
-            &:hover {
-              color: var(--el-color-primary);
-              transform: scale(1.05);
-            }
-          }
-
-          .send-button {
-            flex-shrink: 0;
-            border-radius: 8px;
-            box-shadow: 0 8px 18px rgb(93 135 255 / 24%);
-            transition: all 0.2s ease;
-
-            &:hover {
-              box-shadow: 0 12px 24px rgb(93 135 255 / 28%);
-              transform: translateY(-1px);
-            }
-
-            &:active {
-              transform: translateY(0);
-            }
-          }
-        }
-      }
-    }
-
-    .input-hint {
-      font-size: 12px;
-      font-weight: 400;
-      color: var(--el-text-color-secondary);
-      letter-spacing: 0;
-    }
+    padding: 10px 12px;
   }
 
-  &.chat-input--disabled .input-wrapper .input-container {
-    opacity: 0.72;
-    filter: grayscale(0.06);
+  .composer-topline {
+    margin-bottom: 2px;
+  }
 
-    &:hover {
-      border-color: var(--el-border-color-light);
-      box-shadow: var(--el-box-shadow-light);
-    }
+  .input-hint {
+    display: none;
+  }
 
-    &:focus-within {
-      border-color: var(--el-border-color-light);
-      box-shadow: var(--el-box-shadow-light);
-    }
+  .input-footer {
+    justify-content: flex-end;
+  }
+
+  .message-input :deep(.el-textarea__inner) {
+    max-height: 100px;
   }
 }
 </style>

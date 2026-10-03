@@ -2,7 +2,7 @@
 <template>
   <FaDrawer
     v-model="drawerVisible"
-    :title="'【' + props.roleName + '】权限分配'"
+    :title="`${props.roleName}的权限`"
     :size="drawerSize"
     destroy-on-close
     @close="handleCancel"
@@ -10,30 +10,14 @@
     <div class="drawer-perm-content flex flex-col flex-1 overflow-hidden">
       <ElContainer class="h-full min-h-0 flex-1">
         <!-- 数据权限 -->
-        <ElAside>
-          <div
-            class="border-r border-r-(--el-border-color-lighter) b-r-solid h-full p-[20px] box-border"
-          >
-            <div class="flex items-center">
-              <div class="flex gap-[10px]">
-                <div class="w-[10px] bg-(--el-color-primary)"></div>
-                <div>
-                  <span class="text-[16px]">数据授权</span>
-                  <ElTooltip placement="right">
-                    <template #content>
-                      <span>授权用户可操作的数据范围</span>
-                    </template>
-                    <ElIcon class="ml-1 inline-block cursor-pointer">
-                      <QuestionFilled />
-                    </ElIcon>
-                  </ElTooltip>
-                </div>
-              </div>
-            </div>
+        <ElAside class="permission-scope">
+          <div>
+            <h2>数据范围</h2>
+            <p>选择角色可查看与操作的数据范围。</p>
             <div class="mt-3">
               <ElForm ref="dataFormRef" :model="permissionState">
                 <ElFormItem prop="data_scope">
-                  <ElSelect v-model="permissionState.data_scope">
+                  <ElSelect v-model="permissionState.data_scope" aria-label="数据权限范围">
                     <ElOption :key="1" label="仅本人数据权限" :value="1" />
                     <ElOption :key="4" label="全部数据权限" :value="4" />
                   </ElSelect>
@@ -45,20 +29,8 @@
 
         <!-- 菜单权限 -->
         <ElMain>
-          <div class="flex gap-[10px]">
-            <div class="w-[10px] bg-(--el-color-primary)"></div>
-            <div>
-              <span class="text-[16px]">菜单授权</span>
-              <ElTooltip placement="right">
-                <template #content>
-                  <span>勾选菜单和对应的功能按钮权限</span>
-                </template>
-                <ElIcon class="ml-1 inline-block cursor-pointer">
-                  <QuestionFilled />
-                </ElIcon>
-              </ElTooltip>
-            </div>
-          </div>
+          <h2>菜单与操作权限</h2>
+          <p>勾选可访问的菜单及对应操作，保存后生效。</p>
           <div class="mt-3 flex-1 min-h-0">
             <FaMenuTreeTable
               ref="menuTreeTableRef"
@@ -73,8 +45,10 @@
 
     <template #footer>
       <div class="dialog-footer">
-        <ElButton @click="handleCancel">取 消</ElButton>
-        <ElButton type="primary" :loading="loading" @click.stop="handleDrawerSave">确 定</ElButton>
+        <ElButton @click="handleCancel">取消</ElButton>
+        <ElButton type="primary" :loading="loading" @click.stop="handleDrawerSave"
+          >保存权限</ElButton
+        >
       </div>
     </template>
   </FaDrawer>
@@ -82,7 +56,6 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from "vue";
-import { QuestionFilled } from "@element-plus/icons-vue";
 import FaMenuTreeTable from "@/components/others/fa-menu-tree-table/index.vue";
 import RoleAPI, { permissionDataType } from "@/api/module_system/role";
 import MenuAPI, { MenuTable } from "@/api/module_platform/menu";
@@ -105,7 +78,9 @@ interface Emits {
 const emit = defineEmits<Emits>();
 
 const appStore = useAppStore();
-const drawerSize = computed(() => (appStore.device === DeviceEnum.DESKTOP ? "1200px" : "90%"));
+const drawerSize = computed(() =>
+  appStore.device === DeviceEnum.DESKTOP ? "min(1200px, calc(100vw - 24px))" : "calc(100vw - 24px)"
+);
 
 const drawerVisible = computed({
   get: () => props.modelValue,
@@ -212,3 +187,72 @@ onMounted(async () => {
   await init();
 });
 </script>
+
+<style scoped lang="scss">
+.drawer-perm-content {
+  min-width: 0;
+
+  h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--fa-color-text);
+  }
+
+  p {
+    margin: var(--fa-space-2) 0 var(--fa-space-4);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--fa-color-text-muted);
+  }
+
+  :deep(.el-main) {
+    min-width: 0;
+  }
+}
+
+.permission-scope {
+  width: 260px;
+  padding: var(--fa-space-5);
+  border-right: 1px solid var(--fa-color-border);
+}
+
+.dialog-footer {
+  display: flex;
+  gap: var(--fa-space-2);
+  justify-content: flex-end;
+
+  :deep(button:focus-visible) {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+@media (width <= 640px) {
+  .drawer-perm-content {
+    overflow: auto;
+
+    :deep(.el-container) {
+      flex: none;
+      flex-direction: column;
+    }
+
+    :deep(.el-select__wrapper),
+    :deep(.el-checkbox) {
+      min-height: 44px;
+    }
+  }
+
+  .permission-scope {
+    width: 100%;
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid var(--fa-color-border);
+  }
+
+  .dialog-footer :deep(.el-button) {
+    min-height: 44px;
+    margin-left: 0;
+  }
+}
+</style>

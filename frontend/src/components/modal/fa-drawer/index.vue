@@ -20,6 +20,7 @@
             <FaIconButton
               class="core-overlay-icon-btn"
               icon="ri:close-line"
+              label="关闭抽屉"
               @click="drawerRef?.handleClose()"
             />
           </ElTooltip>

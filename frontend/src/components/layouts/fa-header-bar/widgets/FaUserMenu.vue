@@ -7,30 +7,27 @@
       :width="240"
       :hide-after="0"
       :offset="10"
-      trigger="hover"
+      trigger="click"
       :show-arrow="false"
       popper-class="user-menu-popover"
       popper-style="padding: 5px 16px;"
     >
       <template #reference>
-        <div
+        <button
+          type="button"
+          aria-label="打开账户菜单"
           class="fa-user-menu__avatar-ref mr-5 max-sm:mr-[16px] cursor-pointer flex size-8.5 max-sm:w-6.5 max-sm:h-6.5 shrink-0 items-center justify-center"
         >
           <img
             v-if="userAvatar"
             class="size-full rounded-full object-cover block"
             :src="userAvatar"
-            alt="avatar"
+            alt=""
           />
-          <img
-            v-else
-            class="size-full rounded-full block"
-            src="@imgs/user/avatar.webp"
-            alt="avatar"
-          />
+          <img v-else class="size-full rounded-full block" src="@imgs/user/avatar.webp" alt="" />
           <!-- 在线状态指示点。 -->
           <span class="fa-user-menu__online-dot" aria-hidden="true" />
-        </div>
+        </button>
       </template>
       <template #default>
         <div class="pt-3">
@@ -69,7 +66,11 @@
             </li>
             <li class="w-full h-px my-2 bg-g-300/80" aria-hidden="true"></li>
             <li>
-              <button type="button" class="user-menu-action user-menu-action--logout" @click="handleLogout">
+              <button
+                type="button"
+                class="user-menu-action user-menu-action--logout"
+                @click="handleLogout"
+              >
                 {{ $t("topBar.user.logout") }}
               </button>
             </li>
@@ -77,7 +78,6 @@
         </div>
       </template>
     </ElPopover>
-
   </div>
 </template>
 
@@ -155,6 +155,23 @@ function closeUserMenu(): void {
 .fa-user-menu__avatar-ref {
   position: relative;
   box-sizing: border-box;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+}
+
+.fa-user-menu__avatar-ref:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 3px;
+}
+
+@media (width <= 768px) {
+  .fa-user-menu__avatar-ref {
+    width: 44px;
+    height: 44px;
+    margin-right: 0;
+  }
 }
 
 .fa-user-menu__online-dot {
@@ -174,6 +191,7 @@ function closeUserMenu(): void {
   display: flex;
   align-items: center;
   width: 100%;
+  min-height: 44px;
   padding: 8px;
   color: inherit;
   text-align: left;

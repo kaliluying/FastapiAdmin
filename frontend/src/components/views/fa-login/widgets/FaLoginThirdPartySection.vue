@@ -106,10 +106,17 @@ html.dark .login-third-on-dark {
 }
 
 .oauth-social-btn:focus-visible {
-  box-shadow: 0 0 0 2px var(--el-color-primary-light-7);
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 3px;
 }
 
 html.dark .oauth-social-btn:hover {
   background-color: rgb(255 255 255 / 10%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oauth-social-btn {
+    transition: none;
+  }
 }
 </style>

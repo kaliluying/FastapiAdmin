@@ -2,8 +2,21 @@
   <div class="retrieval-page">
     <FaAiPageHeader title="检索测试" description="选择知识库并输入问题，检查哪些内容会被找到。" />
     <ElCard shadow="never" class="retrieval-card">
+      <FaAsyncState
+        v-if="basesError"
+        state="error"
+        title="知识库选项加载失败"
+        description="请重试加载，已输入的问题不会清除。"
+      >
+        <template #action><ElButton @click="loadBases">重试加载</ElButton></template>
+      </FaAsyncState>
       <!-- 主查询区 -->
-      <ElForm :model="form" label-width="80px" class="retrieval-form">
+      <ElForm
+        :model="form"
+        label-width="80px"
+        class="retrieval-form"
+        :label-position="isNarrowViewport ? 'top' : 'right'"
+      >
         <ElFormItem label="知识库">
           <ElSelect
             v-model="form.knowledge_base_ids"
@@ -25,6 +38,7 @@
           <ElInput
             v-model="form.query"
             type="textarea"
+            placeholder="输入一个需要从资料中查证的问题"
             :rows="4"
             maxlength="1000"
             show-word-limit
@@ -37,6 +51,7 @@
             link
             type="primary"
             class="advanced-toggle"
+            :aria-expanded="showAdvanced"
             @click="showAdvanced = !showAdvanced"
           >
             高级设置
@@ -44,7 +59,7 @@
           </ElButton>
         </ElFormItem>
         <div v-show="showAdvanced" class="advanced-panel">
-          <ElFormItem label="Top K">
+          <ElFormItem label="片段数量">
             <ElInputNumber v-model="form.top_k" :min="1" :max="20" />
           </ElFormItem>
         </div>
@@ -67,10 +82,34 @@
         <p class="results-title">检索结果</p>
 
         <FaAsyncState
-          v-if="asyncStateForDisplay"
-          :state="asyncStateForDisplay"
-          :title="asyncState === 'error' ? '检索失败，请重试' : undefined"
+          v-if="asyncState === 'idle'"
+          state="empty"
+          title="等待检索"
+          description="选择知识库并提交问题，在这里检查匹配的资料片段。"
         />
+
+        <FaAsyncState
+          v-else-if="asyncStateForDisplay"
+          :state="asyncStateForDisplay"
+          :title="
+            asyncState === 'error'
+              ? '检索失败'
+              : asyncState === 'empty'
+                ? '未找到匹配片段'
+                : undefined
+          "
+          :description="
+            asyncState === 'error'
+              ? '问题和选项已保留，请稍后重试。'
+              : asyncState === 'empty'
+                ? '尝试更具体的问题，并确认所选知识库的文档已完成索引。'
+                : undefined
+          "
+        >
+          <template v-if="asyncState === 'error'" #action
+            ><ElButton @click="testRetrieval">重试检索</ElButton></template
+          >
+        </FaAsyncState>
 
         <div v-else-if="asyncState === 'done'" class="result-list">
           <div v-for="(item, index) in results" :key="index" class="result-rank">
@@ -96,6 +135,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from "vue";
+import { useMediaQuery } from "@vueuse/core";
 import { ElMessage } from "element-plus";
 import { Search } from "@element-plus/icons-vue";
 import { useRoute } from "vue-router";
@@ -107,6 +147,8 @@ defineOptions({ name: "AiRetrievalTest" });
 
 const route = useRoute();
 const bases = ref<KnowledgeBase[]>([]);
+const basesError = ref(false);
+const isNarrowViewport = useMediaQuery("(max-width: 640px)");
 const results = ref<RetrievalHit[]>([]);
 const showAdvanced = ref(false);
 const asyncState = ref<"idle" | "loading" | "empty" | "error" | "done">("idle");
@@ -126,8 +168,13 @@ const form = reactive({
 });
 
 const loadBases = async () => {
-  const res = await KnowledgeAPI.optionselect();
-  bases.value = (res.data?.data || []).filter((item) => item.id != null);
+  basesError.value = false;
+  try {
+    const res = await KnowledgeAPI.optionselect();
+    bases.value = (res.data?.data || []).filter((item) => item.id != null);
+  } catch {
+    basesError.value = true;
+  }
 };
 
 const testRetrieval = async () => {
@@ -165,7 +212,7 @@ onMounted(async () => {
 <style scoped>
 .retrieval-card {
   border: 1px solid var(--fa-color-border);
-  border-radius: 10px;
+  border-radius: var(--fa-radius-panel);
 }
 
 .retrieval-card :deep(.el-card__body) {
@@ -177,7 +224,7 @@ onMounted(async () => {
 }
 
 .base-select {
-  width: 360px;
+  width: min(360px, 100%);
 }
 
 .advanced-toggle {
@@ -230,6 +277,7 @@ onMounted(async () => {
 .result-content {
   margin: 0;
   line-height: 1.7;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
 

@@ -2,9 +2,15 @@
   <div class="profile-page">
     <FaPageHeader title="个人中心" description="管理个人资料与登录密码" />
 
-    <section class="account-surface" aria-label="账号设置">
+    <section class="account-surface" aria-label="账号设置" :aria-busy="loading">
       <header class="identity-header">
-        <img v-if="avatar && !avatarFailed" :src="avatar" alt="当前用户头像" class="identity-avatar" @error="avatarFailed = true" />
+        <img
+          v-if="avatar && !avatarFailed"
+          :src="avatar"
+          alt="当前用户头像"
+          class="identity-avatar"
+          @error="avatarFailed = true"
+        />
         <div v-else class="identity-avatar identity-avatar--fallback" aria-hidden="true">
           <FaSvgIcon icon="ri:user-3-line" />
         </div>
@@ -23,9 +29,18 @@
               <h3>基本资料</h3>
               <p>这些信息用于展示当前账号与联系您。</p>
             </div>
-            <ElAlert v-if="loadError" :title="loadError" type="error" show-icon :closable="false" class="load-alert">
+            <ElAlert
+              v-if="loadError"
+              :title="loadError"
+              type="error"
+              show-icon
+              :closable="false"
+              class="load-alert"
+            >
               <template #default>
-                <ElButton link type="primary" @click="loadProfile">重试</ElButton>
+                <ElButton link type="primary" :loading="loading" @click="loadProfile"
+                  >重新加载资料</ElButton
+                >
               </template>
             </ElAlert>
             <ElForm
@@ -34,20 +49,38 @@
               v-loading="loading"
               :model="profileForm"
               :rules="profileRules"
+              :disabled="loading || saving"
               label-position="top"
               class="profile-form profile-form--info"
+              @submit.prevent="saveProfile"
             >
               <ElFormItem label="登录账号">
                 <ElInput :model-value="currentUser?.username || ''" disabled />
               </ElFormItem>
               <ElFormItem label="姓名" prop="name">
-                <ElInput v-model="profileForm.name" maxlength="32" show-word-limit autocomplete="name" />
+                <ElInput
+                  v-model="profileForm.name"
+                  maxlength="32"
+                  show-word-limit
+                  autocomplete="name"
+                />
               </ElFormItem>
               <ElFormItem label="邮箱" prop="email">
-                <ElInput v-model="profileForm.email" type="email" autocomplete="email" placeholder="选填" />
+                <ElInput
+                  v-model="profileForm.email"
+                  type="email"
+                  autocomplete="email"
+                  placeholder="选填"
+                />
               </ElFormItem>
               <ElFormItem label="手机号" prop="mobile">
-                <ElInput v-model="profileForm.mobile" autocomplete="tel" maxlength="11" placeholder="选填" />
+                <ElInput
+                  v-model="profileForm.mobile"
+                  autocomplete="tel"
+                  inputmode="tel"
+                  maxlength="11"
+                  placeholder="选填"
+                />
               </ElFormItem>
               <ElFormItem label="性别" prop="gender">
                 <ElSelect v-model="profileForm.gender" class="full-width">
@@ -56,8 +89,25 @@
                   <ElOption label="未知" value="2" />
                 </ElSelect>
               </ElFormItem>
+              <ElAlert
+                v-if="profileError"
+                :title="profileError"
+                type="error"
+                show-icon
+                :closable="false"
+                class="form-feedback"
+              />
               <div class="form-actions">
-                <ElButton type="primary" :loading="saving" @click="saveProfile">保存资料</ElButton>
+                <span class="save-state" role="status">{{
+                  hasProfileChanges ? "有尚未保存的修改" : "资料已同步"
+                }}</span>
+                <ElButton
+                  type="primary"
+                  native-type="submit"
+                  :loading="saving"
+                  :disabled="loading || !currentUser || !hasProfileChanges"
+                  >保存资料</ElButton
+                >
               </div>
             </ElForm>
           </ElTabPane>
@@ -67,25 +117,54 @@
               <h3>账号安全</h3>
               <p>定期更新密码，保护您的账号。</p>
             </div>
-            <p class="form-hint"><FaSvgIcon icon="ri:information-line" />修改后将退出当前登录，请使用新密码重新登录。</p>
+            <p class="form-hint">
+              <FaSvgIcon icon="ri:information-line" />修改后将退出当前登录，请使用新密码重新登录。
+            </p>
             <ElForm
               ref="passwordFormRef"
               :model="passwordForm"
               :rules="passwordRules"
+              :disabled="changingPassword"
               label-position="top"
               class="profile-form profile-form--password"
+              @submit.prevent="changePassword"
             >
               <ElFormItem label="当前密码" prop="old_password" class="password-current">
-                <ElInput v-model="passwordForm.old_password" type="password" show-password autocomplete="current-password" />
+                <ElInput
+                  v-model="passwordForm.old_password"
+                  type="password"
+                  show-password
+                  autocomplete="current-password"
+                />
               </ElFormItem>
               <ElFormItem label="新密码" prop="new_password">
-                <ElInput v-model="passwordForm.new_password" type="password" show-password autocomplete="new-password" />
+                <ElInput
+                  v-model="passwordForm.new_password"
+                  type="password"
+                  show-password
+                  autocomplete="new-password"
+                />
               </ElFormItem>
               <ElFormItem label="确认新密码" prop="confirm_password">
-                <ElInput v-model="passwordForm.confirm_password" type="password" show-password autocomplete="new-password" />
+                <ElInput
+                  v-model="passwordForm.confirm_password"
+                  type="password"
+                  show-password
+                  autocomplete="new-password"
+                />
               </ElFormItem>
+              <ElAlert
+                v-if="passwordError"
+                :title="passwordError"
+                type="error"
+                show-icon
+                :closable="false"
+                class="form-feedback"
+              />
               <div class="form-actions">
-                <ElButton type="primary" :loading="changingPassword" @click="changePassword">修改密码</ElButton>
+                <ElButton type="primary" native-type="submit" :loading="changingPassword"
+                  >修改密码并重新登录</ElButton
+                >
               </div>
             </ElForm>
           </ElTabPane>
@@ -113,6 +192,8 @@ const loading = ref(false);
 const saving = ref(false);
 const changingPassword = ref(false);
 const loadError = ref("");
+const profileError = ref("");
+const passwordError = ref("");
 const avatarFailed = ref(false);
 const currentUser = ref<UserInfo>();
 const profileFormRef = ref<FormInstance>();
@@ -120,9 +201,20 @@ const passwordFormRef = ref<FormInstance>();
 const profileForm = reactive({ name: "", email: "", mobile: "", gender: "2" });
 const passwordForm = reactive({ old_password: "", new_password: "", confirm_password: "" });
 const avatar = computed(() => currentUser.value?.avatar || "");
-const roleLabel = computed(() =>
-  currentUser.value?.roles?.map((role) => role.name).filter(Boolean).join("、") ||
-  (userStore.info.is_superuser ? "超级管理员" : "用户")
+const roleLabel = computed(
+  () =>
+    currentUser.value?.roles
+      ?.map((role) => role.name)
+      .filter(Boolean)
+      .join("、") || (userStore.info.is_superuser ? "超级管理员" : "用户")
+);
+const hasProfileChanges = computed(
+  () =>
+    Boolean(currentUser.value) &&
+    (profileForm.name.trim() !== (currentUser.value?.name || "") ||
+      profileForm.email.trim() !== (currentUser.value?.email || "") ||
+      profileForm.mobile.trim() !== (currentUser.value?.mobile || "") ||
+      profileForm.gender !== (currentUser.value?.gender || "2"))
 );
 
 const profileRules: FormRules = {
@@ -131,20 +223,38 @@ const profileRules: FormRules = {
   mobile: [{ pattern: /^1\d{10}$/, message: "手机号格式不正确", trigger: "blur" }],
 };
 const passwordRules: FormRules = {
-  old_password: [{ required: true, min: 6, max: 128, message: "当前密码需为 6–128 位", trigger: "blur" }],
-  new_password: [{ required: true, min: 6, max: 128, message: "新密码需为 6–128 位", trigger: "blur" }],
-  confirm_password: [{ required: true, message: "请再次输入新密码", trigger: "blur" }],
+  old_password: [
+    { required: true, min: 6, max: 128, message: "当前密码需为 6–128 位", trigger: "blur" },
+  ],
+  new_password: [
+    { required: true, min: 6, max: 128, message: "新密码需为 6–128 位", trigger: "blur" },
+  ],
+  confirm_password: [
+    { required: true, message: "请再次输入新密码", trigger: "blur" },
+    {
+      validator: (_rule, value, callback) =>
+        callback(
+          value === passwordForm.new_password ? undefined : new Error("两次输入的新密码不一致")
+        ),
+      trigger: "blur",
+    },
+  ],
 };
 
-watch(() => route.query.tab, (tab) => {
-  activeTab.value = tab === "password" ? "password" : "info";
-}, { immediate: true });
+watch(
+  () => route.query.tab,
+  (tab) => {
+    activeTab.value = tab === "password" ? "password" : "info";
+  },
+  { immediate: true }
+);
 
 function changeTab(tab: string | number): void {
   void router.replace({ name: "Profile", query: tab === "password" ? { tab: "password" } : {} });
 }
 
 async function loadProfile(): Promise<void> {
+  if (loading.value) return;
   loading.value = true;
   loadError.value = "";
   try {
@@ -164,53 +274,75 @@ async function loadProfile(): Promise<void> {
 }
 
 async function saveProfile(): Promise<void> {
-  await profileFormRef.value?.validate();
-  const name = profileForm.name.trim();
-  const email = profileForm.email.trim();
-  const mobile = profileForm.mobile.trim();
-  const changes: { name?: string; email?: string | null; mobile?: string | null; gender?: string } = {};
-  if (name !== (currentUser.value?.name || "")) changes.name = name;
-  if (email !== (currentUser.value?.email || "")) changes.email = email || null;
-  if (mobile !== (currentUser.value?.mobile || "")) changes.mobile = mobile || null;
-  if (profileForm.gender !== (currentUser.value?.gender || "2")) changes.gender = profileForm.gender;
-  if (Object.keys(changes).length === 0) {
-    ElMessage.info("资料没有变化");
-    return;
-  }
-
+  if (saving.value || loading.value || !currentUser.value) return;
   saving.value = true;
+  profileError.value = "";
+  let saved = false;
   try {
+    if (!(await profileFormRef.value?.validate().catch(() => false))) return;
+    const name = profileForm.name.trim();
+    const email = profileForm.email.trim();
+    const mobile = profileForm.mobile.trim();
+    const changes: {
+      name?: string;
+      email?: string | null;
+      mobile?: string | null;
+      gender?: string;
+    } = {};
+    if (name !== (currentUser.value?.name || "")) changes.name = name;
+    if (email !== (currentUser.value?.email || "")) changes.email = email || null;
+    if (mobile !== (currentUser.value?.mobile || "")) changes.mobile = mobile || null;
+    if (profileForm.gender !== (currentUser.value?.gender || "2"))
+      changes.gender = profileForm.gender;
+    if (Object.keys(changes).length === 0) {
+      ElMessage.info("资料没有变化");
+      return;
+    }
+
     await UserAPI.updateCurrentUserInfo(changes);
+    saved = true;
     await userStore.getUserInfo();
     await loadProfile();
     ElMessage.success("个人资料已保存");
+  } catch {
+    profileError.value = saved
+      ? "资料已保存，但显示刷新失败。请重新加载资料。"
+      : "保存失败，已保留您的修改，请重试。";
   } finally {
     saving.value = false;
   }
 }
 
 async function changePassword(): Promise<void> {
-  await passwordFormRef.value?.validate();
-  if (passwordForm.new_password !== passwordForm.confirm_password) {
-    ElMessage.error("两次输入的新密码不一致");
-    return;
-  }
-  if (passwordForm.new_password === passwordForm.old_password) {
-    ElMessage.error("新密码不能与当前密码相同");
-    return;
-  }
-
+  if (changingPassword.value) return;
   changingPassword.value = true;
+  passwordError.value = "";
+  let changed = false;
   try {
+    if (!(await passwordFormRef.value?.validate().catch(() => false))) return;
+    if (passwordForm.new_password !== passwordForm.confirm_password) {
+      passwordError.value = "两次输入的新密码不一致";
+      return;
+    }
+    if (passwordForm.new_password === passwordForm.old_password) {
+      passwordError.value = "新密码不能与当前密码相同";
+      return;
+    }
+
     await UserAPI.changeCurrentUserPassword({
       old_password: passwordForm.old_password,
       new_password: passwordForm.new_password,
     });
+    changed = true;
     passwordForm.old_password = "";
     passwordForm.new_password = "";
     passwordForm.confirm_password = "";
     ElMessage.success("密码已修改，请重新登录");
     await userStore.logout();
+  } catch {
+    passwordError.value = changed
+      ? "密码已修改，请退出当前账号后使用新密码登录。"
+      : "密码修改失败，请检查当前密码后重试。";
   } finally {
     changingPassword.value = false;
   }
@@ -230,7 +362,8 @@ onMounted(loadProfile);
   overflow: hidden;
   background: var(--fa-color-surface, var(--el-bg-color));
   border: 1px solid var(--fa-color-border, var(--el-border-color));
-  border-radius: 8px;
+  border-radius: var(--fa-radius-panel, 14px);
+  box-shadow: var(--fa-soft-shadow);
 }
 
 .identity-header {
@@ -259,6 +392,7 @@ onMounted(loadProfile);
 }
 
 .identity-copy {
+  flex: 1;
   min-width: 0;
 }
 
@@ -286,14 +420,17 @@ onMounted(loadProfile);
 }
 
 .identity-role {
-  flex: none;
+  flex: 0 1 auto;
+  max-width: 40%;
   padding: 6px 10px;
   margin-left: auto;
   font-size: 12px;
+  line-height: 1.6;
   color: var(--fa-color-text, var(--el-text-color-primary));
+  overflow-wrap: anywhere;
   background: var(--el-fill-color-light);
   border: 1px solid var(--fa-color-border, var(--el-border-color));
-  border-radius: 5px;
+  border-radius: var(--fa-radius-control, 10px);
 }
 
 .detail-panel {
@@ -331,6 +468,7 @@ onMounted(loadProfile);
 .panel-intro p {
   margin: 7px 0 0;
   font-size: 13px;
+  line-height: 1.65;
   color: var(--fa-color-text-muted, var(--el-text-color-secondary));
 }
 
@@ -361,6 +499,23 @@ onMounted(loadProfile);
   padding-top: 22px;
   margin-top: 4px;
   border-top: 1px solid var(--fa-color-border, var(--el-border-color));
+}
+
+.save-state {
+  margin-right: auto;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--fa-color-text-muted, var(--el-text-color-secondary));
+}
+
+.form-feedback {
+  grid-column: 1 / -1;
+}
+
+.profile-page :deep(button:focus-visible),
+.profile-page :deep(.el-tabs__item:focus-visible) {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 3px;
 }
 
 .form-hint {
@@ -418,7 +573,8 @@ onMounted(loadProfile);
   }
 
   .identity-role {
-    margin-left: 68px;
+    max-width: 100%;
+    margin-left: 0;
   }
 
   .profile-form {
@@ -432,7 +588,14 @@ onMounted(loadProfile);
   }
 
   .form-actions {
+    flex-wrap: wrap;
     grid-column: auto;
+  }
+
+  .form-actions :deep(.el-button) {
+    width: 100%;
+    min-height: 44px;
   }
 }
 </style>
+gap: 16px; align-items: center;

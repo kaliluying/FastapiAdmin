@@ -1,16 +1,26 @@
 <template>
   <header class="home-header">
-    <h1>工作台</h1>
-    <div
-      v-if="healthState === 'degraded' || healthState === 'unavailable'"
-      class="health-alert"
-      role="status"
-    >
-      <FaSvgIcon icon="ri:error-warning-line" aria-hidden="true" />
-      <span>{{ healthDescription }}</span>
-      <button type="button" :disabled="healthLoading" @click="$emit('refresh')">
-        {{ healthLoading ? "检查中" : "重试" }}
+    <div>
+      <h1>工作台</h1>
+      <p>
+        欢迎回来<span v-if="userName">，{{ userName }}</span
+        >。从这里开始今天的工作。
+      </p>
+    </div>
+    <div class="home-health" :class="`home-health--${healthState}`" role="status">
+      <button
+        type="button"
+        :disabled="healthLoading"
+        :aria-label="`刷新基础服务状态：${healthLoading ? healthLabels.loading : healthLabels[healthState]}`"
+        @click="$emit('refresh')"
+      >
+        <span class="home-health__dot" aria-hidden="true" />
+        {{ healthLoading ? "正在检查基础服务" : healthLabels[healthState] }}
+        <FaSvgIcon icon="ri:refresh-line" aria-hidden="true" />
       </button>
+      <p v-if="healthState === 'degraded' || healthState === 'unavailable'">
+        {{ healthDescription }}
+      </p>
     </div>
   </header>
 </template>
@@ -22,61 +32,112 @@ defineProps<{
   healthState: "loading" | "healthy" | "degraded" | "unavailable";
   healthDescription: string;
   healthLoading: boolean;
+  userName: string;
 }>();
 
 defineEmits<{ refresh: [] }>();
+
+const healthLabels = {
+  loading: "正在检查基础服务",
+  healthy: "基础服务正常",
+  degraded: "基础服务异常 · 重试",
+  unavailable: "状态暂不可用 · 重试",
+};
 </script>
 
 <style scoped lang="scss">
 .home-header {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px 20px;
+  gap: 16px 24px;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin: 4px 0 28px;
 }
 
 h1 {
   margin: 0;
-  font-size: 25px;
+  font-size: 30px;
   font-weight: 650;
-  line-height: 1.3;
+  line-height: 1.4;
   color: var(--fa-color-text);
+  letter-spacing: -0.03em;
 }
 
-.health-alert {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  min-height: 34px;
-  padding: 5px 10px;
+.home-header > div > p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--fa-color-text-muted);
+}
+
+.home-health {
+  max-width: 100%;
   font-size: 12px;
-  color: var(--fa-color-warning);
-  background: var(--el-color-warning-light-9);
-  border: 1px solid var(--el-color-warning-light-7);
-  border-radius: 7px;
+  color: var(--fa-color-text-muted);
 }
 
-.health-alert button {
-  padding: 0;
+.home-health button {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 14px;
   font: inherit;
-  font-weight: 600;
   color: inherit;
-  text-decoration: underline;
-  text-underline-offset: 2px;
   cursor: pointer;
-  background: none;
-  border: 0;
+  background: var(--fa-color-surface);
+  border: 1px solid var(--fa-color-border);
+  border-radius: 24px;
+  transition: border-color 180ms ease;
 }
 
-.health-alert button:disabled {
+.home-health button:hover {
+  border-color: var(--fa-color-text-muted);
+}
+
+.home-health button:disabled {
   cursor: wait;
-  opacity: 0.6;
 }
 
-.health-alert button:focus-visible {
-  outline: 2px solid var(--fa-color-accent);
+.home-health button:focus-visible {
+  outline: 2px solid var(--theme-color);
   outline-offset: 3px;
+}
+
+.home-health__dot {
+  width: 7px;
+  height: 7px;
+  background: var(--fa-color-text-muted);
+  border-radius: 50%;
+}
+
+.home-health--healthy .home-health__dot {
+  background: var(--fa-color-success);
+}
+
+.home-health--degraded .home-health__dot,
+.home-health--unavailable .home-health__dot {
+  background: var(--fa-color-warning);
+}
+
+.home-health > p {
+  max-width: 320px;
+}
+
+@media (width <= 520px) {
+  .home-header {
+    margin-bottom: 20px;
+  }
+
+  h1 {
+    font-size: 26px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-health button {
+    transition: none;
+  }
 }
 </style>

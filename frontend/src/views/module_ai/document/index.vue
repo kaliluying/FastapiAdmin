@@ -53,6 +53,8 @@
       <FaAsyncState
         v-if="loading || (!rows.length && !loadError)"
         :state="loading ? 'loading' : 'empty'"
+        :title="loading ? undefined : '没有匹配的文档'"
+        description="调整知识库或文件名筛选；上传后可在这里查看处理进度。"
       />
       <p v-if="!loading && rows.length && isNarrowViewport" class="table-scroll-hint">
         左右滑动查看完整列表
@@ -118,15 +120,16 @@
         v-model:current-page="query.page_no"
         v-model:page-size="query.page_size"
         class="pagination"
-        layout="total, sizes, prev, pager, next"
+        :layout="isNarrowViewport ? 'total, prev, pager, next' : 'total, sizes, prev, pager, next'"
+        :pager-count="isNarrowViewport ? 5 : 7"
         :total="total"
         @size-change="loadData()"
         @current-change="loadData()"
       />
     </ElCard>
 
-    <ElDialog v-model="uploadDialogVisible" title="上传文档" width="520px">
-      <ElForm label-width="90px">
+    <ElDialog v-model="uploadDialogVisible" title="上传文档" width="min(92vw, 520px)">
+      <ElForm label-width="90px" :label-position="isNarrowViewport ? 'top' : 'right'">
         <ElFormItem label="知识库" required>
           <ElSelect
             v-model="uploadForm.knowledge_base_id"
@@ -420,7 +423,7 @@ watch(visibility, (state) => {
 <style scoped>
 .document-card {
   border: 1px solid var(--fa-color-border);
-  border-radius: 10px;
+  border-radius: var(--fa-radius-panel);
 }
 
 .document-card :deep(.el-card__body) {
@@ -463,6 +466,23 @@ watch(visibility, (state) => {
 }
 
 @media (width <= 800px) {
+  .toolbar,
+  .toolbar :deep(.el-form),
+  .toolbar :deep(.el-form-item),
+  .base-select {
+    width: 100%;
+  }
+
+  .toolbar :deep(.el-form-item) {
+    margin-right: 0;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
   .document-card :deep(.el-card__body) {
     padding: 16px;
   }

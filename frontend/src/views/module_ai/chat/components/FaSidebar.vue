@@ -3,7 +3,7 @@
     <div class="sidebar-header">
       <div class="logo-section">
         <ElIcon class="logo-icon" :size="28"><ChatDotRound /></ElIcon>
-        <span v-if="!props.isCollapsed" class="project-name">FA智能助手</span>
+        <span v-if="!props.isCollapsed" class="project-name">会话列表</span>
       </div>
     </div>
 
@@ -21,6 +21,7 @@
             <ElInput
               v-model="searchQuery"
               placeholder="搜索会话历史"
+              aria-label="搜索会话历史"
               :prefix-icon="Search"
               clearable
               @input="handleSearch"
@@ -28,7 +29,12 @@
           </div>
           <div class="history-groups">
             <div v-for="group in groupedSessions" :key="group.title" class="history-group">
-              <div class="group-title" @click="toggleGroup(group.title)">
+              <button
+                type="button"
+                class="group-title"
+                :aria-expanded="!collapsedGroups.has(group.title)"
+                @click="toggleGroup(group.title)"
+              >
                 <span>{{ group.title }}</span>
                 <ElIcon
                   class="collapse-icon"
@@ -36,24 +42,37 @@
                 >
                   <ArrowDown />
                 </ElIcon>
-              </div>
+              </button>
               <div v-show="!collapsedGroups.has(group.title)" class="session-list">
                 <div
                   v-for="session in group.sessions"
                   :key="session.id"
                   class="session-item"
                   :class="{ active: props.currentSessionId === session.id }"
-                  @click="handleSelectSession(session)"
                 >
-                  <ElIcon class="session-icon"><ChatLineRound /></ElIcon>
-                  <span class="session-title">
-                    {{ session.title || session.session_data?.session_name || "未命名会话" }}
-                  </span>
+                  <button
+                    type="button"
+                    class="session-select"
+                    :aria-current="props.currentSessionId === session.id ? 'true' : undefined"
+                    @click="handleSelectSession(session)"
+                  >
+                    <ElIcon class="session-icon"><ChatLineRound /></ElIcon>
+                    <span class="session-title">
+                      {{ session.title || session.session_data?.session_name || "未命名会话" }}
+                    </span>
+                  </button>
                   <ElDropdown
                     trigger="click"
                     @command="(cmd) => handleSessionCommand(cmd, session)"
                   >
-                    <ElIcon class="more-icon" @click.stop><MoreFilled /></ElIcon>
+                    <button
+                      type="button"
+                      class="session-more"
+                      :aria-label="`会话操作：${session.title || '未命名会话'}`"
+                      @click.stop
+                    >
+                      <ElIcon class="more-icon"><MoreFilled /></ElIcon>
+                    </button>
                     <template #dropdown>
                       <ElDropdownMenu>
                         <ElDropdownItem command="rename">重命名</ElDropdownItem>
@@ -64,8 +83,21 @@
                 </div>
               </div>
             </div>
-            <div v-if="filteredSessions.length === 0" class="empty-state">
-              <ElEmpty description="暂无会话历史" :image-size="60" />
+            <FaAsyncState
+              v-if="loadError"
+              state="error"
+              title="会话列表加载失败"
+              description="当前对话不受影响，请重试加载历史。"
+            >
+              <template #action
+                ><ElButton :loading="loading" @click="loadSessions">重试</ElButton></template
+              >
+            </FaAsyncState>
+            <div v-else-if="!loading && filteredSessions.length === 0" class="empty-state">
+              <ElEmpty
+                :description="searchQuery ? '没有匹配的会话' : '暂无会话，开始一次提问吧'"
+                :image-size="48"
+              />
             </div>
           </div>
         </div>
@@ -79,7 +111,7 @@
         </ElAvatar>
         <div class="user-details">
           <div class="user-name">{{ userInfo.name }}</div>
-          <div class="user-status">在线</div>
+          <div class="user-status">当前账号</div>
         </div>
       </div>
       <div v-else class="collapsed-user">
@@ -94,7 +126,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { ElMessage, ElMessageBox, ElScrollbar } from "element-plus";
-import { ChatLineRound, User, MoreFilled, Plus, Search, ArrowDown } from "@element-plus/icons-vue";
+import {
+  ChatDotRound,
+  ChatLineRound,
+  User,
+  MoreFilled,
+  Plus,
+  Search,
+  ArrowDown,
+} from "@element-plus/icons-vue";
+import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 import { useUserStoreHook } from "@stores";
 import { ChatSession, SessionGroup, UserInfo } from "@/api/module_ai/chat";
 import AiChatAPI from "@/api/module_ai/chat";
@@ -118,6 +159,8 @@ const emit = defineEmits<Emits>();
 const userStore = useUserStoreHook();
 
 const sessions = ref<ChatSession[]>([]);
+const loading = ref(false);
+const loadError = ref(false);
 const searchQuery = ref("");
 const collapsedGroups = ref<Set<string>>(new Set());
 
@@ -251,6 +294,8 @@ const handleSessionCommand = async (command: string, session: ChatSession) => {
 };
 
 const loadSessions = async () => {
+  loading.value = true;
+  loadError.value = false;
   try {
     const res = await AiChatAPI.getSessionList({ page_no: 1, page_size: 100 });
     const responseData = res.data;
@@ -285,7 +330,10 @@ const loadSessions = async () => {
         }));
     }
   } catch (error) {
+    loadError.value = true;
     console.error("加载会话列表失败:", error);
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -299,6 +347,39 @@ defineExpose({
 </script>
 
 <style lang="scss" scoped>
+.session-select,
+.session-more {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: var(--fa-radius-control);
+}
+
+.session-select {
+  flex: 1;
+}
+
+.session-more {
+  justify-content: center;
+  width: 32px;
+}
+
+.session-select:focus-visible,
+.session-more:focus-visible,
+.group-title:focus-visible {
+  outline: 2px solid var(--theme-color);
+  outline-offset: 2px;
+}
+
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -332,6 +413,7 @@ defineExpose({
 
   .sidebar-content {
     flex: 1;
+    min-height: 0;
 
     .new-session-section {
       margin-bottom: 16px;
@@ -350,12 +432,7 @@ defineExpose({
         }
 
         &:hover {
-          box-shadow: var(--el-box-shadow);
-          transform: translateY(-1px);
-        }
-
-        &:active {
-          transform: translateY(0);
+          box-shadow: none;
         }
       }
     }
@@ -396,13 +473,19 @@ defineExpose({
             gap: 6px;
             align-items: center;
             justify-content: space-between;
+            width: 100%;
+            min-height: 36px;
             padding: 0 4px;
             margin-bottom: 10px;
+            font: inherit;
             font-size: 12px;
             font-weight: 500;
             color: var(--el-text-color-secondary);
+            text-align: left;
             cursor: pointer;
             user-select: none;
+            background: transparent;
+            border: 0;
             transition: color 0.2s;
 
             &::before {
@@ -443,7 +526,6 @@ defineExpose({
               &:hover {
                 background: var(--el-fill-color-light);
                 border-color: var(--el-border-color-light);
-                transform: translateX(2px);
               }
 
               &.active {
@@ -483,7 +565,7 @@ defineExpose({
                 padding: 4px;
                 font-size: 16px;
                 border-radius: 4px;
-                opacity: 0;
+                opacity: 1;
                 transition: all 0.2s;
 
                 &:hover {
@@ -536,7 +618,7 @@ defineExpose({
 
         .user-status {
           font-size: 12px;
-          color: var(--el-color-success);
+          color: var(--fa-color-text-muted);
         }
       }
     }

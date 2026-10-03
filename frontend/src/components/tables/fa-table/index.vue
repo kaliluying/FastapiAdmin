@@ -203,7 +203,7 @@ const hasExplicitTableProp = (propName: string): boolean => {
 };
 
 const LAYOUT = {
-  MOBILE: "prev, pager, next, sizes, jumper, total",
+  MOBILE: "prev, next, total",
   IPAD: "prev, pager, next, jumper, total",
   DESKTOP: "total, prev, pager, next, sizes, jumper",
 };
@@ -223,15 +223,15 @@ const DEFAULT_PAGINATION_OPTIONS: PaginationOptions = {
   pageSizes: [10, 20, 30, 50, 100],
   align: "center",
   background: true,
-  layout: layout.value,
   hideOnSinglePage: false,
   size: "default",
-  pagerCount: width.value > 1200 ? 7 : 5,
 };
 
 // 合并分页配置
 const mergedPaginationOptions = computed(() => ({
   ...DEFAULT_PAGINATION_OPTIONS,
+  layout: layout.value,
+  pagerCount: width.value > 1200 ? 7 : 5,
   ...props.paginationOptions,
 }));
 

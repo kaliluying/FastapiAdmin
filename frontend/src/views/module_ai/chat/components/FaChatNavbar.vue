@@ -13,6 +13,7 @@
           class="size-6"
         />
       </button>
+      <h1 class="workspace-title">知识问答</h1>
     </div>
     <div class="navbar-right">
       <ElSelect
@@ -23,7 +24,8 @@
         clearable
         filterable
         class="knowledge-select"
-        placeholder="知识库"
+        aria-label="用于回答的知识库"
+        placeholder="选择知识库"
         @update:model-value="handleKnowledgeChange"
       >
         <ElOption
@@ -39,7 +41,13 @@
       <ElTag
         class="connection-status"
         effect="plain"
-        :type="connectionStatus === 'connected' ? 'success' : 'danger'"
+        :type="
+          connectionStatus === 'connected'
+            ? 'success'
+            : connectionStatus === 'connecting'
+              ? 'warning'
+              : 'info'
+        "
       >
         <ElIcon :class="['status-icon', connectionStatus]">
           <Connection v-if="connectionStatus === 'connected'" />
@@ -119,122 +127,112 @@ const handleKnowledgeChange = (value: number[]) => {
 <style lang="scss" scoped>
 .chat-navbar {
   display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   align-items: center;
   justify-content: space-between;
-  padding: 10px;
+  padding: 12px 16px;
+  color: #fff;
+  background: #182b46;
+}
 
-  .navbar-left {
-    display: flex;
-    gap: 12px;
-    align-items: center;
+.navbar-left,
+.navbar-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
 
-    .collapse-btn {
-      width: 32px;
-      height: 32px;
-      padding: 0;
-      color: var(--el-text-color-regular);
-      cursor: pointer;
-      background: transparent;
-      border: none;
-      border-radius: 4px;
-      transition:
-        background-color 0.2s,
-        color 0.2s;
+.navbar-right {
+  flex: 1 1 320px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
 
-      &:hover {
-        color: var(--el-color-primary);
-        background: var(--el-color-primary-light-9);
-      }
+.navbar-left {
+  flex-shrink: 0;
+}
 
-      &:focus-visible {
-        outline: 2px solid var(--el-color-primary);
-        outline-offset: 2px;
-      }
+.workspace-title {
+  flex-shrink: 0;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 650;
+  white-space: nowrap;
+}
 
-      /* UnoCSS 图标 SVG 多随 currentColor */
-      & > div {
-        color: inherit;
-      }
+.collapse-btn {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: var(--fa-radius-control);
+}
 
-      .collapse-icon {
-        width: 20px;
-        height: 20px;
-        color: inherit;
-      }
-    }
-  }
+.collapse-btn:hover {
+  background: rgb(255 255 255 / 10%);
+}
 
-  .navbar-right {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 12px;
-    align-items: center;
+.collapse-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
 
-    .knowledge-select {
-      width: 240px;
-    }
+.knowledge-select {
+  width: 220px;
+}
 
-    /* EP 相邻按钮自带 margin-left，叠在 flex gap 上会导致间距忽大忽小 */
-    :deep(.el-button) {
-      margin: 0;
-    }
+.navbar-right :deep(.el-button) {
+  margin: 0;
+  color: #fff;
+}
 
-    .connection-status {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 32px;
-      padding: 0 12px;
-      margin: 0;
-      font-size: 14px;
-      line-height: 1;
+.navbar-right :deep(.el-button:hover) {
+  background: rgb(255 255 255 / 12%);
+}
 
-      :deep(.el-tag__content) {
-        display: inline-flex;
-        gap: 6px;
-        align-items: center;
-      }
-
-      .status-icon {
-        &.connected {
-          color: var(--el-color-success);
-        }
-
-        &.connecting {
-          color: var(--el-color-warning);
-        }
-
-        &.disconnected {
-          color: var(--el-color-danger);
-        }
-      }
-
-      .status-text {
-        color: var(--el-text-color-secondary);
-      }
-    }
-  }
+.connection-status :deep(.el-tag__content) {
+  display: flex;
+  gap: 6px;
+  align-items: center;
 }
 
 @media (width <= 1024px) {
   .chat-navbar {
     gap: 8px;
-    align-items: flex-start;
+    padding: 10px 12px;
+  }
 
-    .navbar-right {
-      flex: 1;
-      flex-wrap: wrap;
-      gap: 4px;
-      min-width: 0;
+  .navbar-right {
+    gap: 4px;
+  }
 
-      .knowledge-select {
-        width: 100%;
-      }
+  .connection-status {
+    display: none;
+  }
+}
 
-      .connection-status {
-        display: none;
-      }
-    }
+@media (width <= 640px) {
+  .navbar-right {
+    width: 100%;
+  }
+
+  .knowledge-select {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+
+  .navbar-right :deep(.el-button) {
+    padding: 8px;
+    font-size: 12px;
   }
 }
 </style>

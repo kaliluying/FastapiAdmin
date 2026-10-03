@@ -7,7 +7,7 @@
       </div>
 
       <div class="fa-enterprise-intro__header">
-        <h1 id="enterprise-intro-title">让知识进入<br />日常工作。</h1>
+        <h2 id="enterprise-intro-title">让知识进入<br />日常工作。</h2>
         <p>在一个地方整理内部资料、获取有依据的回答，并管理团队的工作权限。</p>
       </div>
 
@@ -19,7 +19,7 @@
         >
           <FaSvgIcon :icon="highlight.icon" aria-hidden="true" />
           <div>
-            <h2>{{ highlight.title }}</h2>
+            <h3>{{ highlight.title }}</h3>
             <p>{{ highlight.description }}</p>
           </div>
         </article>
@@ -107,7 +107,7 @@ const highlights = [
   margin-top: clamp(2.5rem, 5vw, 5rem);
 }
 
-.fa-enterprise-intro__header h1 {
+.fa-enterprise-intro__header h2 {
   margin: 0;
   font-size: clamp(3rem, 4.4vw, 5.3rem);
   font-weight: 670;
@@ -147,7 +147,7 @@ const highlights = [
   color: #aac3ff;
 }
 
-.fa-enterprise-intro__highlight h2 {
+.fa-enterprise-intro__highlight h3 {
   margin: 1rem 0 0.35rem;
   font-size: 14px;
   font-weight: 650;

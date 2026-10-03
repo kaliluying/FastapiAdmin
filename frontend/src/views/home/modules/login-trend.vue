@@ -1,5 +1,5 @@
 <template>
-  <ElCard shadow="never" class="login-trend-card">
+  <ElCard shadow="never" class="login-trend-card" :aria-busy="loading">
     <template #header>
       <div class="section-heading">
         <div>
@@ -8,14 +8,7 @@
         </div>
         <div class="section-actions">
           <ElTooltip content="刷新登录趋势" placement="top">
-            <ElButton
-              size="small"
-              plain
-              circle
-              :loading="loading"
-              aria-label="刷新登录趋势"
-              @click="loadTrend"
-            >
+            <ElButton plain circle :loading="loading" aria-label="刷新登录趋势" @click="loadTrend">
               <FaSvgIcon icon="ri:refresh-line" />
             </ElButton>
           </ElTooltip>
@@ -46,24 +39,55 @@
           </div>
         </div>
 
-        <div v-if="hasActivity" class="trend-chart" aria-label="近七日登录折线图">
+        <div
+          v-if="hasActivity && !reducedMotion"
+          ref="trendChart"
+          class="trend-chart"
+          aria-label="近七日登录折线图"
+        >
           <FaLineChart
             :data="chartSeries"
             :x-axis-data="chartLabels"
             :colors="chartColors"
-            height="300px"
+            height="100%"
             :show-area-color="true"
             :show-legend="true"
             legend-position="top"
             :show-axis-line="false"
             :show-split-line="true"
-            :smooth="true"
+            :smooth="false"
           />
         </div>
-        <div v-else class="trend-state" role="status">
+        <div v-else-if="!hasActivity" class="trend-state" role="status">
           <FaSvgIcon icon="ri:bar-chart-2-line" class="trend-state__icon" />
           <span>近 7 日暂无成功登录记录</span>
         </div>
+        <details v-if="trendItems.length" class="trend-details" :open="reducedMotion">
+          <summary>查看每日明细</summary>
+          <div class="trend-details__table">
+            <table>
+              <caption class="sr-only">
+                近七日登录活动
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">日期</th>
+                  <th scope="col">成功登录</th>
+                  <th scope="col">独立用户</th>
+                  <th scope="col">新增账号</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in trendItems" :key="item.day">
+                  <th scope="row">{{ item.day.slice(5) }}</th>
+                  <td>{{ item.logins }}</td>
+                  <td>{{ item.unique_users }}</td>
+                  <td>{{ item.new_users }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
       </template>
     </div>
   </ElCard>
@@ -71,18 +95,29 @@
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
+import { usePreferredReducedMotion, useResizeObserver } from "@vueuse/core";
+import { useSettingsStore } from "@stores";
 import { ApiStatus, getCssVar, HttpError } from "@utils";
 import DashboardAPI, { type LoginTrendItem } from "@/api/module_common/dashboard";
 import FaLineChart from "@/components/charts/fa-line-chart/index.vue";
+import { echarts } from "@/plugins/echarts";
 import type { LineDataItem } from "@/types/component/chart";
 
 defineOptions({ name: "LoginTrend" });
 
 const REFRESH_INTERVAL = 60_000;
+const settingsStore = useSettingsStore();
 const trendItems = ref<LoginTrendItem[]>([]);
 const loading = ref(false);
 const hasLoaded = ref(false);
 const trendError = ref("");
+const preferredMotion = usePreferredReducedMotion();
+const reducedMotion = computed(() => preferredMotion.value === "reduce");
+const trendChart = ref<HTMLElement>();
+useResizeObserver(trendChart, () => {
+  const chartElement = trendChart.value?.firstElementChild;
+  if (chartElement instanceof HTMLElement) echarts.getInstanceByDom(chartElement)?.resize();
+});
 
 const totalLogins = computed(() =>
   trendItems.value.reduce((total, item) => total + item.logins, 0)
@@ -105,7 +140,7 @@ const chartSeries = computed<LineDataItem[]>(() => [
   },
 ]);
 const chartColors = computed(() => [
-  getCssVar("--el-color-primary"),
+  settingsStore.systemThemeColor || getCssVar("--el-color-primary"),
   getCssVar("--el-color-success"),
 ]);
 
@@ -174,12 +209,12 @@ onUnmounted(() => {
 }
 
 .login-trend-card :deep(.el-card__header) {
-  padding: 18px 22px;
-  border-bottom-color: var(--fa-color-border, var(--el-border-color));
+  padding: 24px 24px 0;
+  border-bottom: 0;
 }
 
 .login-trend-card :deep(.el-card__body) {
-  padding: 20px 22px;
+  padding: 20px 24px;
 }
 
 .section-heading {
@@ -239,7 +274,7 @@ onUnmounted(() => {
 }
 
 .trend-summary__item strong {
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 680;
   font-variant-numeric: tabular-nums;
   line-height: 1.15;
@@ -247,8 +282,8 @@ onUnmounted(() => {
 }
 
 .trend-chart {
-  height: 300px;
-  margin-top: 20px;
+  height: 220px;
+  margin-top: 16px;
 }
 
 .trend-chart :deep(.relative) {
@@ -260,8 +295,10 @@ onUnmounted(() => {
   gap: 8px;
   align-items: center;
   justify-content: center;
-  min-height: 300px;
+  min-height: 280px;
+  padding: 20px;
   color: var(--el-text-color-secondary);
+  text-align: center;
 }
 
 .trend-state--error {
@@ -282,6 +319,52 @@ onUnmounted(() => {
   to {
     transform: rotate(360deg);
   }
+}
+
+.section-actions :deep(button) {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.trend-details {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--fa-color-text-muted);
+}
+
+.trend-details summary {
+  width: fit-content;
+  min-height: 44px;
+  padding: 12px 0;
+  cursor: pointer;
+}
+
+.trend-details summary:focus-visible {
+  outline: 2px solid var(--theme-color);
+  outline-offset: 2px;
+}
+
+.trend-details__table {
+  overflow-x: auto;
+}
+
+.trend-details table {
+  width: 100%;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  border-collapse: collapse;
+}
+
+.trend-details th,
+.trend-details td {
+  padding: 10px 4px;
+  font-weight: 400;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--fa-color-border);
+}
+
+.trend-details th:first-child {
+  text-align: left;
 }
 
 @media (width <= 640px) {

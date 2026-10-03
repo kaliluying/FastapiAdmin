@@ -1,7 +1,10 @@
 <!-- AI 会话记录：Art + useTable -->
 <template>
-  <div class="fa-full-height">
-    <FaAiPageHeader title="AI 记忆" />
+  <div class="fa-full-height session-page">
+    <FaAiPageHeader
+      title="会话记录"
+      description="查看历史问答、整理会话标题，或删除不再需要的记录。"
+    />
 
     <FaSearchBar
       v-show="showSearchBar"
@@ -21,7 +24,7 @@
     />
 
     <ElCard
-      shadow="hover"
+      shadow="never"
       class="fa-table-card"
       :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
     >
@@ -51,6 +54,9 @@
         :data="data"
         :columns="columns"
         :pagination="pagination"
+        :error="error ? { message: '会话记录暂时无法加载，请重试；筛选条件已保留。' } : null"
+        empty-text="没有匹配的会话记录，可调整筛选或开始新的对话"
+        @retry="refreshData"
         @selection-change="onTableSelectionChange"
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handleCurrentChange"
@@ -64,10 +70,16 @@
             @blur="handleSaveTitle(row)"
             @keyup.enter="handleSaveTitle(row)"
           />
-          <span v-else class="editable-cell" title="点击编辑" @click="handleEditTitle(row)">
+          <button
+            v-else
+            type="button"
+            class="editable-cell"
+            :aria-label="`重命名会话：${row.title || '未命名会话'}`"
+            @click="handleEditTitle(row)"
+          >
             {{ row.title || "未命名会话" }}
             <ElIcon class="edit-icon"><Edit /></ElIcon>
-          </span>
+          </button>
         </template>
       </FaTable>
     </ElCard>
@@ -75,7 +87,7 @@
     <FaDialog
       v-model="dialogVisible.visible"
       :title="dialogVisible.title"
-      width="920px"
+      width="min(92vw, 920px)"
       dialog-class="session-detail-dialog"
       modal-class="session-detail-dialog"
       :form-mode="dialogVisible.type"
@@ -86,7 +98,7 @@
       <template v-if="dialogVisible.type === 'detail'">
         <ElScrollbar max-height="70vh" :view-style="{ overflowX: 'hidden' }">
           <FaDescriptions
-            :column="2"
+            :column="isNarrowViewport ? 1 : 2"
             :data="detailFormData"
             :items="memoryDetailItems"
             :scrollbar="false"
@@ -130,7 +142,7 @@
           :rules="rules"
           label-suffix=":"
           :label-width="100"
-          label-position="right"
+          :label-position="isNarrowViewport ? 'top' : 'right'"
           :span="24"
           :gutter="16"
           :show-reset="false"
@@ -149,6 +161,7 @@ defineOptions({
 });
 
 import { ref, reactive, computed, nextTick } from "vue";
+import { useMediaQuery } from "@vueuse/core";
 import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
 import { Edit } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
@@ -170,6 +183,8 @@ type MemorySearchForm = {
   created_at?: string[];
   updated_at?: string[];
 };
+
+const isNarrowViewport = useMediaQuery("(max-width: 640px)");
 
 function buildMemoryReplaceParams(u: MemorySearchForm): Record<string, unknown> {
   return {
@@ -256,6 +271,7 @@ const {
   columnChecks,
   data,
   loading,
+  error,
   pagination,
   getData,
   replaceSearchParams,
@@ -514,7 +530,7 @@ async function handleSubmit() {
 <style lang="scss" scoped>
 .edit-icon {
   font-size: 12px;
-  opacity: 0;
+  opacity: 1;
   transition: opacity 0.2s;
 }
 
@@ -522,7 +538,19 @@ async function handleSubmit() {
   display: flex;
   gap: 8px;
   align-items: center;
+  max-width: 100%;
+  padding: 4px 0;
+  font: inherit;
+  color: var(--fa-color-text);
+  text-align: left;
   cursor: pointer;
+  background: transparent;
+  border: 0;
+
+  &:focus-visible {
+    outline: 2px solid var(--theme-color);
+    outline-offset: 2px;
+  }
 
   &:hover {
     color: var(--el-color-primary);

@@ -1,6 +1,6 @@
 <!-- 登录页：顶栏固定；仅插画列与表单区随布局切换 -->
 <template>
-  <div class="login-page-root flex h-screen w-full flex-col overflow-hidden">
+  <div class="login-page-root flex w-full flex-col overflow-hidden">
     <FaLoginCenterBackdrop v-if="panelAlign === 'center'" viewport-fixed />
     <FaAuthTopBar v-model:panel-align="panelAlign" />
 
@@ -35,10 +35,10 @@
                     : 'min-h-[min(720px,calc(100vh-13rem))]'
                 "
               >
-                <div class="auth-right-wrap">
+                <main class="auth-right-wrap" aria-labelledby="login-heading">
                   <div class="form">
                     <div class="form-intro">
-                      <h3 class="title">{{ panelTitle }}</h3>
+                      <h1 id="login-heading" class="title">{{ panelTitle }}</h1>
                       <p class="sub-title">{{ panelSubTitle }}</p>
                     </div>
 
@@ -54,8 +54,19 @@
                       @submit="handleSubmit"
                       @refresh-captcha="loadCaptcha(true)"
                     />
+                    <p v-if="loginError" class="auth-feedback" role="alert">{{ loginError }}</p>
+                    <div v-if="captchaError" class="auth-feedback" role="alert">
+                      <p>{{ captchaError }}</p>
+                      <ElButton
+                        link
+                        type="primary"
+                        :loading="captchaLoading"
+                        @click="loadCaptcha(captchaEnabled)"
+                        >重新获取验证码</ElButton
+                      >
+                    </div>
                   </div>
-                </div>
+                </main>
               </div>
             </div>
           </ElScrollbar>
@@ -65,44 +76,7 @@
           class="login-page-footer login-page-footer--pinned shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3"
           :class="panelAlign === 'center' && 'login-page-footer--floating-layout'"
         >
-          <div class="login-footer-text text-sm">
-            <div class="login-footer-row">
-              <span>{{ footerCopyright }}</span>
-            </div>
-            <span class="login-page-footer__sep login-footer-sep-center">|</span>
-            <div class="login-footer-row">
-              <a
-                :href="footerHelpDoc"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="login-page-footer__link"
-              >
-                帮助
-              </a>
-              <span class="login-page-footer__sep">|</span>
-              <a
-                :href="footerPrivacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="login-page-footer__link"
-              >
-                隐私
-              </a>
-              <span class="login-page-footer__sep">|</span>
-              <a
-                :href="footerClause"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="login-page-footer__link"
-              >
-                条款
-              </a>
-              <span v-if="footerKeepRecord" class="login-page-footer__sep">|</span>
-              <span v-if="footerKeepRecord" class="login-page-footer__record">
-                {{ footerKeepRecord }}
-              </span>
-            </div>
-          </div>
+          <p class="login-footer-text">登录遇到问题，请联系管理员确认账号状态与访问权限。</p>
         </footer>
       </div>
     </div>
@@ -132,11 +106,6 @@ const { panelAlign } = useLoginPanelAlign();
 const panelTitle = computed(() => t("login.title"));
 const panelSubTitle = computed(() => t("login.subTitle"));
 
-const footerCopyright = computed(() => "");
-const footerHelpDoc = computed(() => "#");
-const footerPrivacy = computed(() => "#");
-const footerClause = computed(() => "#");
-const footerKeepRecord = computed(() => "");
 const formKey = ref(0);
 
 watch(locale, () => {
@@ -149,6 +118,7 @@ const route = useRoute();
 
 const accountFormRef = ref<InstanceType<typeof FaLoginAccountForm> | null>(null);
 const loading = ref(false);
+const loginError = ref("");
 
 const loginForm = reactive<LoginFormData>({
   username: "",
@@ -162,10 +132,12 @@ const loginForm = reactive<LoginFormData>({
 const captchaEnabled = ref(false);
 const captchaImage = ref("");
 const captchaLoading = ref(false);
+const captchaError = ref("");
 
 /** Load a fresh login challenge and optionally reveal adaptive CAPTCHA. */
 async function loadCaptcha(forceVisible = false) {
   captchaLoading.value = true;
+  captchaError.value = "";
   try {
     const response = await AuthAPI.getCaptcha();
     const data = response.data.data;
@@ -174,6 +146,7 @@ async function loadCaptcha(forceVisible = false) {
     loginForm.captcha = "";
     captchaEnabled.value = forceVisible || Boolean(data?.enable);
   } catch (error) {
+    captchaError.value = "验证码加载失败，请重新获取后再登录。";
     console.warn("[Login] 获取验证码失败", error);
     if (forceVisible) captchaEnabled.value = true;
   } finally {
@@ -250,6 +223,7 @@ onMounted(async () => {
     if (await consumeOAuthTicket()) return;
     await loadCaptcha();
   } catch (error) {
+    loginError.value = "第三方登录未完成，请重试或使用账号密码登录。";
     console.warn("[Login] 登录初始化失败，继续使用默认渲染", error);
     ElNotification({
       title: "登录失败",
@@ -266,6 +240,7 @@ onMounted(async () => {
 const handleSubmit = async () => {
   if (!accountFormRef.value || loading.value) return;
   loading.value = true;
+  loginError.value = "";
 
   try {
     const valid = await accountFormRef.value.validate?.();
@@ -278,6 +253,7 @@ const handleSubmit = async () => {
       appStore.showGuide(true);
     }
   } catch (error) {
+    loginError.value = error instanceof HttpError ? error.message : "登录失败，请稍后重试。";
     if (error instanceof HttpError && error.message.includes("验证码")) {
       await loadCaptcha(true);
     }

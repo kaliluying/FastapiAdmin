@@ -282,6 +282,19 @@
   }
 }
 
+@media (width <= 800px) {
+  .fa-full-height,
+  .fa-management-page {
+    flex: 0 0 auto;
+  }
+
+  .fa-table-card {
+    flex: none;
+    height: min(640px, 80dvh);
+    min-height: 440px;
+  }
+}
+
 // 徽章样式
 .fa-badge {
   position: absolute;

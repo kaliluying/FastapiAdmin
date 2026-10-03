@@ -22,7 +22,7 @@
 
   // 系统主色
   --main-color: var(--el-color-primary);
-  --el-color-white: var(--fa-color-surface) !important;
+  --el-color-white: #fff !important;
   --el-color-black: var(--fa-color-text) !important;
   --el-bg-color-page: var(--fa-color-canvas) !important;
   --el-bg-color: var(--fa-color-surface) !important;
@@ -50,14 +50,6 @@
   --el-text-color-regular: var(--fa-color-text) !important;
   --el-text-color-secondary: var(--fa-color-text-muted) !important;
   // 按钮样式偏好
-  --el-button-hover-bg-color: color-mix(
-    in srgb,
-    var(--theme-color) 9%,
-    var(--fa-color-surface)
-  ) !important;
-  --el-button-hover-border-color: var(--el-color-primary) !important;
-  --el-button-border-color: var(--el-color-primary) !important;
-  --el-button-text-color: var(--el-color-primary) !important;
   // 按钮粗度
   --el-font-weight-primary: 400 !important;
   --el-component-custom-height: var(--fa-control-height) !important;
@@ -98,6 +90,10 @@ html.dark .el-card {
 
   @media (width <= 1180px) {
     --el-pagination-button-width: 28px !important;
+  }
+
+  @media (width <= 768px) {
+    --el-pagination-button-width: 44px !important;
   }
 
   .el-select--default .el-select__wrapper {
@@ -165,6 +161,16 @@ html.dark .el-card {
 .el-dialog {
   overflow: hidden;
   border-radius: var(--fa-radius-overlay) !important;
+}
+
+.el-dialog:not(.is-fullscreen) {
+  max-width: calc(100vw - 32px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .el-menu.el-menu--inline {
+    transition: none !important;
+  }
 }
 
 .el-dialog__header {
@@ -613,7 +619,6 @@ html.dark .el-card {
 }
 
 .el-button--primary {
-  background-image: linear-gradient(180deg, color-mix(in srgb, #fff 14%, transparent), transparent);
   border-color: var(--theme-color) !important;
   box-shadow: none !important;
 }
@@ -632,6 +637,31 @@ html.dark .el-card {
 
   &:hover {
     border-color: color-mix(in srgb, var(--theme-color) 28%, var(--fa-color-border)) !important;
+  }
+}
+
+@media (width <= 768px) {
+  :root {
+    --fa-control-height: 44px;
+  }
+
+  .el-button:not(.is-text, .is-link),
+  .el-input__wrapper,
+  .el-select__wrapper {
+    min-height: 44px;
+  }
+
+  .el-button.is-circle {
+    min-width: 44px;
+  }
+
+  .el-message-box {
+    max-width: calc(100vw - 32px);
+  }
+
+  .el-drawer.rtl,
+  .el-drawer.ltr {
+    max-width: 100vw;
   }
 }
 

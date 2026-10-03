@@ -43,6 +43,16 @@
 
 // 尊重 reduced-motion：关闭入场与 shimmer 动效
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
   .fa-rise,
   .fa-skeleton {
     animation: none !important;

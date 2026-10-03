@@ -22,11 +22,17 @@
             <FaIconButton
               class="core-overlay-icon-btn"
               :icon="fullscreen ? 'ri:fullscreen-exit-line' : 'ri:fullscreen-fill'"
+              :label="fullscreen ? '还原对话框' : '全屏对话框'"
               @click="fullscreen = !fullscreen"
             />
           </ElTooltip>
           <ElTooltip content="关闭" placement="top">
-            <FaIconButton class="core-overlay-icon-btn" icon="ri:close-line" @click="close" />
+            <FaIconButton
+              class="core-overlay-icon-btn"
+              icon="ri:close-line"
+              label="关闭对话框"
+              @click="close"
+            />
           </ElTooltip>
         </div>
       </div>

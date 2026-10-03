@@ -42,6 +42,7 @@ defineProps<Props>();
 
   &__title-row {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     align-items: center;
   }
@@ -58,15 +59,17 @@ defineProps<Props>();
   &__description {
     margin: 7px 0 0;
     font-size: 13px;
-    line-height: 1.55;
+    line-height: 1.7;
     color: var(--fa-color-text-muted, var(--el-text-color-secondary));
   }
 
   &__actions {
     display: flex;
     flex-shrink: 0;
+    flex-wrap: wrap;
     gap: 8px;
     align-items: center;
+    max-width: 100%;
     margin-left: 16px;
   }
 }

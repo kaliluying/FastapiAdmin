@@ -1,7 +1,10 @@
 <!-- AI 记忆管理：对 user_preference / fact / work_rule 进行增删改查 -->
 <template>
-  <div class="fa-full-height">
-    <FaAiPageHeader title="记忆管理" />
+  <div class="fa-full-height memory-page">
+    <FaAiPageHeader
+      title="记忆管理"
+      description="管理回答参考的用户偏好、事实和工作规则，决定哪些记忆继续生效。"
+    />
 
     <FaSearchBar
       v-show="showSearchBar"
@@ -20,7 +23,7 @@
     />
 
     <ElCard
-      shadow="hover"
+      shadow="never"
       class="fa-table-card"
       :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
     >
@@ -43,6 +46,15 @@
         </template>
       </FaTableHeader>
 
+      <FaAsyncState
+        v-if="loadError"
+        state="error"
+        title="记忆列表加载失败"
+        description="已保留当前列表和筛选，请重试。"
+      >
+        <template #action><ElButton :loading="loading" @click="loadData">重试</ElButton></template>
+      </FaAsyncState>
+
       <FaTable
         ref="faTableRef"
         row-key="id"
@@ -50,6 +62,7 @@
         :data="data"
         :columns="columns"
         :pagination="pagination"
+        empty-text="没有匹配的记忆，可调整筛选；需要时按权限添加偏好或规则"
         @selection-change="onTableSelectionChange"
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handleCurrentChange"
@@ -63,6 +76,7 @@
           <ElSwitch
             :model-value="row.is_active"
             size="small"
+            :aria-label="`启用记忆：${row.key}`"
             @change="(val: string | number | boolean) => handleToggleActive(row, Boolean(val))"
           />
         </template>
@@ -76,22 +90,28 @@
     <FaDialog
       v-model="dialogVisible.visible"
       :title="dialogVisible.title"
-      width="600px"
+      width="min(92vw, 600px)"
       :form-mode="dialogVisible.type"
       :confirm-loading="submitLoading"
       @confirm="handleDialogConfirm"
       @closed="handleDialogClosed"
     >
-      <ElForm ref="formRef" :model="formData" :rules="formRules" label-width="80px">
+      <ElForm
+        ref="formRef"
+        :model="formData"
+        :rules="formRules"
+        label-width="80px"
+        :label-position="isNarrowViewport ? 'top' : 'right'"
+      >
         <ElFormItem label="记忆类型" prop="memory_type">
           <ElSelect
             v-model="formData.memory_type"
             :disabled="dialogVisible.type === 'update'"
             style="width: 100%"
           >
-            <ElOption label="用户偏好 (user_preference)" value="user_preference" />
-            <ElOption label="用户事实 (fact)" value="fact" />
-            <ElOption label="工作规则 (work_rule)" value="work_rule" />
+            <ElOption label="用户偏好" value="user_preference" />
+            <ElOption label="用户事实" value="fact" />
+            <ElOption label="工作规则" value="work_rule" />
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="标签" prop="key">
@@ -116,7 +136,7 @@
         </ElFormItem>
         <ElFormItem label="优先级" prop="priority">
           <ElInputNumber v-model="formData.priority" :min="0" :max="100" />
-          <span class="form-tip">越高越优先注入</span>
+          <span class="form-tip">数值越高，回答时越优先参考</span>
         </ElFormItem>
         <ElFormItem label="启用" prop="is_active">
           <ElSwitch v-model="formData.is_active" />
@@ -128,6 +148,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from "vue";
+import { useMediaQuery } from "@vueuse/core";
+import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from "element-plus";
 import {
@@ -175,6 +197,8 @@ const memoryTypeTag = (type: string): "primary" | "success" | "info" | "warning"
 
 // ── 表格 ──
 const loading = ref(false);
+const loadError = ref(false);
+const isNarrowViewport = useMediaQuery("(max-width: 640px)");
 const data = ref<AiMemoryItem[]>([]);
 const selectedIds = ref<number[]>([]);
 const batchDeleting = ref(false);
@@ -220,6 +244,7 @@ const pagination = reactive({
 // ── 数据加载 ──
 async function loadData() {
   loading.value = true;
+  loadError.value = false;
   try {
     const res = await AiMemoryAPI.list({
       page_no: pagination.current,
@@ -230,6 +255,8 @@ async function loadData() {
     const body = res.data.data;
     data.value = body.items || [];
     pagination.total = body.total || 0;
+  } catch {
+    loadError.value = true;
   } finally {
     loading.value = false;
   }

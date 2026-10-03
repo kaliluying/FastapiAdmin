@@ -7,6 +7,7 @@
 
 /* 登录页根节点：语义化画布背景色 */
 .login-page-root {
+  height: 100dvh;
   background-color: var(--fa-color-canvas);
 }
 
@@ -79,7 +80,7 @@
   padding-bottom: 1.5rem;
 
   /* 盖过 Tailwind overflow-y-auto：仅卡片内滚动，外层不出滚动条 */
-  overflow: hidden;
+  overflow: visible;
 }
 
 .login-page-panel__scroll--centered .login-panel-align-row {
@@ -87,21 +88,18 @@
   justify-content: center;
   width: 100%;
   min-height: 0;
-  max-height: 100%;
 }
 
 /* 悬浮卡片：玻璃拟态，圆角透明 */
 .login-auth-split--center .auth-right-wrap {
-  width: min(480px, calc(100vw - 2rem)) !important;
-  max-width: min(480px, calc(100vw - 2rem));
+  width: min(480px, 100%) !important;
+  max-width: 100%;
   height: auto;
-  max-height: calc(100dvh - 8rem);
   padding: 1.5rem;
-  overflow: hidden auto;
-  background: var(--default-box-color);
-  border: 1px solid var(--fa-card-border);
-  border-radius: 12px;
-  box-shadow: 0 18px 48px rgb(24 35 45 / 10%);
+  background: var(--fa-color-surface);
+  border: 1px solid var(--fa-color-border);
+  border-radius: var(--fa-radius-panel);
+  box-shadow: var(--fa-panel-shadow);
 }
 
 .login-auth-split--center .auth-right-wrap .form {
@@ -129,24 +127,6 @@ html.dark .login-page-footer--floating-layout {
 }
 
 /* 居中模式 footer 单行展示 */
-.login-auth-split--center .login-page-footer--floating-layout {
-  .login-footer-text {
-    white-space: nowrap;
-  }
-
-  .login-footer-row {
-    display: inline;
-  }
-
-  .login-footer-row + .login-footer-row {
-    margin-top: 0;
-  }
-
-  .login-footer-sep-center {
-    display: inline;
-  }
-}
-
 @media only screen and (width <= 1180px) {
   .login-auth-split {
     flex-direction: column !important;
@@ -165,7 +145,7 @@ html.dark .login-page-footer--floating-layout {
   }
 
   .login-page-panel__main {
-    padding-top: 1.25rem !important;
+    padding-top: 6.25rem !important;
   }
 
   .login-panel-align-row {
@@ -176,9 +156,8 @@ html.dark .login-page-footer--floating-layout {
 
   /* 窄屏横排切竖排：恢复插画；居中模式本身无插画，不受影响 */
   .login-auth-split--center .auth-right-wrap {
-    width: min(420px, calc(100vw - 1.5rem)) !important;
-    max-width: min(420px, calc(100vw - 1.5rem));
-    max-height: calc(100dvh - 6rem);
+    width: min(420px, 100%) !important;
+    max-width: 100%;
   }
 }
 
@@ -186,23 +165,18 @@ html.dark .login-page-footer--floating-layout {
 .auth-right-wrap {
   position: relative;
   flex-shrink: 0;
-  width: 440px;
+  width: min(440px, 100%);
   height: auto;
-  max-height: calc(100dvh - 9rem);
   padding: 2rem;
-  overflow: hidden auto;
-  background: var(--el-bg-color);
-  border: 1px solid var(--fa-card-border);
-  border-radius: 12px;
-  box-shadow: 0 18px 48px rgb(24 35 45 / 9%);
-  animation: slideInRight 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  background: var(--fa-color-surface);
+  border: 1px solid var(--fa-color-border);
+  border-radius: var(--fa-radius-panel);
+  box-shadow: var(--fa-panel-shadow);
 
   @media (width <= 640px) {
     width: 100%;
     height: auto;
-    max-height: calc(100vh - 10rem);
-    padding-right: 1.75rem;
-    padding-left: 1.75rem;
+    padding: 1.5rem 1.25rem;
   }
 
   @media (width <= 768px) {
@@ -227,10 +201,6 @@ html.dark .login-page-footer--floating-layout {
       font-size: 1.875rem;
       line-height: 2.25rem;
     }
-
-    @media (width <= 640px) {
-      padding-top: 2.5rem;
-    }
   }
 
   .sub-title {
@@ -249,18 +219,6 @@ html.dark .auth-right-wrap {
   background: var(--el-bg-color);
   border-color: rgb(255 255 255 / 9%);
   box-shadow: 0 1px 2px rgb(0 0 0 / 22%);
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
 }
 
 .login-page-panel {
@@ -330,7 +288,44 @@ html.dark .login-page-panel {
 }
 
 .login-submit-btn:hover {
-  transform: translateY(-1px);
+  filter: brightness(0.98);
+}
+
+.login-page-root button:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 3px;
+}
+
+.auth-feedback {
+  padding: 12px 14px;
+  margin: 16px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--fa-color-text);
+  background: var(--fa-color-surface-raised);
+  border: 1px solid var(--fa-color-border);
+  border-left: 3px solid var(--fa-color-danger);
+  border-radius: var(--fa-radius-control);
+}
+
+.auth-feedback p {
+  margin: 0 0 4px;
+}
+
+.login-footer-text {
+  padding: 0 20px;
+  margin: 0;
+  font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-right-wrap,
+  .login-submit-btn,
+  .login-page-form :deep(.el-input__wrapper),
+  .login-page-root button {
+    transition: none;
+    animation: none;
+  }
 }
 
 .login-secondary-actions .login-secondary-btn {

@@ -1,9 +1,21 @@
 <!-- 角色管理：Art + useTable；操作列最多 3 个外露 +「更多」 -->
 <template>
-  <div class="fa-full-height">
-    <FaPageHeader title="角色管理" />
+  <div class="fa-full-height management-page">
+    <FaPageHeader title="角色管理" description="维护角色与授权范围，让每位用户拥有合适的操作权限。">
+      <template #actions>
+        <ElButton
+          :aria-expanded="showSearchBar"
+          aria-controls="role-filters"
+          @click="showSearchBar = !showSearchBar"
+        >
+          {{ showSearchBar ? "收起筛选" : "展开筛选" }}
+        </ElButton>
+        <ElButton :loading="loading" @click="refreshData">刷新列表</ElButton>
+      </template>
+    </FaPageHeader>
     <div class="fa-management-page">
       <FaSearchBar
+        id="role-filters"
         v-show="showSearchBar"
         ref="searchBarRef"
         v-model="searchForm"
@@ -21,15 +33,18 @@
       />
 
       <ElCard
-        shadow="hover"
+        shadow="never"
         class="fa-table-card"
         :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
       >
+        <div class="management-list-heading">
+          <h2>角色列表</h2>
+          <span role="status">已选择 {{ selectedIds.length }} 个角色</span>
+        </div>
         <FaTableHeader
           v-model:columns="columnChecks"
-          v-model:showSearchBar="showSearchBar"
+          layout="size,fullscreen,columns,rowDrag,settings"
           :loading="loading"
-          @refresh="refreshData"
         >
           <template #left>
             <FaTableHeaderLeft
@@ -54,8 +69,10 @@
           :loading="loading"
           :error="error"
           :data="data"
-          :columns="columns"
+          :columns="displayColumns"
           :pagination="pagination"
+          :scrollbar-tabindex="0"
+          empty-text="暂无匹配角色，请调整筛选条件"
           @retry="refreshData"
           @selection-change="onTableSelectionChange"
           @pagination:size-change="handleSizeChange"
@@ -66,18 +83,19 @@
       <FaDialog
         v-model="dialogVisible.visible"
         :title="dialogVisible.title"
-        width="640px"
+        width="min(640px, calc(100vw - 24px))"
         dialog-class="crud-embed-dialog"
         modal-class="crud-embed-dialog"
         :form-mode="dialogVisible.type"
         :confirm-loading="submitLoading"
         :form-data="formData"
+        :confirm-text="dialogVisible.type === 'detail' ? '关闭' : '保存角色'"
         @cancel="handleCloseDialog"
         @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
       >
         <template v-if="dialogVisible.type === 'detail'">
           <FaDescriptions
-            :column="4"
+            :column="isCompact ? 2 : 4"
             :data="detailFormData"
             :items="roleDetailItems"
             max-height="75vh"
@@ -99,12 +117,12 @@
             :rules="rules"
             label-suffix=":"
             :label-width="100"
-            label-position="right"
+            :label-position="isCompact ? 'top' : 'right'"
             :span="24"
             :gutter="16"
             :show-reset="false"
             :show-submit="false"
-            class="crud-dialog-art-form"
+            class="crud-dialog-art-form management-form"
           >
             <template #status>
               <ElRadioGroup v-model="formData.status">
@@ -137,6 +155,7 @@
 
 <script setup lang="ts">
 import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
+import { useWindowSize } from "@vueuse/core";
 import { useTable } from "@/hooks/core/useTable";
 import { useImportExport } from "@/hooks/core/useImportExport";
 import { useCrudDialog } from "@/hooks/core/useCrudDialog";
@@ -167,6 +186,8 @@ defineOptions({
 });
 
 const { hasAuth } = useAuth();
+const { width } = useWindowSize();
+const isCompact = computed(() => width.value <= 640);
 
 type RoleSearchForm = {
   name?: string;
@@ -546,6 +567,12 @@ const {
   },
 });
 
+const displayColumns = computed(() =>
+  isCompact.value
+    ? columns.value.map((column: ColumnOption<RoleTable>) => ({ ...column, fixed: undefined }))
+    : columns.value
+);
+
 const roleCrudCols = computed(() =>
   columns.value.map((c: ColumnOption<RoleTable>) => {
     const t = (c as { type?: string }).type;
@@ -629,3 +656,66 @@ async function handleMoreClick(status: number) {
   }
 }
 </script>
+
+<style scoped lang="scss">
+.management-page {
+  min-width: 0;
+
+  :deep(.data-table__toolbar--left .el-space) {
+    flex-wrap: wrap;
+  }
+
+  :deep(.data-table__toolbar--left .el-button--primary.is-plain) {
+    --el-button-text-color: var(--el-color-white);
+    --el-button-bg-color: var(--el-color-primary);
+    --el-button-hover-text-color: var(--el-color-white);
+    --el-button-hover-bg-color: var(--el-color-primary-dark-2);
+  }
+
+  :deep(.data-table__toolbar--left .el-button--success),
+  :deep(.data-table__toolbar--left .el-button--warning) {
+    --el-button-text-color: var(--fa-color-text);
+    --el-button-bg-color: var(--fa-color-surface);
+    --el-button-border-color: var(--fa-color-border);
+  }
+
+  :deep(button:focus-visible) {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.management-list-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fa-space-2);
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--fa-space-4);
+
+  h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--fa-color-text);
+  }
+
+  span {
+    font-size: 13px;
+    color: var(--fa-color-text-muted);
+  }
+}
+
+@media (width <= 640px) {
+  .management-page {
+    :deep(.el-button + .el-button) {
+      margin-left: 0;
+    }
+  }
+
+  .management-form :deep(.el-radio),
+  .management-form :deep(.el-checkbox) {
+    min-height: 44px;
+  }
+}
+</style>

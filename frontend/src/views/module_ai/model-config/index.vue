@@ -1,6 +1,9 @@
 <template>
   <div class="model-config-page">
-    <FaAiPageHeader title="模型配置" />
+    <FaAiPageHeader
+      title="模型配置"
+      description="配置对话模型的连接方式，并查看当前向量运行配置。"
+    />
 
     <ElCard shadow="never">
       <template #header>
@@ -11,14 +14,40 @@
           </div>
           <div class="header-actions">
             <ElButton :icon="Refresh" :loading="loading" @click="loadConfig">刷新</ElButton>
-            <ElButton v-auth="'module_ai:model_config:update'" type="primary" :icon="Check" :loading="saving" @click="saveConfig">
+            <ElButton
+              v-auth="'module_ai:model_config:update'"
+              type="primary"
+              :icon="Check"
+              :loading="saving"
+              :disabled="loading || loadError"
+              @click="saveConfig"
+            >
               保存
             </ElButton>
           </div>
         </div>
       </template>
 
-      <ElForm ref="formRef" v-loading="loading" :model="form" :rules="rules" class="model-form" label-width="104px">
+      <FaAsyncState
+        v-if="loadError"
+        state="error"
+        title="模型配置加载失败"
+        description="当前输入已保留，请重新加载后再保存。"
+      >
+        <template #action
+          ><ElButton :loading="loading" @click="loadConfig">重试</ElButton></template
+        >
+      </FaAsyncState>
+
+      <ElForm
+        ref="formRef"
+        v-loading="loading"
+        :model="form"
+        :rules="rules"
+        class="model-form"
+        label-width="104px"
+        :label-position="isNarrowViewport ? 'top' : 'right'"
+      >
         <ElFormItem label="接口协议" prop="chat_protocol">
           <ElSelect v-model="form.chat_protocol" :disabled="!canEdit" class="form-control">
             <ElOption label="OpenAI · Chat Completions" value="openai" />
@@ -40,27 +69,47 @@
               class="model-picker-input"
               @input="showAllModels = false"
             />
-            <ElButton :icon="Refresh" :loading="fetchingModels" :disabled="!canEdit" @click="fetchModels">获取模型</ElButton>
+            <ElButton
+              :icon="Refresh"
+              :loading="fetchingModels"
+              :disabled="!canEdit"
+              @click="fetchModels"
+              >获取模型</ElButton
+            >
           </div>
         </ElFormItem>
         <ElFormItem label="API Key" prop="openai_api_key">
-          <ElInput v-model="form.openai_api_key" :disabled="!canEdit" type="password" show-password autocomplete="new-password" />
-          <ElTag class="key-status" :type="config?.openai_api_key_configured ? 'success' : 'danger'" effect="plain">
+          <ElInput
+            v-model="form.openai_api_key"
+            :disabled="!canEdit"
+            type="password"
+            show-password
+            autocomplete="new-password"
+          />
+          <ElTag
+            class="key-status"
+            :type="config?.openai_api_key_configured ? 'success' : 'danger'"
+            effect="plain"
+          >
             {{ config?.openai_api_key_configured ? "已配置" : "未配置" }}
           </ElTag>
         </ElFormItem>
       </ElForm>
 
       <ElDivider content-position="left">向量运行状态</ElDivider>
-      <ElDescriptions :column="2" border>
+      <ElDescriptions :column="isNarrowViewport ? 1 : 2" border>
         <ElDescriptionsItem label="向量来源">
           <ElTag :type="config?.embedding_provider === 'local' ? 'success' : 'warning'">
             {{ config?.embedding_provider || "-" }}
           </ElTag>
         </ElDescriptionsItem>
         <ElDescriptionsItem label="向量模型">{{ embeddingModelLabel }}</ElDescriptionsItem>
-        <ElDescriptionsItem label="Chroma 持久化目录">{{ config?.chroma_persist_dir || "-" }}</ElDescriptionsItem>
-        <ElDescriptionsItem label="Chroma 集合">{{ config?.chroma_collection_name || "-" }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="Chroma 持久化目录">{{
+          config?.chroma_persist_dir || "-"
+        }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="Chroma 集合">{{
+          config?.chroma_collection_name || "-"
+        }}</ElDescriptionsItem>
       </ElDescriptions>
     </ElCard>
   </div>
@@ -68,8 +117,10 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, reactive, ref, watch } from "vue";
+import { useMediaQuery } from "@vueuse/core";
 import { ElMessage, type FormInstance, type FormRules } from "element-plus";
 import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
+import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 import { Check, Refresh } from "@element-plus/icons-vue";
 import { useAuth } from "@/hooks/core/useAuth";
 import AiChatAPI, { type AiModelConfig, type AiModelConfigUpdate } from "@/api/module_ai/chat";
@@ -77,6 +128,8 @@ import AiChatAPI, { type AiModelConfig, type AiModelConfigUpdate } from "@/api/m
 defineOptions({ name: "AiModelConfig" });
 
 const loading = ref(false);
+const loadError = ref(false);
+const isNarrowViewport = useMediaQuery("(max-width: 640px)");
 const saving = ref(false);
 const fetchingModels = ref(false);
 const showAllModels = ref(false);
@@ -104,11 +157,14 @@ const embeddingModelLabel = computed(() => {
     : config.value.openai_embedding_model || "-";
 });
 
-const protocolLabel = computed(() => ({
-  openai: "OpenAI · Chat Completions",
-  openai_responses: "OpenAI · Responses",
-  anthropic: "Anthropic Claude",
-})[form.chat_protocol]);
+const protocolLabel = computed(
+  () =>
+    ({
+      openai: "OpenAI · Chat Completions",
+      openai_responses: "OpenAI · Responses",
+      anthropic: "Anthropic Claude",
+    })[form.chat_protocol]
+);
 
 const suggestModels = (query: string, callback: (items: { value: string }[]) => void) => {
   if (showAllModels.value) {
@@ -119,10 +175,13 @@ const suggestModels = (query: string, callback: (items: { value: string }[]) => 
   callback(modelOptions.value.filter((item) => item.value.toLowerCase().includes(normalized)));
 };
 
-watch(() => [form.chat_protocol, form.openai_base_url, form.openai_api_key], () => {
-  modelOptions.value = [];
-  showAllModels.value = false;
-});
+watch(
+  () => [form.chat_protocol, form.openai_base_url, form.openai_api_key],
+  () => {
+    modelOptions.value = [];
+    showAllModels.value = false;
+  }
+);
 
 const fetchModels = async () => {
   fetchingModels.value = true;
@@ -133,7 +192,8 @@ const fetchModels = async () => {
       openai_base_url: form.openai_base_url,
       ...(form.openai_api_key?.trim() ? { openai_api_key: form.openai_api_key.trim() } : {}),
     });
-    if (selection !== [form.chat_protocol, form.openai_base_url, form.openai_api_key].join("\n")) return;
+    if (selection !== [form.chat_protocol, form.openai_base_url, form.openai_api_key].join("\n"))
+      return;
     modelOptions.value = (res.data.data || []).map((value) => ({ value }));
     showAllModels.value = true;
     await nextTick();
@@ -155,9 +215,12 @@ const applyConfig = (value?: AiModelConfig) => {
 
 const loadConfig = async () => {
   loading.value = true;
+  loadError.value = false;
   try {
     const res = await AiChatAPI.getModelConfig();
     applyConfig(res.data?.data);
+  } catch {
+    loadError.value = true;
   } finally {
     loading.value = false;
   }
@@ -186,7 +249,11 @@ onMounted(loadConfig);
 
 <style scoped>
 .model-config-page {
-  height: 100%;
+  min-width: 0;
+}
+
+.model-config-page :deep(.el-descriptions__cell) {
+  overflow-wrap: anywhere;
 }
 
 .card-header {
@@ -199,6 +266,7 @@ onMounted(loadConfig);
 .header-title,
 .header-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
 }
@@ -215,6 +283,7 @@ onMounted(loadConfig);
   display: flex;
   gap: 8px;
   width: 100%;
+  min-width: 0;
 }
 
 .model-picker-input {

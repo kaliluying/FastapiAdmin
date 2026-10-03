@@ -9,20 +9,17 @@
 
       <div class="welcome-heading">
         <span>知识助手</span>
-        <h1>从知识库开始提问</h1>
+        <h2>从知识库开始提问</h2>
         <p>输入问题并选择知识库；回答中的引用会标明所依据的内容。</p>
       </div>
 
       <div class="example-prompts">
-        <div
+        <button
           v-for="card in promptCards"
           :key="card.prompt"
           class="prompt-card"
-          role="button"
-          tabindex="0"
+          type="button"
           @click="handlePromptClick(card.prompt)"
-          @keydown.enter.prevent="handlePromptClick(card.prompt)"
-          @keydown.space.prevent="handlePromptClick(card.prompt)"
         >
           <div class="prompt-card__icon">
             <FaSvgIcon :icon="card.icon" />
@@ -31,7 +28,7 @@
             <h4>{{ card.title }}</h4>
             <p>{{ card.body }}</p>
           </div>
-        </div>
+        </button>
       </div>
     </div>
   </div>
@@ -84,9 +81,8 @@ const handlePromptClick = (prompt: string) => {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  height: 100%;
-  padding: 36px 24px 24px;
-  text-align: center;
+  padding: 28px 24px;
+  text-align: left;
   background: var(--fa-color-surface);
 }
 
@@ -97,17 +93,17 @@ const handlePromptClick = (prompt: string) => {
 .ai-mark {
   display: inline-grid;
   place-items: center;
-  width: 54px;
-  height: 54px;
-  margin-bottom: 18px;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 14px;
 }
 
 .ai-mark__core {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 54px;
-  height: 54px;
+  width: 40px;
+  height: 40px;
   color: var(--theme-color);
   background: var(--fa-color-canvas);
   border: 1px solid var(--fa-color-border);
@@ -122,9 +118,9 @@ const handlePromptClick = (prompt: string) => {
   color: var(--theme-color);
 }
 
-.welcome-heading h1 {
+.welcome-heading h2 {
   margin: 0;
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 680;
   line-height: 1.2;
   color: var(--el-text-color-primary);
@@ -132,7 +128,7 @@ const handlePromptClick = (prompt: string) => {
 
 .welcome-heading p {
   max-width: 620px;
-  margin: 6px auto 0;
+  margin: 8px 0 0;
   font-size: 14px;
   line-height: 1.55;
   color: var(--el-text-color-secondary);
@@ -142,7 +138,7 @@ const handlePromptClick = (prompt: string) => {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
-  margin-top: 28px;
+  margin-top: 20px;
 }
 
 .prompt-card {
@@ -154,16 +150,14 @@ const handlePromptClick = (prompt: string) => {
   min-height: 76px;
   padding: 14px 16px;
   overflow: hidden;
+  font: inherit;
   text-align: left;
   cursor: pointer;
-  background: var(--default-box-color);
+  background: var(--fa-color-surface);
   border: 1px solid var(--fa-card-border);
   border-radius: 10px;
   box-shadow: none;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
+  transition: border-color var(--fa-motion-control);
 }
 
 .prompt-card:hover {
@@ -204,15 +198,27 @@ const handlePromptClick = (prompt: string) => {
 
 @media (width <= 720px) {
   .welcome-screen {
-    padding: 24px 16px;
+    padding: 18px 14px;
   }
 
-  .welcome-heading h1 {
-    font-size: 28px;
+  .ai-mark,
+  .welcome-heading > span {
+    display: none;
   }
 
-  .example-prompts {
-    grid-template-columns: 1fr;
+  .welcome-heading h2 {
+    font-size: 21px;
+  }
+
+  .prompt-card {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    min-height: 64px;
+    padding: 12px;
+  }
+
+  .prompt-card__icon {
+    display: none;
   }
 }
 </style>

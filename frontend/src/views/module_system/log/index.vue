@@ -1,11 +1,23 @@
 <!-- 日志管理：登录日志 + 操作日志 -->
 <template>
-  <div class="fa-full-height">
-    <FaPageHeader title="操作日志" />
+  <div class="fa-full-height management-page">
+    <FaPageHeader title="日志管理" description="查看登录与操作记录，按时间或目标筛选并追溯异常。">
+      <template #actions>
+        <ElButton
+          :aria-expanded="showActiveFilters"
+          :aria-controls="activeTab === 'operation' ? 'operation-filters' : 'login-filters'"
+          @click="showActiveFilters = !showActiveFilters"
+        >
+          {{ showActiveFilters ? "收起筛选" : "展开筛选" }}
+        </ElButton>
+        <ElButton :loading="activeLoading" @click="refreshActiveList">刷新列表</ElButton>
+      </template>
+    </FaPageHeader>
     <div class="fa-management-page">
-      <ElTabs v-model="activeTab" type="card">
+      <ElTabs v-model="activeTab" class="management-log-tabs">
         <ElTabPane label="操作日志" name="operation">
           <FaSearchBar
+            id="operation-filters"
             v-show="opShowSearchBar"
             ref="opSearchBarRef"
             v-model="opSearchForm"
@@ -23,15 +35,18 @@
           />
 
           <ElCard
-            shadow="hover"
+            shadow="never"
             class="fa-table-card"
             :style="{ 'margin-top': opShowSearchBar ? '12px' : '0' }"
           >
+            <div class="management-list-heading">
+              <h2>操作记录</h2>
+              <span role="status">已选择 {{ opSelectedIds.length }} 条记录</span>
+            </div>
             <FaTableHeader
               v-model:columns="opColumnChecks"
-              v-model:showSearchBar="opShowSearchBar"
+              layout="size,fullscreen,columns,rowDrag,settings"
               :loading="opLoading"
-              @refresh="opRefreshData"
             >
               <template #left>
                 <FaTableHeaderLeft
@@ -48,9 +63,13 @@
             <FaTable
               ref="opTableRef"
               :loading="opLoading"
+              :error="opError"
               :data="opData"
-              :columns="opColumns"
+              :columns="opDisplayColumns"
               :pagination="opPagination"
+              :scrollbar-tabindex="0"
+              empty-text="暂无匹配操作记录，请调整筛选条件"
+              @retry="opRefreshData"
               @selection-change="onOpTableSelectionChange"
               @pagination:size-change="opHandleSizeChange"
               @pagination:current-change="opHandleCurrentChange"
@@ -60,17 +79,18 @@
           <FaDialog
             v-model="opDialogVisible.visible"
             :title="opDialogVisible.title"
-            width="960px"
+            width="min(960px, calc(100vw - 24px))"
             dialog-class="crud-embed-dialog"
             modal-class="crud-embed-dialog"
             form-mode="detail"
+            confirm-text="关闭"
             @confirm="handleOpCloseDialog"
           >
             <FaDescriptions
-              :column="8"
+              :column="isCompact ? 2 : 8"
               :data="opFormData"
               :items="opDetailItems"
-              label-width="200px"
+              :label-width="isCompact ? '88px' : '200px'"
               max-height="75vh"
             >
               <template #request_method="{ row }">
@@ -109,6 +129,7 @@
 
         <ElTabPane label="登录日志" name="login">
           <FaSearchBar
+            id="login-filters"
             v-show="loginShowSearchBar"
             ref="loginSearchBarRef"
             v-model="loginSearchForm"
@@ -126,15 +147,18 @@
           />
 
           <ElCard
-            shadow="hover"
+            shadow="never"
             class="fa-table-card"
             :style="{ 'margin-top': loginShowSearchBar ? '12px' : '0' }"
           >
+            <div class="management-list-heading">
+              <h2>登录记录</h2>
+              <span role="status">已选择 {{ loginSelectedIds.length }} 条记录</span>
+            </div>
             <FaTableHeader
               v-model:columns="loginColumnChecks"
-              v-model:showSearchBar="loginShowSearchBar"
+              layout="size,fullscreen,columns,rowDrag,settings"
               :loading="loginLoading"
-              @refresh="loginRefreshData"
             >
               <template #left>
                 <FaTableHeaderLeft
@@ -149,9 +173,13 @@
             <FaTable
               ref="loginTableRef"
               :loading="loginLoading"
+              :error="loginError"
               :data="loginData"
-              :columns="loginColumns"
+              :columns="loginDisplayColumns"
               :pagination="loginPagination"
+              :scrollbar-tabindex="0"
+              empty-text="暂无匹配登录记录，请调整筛选条件"
+              @retry="loginRefreshData"
               @selection-change="onLoginTableSelectionChange"
               @pagination:size-change="loginHandleSizeChange"
               @pagination:current-change="loginHandleCurrentChange"
@@ -161,17 +189,18 @@
           <FaDialog
             v-model="loginDialogVisible.visible"
             :title="loginDialogVisible.title"
-            width="640px"
+            width="min(640px, calc(100vw - 24px))"
             dialog-class="crud-embed-dialog"
             modal-class="crud-embed-dialog"
             form-mode="detail"
+            confirm-text="关闭"
             @confirm="handleLoginCloseDialog"
           >
             <FaDescriptions
               :column="2"
               :data="loginFormData"
               :items="loginDetailItems"
-              label-width="120px"
+              :label-width="isCompact ? '88px' : '120px'"
               max-height="75vh"
             >
               <template #status="{ row }">
@@ -190,6 +219,7 @@
 <script setup lang="ts">
 import FaPageHeader from "@/components/layouts/fa-page-header/index.vue";
 import { h } from "vue";
+import { useWindowSize } from "@vueuse/core";
 import { useTable } from "@/hooks/core/useTable";
 import { useImportExport } from "@/hooks/core/useImportExport";
 import { useCrudDialog } from "@/hooks/core/useCrudDialog";
@@ -222,6 +252,8 @@ defineOptions({
 });
 
 const { hasAuth } = useAuth();
+const { width } = useWindowSize();
+const isCompact = computed(() => width.value <= 640);
 
 const activeTab = ref<"operation" | "login">("operation");
 
@@ -275,6 +307,7 @@ const {
   columnChecks: opColumnChecks,
   data: opData,
   loading: opLoading,
+  error: opError,
   pagination: opPagination,
   searchParams: opSearchParams,
   getData: opGetData,
@@ -528,6 +561,7 @@ const {
   columnChecks: loginColumnChecks,
   data: loginData,
   loading: loginLoading,
+  error: loginError,
   pagination: loginPagination,
   getData: loginGetData,
   replaceSearchParams: loginReplaceSearchParams,
@@ -697,6 +731,37 @@ function getStatusCodeType(code?: number): StatusType {
   return "danger";
 }
 
+const opDisplayColumns = computed(() =>
+  isCompact.value
+    ? opColumns.value.map((column: ColumnOption<OperationLogTable>) => ({
+        ...column,
+        fixed: undefined,
+      }))
+    : opColumns.value
+);
+const loginDisplayColumns = computed(() =>
+  isCompact.value
+    ? loginColumns.value.map((column: ColumnOption<LoginLogTable>) => ({
+        ...column,
+        fixed: undefined,
+      }))
+    : loginColumns.value
+);
+const activeLoading = computed(() =>
+  activeTab.value === "operation" ? opLoading.value : loginLoading.value
+);
+const showActiveFilters = computed({
+  get: () => (activeTab.value === "operation" ? opShowSearchBar.value : loginShowSearchBar.value),
+  set: (visible: boolean) => {
+    if (activeTab.value === "operation") opShowSearchBar.value = visible;
+    else loginShowSearchBar.value = visible;
+  },
+});
+
+function refreshActiveList() {
+  return activeTab.value === "operation" ? opRefreshData() : loginRefreshData();
+}
+
 function getMethodType(method?: string): StatusType {
   if (method === undefined) return "info";
   if (method === "GET") return "info";
@@ -708,6 +773,71 @@ function getMethodType(method?: string): StatusType {
 </script>
 
 <style scoped lang="scss">
+.management-page {
+  min-width: 0;
+
+  :deep(.data-table__toolbar--left .el-space) {
+    flex-wrap: wrap;
+  }
+
+  :deep(.data-table__toolbar--left .el-button--primary.is-plain) {
+    --el-button-text-color: var(--el-color-white);
+    --el-button-bg-color: var(--el-color-primary);
+    --el-button-hover-text-color: var(--el-color-white);
+    --el-button-hover-bg-color: var(--el-color-primary-dark-2);
+  }
+
+  :deep(.data-table__toolbar--left .el-button--success),
+  :deep(.data-table__toolbar--left .el-button--warning) {
+    --el-button-text-color: var(--fa-color-text);
+    --el-button-bg-color: var(--fa-color-surface);
+    --el-button-border-color: var(--fa-color-border);
+  }
+
+  :deep(button:focus-visible) {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.management-list-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fa-space-2);
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--fa-space-4);
+
+  h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--fa-color-text);
+  }
+
+  span {
+    font-size: 13px;
+    color: var(--fa-color-text-muted);
+  }
+}
+
+@media (width <= 640px) {
+  .management-page {
+    :deep(.el-button + .el-button) {
+      margin-left: 0;
+    }
+
+    :deep(.el-tabs__item) {
+      min-height: 44px;
+    }
+  }
+
+  .management-form :deep(.el-radio),
+  .management-form :deep(.el-checkbox) {
+    min-height: 44px;
+  }
+}
+
 :deep(.el-tabs) {
   display: flex;
   flex: 1;

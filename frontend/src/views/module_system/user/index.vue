@@ -1,9 +1,24 @@
 ﻿<!-- 用户管理 -->
 <template>
-  <div class="fa-full-height user-manage-page">
-    <FaPageHeader title="用户管理" />
+  <div class="fa-full-height user-manage-page management-page">
+    <FaPageHeader
+      title="用户管理"
+      description="管理账号资料、角色与启用状态。先筛选，再对目标用户操作。"
+    >
+      <template #actions>
+        <ElButton
+          :aria-expanded="showSearchBar"
+          aria-controls="user-filters"
+          @click="showSearchBar = !showSearchBar"
+        >
+          {{ showSearchBar ? "收起筛选" : "展开筛选" }}
+        </ElButton>
+        <ElButton :loading="loading" @click="refreshData">刷新列表</ElButton>
+      </template>
+    </FaPageHeader>
     <div class="fa-management-page">
       <FaSearchBar
+        id="user-filters"
         v-show="showSearchBar"
         ref="searchBarRef"
         v-model="searchForm"
@@ -21,15 +36,18 @@
       />
 
       <ElCard
-        shadow="hover"
+        shadow="never"
         class="fa-table-card"
         :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
       >
+        <div class="management-list-heading">
+          <h2>账号列表</h2>
+          <span role="status">已选择 {{ selectedIds.length }} 个用户</span>
+        </div>
         <FaTableHeader
           v-model:columns="columnChecks"
-          v-model:showSearchBar="showSearchBar"
+          layout="size,fullscreen,columns,rowDrag,settings"
           :loading="loading"
-          @refresh="refreshData"
         >
           <template #left>
             <FaTableHeaderLeft
@@ -58,8 +76,10 @@
           :loading="loading"
           :error="error"
           :data="data"
-          :columns="columns"
+          :columns="displayColumns"
           :pagination="pagination"
+          :scrollbar-tabindex="0"
+          empty-text="暂无匹配用户，请调整筛选条件"
           @retry="refreshData"
           @selection-change="onTableSelectionChange"
           @pagination:size-change="handleSizeChange"
@@ -74,6 +94,7 @@
         :form-mode="dialogVisible.type"
         :confirm-loading="submitLoading"
         :form-data="formData"
+        :confirm-text="dialogVisible.type === 'detail' ? '关闭' : '保存用户'"
         @cancel="handleCloseDialog"
         @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
       >
@@ -114,12 +135,12 @@
             :rules="rules"
             label-suffix=":"
             :label-width="100"
-            label-position="right"
+            :label-position="isCompact ? 'top' : 'right'"
             :span="24"
             :gutter="16"
             :show-reset="false"
             :show-submit="false"
-            class="crud-dialog-art-form"
+            class="crud-dialog-art-form management-form"
           >
             <template #role_ids>
               <ElSelect v-model="formData.role_ids" multiple placeholder="请选择角色">
@@ -179,6 +200,7 @@ defineOptions({
 });
 
 import { h } from "vue";
+import { useWindowSize } from "@vueuse/core";
 import { UserFilled } from "@element-plus/icons-vue";
 import { ElAvatar } from "element-plus";
 import { DeviceEnum } from "@/enums/settings/device.enum";
@@ -211,6 +233,8 @@ import { ElMessage, ElMessageBox } from "element-plus";
 const { hasAuth } = useAuth();
 const appStore = useAppStore();
 const userStore = useUserStore();
+const { width } = useWindowSize();
+const isCompact = computed(() => width.value <= 640);
 
 type UserSearchForm = {
   username?: string;
@@ -310,7 +334,9 @@ const importResultType = computed(() => {
 const createLoading = ref(false);
 const moreLoading = ref(false);
 
-const drawerSize = computed(() => (appStore.device === DeviceEnum.DESKTOP ? "450px" : "90%"));
+const drawerSize = computed(() =>
+  appStore.device === DeviceEnum.DESKTOP ? "min(450px, calc(100vw - 24px))" : "calc(100vw - 24px)"
+);
 const roleOptions = ref<Array<{ value: number; label: string; disabled?: boolean }>>();
 const { importVisible, exportVisible, openImport, openExport } = useImportExport();
 const detailFormData = ref<UserInfo>({});
@@ -583,6 +609,12 @@ const {
     ]),
   },
 });
+
+const displayColumns = computed(() =>
+  isCompact.value
+    ? columns.value.map((column: ColumnOption<UserInfo>) => ({ ...column, fixed: undefined }))
+    : columns.value
+);
 
 const userCrudCols = computed(() =>
   columns.value.map((c: ColumnOption<UserInfo>) => {
@@ -864,3 +896,66 @@ async function handleMoreClick(status: number) {
   }
 }
 </script>
+
+<style scoped lang="scss">
+.management-page {
+  min-width: 0;
+
+  :deep(.data-table__toolbar--left .el-space) {
+    flex-wrap: wrap;
+  }
+
+  :deep(.data-table__toolbar--left .el-button--primary.is-plain) {
+    --el-button-text-color: var(--el-color-white);
+    --el-button-bg-color: var(--el-color-primary);
+    --el-button-hover-text-color: var(--el-color-white);
+    --el-button-hover-bg-color: var(--el-color-primary-dark-2);
+  }
+
+  :deep(.data-table__toolbar--left .el-button--success),
+  :deep(.data-table__toolbar--left .el-button--warning) {
+    --el-button-text-color: var(--fa-color-text);
+    --el-button-bg-color: var(--fa-color-surface);
+    --el-button-border-color: var(--fa-color-border);
+  }
+
+  :deep(button:focus-visible) {
+    outline: 2px solid var(--el-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.management-list-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--fa-space-2);
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--fa-space-4);
+
+  h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--fa-color-text);
+  }
+
+  span {
+    font-size: 13px;
+    color: var(--fa-color-text-muted);
+  }
+}
+
+@media (width <= 640px) {
+  .management-page {
+    :deep(.el-button + .el-button) {
+      margin-left: 0;
+    }
+  }
+
+  .management-form :deep(.el-radio),
+  .management-form :deep(.el-checkbox) {
+    min-height: 44px;
+  }
+}
+</style>

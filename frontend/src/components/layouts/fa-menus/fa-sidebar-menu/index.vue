@@ -55,6 +55,7 @@
       <FaIconButton
         class="switch-btn size-10"
         icon="ri:arrow-left-right-fill"
+        label="切换导航显示方式"
         @click="toggleDualMenuMode"
       />
     </div>
@@ -75,7 +76,7 @@
           background: getMenuTheme.background,
         }"
       >
-        <div class="header-brand">
+        <button class="header-brand" type="button" aria-label="返回首页">
           <div class="header-brand__logo">
             <FaLogo v-if="!isDualMenu" class="logo" :src="sidebarLogoSrc" />
           </div>
@@ -91,13 +92,15 @@
             </p>
             <span class="header-brand__subtitle">管理工作台</span>
           </div>
-        </div>
+        </button>
         <!-- 主动折叠/展开按钮（仅在非双列菜单下显示） -->
         <button
           v-if="!isDualMenu"
           class="header-collapse-btn"
           :aria-label="menuOpen ? '收起侧边栏' : '展开侧边栏'"
           :title="menuOpen ? '收起侧边栏' : '展开侧边栏'"
+          :aria-expanded="menuOpen"
+          type="button"
           @click.stop="toggleMenuVisibility"
         >
           <FaSvgIcon :icon="menuOpen ? 'ri:menu-fold-3-line' : 'ri:menu-unfold-3-line'" />
@@ -105,7 +108,6 @@
       </div>
       <ElScrollbar :style="scrollbarStyle">
         <ElMenu
-          ref="elMenuRef"
           :class="'el-menu-' + getMenuTheme.theme"
           :collapse="!menuOpen"
           :default-active="routerPath"
@@ -119,7 +121,7 @@
         >
           <SidebarSubmenu
             :list="menuList"
-            :isMobile="isMobileMode"
+            :isMobile="isMobileScreen"
             :theme="getMenuTheme"
             @close="handleMenuClose"
           />
@@ -153,7 +155,7 @@ import { useSettingsStore, useMenuStore } from "@stores";
 import { MenuTypeEnum, MenuWidth } from "@/enums/appEnum";
 import { isIframe, handleMenuJump } from "@utils";
 import SidebarSubmenu from "./widgets/FaSidebarSubmenu.vue";
-import { useWindowSize, useTimeoutFn } from "@vueuse/core";
+import { useWindowSize, useTimeoutFn, onKeyStroke } from "@vueuse/core";
 import { navigateToHome as navigateToHomeRoute } from "@/router/homeNavigation";
 
 defineOptions({ name: "FaSidebarMenu" });
@@ -174,10 +176,6 @@ const sidebarTitle = computed(() => AppConfig.systemInfo.name);
 const { getMenuOpenWidth, menuType, dualMenuShowText, menuOpen, getMenuTheme, showAppLogo } =
   storeToRefs(settingStore);
 
-// ElMenu 组件引用
-const elMenuRef = ref();
-
-const isMobileMode = ref(false);
 const showMobileModal = ref(false);
 
 // 使用 VueUse 的窗口尺寸监听
@@ -263,8 +261,7 @@ const menuList = computed(() => {
   return sub;
 });
 
-/** 收集所有含子菜单的菜单项 index，用于强制全部展开（消除下拉折叠行为） */
-const allSubmenuIndexes = computed(() => {
+const defaultOpenedMenus = computed(() => {
   const indexes: string[] = [];
   const collect = (items: AppRouteRecord[]) => {
     items.forEach((item) => {
@@ -277,23 +274,6 @@ const allSubmenuIndexes = computed(() => {
   collect(menuList.value);
   return indexes;
 });
-
-/** 默认展开所有子菜单 */
-const defaultOpenedMenus = computed(() => allSubmenuIndexes.value);
-
-/** 展开模式下强制保持所有子菜单打开，禁止折叠 */
-watch(
-  [allSubmenuIndexes, menuOpen],
-  () => {
-    if (!menuOpen.value) return;
-    nextTick(() => {
-      allSubmenuIndexes.value.forEach((idx) => {
-        elMenuRef.value?.open(idx);
-      });
-    });
-  },
-  { immediate: true }
-);
 
 // 双列菜单收起时的滚动条样式
 const scrollbarStyle = computed(() => {
@@ -354,17 +334,6 @@ const navigateToHome = (): void => {
  */
 const toggleMenuVisibility = (): void => {
   settingStore.setMenuOpen(!menuOpen.value);
-
-  // 移动端模态框控制逻辑
-  if (isMobileScreen.value) {
-    if (!menuOpen.value) {
-      // 菜单即将打开，立即显示模态框
-      showMobileModal.value = true;
-    } else {
-      // 菜单即将关闭，延迟隐藏模态框确保动画完成
-      delayHideMobileModal();
-    }
-  }
 };
 
 /**
@@ -376,6 +345,8 @@ const handleMenuClose = (): void => {
     delayHideMobileModal();
   }
 };
+
+onKeyStroke("Escape", handleMenuClose);
 
 /**
  * 切换双列菜单模式
@@ -587,6 +558,16 @@ watch(menuOpen, (isMenuOpen: boolean) => {
       align-items: center;
       width: calc(100% - 34px);
       min-width: 0;
+      padding: 0;
+      text-align: left;
+      cursor: pointer;
+      background: transparent;
+      border: 0;
+
+      &:focus-visible {
+        outline: 2px solid var(--theme-color);
+        outline-offset: 3px;
+      }
 
       &__logo {
         display: flex;
@@ -651,8 +632,8 @@ watch(menuOpen, (isMenuOpen: boolean) => {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 28px;
-      height: 28px;
+      width: 44px;
+      height: 44px;
       padding: 0;
       margin: 0;
       font-size: 16px;
@@ -727,6 +708,10 @@ watch(menuOpen, (isMenuOpen: boolean) => {
 
     /* 折叠状态下的header样式 */
     .menu-left-close .header {
+      .header-brand {
+        visibility: hidden;
+      }
+
       .logo {
         display: none;
       }

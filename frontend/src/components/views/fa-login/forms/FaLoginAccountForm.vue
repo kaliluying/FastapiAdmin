@@ -8,13 +8,16 @@
       :key="formKey"
       class="login-page-form"
       :validate-on-rule-change="false"
-      @keyup.enter="$emit('submit')"
+      :disabled="loading"
+      :aria-busy="loading"
+      @submit.prevent="!loading && emit('submit')"
     >
       <ElFormItem prop="username">
         <ElInput
           class="custom-height"
           v-model.trim="loginForm.username"
           name="username"
+          :aria-label="$t('login.placeholder.username')"
           autocomplete="username"
           clearable
           :placeholder="$t('login.placeholder.username')"
@@ -32,6 +35,7 @@
             v-model="loginForm.password"
             type="password"
             name="password"
+            :aria-label="$t('login.placeholder.password')"
             autocomplete="current-password"
             show-password
             clearable
@@ -52,6 +56,7 @@
             class="custom-height min-w-0 flex-1"
             autocomplete="off"
             maxlength="8"
+            :aria-label="$t('login.captchaCode')"
             placeholder="请输入验证码"
           />
           <button
@@ -75,9 +80,9 @@
           <ElButton
             class="login-submit-btn h-11 w-full text-base font-medium"
             type="primary"
+            native-type="submit"
             :loading="loading"
             v-ripple
-            @click="$emit('submit')"
           >
             {{ $t("login.btnText") }}
           </ElButton>

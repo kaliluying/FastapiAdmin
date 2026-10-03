@@ -387,8 +387,8 @@ async function run() {
   }
 }
 
-async function main() {
-  if (process.env.UX_E2E_EXTERNAL_SERVICES === "1") return run();
+async function main(runCheck = run) {
+  if (process.env.UX_E2E_EXTERNAL_SERVICES === "1") return runCheck();
   const root = path.resolve(__dirname, "../..");
   const artifacts = fs.mkdtempSync(path.join(os.tmpdir(), "fastapiadmin-ux-e2e-"));
   const children = [];
@@ -450,7 +450,7 @@ async function main() {
       }
       if (!ready) throw new Error(`Acceptance service did not become ready; see ${artifacts}`);
     }
-    await run();
+    await runCheck();
   } finally {
     for (const child of children) {
       if (!child.pid) continue;
@@ -477,7 +477,11 @@ async function main() {
   }
 }
 
-main().catch((error) => {
-  console.error(error.message.split("\n")[0]);
-  process.exitCode = 1;
-});
+module.exports = { runAcceptance: main };
+
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error.message.split("\n")[0]);
+    process.exitCode = 1;
+  });
+}

@@ -42,6 +42,8 @@
       <FaAsyncState
         v-if="loading || (!rows.length && !loadError)"
         :state="loading ? 'loading' : 'empty'"
+        :title="loading ? undefined : '没有匹配的知识库'"
+        description="调整筛选条件，或新建知识库开始整理资料。"
       />
       <template v-if="!loading && rows.length">
         <p v-if="isNarrowViewport" class="table-scroll-hint">左右滑动查看完整列表</p>
@@ -96,7 +98,10 @@
           v-model:current-page="query.page_no"
           v-model:page-size="query.page_size"
           class="pagination"
-          layout="total, sizes, prev, pager, next"
+          :layout="
+            isNarrowViewport ? 'total, prev, pager, next' : 'total, sizes, prev, pager, next'
+          "
+          :pager-count="isNarrowViewport ? 5 : 7"
           :total="total"
           @size-change="loadData()"
           @current-change="loadData()"
@@ -107,9 +112,15 @@
     <ElDialog
       v-model="dialogVisible"
       :title="editingId ? '编辑知识库' : '新建知识库'"
-      width="560px"
+      width="min(92vw, 560px)"
     >
-      <ElForm ref="formRef" :model="form" :rules="rules" label-width="92px">
+      <ElForm
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="92px"
+        :label-position="isNarrowViewport ? 'top' : 'right'"
+      >
         <ElFormItem label="名称" prop="name">
           <ElInput v-model="form.name" maxlength="100" show-word-limit />
         </ElFormItem>
@@ -356,12 +367,12 @@ watch(visibility, (state) => {
 
 <style scoped>
 .knowledge-page {
-  height: 100%;
+  min-width: 0;
 }
 
 .knowledge-card {
   border: 1px solid var(--fa-color-border);
-  border-radius: 10px;
+  border-radius: var(--fa-radius-panel);
 }
 
 .knowledge-card :deep(.el-card__body) {
@@ -417,6 +428,23 @@ watch(visibility, (state) => {
 @media (width <= 800px) {
   .toolbar {
     flex-direction: column;
+    width: 100%;
+  }
+
+  .query-form,
+  .status-select,
+  .toolbar :deep(.el-form-item) {
+    width: 100%;
+  }
+
+  .toolbar :deep(.el-form-item) {
+    margin-right: 0;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-start;
   }
 
   .knowledge-card :deep(.el-card__body) {

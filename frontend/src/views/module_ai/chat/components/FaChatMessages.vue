@@ -75,7 +75,9 @@ defineExpose({
 
 <style lang="scss" scoped>
 .chat-messages {
-  /* 与 index chat-main 同底，避免 disabled 灰 + page 色打架 */
+  width: 100%;
+  height: 100%;
+  min-height: 0;
   background: transparent;
 
   .messages-list {
@@ -85,12 +87,16 @@ defineExpose({
   }
 
   .error-banner {
-    position: fixed;
-    bottom: 140px;
-    left: 50%;
-    z-index: 1000;
-    padding: 0 24px;
-    transform: translateX(-50%);
+    max-width: 800px;
+    padding: 12px 24px;
+    margin: 0 auto;
+  }
+}
+
+@media (width <= 640px) {
+  .chat-messages .messages-list,
+  .chat-messages .error-banner {
+    padding: 12px 14px;
   }
 }
 </style>

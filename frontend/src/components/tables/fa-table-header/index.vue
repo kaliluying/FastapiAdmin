@@ -5,25 +5,33 @@
       <slot name="left"></slot>
     </div>
 
-    <div class="flex items-center md:justify-end max-md:mt-3 max-sm:hidden!">
+    <div class="flex flex-wrap items-center md:justify-end max-md:mt-3">
       <!-- 搜索区域显示/隐藏：默认展示搜索（未高亮）；点按收起后高亮表示当前为隐藏状态 -->
       <ElTooltip
         v-if="showSearchBar != null"
         placement="bottom"
         :content="showSearchBar ? t('table.toolbar.hideSearch') : t('table.toolbar.showSearch')"
       >
-        <div
+        <button
+          type="button"
+          :aria-label="
+            showSearchBar ? t('table.toolbar.hideSearch') : t('table.toolbar.showSearch')
+          "
+          :aria-expanded="showSearchBar"
           class="button"
           @click="search"
           :class="!showSearchBar ? 'active bg-theme! hover:bg-theme/80!' : ''"
         >
           <FaSvgIcon icon="ri:search-line" :class="!showSearchBar ? 'text-white' : 'text-g-700'" />
-        </div>
+        </button>
       </ElTooltip>
 
       <!-- 刷新 -->
-      <div
+      <button
         v-if="shouldShow('refresh')"
+        type="button"
+        aria-label="刷新表格"
+        :disabled="loading"
         class="button"
         @click="refresh"
         :class="{ loading: loading && isManualRefresh }"
@@ -32,13 +40,13 @@
           icon="ri:refresh-line"
           :class="loading && isManualRefresh ? 'animate-spin text-g-600' : ''"
         />
-      </div>
+      </button>
 
       <!-- 表格大小 -->
       <ElDropdown v-if="shouldShow('size')" @command="handleTableSizeChange">
-        <div class="button">
+        <button type="button" class="button" aria-label="表格密度">
           <FaSvgIcon icon="ri:arrow-up-down-fill" />
-        </div>
+        </button>
         <template #dropdown>
           <ElDropdownMenu>
             <div
@@ -59,9 +67,15 @@
       </ElDropdown>
 
       <!-- 全屏 -->
-      <div v-if="shouldShow('fullscreen')" class="button" @click="toggleFullScreen">
+      <button
+        v-if="shouldShow('fullscreen')"
+        type="button"
+        class="button"
+        :aria-label="isFullScreen ? '退出表格全屏' : '表格全屏'"
+        @click="toggleFullScreen"
+      >
         <FaSvgIcon :icon="isFullScreen ? 'ri:fullscreen-exit-line' : 'ri:fullscreen-line'" />
-      </div>
+      </button>
 
       <!-- 行拖拽排序 -->
       <ElTooltip
@@ -69,21 +83,26 @@
         placement="bottom"
         :content="isRowDrag ? t('table.toolbar.disableRowDrag') : t('table.toolbar.enableRowDrag')"
       >
-        <div
+        <button
+          type="button"
+          :aria-label="
+            isRowDrag ? t('table.toolbar.disableRowDrag') : t('table.toolbar.enableRowDrag')
+          "
+          :aria-pressed="isRowDrag"
           class="button"
           @click="toggleRowDrag"
           :class="isRowDrag ? 'active bg-theme! hover:bg-theme/80!' : ''"
         >
           <FaSvgIcon icon="ri:drag-move-line" :class="isRowDrag ? 'text-white' : 'text-g-700'" />
-        </div>
+        </button>
       </ElTooltip>
 
       <!-- 列设置 -->
       <ElPopover v-if="shouldShow('columns')" placement="bottom" trigger="click">
         <template #reference>
-          <div class="button">
+          <button type="button" class="button" aria-label="设置显示列">
             <FaSvgIcon icon="ri:align-right" />
-          </div>
+          </button>
         </template>
         <div>
           <ElScrollbar max-height="380px">
@@ -125,9 +144,9 @@
       <!-- 其他设置 -->
       <ElPopover v-if="shouldShow('settings')" placement="bottom" trigger="click">
         <template #reference>
-          <div class="button">
+          <button type="button" class="button" aria-label="表格样式设置">
             <FaSvgIcon icon="ri:settings-line" />
-          </div>
+          </button>
         </template>
         <div class="flex min-w-[200px] flex-col gap-2">
           <ElCheckbox v-model="isZebra" :value="true">
@@ -385,5 +404,18 @@ onUnmounted(() => {
 .button.active {
   border-color: color-mix(in srgb, var(--theme-color) 32%, transparent);
   box-shadow: var(--fa-soft-shadow);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 2px;
+}
+
+@media (width <= 768px) {
+  .button {
+    width: 44px;
+    height: 44px;
+    margin: 0 6px 6px 0;
+  }
 }
 </style>

@@ -120,7 +120,13 @@
                 {{ t("table.searchBar.search") }}
               </ElButton>
             </div>
-            <div v-if="shouldShowExpandToggle" class="filter-toggle" @click="toggleExpand">
+            <button
+              v-if="shouldShowExpandToggle"
+              type="button"
+              class="filter-toggle"
+              :aria-expanded="isExpanded"
+              @click="toggleExpand"
+            >
               <span>{{ expandToggleText }}</span>
               <div class="icon-wrapper">
                 <ElIcon>
@@ -128,7 +134,7 @@
                   <ArrowDownBold v-else />
                 </ElIcon>
               </div>
-            </div>
+            </button>
           </div>
         </ElCol>
       </ElRow>
@@ -586,16 +592,8 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
   overflow: hidden;
   background: var(--default-box-color);
   border: 1px solid var(--fa-card-border);
-  border-radius: 8px;
-  box-shadow: var(--fa-panel-shadow) !important;
-
-  &::before {
-    position: absolute;
-    inset: 0 0 auto;
-    height: 3px;
-    content: "";
-    background: linear-gradient(90deg, color-mix(in srgb, var(--theme-color) 82%, white), #10b981);
-  }
+  border-radius: var(--fa-radius-panel);
+  box-shadow: var(--fa-soft-shadow);
 
   :deep(.el-form-item) {
     margin-bottom: 14px;
@@ -658,9 +656,14 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
         color 0.2s ease;
 
       &:hover {
-        color: var(--ElColor-primary);
+        color: var(--el-color-primary);
         background: color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color));
         border-color: color-mix(in srgb, var(--theme-color) 32%, var(--fa-card-border));
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--el-color-primary);
+        outline-offset: 2px;
       }
 
       span {
@@ -695,6 +698,7 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
 
         .filter-toggle {
           justify-content: center;
+          min-height: 44px;
           margin-left: 0;
         }
       }
