@@ -130,27 +130,6 @@ export const SETTING_DEFAULT_CONFIG = {
 /** 与 Store / App 中使用的默认设置别名（同 SETTING_DEFAULT_CONFIG） */
 export const defaultSettings = SETTING_DEFAULT_CONFIG;
 
-/**
- * 获取设置默认值
- * @returns 设置默认值对象
- */
-export function getSettingDefaults() {
-  return { ...SETTING_DEFAULT_CONFIG };
-}
-
-/**
- * 重置为默认设置
- * @param currentSettings 当前设置对象
- */
-export function resetToDefaults(currentSettings: Record<string, any>) {
-  const defaults = getSettingDefaults();
-  Object.keys(defaults).forEach((key) => {
-    if (key in currentSettings) {
-      currentSettings[key] = defaults[key as keyof typeof defaults];
-    }
-  });
-}
-
 // 主题色预设 - 现代化配色方案
 // 注意：修改默认主题色时，需要同步修改 src/styles/variables.scss 中的 primary.base 值
 export const themeColorPresets = [

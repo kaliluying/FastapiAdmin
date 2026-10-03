@@ -30,12 +30,6 @@ export function calculateResponsiveSpan(
   return finalSpan >= config.threshold ? finalSpan : config.fallback;
 }
 
-export function createResponsiveSpanCalculator(defaultSpan: number) {
-  return (itemSpan: number | undefined, breakpoint: ResponsiveBreakpoint): number => {
-    return calculateResponsiveSpan(itemSpan, defaultSpan, breakpoint);
-  };
-}
-
 // -----------------------------
 // Validation
 // -----------------------------

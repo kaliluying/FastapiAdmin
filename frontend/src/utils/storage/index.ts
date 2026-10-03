@@ -292,13 +292,6 @@ export function getSystemStorage(): any {
 }
 
 /**
- * 获取系统版本号
- */
-export function getSysVersion(): string | null {
-  return storageManager.getSystemVersion();
-}
-
-/**
  * 验证本地存储数据
  * @param requireAuth 是否需要验证登录状态（默认 false）
  */
