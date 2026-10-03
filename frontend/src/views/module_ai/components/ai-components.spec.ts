@@ -15,6 +15,8 @@ describe("AI workspace primitives", () => {
       props: { citations: [{ id: "1", title: "权限管理指南", snippet: "角色可关联查询权限" }] },
     });
     expect(wrapper.text()).toContain("权限管理指南");
-    expect(wrapper.get("button").attributes("aria-expanded")).toBe("false");
+    expect(wrapper.get("button[aria-expanded]").attributes("aria-expanded")).toBe("false");
+    wrapper.get(".fa-citation-item__title").trigger("click");
+    expect(wrapper.emitted("select")?.[0]?.[0]).toMatchObject({ title: "权限管理指南" });
   });
 });

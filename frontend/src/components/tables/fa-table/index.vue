@@ -49,6 +49,16 @@
           <slot v-if="$slots.default" />
           <template #empty>
             <div v-if="loading"></div>
+            <FaAsyncState
+              v-else-if="error"
+              state="error"
+              title="加载失败"
+              :description="error.message"
+            >
+              <template #action>
+                <ElButton type="primary" plain @click="emit('retry')">重试</ElButton>
+              </template>
+            </FaAsyncState>
             <ElEmpty v-else :description="emptyText" :image-size="80" />
           </template>
         </ElTable>
@@ -101,6 +111,7 @@ import { useCommon } from "@/hooks/core/useCommon";
 import { useTableHeight } from "@/hooks/core/useTableHeight";
 import { useWindowSize } from "@vueuse/core";
 import { VueDraggable } from "vue-draggable-plus";
+import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 
 defineOptions({ name: "FaTable" });
 
@@ -152,6 +163,7 @@ interface PaginationOptions {
 interface Props extends TableProps<Record<string, any>> {
   /** 加载状态 */
   loading?: boolean;
+  error?: { message: string } | null;
   /** 列渲染配置 */
   columns?: ColumnOption[];
   /** 分页状态 */
@@ -315,6 +327,7 @@ const mergedTableProps = computed(() => ({
 }));
 
 interface Emits {
+  (e: "retry"): void;
   (e: "pagination:size-change", val: number): void;
   (e: "pagination:current-change", val: number): void;
   (e: "update:data", val: Record<string, unknown>[]): void;

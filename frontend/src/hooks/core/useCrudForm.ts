@@ -1,5 +1,44 @@
-import type { Ref } from "vue";
+import { nextTick, ref, watch, type Ref } from "vue";
+import { ElMessageBox } from "element-plus";
 import type { CrudDialogState, DialogType } from "./useCrudDialog";
+
+export function useFormCloseGuard(options: {
+  visible: () => boolean;
+  formData: () => object | undefined;
+  submitting: () => boolean;
+}) {
+  let initialSnapshot: string | undefined;
+  let confirming = false;
+  watch(
+    options.visible,
+    async (visible) => {
+      if (!visible) return;
+      await nextTick();
+      if (options.visible()) initialSnapshot = JSON.stringify(options.formData());
+    },
+    { immediate: true, flush: "sync" }
+  );
+
+  return async (): Promise<boolean> => {
+    await nextTick();
+    if (options.submitting() || confirming) return false;
+    if (!options.formData()) return true;
+    if (JSON.stringify(options.formData()) === initialSnapshot) return true;
+    confirming = true;
+    try {
+      await ElMessageBox.confirm("有未保存的修改，关闭后将丢失。", "放弃修改？", {
+        confirmButtonText: "放弃修改",
+        cancelButtonText: "继续编辑",
+        type: "warning",
+      });
+      return !options.submitting();
+    } catch {
+      return false;
+    } finally {
+      confirming = false;
+    }
+  };
+}
 
 /**
  * CRUD 表单管理
@@ -85,6 +124,7 @@ export function useCrudForm<T extends object>(options: {
 
   /** 关闭对话框并重置表单 */
   async function handleCloseDialog() {
+    if (submitLoading.value) return;
     dialogVisible.visible = false;
     await resetForm();
   }
@@ -125,14 +165,14 @@ export function useCrudForm<T extends object>(options: {
 
   /** 提交表单 */
   async function handleSubmit() {
+    if (submitLoading.value) return;
     const form = dataFormRef.value;
     if (!form) return;
-    const valid = await (form.validate as () => Promise<boolean>)().catch(() => false);
-    if (!valid) return;
-
     submitLoading.value = true;
     const id = (formData.value as Record<string, unknown>).id as number | undefined;
     try {
+      const valid = await (form.validate as () => Promise<boolean>)().catch(() => false);
+      if (!valid) return;
       if (id && updateApi) {
         await updateApi(id, { id, ...formData.value });
         await onUpdateSuccess?.();
@@ -140,9 +180,9 @@ export function useCrudForm<T extends object>(options: {
         await createApi(formData.value);
         await onCreateSuccess?.();
       }
+      await onSubmitSuccess?.(formData.value);
       dialogVisible.visible = false;
       await resetForm();
-      await onSubmitSuccess?.(formData.value);
     } catch (error: unknown) {
       console.error(error);
     } finally {

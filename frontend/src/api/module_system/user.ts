@@ -108,19 +108,27 @@ export const UserAPI = {
     });
   },
 
-  importUser(body: any) {
-    return request<ApiResponse>({
+  importUser(body: FormData) {
+    return request<ApiResponse<UserImportResult | string>>({
       url: `${API_PATH}/import/data`,
       method: "post",
       data: body,
       headers: {
         "Content-Type": "multipart/form-data",
       },
+      showSuccessMessage: false,
     });
   },
 };
 
 export default UserAPI;
+
+export interface UserImportResult {
+  success_count: number;
+  failed_count: number;
+  errors: Array<{ row: number; message: string }>;
+  message: string;
+}
 
 export interface UserPageQuery extends PageQuery, UserByQueryParams {
   username?: string;
@@ -197,7 +205,7 @@ export interface UserForm extends BaseFormType {
   role_ids?: number[];
   role_names?: string[];
   password?: string;
-  gender?: number;
+  gender?: string;
   email?: string;
   mobile?: string;
   is_superuser?: boolean;

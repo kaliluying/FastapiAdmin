@@ -1,4 +1,6 @@
+import asyncio
 import json
+from contextlib import suppress
 
 from fastapi import APIRouter, WebSocket
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +29,8 @@ async def _resolve_ws_auth(websocket: WebSocket, db: AsyncSession) -> AuthSchema
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
 
     redis = websocket.app.state.redis
-    return await _verify_ws_ticket(ticket, db, redis)
+    auth = await _verify_ws_ticket(ticket, db, redis)
+    return auth.model_copy(update={"check_data_scope": True})
 
 
 def _has_ws_permission(auth: AuthSchema, permission: str) -> bool:
@@ -59,38 +62,67 @@ async def websocket_chat_controller(websocket: WebSocket) -> None:
     await websocket.accept()
     user_info = f"用户: {auth.user.username}" if auth and auth.user else "未知用户"
     logger.info(f"WebSocket connected: {websocket.client} - {user_info}")
+    active_task: asyncio.Task | None = None
+    active_request_id: str | None = None
 
-    # 消息循环：每条消息独立 session，空闲等待时不占用数据库连接
-    while True:
-        try:
-            data = await websocket.receive_text()
-        except Exception:
-            logger.info(f"WebSocket disconnected: {websocket.client}")
-            break
-        try:
-            message_data = json.loads(data)
-            query = ChatQuerySchema(**message_data)
-            logger.info(f"收到聊天查询: {query} - 会话ID: {query.session_id}")
+    async def send_event(request_id: str | None, event: dict) -> None:
+        if request_id:
+            await websocket.send_text(json.dumps({**event, "request_id": request_id}, ensure_ascii=False))
+        elif event.get("type") == "chunk":
+            await websocket.send_text(event["content"])
+        elif event.get("type") == "error":
+            await websocket.send_text(event["message"])
 
+    async def stream_query(query: ChatQuerySchema) -> None:
+        try:
             async with async_db_session() as db:
                 auth.db = db
-                async for chunk in ChatService(auth).chat_query(query=query):
-                    if not chunk:
-                        continue
-                    try:
-                        await websocket.send_text(chunk)
-                    except RuntimeError:
-                        logger.warning("WebSocket connection closed; stopping response stream")
-                        return
-        except json.JSONDecodeError:
-            logger.warning(f"收到非 JSON 消息: {data}")
+                options = {"structured": True} if query.request_id else {}
+                async for chunk in ChatService(auth).chat_query(query=query, **options):
+                    if chunk:
+                        event = chunk if isinstance(chunk, dict) else {"type": "chunk", "content": chunk}
+                        await send_event(query.request_id, event)
+        except asyncio.CancelledError:
+            with suppress(Exception):
+                await send_event(query.request_id, {"type": "cancelled"})
+            raise
+        except Exception:
+            logger.exception("聊天流处理失败")
+            with suppress(Exception):
+                await send_event(query.request_id, {"type": "error", "message": "回答中断，请重试"})
+
+    try:
+        while True:
+            request_id = None
             try:
-                await websocket.send_text("消息格式错误，请发送 JSON 格式的消息")
-            except RuntimeError:
+                data = await websocket.receive_text()
+            except Exception:
                 break
-        except Exception as e:
-            logger.error(f"处理消息时出错: {e}")
             try:
-                await websocket.send_text(f"处理消息时出错: {e}")
-            except RuntimeError:
-                break
+                if len(data) > 120_000:
+                    raise ValueError("message too large")
+                message_data = json.loads(data)
+                if not isinstance(message_data, dict):
+                    raise ValueError("message must be an object")
+                request_id = message_data.get("request_id")
+                if message_data.get("type") == "cancel":
+                    if active_task and not active_task.done() and request_id == active_request_id:
+                        active_task.cancel()
+                        with suppress(asyncio.CancelledError):
+                            await active_task
+                    continue
+                query = ChatQuerySchema(**message_data)
+                if active_task and not active_task.done():
+                    await send_event(query.request_id, {"type": "error", "message": "上一条回答尚未结束，请等待或停止生成"})
+                    continue
+                active_request_id = query.request_id
+                active_task = asyncio.create_task(stream_query(query))
+                await asyncio.sleep(0)
+            except Exception:
+                await send_event(request_id if isinstance(request_id, str) and len(request_id) <= 64 else None, {"type": "error", "message": "消息格式错误，请检查问题和附件大小后重试"})
+    finally:
+        if active_task and not active_task.done():
+            active_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await active_task
+        logger.info("WebSocket disconnected: %s", websocket.client)

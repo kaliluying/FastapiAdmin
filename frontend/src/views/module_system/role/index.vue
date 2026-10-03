@@ -52,9 +52,11 @@
         <FaTable
           ref="faTableRef"
           :loading="loading"
+          :error="error"
           :data="data"
           :columns="columns"
           :pagination="pagination"
+          @retry="refreshData"
           @selection-change="onTableSelectionChange"
           @pagination:size-change="handleSizeChange"
           @pagination:current-change="handleCurrentChange"
@@ -69,6 +71,7 @@
         modal-class="crud-embed-dialog"
         :form-mode="dialogVisible.type"
         :confirm-loading="submitLoading"
+        :form-data="formData"
         @cancel="handleCloseDialog"
         @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
       >
@@ -485,6 +488,7 @@ const {
   columnChecks,
   data,
   loading,
+  error,
   pagination,
   searchParams,
   getData,

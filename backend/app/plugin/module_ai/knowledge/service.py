@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import asyncio
 import uuid
 from datetime import datetime
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
+import anyio
 from fastapi import UploadFile
+from sqlalchemy import update
 
 from app.config.path_conf import BASE_DIR
 from app.core.base_schema import AuthSchema
@@ -20,6 +23,7 @@ from .chroma_store import ChromaKnowledgeStore, get_cached_chroma_store
 from .crud import KnowledgeBaseCRUD, KnowledgeChunkCRUD, KnowledgeDocumentCRUD
 from .embedding import EmbeddingClient, get_cached_embedding_client
 from .extractors import extract_text
+from .model import KnowledgeDocumentModel
 from .public import KnowledgeRetriever, accessible_knowledge_base_ids
 from .schema import (
     KnowledgeBaseCreateSchema,
@@ -46,13 +50,8 @@ async def index_document_in_background(document_id: int, user_id: int | None) ->
         try:
             await KnowledgeService(auth).index_document(document_id)
         except Exception:
-            try:
-                await db.commit()
-            except Exception:
-                await db.rollback()
+            await db.rollback()
             logger.exception("后台索引知识库文档失败: document_id=%s", document_id)
-        else:
-            await db.commit()
 
 
 def build_chroma_metadata(
@@ -131,9 +130,14 @@ class KnowledgeService:
             raise CustomException(msg="knowledge base ids cannot be empty")
         docs = await KnowledgeDocumentCRUD(self.auth).get_list(search={"knowledge_base_id": ("in", ids)})
         doc_ids = [doc.id for doc in docs]
-        store = self._get_store()
+        if any(doc.index_status == "indexing" for doc in docs):
+            raise CustomException(msg="知识库中有文档正在处理，请完成后再删除", status_code=409)
+        vector, bm25 = self._index_backends_to_clean()
         for doc in docs:
-            await store.delete_document(doc.id)
+            if vector:
+                await self._get_store().delete_document(doc.id)
+            if bm25:
+                await self._get_bm25_index().delete_by_document(doc.id)
         if doc_ids:
             chunks = await KnowledgeChunkCRUD(self.auth).get_list(search={"document_id": ("in", doc_ids)})
             chunk_ids = [chunk.id for chunk in chunks]
@@ -184,6 +188,7 @@ class KnowledgeService:
             file_type=saved_path.suffix.lower().lstrip("."),
             file_size=saved_path.stat().st_size,
         )
+        await self.auth.db.commit()
         if background_tasks is None:
             await self.index_document(document.id)
             document = await KnowledgeDocumentCRUD(self.auth).get_or_404(id=document.id)
@@ -197,70 +202,150 @@ class KnowledgeService:
 
     async def index_document(self, document_id: int) -> KnowledgeDocumentOutSchema:
         document = await KnowledgeDocumentCRUD(self.auth).get_or_404(id=document_id, msg="knowledge document not found")
-        if not document.file_path:
-            raise CustomException(msg="document file path is empty")
+        knowledge_base_id, file_name, file_path = document.knowledge_base_id, document.file_name, document.file_path
+        claim = await self.auth.db.execute(
+            update(KnowledgeDocumentModel)
+            .where(
+                KnowledgeDocumentModel.id == document_id,
+                KnowledgeDocumentModel.is_deleted == False,
+                KnowledgeDocumentModel.index_status != "indexing",
+            )
+            .values(parse_status="parsing", index_status="indexing", error_message=None)
+        )
+        if claim.rowcount != 1:
+            raise CustomException(msg="文档正在处理，请稍后刷新状态", status_code=409)
+        await self.auth.db.commit()
         doc_crud = KnowledgeDocumentCRUD(self.auth)
+        stage = "parse"
+        failure_message = "无法解析文档，请确认文件未损坏或加密；扫描件请先转为可复制的文字后重新上传。"
+        chroma_ids: list[str] = []
+        vector_started = bm25_started = False
         try:
-            text = await extract_text(self._resolve_knowledge_path(document.file_path))
+            if not file_path:
+                raise FileNotFoundError
+            text = await extract_text(self._resolve_knowledge_path(file_path))
             chunks = split_text(text)
             if not chunks:
+                failure_message = "未提取到文字，请确认文档包含可复制的文本；扫描件请先识别文字后重新上传。"
                 raise CustomException(msg="document text is empty")
 
             now = datetime.now()
             await doc_crud.update_status(document_id, parse_status="success", index_status="indexing", parsed_at=now)
-            chroma_ids = [f"kb-{document.knowledge_base_id}-doc-{document.id}-{index}-{uuid.uuid4().hex}" for index in range(len(chunks))]
+            await self.auth.db.commit()
+            stage = "index"
+            failure_message = "无法读取索引记录，请联系管理员检查数据库连接后重建索引。"
+            old_chunks = await KnowledgeChunkCRUD(self.auth).list_by_document(document_id)
+            old_ids = [chunk.chroma_id for chunk in old_chunks]
+            chroma_ids = [f"kb-{knowledge_base_id}-doc-{document_id}-{index}-{uuid.uuid4().hex}" for index in range(len(chunks))]
             retrieval_mode = settings.RETRIEVAL_MODE
             embeddings: list[list[float]] | None = None
             metadatas: list[dict[str, int | str]] | None = None
             if retrieval_mode in ("vector", "hybrid"):
+                failure_message = "向量生成失败，请联系管理员检查模型服务配置、连接与额度后重建索引。"
                 embeddings = await self._get_embedding_client().embed_texts(chunks)
                 metadatas = [
                     build_chroma_metadata(
-                        knowledge_base_id=document.knowledge_base_id,
-                        document_id=document.id,
+                        knowledge_base_id=knowledge_base_id,
+                        document_id=document_id,
                         chunk_index=index,
-                        file_name=document.file_name,
+                        file_name=file_name,
                     )
                     for index in range(len(chunks))
                 ]
 
-            chunk_models = await KnowledgeChunkCRUD(self.auth).replace_chunks(
-                knowledge_base_id=document.knowledge_base_id,
-                document_id=document.id,
-                chunks=chunks,
-                chroma_ids=chroma_ids,
-            )
-
+            failure_message = "索引写入失败，请稍后重建索引；若仍失败，请联系管理员检查索引存储权限与可用空间。"
             if embeddings is not None and metadatas is not None:
-                await self._get_store().delete_document(document.id)
+                vector_started = True
                 await self._get_store().upsert_chunks(ids=chroma_ids, embeddings=embeddings, documents=chunks, metadatas=metadatas)
 
             if retrieval_mode in ("hybrid", "bm25"):
                 bm25_chunks = [
                     {
-                        "id": chunk_model.chroma_id,
-                        "content": chunk_model.content,
-                        "knowledge_base_id": chunk_model.knowledge_base_id,
-                        "document_id": chunk_model.document_id,
-                        "chunk_index": chunk_model.chunk_index,
-                        "file_name": document.file_name,
+                        "id": chroma_ids[index],
+                        "content": content,
+                        "knowledge_base_id": knowledge_base_id,
+                        "document_id": document_id,
+                        "chunk_index": index,
+                        "file_name": file_name,
                     }
-                    for chunk_model in chunk_models
+                    for index, content in enumerate(chunks)
                 ]
-                bm25_index = self._get_bm25_index()
-                await bm25_index.delete_by_document(document.id)
-                await bm25_index.add_chunks(bm25_chunks)
-                logger.info(f"BM25索引同步完成: document_id={document.id}, chunks={len(bm25_chunks)}")
+                bm25_started = True
+                await self._get_bm25_index().add_chunks(bm25_chunks)
+
+            failure_message = "索引记录保存失败，请稍后重建索引；若仍失败，请联系管理员检查数据库连接。"
+            await KnowledgeChunkCRUD(self.auth).replace_chunks(
+                knowledge_base_id=knowledge_base_id,
+                document_id=document_id,
+                chunks=chunks,
+                chroma_ids=chroma_ids,
+            )
 
             obj = await doc_crud.update_status(document_id, index_status="success", error_message=None, indexed_at=datetime.now())
-            return self._document_output(obj)
-        except CustomException:
-            await doc_crud.update_status(document_id, parse_status="failed", index_status="failed", error_message="index failed")
-            raise
-        except Exception as exc:
-            await doc_crud.update_status(document_id, parse_status="failed", index_status="failed", error_message="index failed")
+            output = self._document_output(obj)
+            output.chunk_count = len(chunks)
+            await self.auth.db.commit()
+        except (Exception, asyncio.CancelledError) as exc:
+            await self.auth.db.rollback()
+            if isinstance(exc, asyncio.CancelledError):
+                failure_message = "文档处理已中断，请重新索引；若仍失败，请联系管理员检查服务状态。"
+            elif stage == "parse" and isinstance(exc, FileNotFoundError):
+                failure_message = "原文件不存在，请重新上传文档；若仍失败，请联系管理员检查文件存储。"
+            elif stage == "parse" and isinstance(exc, PermissionError):
+                failure_message = "无法读取原文件，请联系管理员检查文件存储权限后重试。"
+            elif stage == "index" and isinstance(exc, TimeoutError):
+                failure_message = "索引服务超时，请稍后重建索引；若仍失败，请联系管理员检查模型服务连接。"
+            try:
+                await self._delete_index_chunks(chroma_ids, vector=vector_started, bm25=bm25_started)
+            except Exception:
+                logger.exception("清理本次失败索引的分块失败: document_id=%s", document_id)
+            await doc_crud.update_status(
+                document_id,
+                parse_status="failed" if stage == "parse" else "success",
+                index_status="failed",
+                error_message=failure_message,
+            )
+            await self.auth.db.commit()
+            if isinstance(exc, asyncio.CancelledError):
+                raise
             logger.exception("索引知识库文档失败: document_id=%s", document_id)
-            raise CustomException(msg="索引知识库文档失败，请稍后重试") from exc
+            raise CustomException(msg=failure_message) from exc
+
+        try:
+            vector, bm25 = self._index_backends_to_clean()
+            await self._delete_index_chunks(old_ids, vector=vector, bm25=bm25)
+        except Exception:
+            logger.exception("清理旧索引分块失败: document_id=%s", document_id)
+            output.error_message = "文档已可检索，但旧索引清理失败，请联系管理员检查索引存储。"
+            await doc_crud.update_status(document_id, error_message=output.error_message)
+            await self.auth.db.commit()
+        return output
+
+    def _index_backends_to_clean(self) -> tuple[bool, bool]:
+        return (
+            settings.RETRIEVAL_MODE in ("vector", "hybrid") or self.store is not None or Path(settings.CHROMA_PERSIST_DIR).is_dir(),
+            settings.RETRIEVAL_MODE in ("bm25", "hybrid") or self.bm25_index is not None or Path(settings.BM25_INDEX_DIR or BASE_DIR / "data" / "bm25_index").is_dir(),
+        )
+
+    async def _delete_index_chunks(self, ids: list[str], *, vector: bool, bm25: bool) -> None:
+        """Remove one generation of chunks without deleting other document indexes."""
+        if not ids:
+            return
+        if vector:
+            await anyio.to_thread.run_sync(lambda: self._get_store().collection.delete(ids=ids))
+        if bm25:
+
+            def delete_chunks() -> None:
+                writer = self._get_bm25_index()._get_index().writer()
+                try:
+                    for chunk_id in ids:
+                        writer.delete_by_term("chunk_id", chunk_id)
+                    writer.commit()
+                except Exception:
+                    writer.cancel()
+                    raise
+
+            await anyio.to_thread.run_sync(delete_chunks)
 
     async def delete_document(self, ids: list[int]) -> None:
         if not ids:
@@ -272,12 +357,14 @@ class KnowledgeService:
         accessible_ids = {document.id for document in documents}
         if accessible_ids != set(normalized_ids):
             raise CustomException(msg="知识库文档不存在或无权访问", status_code=403)
+        if any(getattr(document, "index_status", None) == "indexing" for document in documents):
+            raise CustomException(msg="文档正在处理，请完成后再删除", status_code=409)
 
-        retrieval_mode = settings.RETRIEVAL_MODE
+        vector, bm25 = self._index_backends_to_clean()
         for document_id in normalized_ids:
-            if retrieval_mode in ("vector", "hybrid"):
+            if vector:
                 await self._get_store().delete_document(document_id)
-            if retrieval_mode in ("hybrid", "bm25"):
+            if bm25:
                 await self._get_bm25_index().delete_by_document(document_id)
         chunks = await KnowledgeChunkCRUD(self.auth).get_list(search={"document_id": ("in", normalized_ids)})
         chunk_ids = [chunk.id for chunk in chunks]

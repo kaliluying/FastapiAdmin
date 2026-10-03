@@ -7,6 +7,8 @@
         :key="message.id"
         :message="message"
         @toggle-thinking="handleToggleThinking(message)"
+        @retry="emit('retry', message.id)"
+        @show-citations="emit('show-citations', message.id)"
       />
     </div>
     <div v-if="error" class="error-banner">
@@ -30,6 +32,8 @@ interface Props {
 interface Emits {
   (e: "prompt-click", prompt: string): void;
   (e: "error-close"): void;
+  (e: "retry", messageId: string): void;
+  (e: "show-citations", messageId: string): void;
 }
 
 const props = defineProps<Props>();

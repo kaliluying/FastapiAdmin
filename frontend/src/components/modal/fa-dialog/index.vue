@@ -10,6 +10,7 @@
     align-center
     destroy-on-close
     v-bind="dialogAttrs"
+    :before-close="handleBeforeClose"
     @close="emit('close')"
     @opened="emit('opened')"
   >
@@ -36,7 +37,13 @@
     </template>
     <template v-else-if="formMode" #footer>
       <div class="fa-dialog-footer" :style="'padding-right: var(--el-dialog-padding-primary)'">
-        <ElButton v-if="formMode !== 'detail'" type="primary" plain @click="emit('cancel')">
+        <ElButton
+          v-if="formMode !== 'detail'"
+          type="primary"
+          plain
+          :disabled="confirmLoading"
+          @click="handleCancel"
+        >
           {{ cancelText }}
         </ElButton>
         <ElButton type="primary" :loading="confirmLoading" @click="emit('confirm')">
@@ -51,6 +58,7 @@
 import type { DialogProps } from "element-plus";
 import { computed, ref, useAttrs, watch } from "vue";
 import FaIconButton from "@/components/widget/fa-icon-button/index.vue";
+import { useFormCloseGuard } from "@/hooks/core/useCrudForm";
 
 defineOptions({ name: "FaDialog", inheritAttrs: false });
 
@@ -68,6 +76,7 @@ interface Props {
   formMode?: "detail" | "create" | "update";
   /** 确定按钮 loading 状态 */
   confirmLoading?: boolean;
+  formData?: object;
   /** 确定按钮文本 */
   confirmText?: string;
   /** 取消按钮文本 */
@@ -95,6 +104,24 @@ const emit = defineEmits<Emits>();
 
 const attrs = useAttrs();
 const fullscreen = ref(false);
+const canClose = useFormCloseGuard({
+  visible: () => props.modelValue,
+  formData: () => (props.formMode === "detail" ? undefined : props.formData),
+  submitting: () => !!props.confirmLoading,
+});
+
+async function handleBeforeClose(done: (cancel?: boolean) => void) {
+  if (!(await canClose()) || props.confirmLoading) return;
+  const beforeClose = (attrs.beforeClose ?? attrs["before-close"]) as DialogProps["beforeClose"];
+  if (beforeClose) beforeClose(done);
+  else done();
+}
+
+function handleCancel() {
+  void handleBeforeClose((cancel) => {
+    if (!cancel) emit("cancel");
+  });
+}
 
 watch(fullscreen, (newVal) => {
   emit("fullscreen-change", newVal);

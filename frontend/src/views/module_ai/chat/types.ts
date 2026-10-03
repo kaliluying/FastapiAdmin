@@ -7,6 +7,19 @@ export interface ChatMessage {
   loading?: boolean;
   thinkingCollapsed?: boolean;
   files?: UploadedFile[];
+  citations?: ChatCitation[];
+  error?: string;
+  stopped?: boolean;
+  request?: { message: string; files?: UploadedFile[]; knowledgeBaseIds: number[] };
+}
+
+export interface ChatCitation {
+  id: string;
+  title: string;
+  snippet?: string;
+  knowledge_base_id?: number;
+  document_id?: number;
+  chunk_index?: number;
 }
 
 // 上传文件类型
@@ -17,6 +30,10 @@ export interface UploadedFile {
   type: string;
   url?: string;
   file?: File;
+  content?: string;
+  status?: "uploading" | "ready" | "error";
+  error?: string;
+  truncated?: boolean;
 }
 
 // 会话消息类型（来自后端）

@@ -10,6 +10,18 @@ export interface ChatSessionListQuery extends PageQuery {
 }
 
 export const AiChatAPI = {
+  parseAttachment(body: FormData) {
+    return request<
+      ApiResponse<{ name: string; size: number; type: string; content: string; truncated: boolean }>
+    >({
+      url: `${API_PATH}/attachment`,
+      method: "post",
+      data: body,
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 60000,
+      showSuccessMessage: false,
+    });
+  },
   getSessionList(query: ChatSessionListQuery) {
     return request<ApiResponse<PageResult<ChatSession>>>({
       url: `${API_PATH}/list`,

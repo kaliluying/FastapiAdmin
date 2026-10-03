@@ -1,7 +1,7 @@
 <template>
   <div class="chat-navbar">
     <div class="navbar-left">
-      <button class="collapse-btn" @click="toggleSidebar">
+      <button type="button" class="collapse-btn" aria-label="切换会话列表" @click="toggleSidebar">
         <FaSvgIcon
           v-if="!props.isSidebarCollapsed"
           :icon="resolveIconForFaSvgIcon('layout_leftbar_close_line')"
@@ -49,6 +49,7 @@
         <span class="status-text">{{ connectionStatusText }}</span>
       </ElTag>
       <ElButton v-if="hasMessages" text :icon="Delete" @click="handleClearChat">清空对话</ElButton>
+      <ElButton text @click="emit('show-evidence')">回答依据</ElButton>
     </div>
   </div>
 </template>
@@ -72,6 +73,7 @@ interface Emits {
   (e: "clear-chat"): void;
   (e: "toggle-connection"): void;
   (e: "toggle-sidebar"): void;
+  (e: "show-evidence"): void;
   (e: "update:knowledgeBaseIds", value: number[]): void;
 }
 
@@ -209,6 +211,28 @@ const handleKnowledgeChange = (value: number[]) => {
 
       .status-text {
         color: var(--el-text-color-secondary);
+      }
+    }
+  }
+}
+
+@media (width <= 1024px) {
+  .chat-navbar {
+    gap: 8px;
+    align-items: flex-start;
+
+    .navbar-right {
+      flex: 1;
+      flex-wrap: wrap;
+      gap: 4px;
+      min-width: 0;
+
+      .knowledge-select {
+        width: 100%;
+      }
+
+      .connection-status {
+        display: none;
       }
     }
   }

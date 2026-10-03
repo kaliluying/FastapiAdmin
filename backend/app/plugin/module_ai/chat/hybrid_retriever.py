@@ -47,7 +47,10 @@ class KnowledgeBaseChatRetriever:
         knowledge_base_ids: list[int] | None = None,
         files: list[dict[str, Any]] | None = None,
     ) -> list[RagDocument]:
+        attachments = self.file_retriever._documents_from_files(files)
         if not knowledge_base_ids:
+            if attachments:
+                return attachments
             return await self.file_retriever.retrieve(
                 query=query,
                 user_id=user_id,
@@ -60,7 +63,7 @@ class KnowledgeBaseChatRetriever:
             query=query,
             knowledge_base_ids=knowledge_base_ids,
         )
-        documents = []
+        documents = attachments
         for result in results:
             metadata = dict(result.metadata)
             if self.mode == "vector" and result.distance is not None:

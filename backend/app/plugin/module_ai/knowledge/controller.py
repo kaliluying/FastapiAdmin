@@ -129,7 +129,7 @@ async def upload_document_controller(
         file=file,
         background_tasks=background_tasks,
     )
-    return SuccessResponse(data=result, msg="upload knowledge document success")
+    return SuccessResponse(data=result, msg="文档已接收，等待后台处理；处理完成后可检索")
 
 
 @KnowledgeRouter.post(
@@ -142,7 +142,7 @@ async def reindex_document_controller(
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:document:create"]))],
 ) -> JSONResponse:
     result = await KnowledgeService(auth).index_document(document_id=id)
-    return SuccessResponse(data=result, msg="reindex knowledge document success")
+    return SuccessResponse(data=result, msg="索引重建完成，文档已可检索")
 
 
 @KnowledgeRouter.delete(

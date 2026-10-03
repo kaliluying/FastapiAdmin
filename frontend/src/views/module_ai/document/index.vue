@@ -23,23 +23,53 @@
               v-model="query.file_name"
               clearable
               placeholder="文件名"
-              @keyup.enter="loadData"
+              @keyup.enter="loadData()"
             />
           </ElFormItem>
           <ElFormItem>
-            <ElButton type="primary" :icon="Search" @click="loadData">查询</ElButton>
+            <ElButton type="primary" :icon="Search" @click="loadData()">查询</ElButton>
             <ElButton :icon="Refresh" @click="resetQuery">重置</ElButton>
           </ElFormItem>
         </ElForm>
       </div>
 
-      <FaAsyncState v-if="loading || !rows.length" :state="docListState" />
-      <p v-else-if="isNarrowViewport" class="table-scroll-hint">左右滑动查看完整列表</p>
+      <FaAsyncState
+        v-if="loadError || pollingPaused"
+        :state="loadError ? 'error' : 'partial'"
+        :title="loadError ? '文档状态刷新失败' : '自动刷新已暂停'"
+        :description="
+          loadError
+            ? '已保留当前列表和筛选条件，请重试刷新。'
+            : '处理可能耗时较长，请稍后刷新；仍在等待的文档可重新索引。'
+        "
+      >
+        <template #action
+          ><ElButton :loading="loading" @click="loadData()">刷新状态</ElButton></template
+        >
+      </FaAsyncState>
+      <p v-else-if="hasProcessingDocuments" class="processing-hint" role="status">
+        文档已接收，处理中将自动刷新；显示「可检索」后即可用于问答。
+      </p>
+      <FaAsyncState
+        v-if="loading || (!rows.length && !loadError)"
+        :state="loading ? 'loading' : 'empty'"
+      />
+      <p v-if="!loading && rows.length && isNarrowViewport" class="table-scroll-hint">
+        左右滑动查看完整列表
+      </p>
       <ElTable v-if="!loading && rows.length" :data="rows" row-key="id">
         <ElTableColumn prop="file_name" label="文件名" min-width="220" show-overflow-tooltip />
         <ElTableColumn prop="file_type" label="类型" width="90" />
         <ElTableColumn prop="file_size" label="大小" width="110">
           <template #default="{ row }">{{ formatSize(row.file_size) }}</template>
+        </ElTableColumn>
+        <ElTableColumn label="处理说明" min-width="240">
+          <template #default="{ row }">
+            <span v-if="row.error_message" role="status">{{ row.error_message }}</span>
+            <span v-else>{{
+              row.index_status === "success" ? "可用于检索和问答" : "处理完成后可检索"
+            }}</span>
+          </template>
         </ElTableColumn>
         <ElTableColumn label="状态" width="120">
           <template #default="{ row }">
@@ -57,8 +87,29 @@
         <ElTableColumn prop="created_time" label="创建时间" width="180" show-overflow-tooltip />
         <ElTableColumn label="操作" width="160" :fixed="isNarrowViewport ? false : 'right'">
           <template #default="{ row }">
-            <ElButton link type="primary" @click="reindex(row)">重新索引</ElButton>
-            <ElButton link type="danger" @click="remove(row)">删除</ElButton>
+            <ElButton
+              link
+              type="primary"
+              :loading="reindexingIds.has(row.id || 0)"
+              :disabled="
+                row.index_status === 'indexing' ||
+                row.parse_status === 'parsing' ||
+                (isProcessing(row) && !pollingPaused)
+              "
+              @click="reindex(row)"
+              >重新索引</ElButton
+            >
+            <ElButton
+              link
+              type="danger"
+              :disabled="
+                row.index_status === 'indexing' ||
+                row.parse_status === 'parsing' ||
+                reindexingIds.has(row.id || 0)
+              "
+              @click="remove(row)"
+              >删除</ElButton
+            >
           </template>
         </ElTableColumn>
       </ElTable>
@@ -69,8 +120,8 @@
         class="pagination"
         layout="total, sizes, prev, pager, next"
         :total="total"
-        @size-change="loadData"
-        @current-change="loadData"
+        @size-change="loadData()"
+        @current-change="loadData()"
       />
     </ElCard>
 
@@ -96,12 +147,14 @@
             drag
             :http-request="uploadFile"
             :show-file-list="false"
-            :disabled="!uploadForm.knowledge_base_id"
+            :disabled="!uploadForm.knowledge_base_id || uploading"
             accept=".txt,.md,.pdf,.docx"
             :before-upload="beforeUpload"
           >
             <ElIcon class="el-icon--upload"><Upload /></ElIcon>
-            <div class="el-upload__text">点击或拖拽文件上传</div>
+            <div class="el-upload__text">
+              {{ uploading ? "正在接收文件…" : "点击或拖拽文件上传" }}
+            </div>
             <template #tip>
               <div class="el-upload__tip">支持 .txt、.md、.pdf、.docx</div>
             </template>
@@ -113,11 +166,20 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import {
+  computed,
+  onActivated,
+  onBeforeUnmount,
+  onDeactivated,
+  onMounted,
+  reactive,
+  ref,
+  watch,
+} from "vue";
 import { ElMessage, ElMessageBox, type UploadRequestOptions } from "element-plus";
 import { Refresh, Search, Upload } from "@element-plus/icons-vue";
 import { useRoute } from "vue-router";
-import { useMediaQuery } from "@vueuse/core";
+import { useDocumentVisibility, useMediaQuery } from "@vueuse/core";
 import KnowledgeAPI, {
   type KnowledgeBase,
   type KnowledgeDocument,
@@ -130,8 +192,20 @@ defineOptions({ name: "AiKnowledgeDocument" });
 const route = useRoute();
 const isNarrowViewport = useMediaQuery("(max-width: 800px)");
 const loading = ref(false);
-const docListState = computed<"loading" | "empty">(() => (loading.value ? "loading" : "empty"));
+const loadError = ref(false);
+const pollingPaused = ref(false);
+const uploading = ref(false);
+const reindexingIds = ref(new Set<number>());
+const visibility = useDocumentVisibility();
+let viewActive = false;
+let pollTimer: ReturnType<typeof setTimeout> | undefined;
+let pollRemaining = 60;
+let pollFailures = 0;
+let requestSequence = 0;
 const rows = ref<KnowledgeDocument[]>([]);
+const isProcessing = (row: KnowledgeDocument) =>
+  row.index_status !== "success" && row.index_status !== "failed";
+const hasProcessingDocuments = computed(() => rows.value.some(isProcessing));
 const bases = ref<KnowledgeBase[]>([]);
 const total = ref(0);
 const uploadDialogVisible = ref(false);
@@ -152,15 +226,53 @@ const loadBases = async () => {
   bases.value = (res.data?.data || []).filter((item) => item.id != null);
 };
 
-const loadData = async () => {
-  loading.value = true;
+const stopPolling = () => {
+  clearTimeout(pollTimer);
+  pollTimer = undefined;
+};
+
+const schedulePolling = () => {
+  stopPolling();
+  if (!viewActive || visibility.value !== "visible" || !hasProcessingDocuments.value) return;
+  if (pollRemaining <= 0 || pollFailures >= 3) {
+    pollingPaused.value = true;
+    return;
+  }
+  pollTimer = setTimeout(() => {
+    pollRemaining -= 1;
+    void loadData(true);
+  }, 2000);
+};
+
+const loadData = async (background = false) => {
+  if (!viewActive) return;
+  stopPolling();
+  if (!background) {
+    pollRemaining = 60;
+    pollFailures = 0;
+    pollingPaused.value = false;
+    loading.value = true;
+  }
+  const sequence = ++requestSequence;
   try {
     const res = await KnowledgeAPI.listDocument({ ...query });
+    if (!viewActive || sequence !== requestSequence) return;
     const data = res.data?.data;
     rows.value = data?.items || [];
     total.value = data?.total || 0;
+    loadError.value = false;
+    pollFailures = 0;
+    if (!hasProcessingDocuments.value) pollingPaused.value = false;
+  } catch {
+    if (viewActive && sequence === requestSequence) {
+      loadError.value = true;
+      pollFailures += 1;
+    }
   } finally {
-    loading.value = false;
+    if (sequence === requestSequence) {
+      loading.value = false;
+      schedulePolling();
+    }
   }
 };
 
@@ -202,6 +314,7 @@ const beforeUpload = (file: File): boolean => {
 };
 
 const uploadFile = async (options: UploadRequestOptions) => {
+  if (uploading.value) return;
   if (!uploadForm.knowledge_base_id) {
     ElMessage.warning("请先选择知识库");
     return;
@@ -209,20 +322,40 @@ const uploadFile = async (options: UploadRequestOptions) => {
   const form = new FormData();
   form.append("knowledge_base_id", String(uploadForm.knowledge_base_id));
   form.append("file", options.file);
-  await KnowledgeAPI.uploadDocument(form);
-  ElMessage.success("上传成功");
-  uploadDialogVisible.value = false;
-  if (!query.knowledge_base_id) {
-    query.knowledge_base_id = uploadForm.knowledge_base_id;
+  uploading.value = true;
+  try {
+    await KnowledgeAPI.uploadDocument(form);
+    ElMessage.success("文档已接收，等待处理；处理完成后可检索");
+    uploadDialogVisible.value = false;
+    await loadData();
+  } finally {
+    uploading.value = false;
   }
-  await loadData();
 };
 
 const reindex = async (row: KnowledgeDocument) => {
-  if (!row.id) return;
-  await KnowledgeAPI.reindexDocument(row.id);
-  ElMessage.success("已提交重建");
-  await loadData();
+  if (
+    !row.id ||
+    reindexingIds.value.has(row.id) ||
+    row.index_status === "indexing" ||
+    row.parse_status === "parsing"
+  )
+    return;
+  reindexingIds.value.add(row.id);
+  try {
+    const res = await KnowledgeAPI.reindexDocument(row.id);
+    const document = res.data?.data as KnowledgeDocument | undefined;
+    if (document?.index_status === "success") {
+      ElMessage.success("索引重建完成，文档已可检索");
+    } else {
+      ElMessage.warning("尚未确认索引完成，请刷新查看文档状态");
+    }
+  } catch {
+    loadError.value = true;
+  } finally {
+    reindexingIds.value.delete(row.id);
+    await loadData();
+  }
 };
 
 const remove = async (row: KnowledgeDocument) => {
@@ -243,18 +376,44 @@ const documentStatusMeta = (row: KnowledgeDocument) => {
   if (row.parse_status === "failed") return { label: "解析失败", type: "danger" as const };
   if (row.index_status === "failed") return { label: "索引失败", type: "danger" as const };
   if (row.index_status === "success") return { label: "可检索", type: "success" as const };
+  if (row.parse_status === "parsing") return { label: "正在解析", type: "warning" as const };
   if (row.index_status === "indexing") return { label: "正在索引", type: "warning" as const };
   if (row.parse_status === "success") return { label: "等待索引", type: "info" as const };
   return { label: "等待处理", type: "info" as const };
 };
 
 onMounted(async () => {
-  await loadBases();
+  viewActive = true;
   applyRouteQuery();
+  try {
+    await loadBases();
+  } catch {
+    ElMessage.warning("知识库选项加载失败，请稍后重新打开页面");
+  }
+  if (!viewActive) return;
   if (route.query.upload === "1") {
     openUploadDialog();
   }
   await loadData();
+});
+
+onActivated(() => {
+  if (viewActive) return;
+  viewActive = true;
+  void loadData(true);
+});
+
+const deactivate = () => {
+  viewActive = false;
+  requestSequence += 1;
+  loading.value = false;
+  stopPolling();
+};
+onDeactivated(deactivate);
+onBeforeUnmount(deactivate);
+watch(visibility, (state) => {
+  if (state !== "visible") stopPolling();
+  else if (viewActive) void loadData(true);
 });
 </script>
 
@@ -294,6 +453,12 @@ onMounted(async () => {
 .table-scroll-hint {
   margin: 0 0 8px;
   font-size: 12px;
+  color: var(--fa-color-text-muted);
+}
+
+.processing-hint {
+  margin: 0 0 12px;
+  font-size: 13px;
   color: var(--fa-color-text-muted);
 }
 

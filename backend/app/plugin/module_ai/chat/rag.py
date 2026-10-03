@@ -354,6 +354,7 @@ class RagChatChain:
         self.user_id = user_id
         self.team_id = team_id
         self.user_profile = user_profile or {}
+        self.citations: list[dict[str, Any]] = []
 
     async def ainvoke(
         self,
@@ -385,7 +386,8 @@ class RagChatChain:
         session_id: str | None,
         knowledge_base_ids: list[int] | None = None,
         files: list[dict[str, Any]] | None = None,
-    ) -> AsyncGenerator[str, None]:
+        include_events: bool = False,
+    ) -> AsyncGenerator[str | dict[str, Any], None]:
         prompt = await self._build_prompt(
             message=message,
             user_id=user_id,
@@ -395,6 +397,9 @@ class RagChatChain:
             files=files,
         )
         await self._release_db_transaction()
+        if include_events:
+            yield {"type": "citations", "citations": self.citations}
+            yield {"type": "stage", "stage": "generating"}
         async for chunk in self.chat_model.stream(prompt):
             yield chunk
 
@@ -422,6 +427,29 @@ class RagChatChain:
             knowledge_base_ids=knowledge_base_ids,
             files=files,
         )
+        context_documents: list[RagDocument] = []
+        context_size = 0
+        for document in documents:
+            fragment_size = len(RagPromptBuilder._format_context([document])) + 3
+            available = MAX_CONTEXT_CHARS - context_size
+            if fragment_size > available:
+                content_limit = min(len(document.content), MAX_DOCUMENT_CHARS) - (fragment_size - available)
+                if content_limit <= 0:
+                    break
+                document = RagDocument(content=document.content[:content_limit], metadata=document.metadata)
+                fragment_size = len(RagPromptBuilder._format_context([document])) + 3
+            context_documents.append(document)
+            context_size += fragment_size
+        documents = context_documents
+        self.citations = [
+            {
+                "id": str(index + 1),
+                "title": str(document.metadata.get("file_name") or document.metadata.get("name") or "知识片段"),
+                "snippet": _clip(document.content, MAX_DOCUMENT_CHARS),
+                **{key: document.metadata[key] for key in ("knowledge_base_id", "document_id", "chunk_index") if key in document.metadata},
+            }
+            for index, document in enumerate(documents)
+        ]
 
         # ── 短期记忆：从会话 runs 中提取最近对话历史 ──
         session_history: list[dict[str, Any]] = []
@@ -523,17 +551,10 @@ def create_rag_chain(db: Any | None = None, auth: Any | None = None) -> RagChatC
         alpha=0.0 if search_mode == "bm25" else settings.HYBRID_ALPHA,
         top_k=settings.RETRIEVAL_TOP_K,
         candidate_multiplier=settings.RETRIEVAL_CANDIDATE_MULTIPLIER,
-        auto_adjust_alpha=(
-            getattr(settings, "RETRIEVAL_AUTO_ADJUST_ALPHA", True)
-            if search_mode == "hybrid"
-            else False
-        ),
+        auto_adjust_alpha=(getattr(settings, "RETRIEVAL_AUTO_ADJUST_ALPHA", True) if search_mode == "hybrid" else False),
     )
     if search_mode == "hybrid":
-        logger.info(
-            f"使用混合检索模式: alpha={settings.HYBRID_ALPHA}, "
-            f"auto_adjust={retriever.auto_adjust_alpha}"
-        )
+        logger.info(f"使用混合检索模式: alpha={settings.HYBRID_ALPHA}, auto_adjust={retriever.auto_adjust_alpha}")
     elif search_mode == "bm25":
         logger.info("使用纯BM25检索模式")
     else:

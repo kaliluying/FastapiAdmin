@@ -3,6 +3,8 @@ from typing import Any
 
 import pandas as pd
 from fastapi import UploadFile
+from pydantic import ValidationError
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.v1.module_platform.menu.crud import MenuCRUD
 from app.api.v1.module_platform.menu.schema import MenuOutSchema
@@ -248,7 +250,7 @@ class UserService:
         new_user = await UserCRUD(self.auth).change_password(id=data.id, password_hash=new_password_hash)
         return UserOutSchema.model_validate(new_user)
 
-    async def batch_import(self, file: UploadFile, update_support: bool = False) -> str:
+    async def batch_import(self, file: UploadFile, update_support: bool = False) -> dict[str, Any]:
         header_dict = {
             "账号": "username",
             "昵称": "name",
@@ -272,72 +274,68 @@ class UserService:
 
             df.rename(columns=header_dict, inplace=True)
 
-            required_fields = ["username", "name"]
-            errors = []
-            for field in required_fields:
-                if df[field].isnull().any():
-                    missing_count = df[field].isnull().sum()
-                    errors.append(f"字段'{field}'有{missing_count}行缺少数据")
-
-            if errors:
-                raise CustomException(msg="\n".join(errors))
-
             success_count = 0
-            error_msgs = []
+            errors = []
+            gender_codes = {"男": "0", "女": "1", "未知": "2", "0": "0", "1": "1", "2": "2"}
 
-            for i, (_, row) in enumerate(df.iterrows(), start=2):
+            for row_number, (_, row) in enumerate(df.iterrows(), start=2):
                 try:
                     username = str(row["username"]).strip() if pd.notna(row["username"]) else ""
                     name = str(row["name"]).strip() if pd.notna(row["name"]) else ""
                     if not username:
-                        error_msgs.append(f"第{i}行: 账号不能为空")
-                        continue
+                        raise CustomException(msg="账号不能为空")
                     if not name:
-                        error_msgs.append(f"第{i}行: 昵称不能为空")
-                        continue
+                        raise CustomException(msg="昵称不能为空")
+
+                    gender = str(row["gender"]).strip() if pd.notna(row["gender"]) else "未知"
+                    if isinstance(row["gender"], (int, float)) and pd.notna(row["gender"]) and row["gender"] in (0, 1, 2):
+                        gender = str(int(row["gender"]))
+                    if gender not in gender_codes:
+                        raise CustomException(msg="性别仅支持男、女、未知或编码 0、1、2")
 
                     user_data = {
                         "username": username,
                         "name": name,
                         "email": str(row["email"]).strip() if pd.notna(row["email"]) else None,
                         "mobile": str(row["mobile"]).strip() if pd.notna(row["mobile"]) else None,
-                        "gender": str(row["gender"]).strip() if pd.notna(row["gender"]) else "1",
+                        "gender": gender_codes[gender],
                         "status": 0 if str(row["status"]).strip() == "正常" else 1,
                     }
 
-                    exists_user = await UserCRUD(self.auth).get(username=user_data["username"])
-                    if exists_user:
-                        if exists_user.is_superuser:
-                            error_msgs.append(f"第{i}行: 超级管理员不允许修改")
-                            continue
-                        if update_support:
-                            # 更新导入只同步资料字段，不能把统一初始密码带入已有账户。
+                    async with self.auth.db.begin_nested():
+                        exists_user = await UserCRUD(self.auth).get(username=user_data["username"])
+                        if exists_user:
+                            if exists_user.is_superuser:
+                                raise CustomException(msg="超级管理员不允许修改")
+                            if not update_support:
+                                raise CustomException(msg=f"用户 {user_data['username']} 已存在")
                             user_update_data = UserUpdateSchema(**user_data)
                             await UserCRUD(self.auth).update(id=exists_user.id, data=user_update_data)
-                            success_count += 1
                         else:
-                            error_msgs.append(f"第{i}行: 用户 {user_data['username']} 已存在")
-                    else:
-                        new_user_data = {
-                            **user_data,
-                            "password": PwdUtil.hash_password(password="123456"),
-                        }
-                        user_create_schema = UserCreateSchema(**new_user_data)
-                        user_create_data = user_create_schema.model_dump(exclude_unset=True, exclude={"role_ids"})
-                        new_user = await UserCRUD(self.auth).create(data=user_create_data)
-                        if user_create_schema.role_ids and len(user_create_schema.role_ids) > 0:
-                            await UserCRUD(self.auth).set_user_roles(user_ids=[new_user.id], role_ids=user_create_schema.role_ids)
-                            await invalidate_permission_cache(getattr(self.auth, "redis", None))
-                        success_count += 1
+                            new_user_data = {
+                                **user_data,
+                                "password": PwdUtil.hash_password(password="123456"),
+                            }
+                            user_create_schema = UserCreateSchema(**new_user_data)
+                            user_create_data = user_create_schema.model_dump(exclude_unset=True, exclude={"role_ids"})
+                            new_user = await UserCRUD(self.auth).create(data=user_create_data)
+                            if user_create_schema.role_ids and len(user_create_schema.role_ids) > 0:
+                                await UserCRUD(self.auth).set_user_roles(user_ids=[new_user.id], role_ids=user_create_schema.role_ids)
+                                await invalidate_permission_cache(getattr(self.auth, "redis", None))
+                    success_count += 1
+                except ValidationError as error:
+                    message = "；".join(f"{'.'.join(map(str, detail['loc']))}: {detail['msg']}" for detail in error.errors(include_input=False))
+                    errors.append({"row": row_number, "message": message})
+                except CustomException as error:
+                    message = "数据写入失败，请检查账号、邮箱或手机号是否重复" if isinstance(error.__context__, SQLAlchemyError) else error.msg
+                    errors.append({"row": row_number, "message": message})
+                except Exception:
+                    errors.append({"row": row_number, "message": "数据写入失败，请检查数据格式或唯一字段"})
 
-                except Exception as e:
-                    error_msgs.append(f"第{i}行: 异常{e!s}")
-                    continue
-
-            result = f"成功导入 {success_count} 条数据"
-            if error_msgs:
-                result += "\n错误信息:\n" + "\n".join(error_msgs)
-            return result
+            message = f"成功导入 {success_count} 条数据"
+            if errors:
+                message += "\n错误信息:\n" + "\n".join(f"第{error['row']}行: {error['message']}" for error in errors)
+            return {"success_count": success_count, "failed_count": len(errors), "errors": errors, "message": message}
 
         except Exception as e:
             logger.error(f"批量导入用户失败: {e!s}")
@@ -365,7 +363,7 @@ class UserService:
         )
 
     @staticmethod
-    def export_list(user_list: list[dict[str, Any]]) -> bytes:
+    def export_list(user_list: list[UserOutSchema | dict[str, Any]]) -> bytes:
         if not user_list:
             raise CustomException(msg="没有数据可导出")
 
@@ -386,11 +384,11 @@ class UserService:
             "updated_id": "更新者ID",
         }
 
-        data = user_list.copy()
+        data = [item.model_dump() if isinstance(item, UserOutSchema) else item.copy() for item in user_list]
         for item in data:
             item["status"] = "启用" if item.get("status") == 0 else "停用"
             gender = item.get("gender")
-            item["gender"] = "男" if gender == "1" else ("女" if gender == "2" else "未知")
+            item["gender"] = {"0": "男", "1": "女", "2": "未知"}.get(str(gender), "未知")
             item["is_superuser"] = "是" if item.get("is_superuser") else "否"
             item["creator"] = item.get("created_by", {}).get("name", "未知") if isinstance(item.get("created_by"), dict) else "未知"
 

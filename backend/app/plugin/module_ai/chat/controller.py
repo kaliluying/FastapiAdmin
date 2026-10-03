@@ -1,6 +1,6 @@
-﻿from typing import Annotated, Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Path
+from fastapi import APIRouter, Depends, Path, UploadFile
 from fastapi.responses import JSONResponse
 
 from app.common.response import ResponseSchema, SuccessResponse
@@ -8,6 +8,7 @@ from app.core.base_params import PaginationQueryParam
 from app.core.base_schema import AuthSchema
 from app.core.dependencies import AuthPermission
 from app.core.router_class import OperationLogRoute
+from app.plugin.module_ai.knowledge.public import extract_chat_attachment
 
 from .schema import (
     AiChatRequestSchema,
@@ -24,6 +25,15 @@ from .service import ChatService
 ChatRouter = APIRouter(route_class=OperationLogRoute, prefix="/chat", tags=["AI管理", "AI对话"])
 
 
+@ChatRouter.post("/attachment", summary="解析聊天附件", response_model=ResponseSchema[dict[str, Any]])
+async def parse_chat_attachment_controller(
+    file: UploadFile,
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:chat:ws"]))],
+) -> JSONResponse:
+    result = await extract_chat_attachment(file)
+    return SuccessResponse(data=result, msg="附件已解析")
+
+
 @ChatRouter.get(
     "/detail/{session_id}",
     summary="获取会话详情",
@@ -38,7 +48,11 @@ async def get_session_detail_controller(
     return SuccessResponse(data=result, msg="获取会话详情成功")
 
 
-@ChatRouter.get("/list",summary="查询会话列表",response_model=ResponseSchema[dict],)
+@ChatRouter.get(
+    "/list",
+    summary="查询会话列表",
+    response_model=ResponseSchema[dict],
+)
 async def get_session_list_controller(
     page: Annotated[PaginationQueryParam, Depends()],
     search: Annotated[ChatSessionQueryParam, Depends()],
@@ -121,6 +135,8 @@ async def ai_chat_controller(
         ),
         msg="chat success",
     )
+
+
 @ChatRouter.get(
     "/model-config",
     summary="AI model configuration",

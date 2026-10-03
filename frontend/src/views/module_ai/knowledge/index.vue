@@ -13,7 +13,7 @@
               v-model="query.name"
               clearable
               placeholder="知识库名称"
-              @keyup.enter="loadData"
+              @keyup.enter="loadData()"
             />
           </ElFormItem>
           <ElFormItem label="状态">
@@ -23,17 +23,27 @@
             </ElSelect>
           </ElFormItem>
           <ElFormItem>
-            <ElButton type="primary" :icon="Search" @click="loadData">查询</ElButton>
+            <ElButton type="primary" :icon="Search" @click="loadData()">查询</ElButton>
             <ElButton :icon="Refresh" @click="resetQuery">重置</ElButton>
           </ElFormItem>
         </ElForm>
       </div>
 
       <FaAsyncState
-        v-if="loading || loadError || (!loading && rows.length === 0)"
-        :state="loading ? 'loading' : loadError ? 'error' : 'empty'"
+        v-if="loadError || pollingPaused"
+        :state="loadError ? 'error' : 'partial'"
+        :title="loadError ? '知识库状态刷新失败' : '自动刷新已暂停'"
+        description="已保留筛选和分页，请稍后刷新；可进入文档页查看处理结果或重试。"
+      >
+        <template #action
+          ><ElButton :loading="loading" @click="loadData()">刷新状态</ElButton></template
+        >
+      </FaAsyncState>
+      <FaAsyncState
+        v-if="loading || (!rows.length && !loadError)"
+        :state="loading ? 'loading' : 'empty'"
       />
-      <template v-else>
+      <template v-if="!loading && rows.length">
         <p v-if="isNarrowViewport" class="table-scroll-hint">左右滑动查看完整列表</p>
         <ElTable :data="rows" row-key="id">
           <ElTableColumn prop="name" label="名称" min-width="180" show-overflow-tooltip />
@@ -42,7 +52,7 @@
           <ElTableColumn label="索引状态" min-width="180">
             <template #default="{ row }">
               <div class="index-status">
-                <ElTag type="success" effect="plain">成功 {{ row.indexed_document_count }}</ElTag>
+                <ElTag type="success" effect="plain">可检索 {{ row.indexed_document_count }}</ElTag>
                 <ElTag type="warning" effect="plain"
                   >处理中 {{ row.indexing_document_count }}</ElTag
                 >
@@ -88,8 +98,8 @@
           class="pagination"
           layout="total, sizes, prev, pager, next"
           :total="total"
-          @size-change="loadData"
-          @current-change="loadData"
+          @size-change="loadData()"
+          @current-change="loadData()"
         />
       </template>
     </ElCard>
@@ -125,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { onActivated, onBeforeUnmount, onDeactivated, onMounted, reactive, ref, watch } from "vue";
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from "element-plus";
 import {
   Delete,
@@ -138,7 +148,7 @@ import {
   Upload,
 } from "@element-plus/icons-vue";
 import { useRouter } from "vue-router";
-import { useMediaQuery } from "@vueuse/core";
+import { useDocumentVisibility, useMediaQuery } from "@vueuse/core";
 import KnowledgeAPI, {
   type KnowledgeBase,
   type KnowledgeBaseForm,
@@ -152,6 +162,13 @@ const router = useRouter();
 const isNarrowViewport = useMediaQuery("(max-width: 800px)");
 const loading = ref(false);
 const loadError = ref(false);
+const pollingPaused = ref(false);
+const visibility = useDocumentVisibility();
+let viewActive = false;
+let pollTimer: ReturnType<typeof setTimeout> | undefined;
+let pollRemaining = 60;
+let pollFailures = 0;
+let requestSequence = 0;
 const saving = ref(false);
 const rows = ref<KnowledgeBase[]>([]);
 const total = ref(0);
@@ -176,18 +193,58 @@ const rules: FormRules = {
   name: [{ required: true, message: "请输入知识库名称", trigger: "blur" }],
 };
 
-const loadData = async () => {
-  loading.value = true;
-  loadError.value = false;
+const stopPolling = () => {
+  clearTimeout(pollTimer);
+  pollTimer = undefined;
+};
+
+const schedulePolling = () => {
+  stopPolling();
+  if (
+    !viewActive ||
+    visibility.value !== "visible" ||
+    !rows.value.some((row) => row.indexing_document_count > 0)
+  )
+    return;
+  if (pollRemaining <= 0 || pollFailures >= 3) {
+    pollingPaused.value = true;
+    return;
+  }
+  pollTimer = setTimeout(() => {
+    pollRemaining -= 1;
+    void loadData(true);
+  }, 2000);
+};
+
+const loadData = async (background = false) => {
+  if (!viewActive) return;
+  stopPolling();
+  if (!background) {
+    pollRemaining = 60;
+    pollFailures = 0;
+    pollingPaused.value = false;
+    loading.value = true;
+  }
+  const sequence = ++requestSequence;
   try {
     const res = await KnowledgeAPI.listKnowledgeBase({ ...query });
+    if (!viewActive || sequence !== requestSequence) return;
     const data = res.data?.data;
     rows.value = data?.items || [];
     total.value = data?.total || 0;
+    loadError.value = false;
+    pollFailures = 0;
+    if (!rows.value.some((row) => row.indexing_document_count > 0)) pollingPaused.value = false;
   } catch {
-    loadError.value = true;
+    if (viewActive && sequence === requestSequence) {
+      loadError.value = true;
+      pollFailures += 1;
+    }
   } finally {
-    loading.value = false;
+    if (sequence === requestSequence) {
+      loading.value = false;
+      schedulePolling();
+    }
   }
 };
 
@@ -274,7 +331,27 @@ const remove = async (row: KnowledgeBase) => {
   await loadData();
 };
 
-onMounted(loadData);
+onMounted(() => {
+  viewActive = true;
+  void loadData();
+});
+onActivated(() => {
+  if (viewActive) return;
+  viewActive = true;
+  void loadData(true);
+});
+const deactivate = () => {
+  viewActive = false;
+  requestSequence += 1;
+  loading.value = false;
+  stopPolling();
+};
+onDeactivated(deactivate);
+onBeforeUnmount(deactivate);
+watch(visibility, (state) => {
+  if (state !== "visible") stopPolling();
+  else if (viewActive) void loadData(true);
+});
 </script>
 
 <style scoped>

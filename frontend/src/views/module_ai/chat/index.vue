@@ -1,7 +1,12 @@
 <template>
-  <div class="fa-full-height">
+  <div
+    ref="chatWorkspaceRef"
+    class="fa-full-height chat-workspace"
+    :style="isCompactViewport ? { height: compactChatHeight } : undefined"
+  >
     <ElSplitter class="main-chat" :lazy="true">
       <ElSplitterPanel
+        v-if="!isMobileViewport"
         v-model:size="sidebarPanelSize"
         :min="64"
         :max="400"
@@ -18,7 +23,7 @@
           @delete-session="handleDeleteSession"
         />
       </ElSplitterPanel>
-      <ElSplitterPanel :min="360" class="chat-split-panel center-panel">
+      <ElSplitterPanel :min="isMobileViewport ? 0 : 360" class="chat-split-panel center-panel">
         <ElContainer aria-label="对话内容" class="chat-container">
           <ElHeader class="chat-header">
             <FaChatNavbar
@@ -31,6 +36,7 @@
               @clear-chat="handleClearChat"
               @toggle-connection="toggleConnection"
               @toggle-sidebar="toggleSidebar"
+              @show-evidence="isEvidenceDrawerOpen = true"
             />
           </ElHeader>
           <ElMain class="chat-main">
@@ -40,19 +46,24 @@
               :error="error"
               @prompt-click="handleSendMessage"
               @error-close="error = ''"
+              @retry="retryMessage"
+              @show-citations="showCitations"
             />
           </ElMain>
           <ElFooter class="chat-footer">
             <FaChatInput
-              :disabled="!isConnected"
+              ref="chatInputRef"
+              :disabled="!isConnected || switchingSession"
               :sending="sending"
               :is-connected="isConnected"
               @send="handleSendMessage"
+              @stop="stopGeneration"
             />
           </ElFooter>
         </ElContainer>
       </ElSplitterPanel>
       <ElSplitterPanel
+        v-if="!isCompactViewport"
         v-model:size="evidencePanelSize"
         :min="200"
         :max="420"
@@ -60,7 +71,7 @@
         class="chat-split-panel evidence-panel"
       >
         <FaAiProcessStatus :stage="processStage" />
-        <FaCitationList :citations="activeCitations" />
+        <FaCitationList :citations="activeCitations" @select="selectedCitation = $event" />
       </ElSplitterPanel>
     </ElSplitter>
     <!-- 移动端会话抽屉（≤768px 时使用） -->
@@ -73,6 +84,19 @@
         @delete-session="handleDeleteSession"
       />
     </ElDrawer>
+    <ElDrawer v-model="isEvidenceDrawerOpen" title="回答依据" size="min(90vw, 380px)">
+      <FaAiProcessStatus :stage="processStage" />
+      <FaCitationList :citations="activeCitations" @select="selectedCitation = $event" />
+    </ElDrawer>
+    <ElDialog
+      :model-value="!!selectedCitation"
+      title="引用片段"
+      width="min(90vw, 640px)"
+      @close="selectedCitation = null"
+    >
+      <h3>{{ selectedCitation?.title }}</h3>
+      <p class="citation-preview">{{ selectedCitation?.snippet || "暂无片段" }}</p>
+    </ElDialog>
   </div>
 </template>
 
@@ -83,12 +107,12 @@ defineOptions({
 });
 
 import { ref, computed, onMounted, onUnmounted, onActivated, onDeactivated } from "vue";
-import { useMediaQuery } from "@vueuse/core";
+import { useElementBounding, useMediaQuery, useWindowSize } from "@vueuse/core";
 import { ElMessage, ElMessageBox } from "element-plus";
 import AiChatAPI, { ChatSession } from "@/api/module_ai/chat";
 import KnowledgeAPI, { type KnowledgeBase } from "@/api/module_ai/knowledge";
 import AuthAPI from "@/api/module_system/auth";
-import type { ChatMessage, UploadedFile } from "./types";
+import type { ChatMessage, ChatCitation, UploadedFile } from "./types";
 import FaSidebar from "./components/FaSidebar.vue";
 import FaChatNavbar from "./components/FaChatNavbar.vue";
 import FaChatMessages from "./components/FaChatMessages.vue";
@@ -103,6 +127,7 @@ const isConnected = ref(false);
 const connectionStatus = ref<"connected" | "connecting" | "disconnected">("disconnected");
 const error = ref("");
 const currentSessionId = ref<string | null>(null);
+const switchingSession = ref(false);
 const isSidebarCollapsed = ref(false);
 const sidebarPanelSize = ref<number | string>(220);
 const evidencePanelSize = ref<number | string>(260);
@@ -112,16 +137,26 @@ const selectedKnowledgeBaseIds = ref<number[]>([]);
 // Refs
 const chatMessagesRef = ref<{ scrollToBottom: () => void }>();
 const sidebarRef = ref<{ loadSessions: () => void }>();
+const chatInputRef = ref<{ clearDraft: () => void }>();
 
 // 回答依据面板
-const activeCitations = ref<{ id: string; title: string; snippet?: string }[]>([]);
-const processStage = computed(
-  (): "idle" | "retrieving" | "reranking" | "generating" | "complete" | "error" => {
-    if (error.value) return "error";
-    if (sending.value) return "generating";
-    return "idle";
-  }
+const evidenceMessageId = ref<string | null>(null);
+const activeCitations = computed(
+  () => messages.value.find((message) => message.id === evidenceMessageId.value)?.citations || []
 );
+const selectedCitation = ref<ChatCitation | null>(null);
+const isEvidenceDrawerOpen = ref(false);
+const processStage = ref<"idle" | "retrieving" | "generating" | "complete" | "error">("idle");
+const isCompactViewport = useMediaQuery("(max-width: 1024px)");
+const chatWorkspaceRef = ref<HTMLElement>();
+const { top: chatTop } = useElementBounding(chatWorkspaceRef);
+const { height: viewportHeight } = useWindowSize();
+const compactChatHeight = computed(
+  () => `${Math.max(280, viewportHeight.value - Math.max(0, chatTop.value) - 12)}px`
+);
+let activeRequest: { id: string; messageId: string } | null = null;
+let sendGeneration = 0;
+let selectionGeneration = 0;
 
 // 移动端抽屉
 const isMobileDrawerOpen = ref(false);
@@ -131,11 +166,25 @@ const isMobileViewport = useMediaQuery("(max-width: 768px)");
 let ws: WebSocket | null = null;
 const WS_URL = import.meta.env.VITE_APP_WS_ENDPOINT;
 let connectionGeneration = 0;
+let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
+let reconnectAttempts = 0;
+let allowReconnect = true;
+
+const scheduleReconnect = () => {
+  if (!allowReconnect || reconnectTimer || reconnectAttempts >= 3) return;
+  reconnectTimer = setTimeout(
+    () => {
+      reconnectTimer = undefined;
+      void connectWebSocket();
+    },
+    1000 * 2 ** reconnectAttempts++
+  );
+};
 
 // ============ WebSocket 操作 ============
 const connectWebSocket = async () => {
   // CONNECTING / OPEN / CLOSING 期间一律拒绝重入，避免握手期间覆盖旧连接引用。
-  if (ws && ws.readyState !== WebSocket.CLOSED) return;
+  if (connectionStatus.value === "connecting" || (ws && ws.readyState !== WebSocket.CLOSED)) return;
 
   const generation = ++connectionGeneration;
 
@@ -158,7 +207,8 @@ const connectWebSocket = async () => {
       if (ws !== socket) return;
       isConnected.value = true;
       connectionStatus.value = "connected";
-      ElMessage.success("连接成功");
+      reconnectAttempts = 0;
+      error.value = "";
     };
 
     socket.onmessage = (event) => {
@@ -170,24 +220,30 @@ const connectWebSocket = async () => {
       ws = null;
       isConnected.value = false;
       connectionStatus.value = "disconnected";
-      finishLoadingMessages();
+      failCurrentRequest("连接中断，回答未确认保存，请重试这条问题");
+      scheduleReconnect();
     };
 
     socket.onerror = () => {
       if (ws !== socket) return;
       isConnected.value = false;
       connectionStatus.value = "disconnected";
-      ElMessage.error("连接失败，请检查服务器状态");
-      finishLoadingMessages();
+      error.value = "连接失败，请检查服务器状态或重新连接";
+      failCurrentRequest(error.value);
     };
   } catch {
     if (generation !== connectionGeneration) return;
     connectionStatus.value = "disconnected";
     error.value = "无法创建连接";
+    scheduleReconnect();
   }
 };
 
 const disconnectWebSocket = () => {
+  allowReconnect = false;
+  clearTimeout(reconnectTimer);
+  reconnectTimer = undefined;
+  stopGeneration();
   connectionGeneration += 1;
   if (ws) {
     const socket = ws;
@@ -201,7 +257,6 @@ const disconnectWebSocket = () => {
   }
   isConnected.value = false;
   connectionStatus.value = "disconnected";
-  finishLoadingMessages();
 };
 
 const toggleConnection = () => {
@@ -209,22 +264,78 @@ const toggleConnection = () => {
     disconnectWebSocket();
     ElMessage.info("已断开连接");
   } else {
+    allowReconnect = true;
+    reconnectAttempts = 0;
     connectWebSocket();
   }
 };
 
 // ============ 消息处理 ============
 const handleWebSocketMessage = (data: string) => {
-  const lastMessage = messages.value[messages.value.length - 1];
-  const content = data || "";
-
-  if (lastMessage?.type === "assistant" && lastMessage.loading) {
-    lastMessage.content += content;
-  } else {
-    addMessage("assistant", content);
+  let event;
+  try {
+    event = JSON.parse(data);
+  } catch {
+    return;
   }
-
+  if (!activeRequest || event.request_id !== activeRequest.id) return;
+  const message = messages.value.find((item) => item.id === activeRequest?.messageId);
+  if (!message) return;
+  if (event.type === "stage" && ["retrieving", "generating"].includes(event.stage))
+    processStage.value = event.stage;
+  if (event.type === "citations")
+    message.citations = Array.isArray(event.citations) ? event.citations : [];
+  if (event.type === "chunk" && typeof event.content === "string") message.content += event.content;
+  if (event.type === "error") failCurrentRequest(event.message || "生成失败，请重试");
+  if (event.type === "done" || event.type === "cancelled") {
+    message.loading = false;
+    message.stopped = event.type === "cancelled";
+    sending.value = false;
+    activeRequest = null;
+    processStage.value = event.type === "done" ? "complete" : "idle";
+    if (event.type === "done") sidebarRef.value?.loadSessions();
+  }
   chatMessagesRef.value?.scrollToBottom();
+};
+
+const failCurrentRequest = (reason: string) => {
+  sendGeneration += 1;
+  const message = messages.value.find((item) => item.id === activeRequest?.messageId);
+  if (message) {
+    message.loading = false;
+    message.error = reason;
+  }
+  activeRequest = null;
+  sending.value = false;
+  processStage.value = "error";
+  error.value = reason;
+};
+
+const stopGeneration = () => {
+  sendGeneration += 1;
+  if (activeRequest) {
+    if (ws?.readyState === WebSocket.OPEN)
+      ws.send(JSON.stringify({ type: "cancel", request_id: activeRequest.id }));
+    const message = messages.value.find((item) => item.id === activeRequest?.messageId);
+    if (message) {
+      message.loading = false;
+      message.stopped = true;
+    }
+  }
+  activeRequest = null;
+  sending.value = false;
+  processStage.value = "idle";
+};
+
+const showCitations = (messageId: string) => {
+  evidenceMessageId.value = messageId;
+  if (isCompactViewport.value) isEvidenceDrawerOpen.value = true;
+};
+
+const retryMessage = (messageId: string) => {
+  const request = messages.value.find((item) => item.id === messageId)?.request;
+  if (request)
+    void handleSendMessage(request.message, request.files, request.knowledgeBaseIds, false);
 };
 
 const addMessage = (type: "user" | "assistant", content: string, files?: UploadedFile[]) => {
@@ -238,81 +349,75 @@ const addMessage = (type: "user" | "assistant", content: string, files?: Uploade
   });
 };
 
-const finishLoadingMessages = () => {
-  messages.value.forEach((msg) => {
-    if (msg.type === "assistant" && msg.loading) {
-      msg.loading = false;
-    }
-  });
-};
-
 const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
 };
 
 // ============ 发送消息 ============
-const handleSendMessage = async (message: string, files?: UploadedFile[]) => {
-  if ((!message && !files) || !isConnected.value || sending.value) return;
-
-  // 结束上一个加载中的消息
-  finishLoadingMessages();
-
-  // 创建新会话（如果没有）
-  if (!currentSessionId.value) {
-    const success = await createNewSession(message);
-    if (!success) return;
-  }
-
-  // 添加用户消息
-  addMessage("user", message, files);
-
-  // 添加加载中的助手消息
-  messages.value.push({
-    id: generateId(),
-    type: "assistant",
-    content: "",
-    timestamp: Date.now(),
-    loading: true,
-    thinkingCollapsed: true,
-  });
-
+const handleSendMessage = async (
+  message: string,
+  files?: UploadedFile[],
+  baseIds = selectedKnowledgeBaseIds.value,
+  clearInput = true
+) => {
+  if (
+    (!message.trim() && !files?.length) ||
+    !isConnected.value ||
+    switchingSession.value ||
+    sending.value ||
+    files?.some((file) => file.status !== "ready")
+  )
+    return;
   sending.value = true;
-  chatMessagesRef.value?.scrollToBottom();
-
+  error.value = "";
+  const generation = ++sendGeneration;
+  const knowledgeBaseIds = [...baseIds];
+  const question = message.trim() || "请根据附件内容回答。";
   try {
-    if (ws?.readyState === WebSocket.OPEN) {
-      ws.send(
-        JSON.stringify({
-          message,
-          session_id: currentSessionId.value,
-          knowledge_base_ids: selectedKnowledgeBaseIds.value,
-          files: files?.map((f) => ({ name: f.name, type: f.type, size: f.size })),
-        })
-      );
-    } else {
-      throw new Error("WebSocket 连接未建立");
-    }
-  } catch {
-    messages.value.pop();
-    error.value = "发送消息失败，请检查连接状态";
-  } finally {
-    sending.value = false;
-  }
-};
-
-const createNewSession = async (firstMessage: string): Promise<boolean> => {
-  try {
-    const title = firstMessage.slice(0, 20) + (firstMessage.length > 20 ? "..." : "");
-    const res = await AiChatAPI.createSession({ title });
-
-    if (res.data?.code === 0 || res.data?.success) {
-      currentSessionId.value = res.data.data?.id ?? null;
+    if (!currentSessionId.value) {
+      const response = await AiChatAPI.createSession({ title: question.slice(0, 20) });
+      if (generation !== sendGeneration) return;
+      if (!isSuccessResponse(response.data) || !response.data.data?.id)
+        throw new Error("创建会话失败");
+      currentSessionId.value = response.data.data.id;
       sidebarRef.value?.loadSessions();
-      return true;
     }
-    throw new Error("创建会话失败");
+    if (generation !== sendGeneration) return;
+    if (ws?.readyState !== WebSocket.OPEN) throw new Error("连接已断开");
+    const requestId = generateId();
+    const assistantId = generateId();
+    addMessage("user", question, files);
+    messages.value.push({
+      id: assistantId,
+      type: "assistant",
+      content: "",
+      timestamp: Date.now(),
+      loading: true,
+      thinkingCollapsed: true,
+      citations: [],
+      request: { message: question, files, knowledgeBaseIds },
+    });
+    activeRequest = { id: requestId, messageId: assistantId };
+    evidenceMessageId.value = assistantId;
+    processStage.value = "retrieving";
+    ws.send(
+      JSON.stringify({
+        request_id: requestId,
+        message: question,
+        session_id: currentSessionId.value,
+        knowledge_base_ids: knowledgeBaseIds,
+        files: files?.map((file) => ({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          content: file.content,
+        })),
+      })
+    );
+    if (clearInput) chatInputRef.value?.clearDraft();
+    chatMessagesRef.value?.scrollToBottom();
   } catch {
-    return false;
+    if (generation === sendGeneration) failCurrentRequest("发送失败，草稿已保留，请检查连接后重试");
   }
 };
 
@@ -326,9 +431,12 @@ const handleSelectSession = async (session: ChatSession) => {
     ElMessage.error("会话 ID 缺失，无法切换");
     return;
   }
-
+  stopGeneration();
+  const generation = ++selectionGeneration;
+  switchingSession.value = true;
   try {
     const response = await AiChatAPI.getSessionDetail(sessionId);
+    if (generation !== selectionGeneration) return;
     const responseData = response.data;
     if (!isSuccessResponse(responseData)) {
       ElMessage.error(responseData?.msg || "获取会话详情失败");
@@ -346,17 +454,29 @@ const handleSelectSession = async (session: ChatSession) => {
       runMessages.forEach((msg: any) => {
         if (msg.role === "user" || msg.role === "assistant") {
           addMessage(msg.role, msg.content);
+          const restored = messages.value[messages.value.length - 1];
+          if (restored) {
+            restored.citations = msg.citations || [];
+            if (msg.role === "assistant") evidenceMessageId.value = restored.id;
+          }
         }
       });
     });
 
     ElMessage.success(`已切换到会话：${session.title}`);
   } catch {
-    ElMessage.error("获取会话详情失败");
+    if (generation === selectionGeneration) ElMessage.error("获取会话详情失败");
+  } finally {
+    if (generation === selectionGeneration) switchingSession.value = false;
   }
 };
 
 const handleNewSession = () => {
+  stopGeneration();
+  selectionGeneration += 1;
+  switchingSession.value = false;
+  error.value = "";
+  selectedCitation.value = null;
   currentSessionId.value = null;
   messages.value = [];
   ElMessage.success("已开启新对话");
@@ -365,18 +485,19 @@ const handleNewSession = () => {
 const handleDeleteSession = (sessionId: string) => {
   if (currentSessionId.value !== sessionId) return;
 
-  currentSessionId.value = null;
-  messages.value = [];
-  finishLoadingMessages();
+  handleNewSession();
 };
 
 const handleClearChat = async () => {
   try {
-    await ElMessageBox.confirm("确定要清空当前对话吗？此操作不可恢复。", "确认清空", {
+    await ElMessageBox.confirm("清空当前显示？已保存的会话历史不会删除。", "确认清空", {
       confirmButtonText: "确定",
       cancelButtonText: "取消",
       type: "warning",
     });
+    stopGeneration();
+    selectionGeneration += 1;
+    switchingSession.value = false;
     messages.value = [];
     ElMessage.success("对话已清空");
   } catch {
@@ -411,12 +532,24 @@ onMounted(() => {
 onUnmounted(disconnectWebSocket);
 // KeepAlive 缓存切换：离开视图即断开，回到视图按需重连。
 onActivated(() => {
+  allowReconnect = true;
   if (!isConnected.value) connectWebSocket();
 });
 onDeactivated(disconnectWebSocket);
 </script>
 
 <style lang="scss" scoped>
+.chat-workspace {
+  flex: 1;
+  min-height: 0;
+}
+
+.citation-preview {
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 .main-chat {
   height: 100%;
   overflow: hidden;
@@ -425,28 +558,28 @@ onDeactivated(disconnectWebSocket);
   border-radius: 10px;
   box-shadow: none;
 
-  .chat-split-panel {
+  :deep(.chat-split-panel) {
     min-width: 0;
     min-height: 0;
     overflow: hidden;
     background: transparent;
   }
 
-  .sidebar-panel {
+  :deep(.sidebar-panel) {
     transition: flex-basis 0.25s ease;
 
-    :deep(.sidebar) {
+    .sidebar {
       min-width: 0;
     }
 
     &.collapsed {
-      :deep(.sidebar) {
+      .sidebar {
         overflow: hidden;
       }
     }
   }
 
-  .center-panel {
+  :deep(.center-panel) {
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -484,7 +617,7 @@ onDeactivated(disconnectWebSocket);
     border-top: 1px solid var(--fa-card-border);
   }
 
-  .evidence-panel {
+  :deep(.evidence-panel) {
     padding: 12px;
     overflow-y: auto;
     background: var(--fa-color-canvas);
@@ -500,20 +633,8 @@ onDeactivated(disconnectWebSocket);
     background: color-mix(in srgb, var(--theme-color) 12%, transparent);
   }
 
-  @media (width <= 1024px) {
-    .evidence-panel {
-      display: none;
-    }
-  }
-
-  @media (width <= 768px) {
-    .sidebar-panel {
-      display: none;
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .sidebar-panel,
+    :deep(.sidebar-panel),
     :deep(.el-splitter-bar__dragger) {
       transition: none;
     }

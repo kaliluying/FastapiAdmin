@@ -1,5 +1,6 @@
 <template>
   <ElDrawer
+    ref="drawerRef"
     v-model="visible"
     :size="size"
     :direction="direction"
@@ -7,6 +8,7 @@
     :class="drawerClassMerged"
     destroy-on-close
     v-bind="drawerAttrs"
+    :before-close="handleBeforeClose"
     @close="emit('close')"
     @opened="emit('opened')"
   >
@@ -18,7 +20,7 @@
             <FaIconButton
               class="core-overlay-icon-btn"
               icon="ri:close-line"
-              @click="visible = false"
+              @click="drawerRef?.handleClose()"
             />
           </ElTooltip>
         </div>
@@ -30,7 +32,7 @@
     </template>
     <template v-else-if="formMode" #footer>
       <div class="fa-drawer-footer" :style="'padding-right: var(--el-drawer-padding-primary)'">
-        <ElButton v-if="formMode !== 'detail'" @click="emit('cancel')">
+        <ElButton v-if="formMode !== 'detail'" :disabled="confirmLoading" @click="handleCancel">
           {{ cancelText }}
         </ElButton>
         <ElButton type="primary" :loading="confirmLoading" @click="emit('confirm')">
@@ -42,9 +44,10 @@
 </template>
 
 <script setup lang="ts">
-import type { DrawerProps } from "element-plus";
-import { computed, useAttrs } from "vue";
+import type { DrawerProps, DrawerInstance } from "element-plus";
+import { computed, ref, useAttrs } from "vue";
 import FaIconButton from "@/components/widget/fa-icon-button/index.vue";
+import { useFormCloseGuard } from "@/hooks/core/useCrudForm";
 
 defineOptions({ name: "FaDrawer", inheritAttrs: false });
 
@@ -59,6 +62,7 @@ interface Props {
   formMode?: "detail" | "create" | "update";
   /** 确定按钮 loading 状态 */
   confirmLoading?: boolean;
+  formData?: object;
   /** 确定按钮文本 */
   confirmText?: string;
   /** 取消按钮文本 */
@@ -84,6 +88,25 @@ interface Emits {
 const emit = defineEmits<Emits>();
 
 const attrs = useAttrs();
+const drawerRef = ref<DrawerInstance>();
+const canClose = useFormCloseGuard({
+  visible: () => props.modelValue,
+  formData: () => (props.formMode === "detail" ? undefined : props.formData),
+  submitting: () => !!props.confirmLoading,
+});
+
+async function handleBeforeClose(done: (cancel?: boolean) => void) {
+  if (!(await canClose()) || props.confirmLoading) return;
+  const beforeClose = (attrs.beforeClose ?? attrs["before-close"]) as DrawerProps["beforeClose"];
+  if (beforeClose) beforeClose(done);
+  else done();
+}
+
+function handleCancel() {
+  void handleBeforeClose((cancel) => {
+    if (!cancel) emit("cancel");
+  });
+}
 
 const visible = computed({
   get: () => props.modelValue,

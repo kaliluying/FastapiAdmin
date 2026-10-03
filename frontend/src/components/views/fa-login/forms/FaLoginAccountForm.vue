@@ -14,6 +14,8 @@
         <ElInput
           class="custom-height"
           v-model.trim="loginForm.username"
+          name="username"
+          autocomplete="username"
           clearable
           :placeholder="$t('login.placeholder.username')"
         >
@@ -27,9 +29,10 @@
         <ElFormItem prop="password">
           <ElInput
             class="custom-height"
-            v-model.trim="loginForm.password"
+            v-model="loginForm.password"
             type="password"
-            autocomplete="off"
+            name="password"
+            autocomplete="current-password"
             show-password
             clearable
             :placeholder="$t('login.placeholder.password')"
@@ -121,9 +124,6 @@ const isCapsLock = ref(false);
 function onPasswordKeyup(event: KeyboardEvent) {
   if (event instanceof KeyboardEvent) {
     isCapsLock.value = event.getModifierState("CapsLock");
-    if (event.key === "Enter") {
-      emit("submit");
-    }
   }
 }
 

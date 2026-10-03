@@ -247,7 +247,7 @@ async function consumeOAuthTicket(): Promise<boolean> {
 
 onMounted(async () => {
   try {
-      if (await consumeOAuthTicket()) return;
+    if (await consumeOAuthTicket()) return;
     await loadCaptcha();
   } catch (error) {
     console.warn("[Login] 登录初始化失败，继续使用默认渲染", error);
@@ -264,13 +264,12 @@ onMounted(async () => {
 });
 
 const handleSubmit = async () => {
-  if (!accountFormRef.value) return;
+  if (!accountFormRef.value || loading.value) return;
+  loading.value = true;
 
   try {
     const valid = await accountFormRef.value.validate?.();
     if (!valid) return;
-
-    loading.value = true;
 
     await userStore.login(loginForm);
     await router.replace(resolveRedirectTarget(route.query));

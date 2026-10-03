@@ -56,9 +56,11 @@
           ref="faTableRef"
           row-key="id"
           :loading="loading"
+          :error="error"
           :data="data"
           :columns="columns"
           :pagination="pagination"
+          @retry="refreshData"
           @selection-change="onTableSelectionChange"
           @pagination:size-change="handleSizeChange"
           @pagination:current-change="handleCurrentChange"
@@ -71,6 +73,7 @@
         :size="drawerSize"
         :form-mode="dialogVisible.type"
         :confirm-loading="submitLoading"
+        :form-data="formData"
         @cancel="handleCloseDialog"
         @confirm="dialogVisible.type === 'detail' ? handleCloseDialog() : handleSubmit()"
       >
@@ -133,6 +136,22 @@
         </template>
       </FaDrawer>
 
+      <ElAlert
+        v-if="importResult"
+        class="mb-4"
+        :title="`导入结果：成功 ${importResult.success_count} 条，失败 ${importResult.failed_count} 条`"
+        :type="importResultType"
+        :closable="false"
+        show-icon
+        role="status"
+      >
+        <ul class="max-h-40 overflow-y-auto">
+          <li v-for="error in importResult.errors" :key="error.row">
+            第 {{ error.row }} 行：{{ error.message }}
+          </li>
+        </ul>
+      </ElAlert>
+
       <FaImportDialog
         v-model="importVisible"
         :content-config="userImportContentConfig"
@@ -174,6 +193,7 @@ import UserAPI, {
   type UserForm,
   type UserInfo,
   type UserPageQuery,
+  type UserImportResult,
 } from "@/api/module_system/user";
 import { renderTableOperationCell, type TableOperationAction, resolveStatusColumns } from "@utils";
 import RoleAPI from "@/api/module_system/role";
@@ -282,6 +302,11 @@ const dataFormRef = ref<InstanceType<typeof FaForm> | null>(null);
 const userFormRenderKey = ref(0);
 const submitLoading = ref(false);
 const uploadLoading = ref(false);
+const importResult = ref<UserImportResult | null>(null);
+const importResultType = computed(() => {
+  if (!importResult.value?.failed_count) return "success";
+  return importResult.value.success_count ? "warning" : "error";
+});
 const createLoading = ref(false);
 const moreLoading = ref(false);
 
@@ -487,6 +512,7 @@ const {
   columnChecks,
   data,
   loading,
+  error,
   pagination,
   searchParams,
   getData,
@@ -541,6 +567,7 @@ const {
         status: {
           "0": { type: "success", text: "男" },
           "1": { type: "warning", text: "女" },
+          "2": { type: "info", text: "未知" },
         },
       },
       { prop: "created_time", label: "创建时间", width: 168, showOverflowTooltip: true },
@@ -681,12 +708,28 @@ function onResetSearch() {
 
 async function handleImportUpload(formDataUpload: FormData) {
   uploadLoading.value = true;
+  importResult.value = null;
   try {
     const response = await UserAPI.importUser(formDataUpload);
     if (response.data.code === ResultEnum.SUCCESS) {
-      ElMessage.success(`${response.data.msg}，${response.data.data}`);
-      importVisible.value = false;
-      await refreshData();
+      const result = response.data.data;
+      if (typeof result === "string") {
+        ElMessage.success(`${response.data.msg}，${result}`);
+        importVisible.value = false;
+        await refreshData();
+        return;
+      }
+      importResult.value = result;
+      const message = `导入结果：成功 ${result.success_count} 条，失败 ${result.failed_count} 条`;
+      if (!result.failed_count) {
+        ElMessage.success(message);
+        importVisible.value = false;
+      } else if (result.success_count) {
+        ElMessage.warning(message);
+      } else {
+        ElMessage.error(message);
+      }
+      if (result.success_count) await refreshData();
     } else {
       ElMessage.error(response.data.msg || "导入失败");
     }

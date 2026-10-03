@@ -1,6 +1,8 @@
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
@@ -21,6 +23,16 @@ def test_build_chroma_metadata_contains_required_filters():
         "chunk_index": 2,
         "file_name": "handbook.md",
     }
+
+
+@pytest.mark.parametrize(("mode", "expected"), [("bm25", (False, True)), ("vector", (True, False))])
+def test_index_cleanup_does_not_initialize_absent_inactive_stores(monkeypatch, tmp_path, mode, expected):
+    from app.plugin.module_ai.knowledge import service as service_module
+
+    monkeypatch.setattr(service_module.settings, "RETRIEVAL_MODE", mode)
+    monkeypatch.setattr(service_module.settings, "CHROMA_PERSIST_DIR", str(tmp_path / "absent-chroma"))
+    monkeypatch.setattr(service_module.settings, "BM25_INDEX_DIR", str(tmp_path / "absent-bm25"))
+    assert KnowledgeService(AuthSchema())._index_backends_to_clean() == expected
 
 
 def test_knowledge_base_output_exposes_index_status_counts():
@@ -80,6 +92,9 @@ async def test_bm25_indexing_skips_vector_dependencies_and_uses_chroma_ids(monke
         def __init__(self):
             self.chroma_ids = []
 
+        async def list_by_document(self, _document_id):
+            return []
+
         async def replace_chunks(self, *, knowledge_base_id, document_id, chunks, chroma_ids):
             self.chroma_ids = chroma_ids
             return [
@@ -126,16 +141,18 @@ async def test_bm25_indexing_skips_vector_dependencies_and_uses_chroma_ids(monke
     monkeypatch.setattr(service_module, "split_text", lambda _text: ["第一段", "第二段"])
     monkeypatch.setattr(service_module.settings, "RETRIEVAL_MODE", "bm25")
 
+    db = AsyncMock(spec=AsyncSession)
+    db.execute.return_value = SimpleNamespace(rowcount=1)
     result = await KnowledgeService(
-        AuthSchema(),
+        AuthSchema(db=db),
         store=VectorDependency(),
         embedding_client=VectorDependency(),
         bm25_index=bm25_index,
     ).index_document(document.id)
 
     assert result.id == document.id
-    assert bm25_index.operations[0] == ("delete", document.id)
-    assert [chunk["id"] for chunk in bm25_index.operations[1][1]] == chunk_crud.chroma_ids
+    assert [chunk["id"] for chunk in bm25_index.operations[0][1]] == chunk_crud.chroma_ids
+    assert db.commit.await_count == 3
 
 
 @pytest.mark.asyncio

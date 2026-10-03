@@ -123,6 +123,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/conftest.py" = ["E402"]  # 先设置 TESTING/SQLite 环境，再 import 应用
+"tests/ux_e2e_server.py" = ["E402"]
 
 [tool.ruff.format]
 docstring-code-format = true

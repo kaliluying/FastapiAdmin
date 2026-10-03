@@ -207,7 +207,7 @@ class RoleService:
         await invalidate_permission_cache(getattr(self.auth, "redis", None))
 
     @staticmethod
-    def export_list(role_list: list[dict[str, Any]]) -> bytes:
+    def export_list(role_list: list[RoleOutSchema | dict[str, Any]]) -> bytes:
         """
         导出角色列表
 
@@ -241,7 +241,7 @@ class RoleService:
         }
 
         # 处理数据
-        data = role_list.copy()
+        data = [item.model_dump() if isinstance(item, RoleOutSchema) else item.copy() for item in role_list]
         for item in data:
             item["status"] = "启用" if item.get("status") == 0 else "停用"
             item["data_scope"] = data_scope_map.get(item.get("data_scope", 1), "")

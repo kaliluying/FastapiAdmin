@@ -282,7 +282,10 @@ function useTableImpl<TApiFn extends (params: any) => Promise<any>>(
   });
 
   // 错误处理函数
-  const handleError = createErrorHandler(onError, enableLog);
+  const handleError = createErrorHandler((tableError) => {
+    error.value = tableError;
+    onError?.(tableError);
+  }, enableLog);
 
   // 清理缓存，根据不同的业务场景选择性地清理缓存
   const clearCache = (strategy: CacheInvalidationStrategy, context?: string): void => {

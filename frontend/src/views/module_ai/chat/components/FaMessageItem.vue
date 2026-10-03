@@ -58,6 +58,20 @@
           </div>
         </div>
       </div>
+      <p v-if="message.error" role="alert">{{ message.error }}</p>
+      <p v-if="message.stopped" class="message-note">已停止生成；当前回答可能未保存</p>
+      <div v-if="message.type === 'assistant'" class="message-actions">
+        <ElButton v-if="message.error && message.request" link type="primary" @click="emit('retry')"
+          >重试这条问题</ElButton
+        >
+        <ElButton
+          v-if="message.citations?.length"
+          link
+          type="primary"
+          @click="emit('show-citations')"
+          >查看 {{ message.citations.length }} 条依据</ElButton
+        >
+      </div>
     </div>
   </div>
 </template>
@@ -82,6 +96,8 @@ interface Props {
 
 interface Emits {
   (e: "toggle-thinking"): void;
+  (e: "retry"): void;
+  (e: "show-citations"): void;
 }
 
 const props = defineProps<Props>();

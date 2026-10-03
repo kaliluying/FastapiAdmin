@@ -15,6 +15,14 @@ class ChatQuerySchema(BaseModel):
     session_id: str | None = Field(None, description="Session ID")
     files: list[dict[str, Any]] | None = Field(None, description="Ad-hoc file context")
     knowledge_base_ids: list[int] = Field(default_factory=list, max_length=20, description="Knowledge base IDs")
+    request_id: str | None = Field(None, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+
+    @field_validator("files")
+    @classmethod
+    def validate_files(cls, value: list[dict[str, Any]] | None):
+        if value and (len(value) > 5 or any(len(str(item.get("content", ""))) > 16_000 for item in value)):
+            raise ValueError("最多发送 5 个附件，每个附件正文不超过 16000 字符")
+        return value
 
 
 class ChatSessionCreateSchema(BaseModel):

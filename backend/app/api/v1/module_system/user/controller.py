@@ -192,11 +192,16 @@ async def export_user_list_controller(
 @UserRouter.post(
     "/import/data",
     summary="导入用户",
-    response_model=ResponseSchema[None],
+    response_model=ResponseSchema[dict],
 )
 async def import_user_list_controller(
     file: UploadFile,
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_system:user:import"]))],
 ) -> JSONResponse:
     batch_import_result = await UserService(auth).batch_import(file=file, update_support=True)
-    return SuccessResponse(data=batch_import_result, msg="导入用户成功")
+    success_count = batch_import_result["success_count"]
+    failed_count = batch_import_result["failed_count"]
+    msg = "导入用户成功"
+    if failed_count:
+        msg = "部分导入失败" if success_count else "导入用户失败"
+    return SuccessResponse(data=batch_import_result, msg=msg, success=success_count > 0)

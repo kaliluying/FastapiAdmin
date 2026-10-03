@@ -4,9 +4,9 @@
       <div v-for="(citation, index) in citations" :key="citation.id" class="fa-citation-item">
         <div class="fa-citation-item__header">
           <span class="fa-citation-item__number">{{ index + 1 }}</span>
-          <span class="fa-citation-item__title" @click="emit('select', citation)">{{
-            citation.title
-          }}</span>
+          <button type="button" class="fa-citation-item__title" @click="emit('select', citation)">
+            {{ citation.title }}
+          </button>
           <button
             type="button"
             class="fa-citation-item__expand"
@@ -105,12 +105,16 @@ function toggleExpand(id: string) {
   &__title {
     flex: 1;
     min-width: 0;
+    padding: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     font-size: 13px;
     color: var(--el-text-color-primary);
+    text-align: left;
     white-space: nowrap;
     cursor: pointer;
+    background: none;
+    border: none;
 
     &:hover {
       color: var(--el-color-primary);

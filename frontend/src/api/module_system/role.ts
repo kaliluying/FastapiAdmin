@@ -58,11 +58,11 @@ const RoleAPI = {
     });
   },
 
-  exportRole(body: TablePageQuery) {
+  exportRole(query: TablePageQuery) {
     return request<Blob>({
       url: `${API_PATH}/export`,
-      method: "post",
-      data: body,
+      method: "get",
+      params: query,
       responseType: "blob",
     });
   },

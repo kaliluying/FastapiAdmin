@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import AsyncGenerator
+from copy import deepcopy
 from datetime import datetime
 from typing import Any
 from uuid import uuid4
@@ -41,18 +42,43 @@ from .schema import (
 
 
 async def _format_session_data(session: ChatSession, auth: AuthSchema | None = None) -> dict[str, Any]:
-    session_dict = session.to_dict() if hasattr(session, "to_dict") else {
-        "session_id": getattr(session, "session_id", ""),
-        "team_id": getattr(session, "team_id", None),
-        "user_id": getattr(session, "user_id", None),
-        "session_data": getattr(session, "session_data", None),
-        "runs": getattr(session, "runs", []),
-        "summary": getattr(session, "summary", None),
-        "created_at": getattr(session, "created_at", None),
-        "updated_at": getattr(session, "updated_at", None),
-    }
+    session_dict = (
+        session.to_dict()
+        if hasattr(session, "to_dict")
+        else {
+            "session_id": getattr(session, "session_id", ""),
+            "team_id": getattr(session, "team_id", None),
+            "user_id": getattr(session, "user_id", None),
+            "session_data": getattr(session, "session_data", None),
+            "runs": getattr(session, "runs", []),
+            "summary": getattr(session, "summary", None),
+            "created_at": getattr(session, "created_at", None),
+            "updated_at": getattr(session, "updated_at", None),
+        }
+    )
     session_data = session_dict.get("session_data") or {}
     runs = session_dict.get("runs") or []
+    if auth:
+        runs = deepcopy(runs)
+        citation_access: dict[tuple[int, ...], bool] = {}
+        for run in runs:
+            if not isinstance(run, dict):
+                continue
+            for message in run.get("messages", []) or []:
+                if not isinstance(message, dict):
+                    continue
+                citations = message.get("citations", []) or []
+                base_ids = list({citation["knowledge_base_id"] for citation in citations if isinstance(citation, dict) and citation.get("knowledge_base_id")})
+                access_key = tuple(sorted(base_ids))
+                if access_key not in citation_access:
+                    try:
+                        await accessible_knowledge_base_ids(auth, base_ids)
+                        citation_access[access_key] = True
+                    except CustomException:
+                        citation_access[access_key] = False
+                if not citation_access[access_key]:
+                    message["citations"] = []
+        session_dict["runs"] = runs
     messages = _extract_messages(runs)
     session_name = session_data.get("session_name") if session_data else None
 
@@ -98,6 +124,7 @@ def _extract_messages(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
                         "role": role,
                         "content": msg.get("content", ""),
                         "created_at": msg.get("created_at"),
+                        "citations": msg.get("citations", []),
                     }
                 )
     return messages
@@ -107,28 +134,28 @@ class ChatService:
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth
 
-    async def chat_query(self, query: ChatQuerySchema) -> AsyncGenerator[str, None]:
+    async def chat_query(self, query: ChatQuerySchema, structured: bool = False) -> AsyncGenerator[str | dict[str, Any], None]:
         try:
             knowledge_base_ids = await accessible_knowledge_base_ids(self.auth, query.knowledge_base_ids)
             await load_runtime_chat_model_config(self.auth)
             config_error = self._validate_ai_config()
             if config_error:
-                yield config_error
+                yield {"type": "error", "message": config_error} if structured else config_error
                 return
 
             crud = ChatSessionCRUD(self.auth) if self._should_persist_session() else None
-            active_session_id = (
-                await self._ensure_session_id(crud, query.session_id)
-                if crud is not None
-                else self._ensure_runtime_session_id(query.session_id)
-            )
+            active_session_id = await self._ensure_session_id(crud, query.session_id) if crud is not None else self._ensure_runtime_session_id(query.session_id)
             db = crud.db if crud else self._get_db()
             if crud and query.session_id is None and db:
                 await db.commit()
             chain = create_rag_chain(db=db, auth=self.auth)
+            if structured:
+                yield {"type": "stage", "stage": "retrieving"}
 
             has_content = False
             response_chunks: list[str] = []
+            citations: list[dict[str, Any]] = []
+            event_options = {"include_events": True} if structured else {}
             async for chunk in chain.astream(
                 message=query.message,
                 user_id=self._get_user_id(),
@@ -136,23 +163,33 @@ class ChatService:
                 session_id=active_session_id,
                 files=query.files,
                 knowledge_base_ids=knowledge_base_ids,
+                **event_options,
             ):
+                if isinstance(chunk, dict):
+                    if chunk.get("type") == "citations":
+                        citations = chunk.get("citations", [])
+                    yield chunk
+                    continue
                 if chunk:
                     has_content = True
                     response_chunks.append(chunk)
-                    yield chunk
+                    yield {"type": "chunk", "content": chunk} if structured else chunk
 
             if not has_content:
-                yield "AI 服务没有返回内容，请检查 OPENAI_API_KEY、OPENAI_BASE_URL 和 OPENAI_MODEL 配置。"
+                message = "AI 服务没有返回内容，请检查模型配置后重试。"
+                yield {"type": "error", "message": message} if structured else message
                 return
 
             if crud:
                 full_response = "".join(response_chunks)
-                await crud.append_run_crud(
+                saved = await crud.append_run_crud(
                     session_id=active_session_id,
                     message=query.message,
                     response=full_response,
+                    **({"citations": citations} if structured else {}),
                 )
+                if saved is False:
+                    raise CustomException(msg="保存回答失败")
                 db = self._get_db()
                 if db:
                     await db.commit()
@@ -161,12 +198,15 @@ class ChatService:
                     user_message=query.message,
                     assistant_response=full_response,
                 )
+            if structured:
+                yield {"type": "done", "session_id": active_session_id}
         except Exception:
             logger.exception("聊天查询失败")
             db = self._get_db()
             if db:
                 await db.rollback()
-            yield "抱歉，处理您的请求时出现错误，请稍后重试。"
+            message = "处理请求或保存回答失败，请稍后重试。"
+            yield {"type": "error", "message": message} if structured else message
 
     async def chat_non_stream(
         self,
@@ -238,6 +278,7 @@ class ChatService:
         if not auth or user_id is None:
             return
         try:
+
             async def _extract() -> None:
                 try:
                     from types import SimpleNamespace

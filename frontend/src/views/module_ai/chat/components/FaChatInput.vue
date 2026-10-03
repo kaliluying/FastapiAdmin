@@ -5,7 +5,17 @@
         <div v-for="file in uploadedFiles" :key="file.id" class="file-item">
           <ElIcon class="file-icon"><Document /></ElIcon>
           <span class="file-name">{{ file.name }}</span>
-          <ElIcon class="file-remove" @click="removeFile(file.id)"><Close /></ElIcon>
+          <span>{{
+            file.status === "uploading" ? "解析中" : file.status === "error" ? file.error : "已解析"
+          }}</span>
+          <ElButton v-if="file.status === 'error'" link @click="parseFile(file)">重试</ElButton>
+          <ElButton
+            text
+            :aria-label="`移除 ${file.name}`"
+            :disabled="sending"
+            @click="removeFile(file.id)"
+            ><ElIcon><Close /></ElIcon
+          ></ElButton>
         </div>
       </div>
       <div class="input-container">
@@ -27,12 +37,15 @@
             :autosize="{ minRows: 3, maxRows: 8 }"
             resize="none"
             class="message-input"
+            maxlength="8000"
+            show-word-limit
             @keydown.enter.exact.prevent="handleSend"
-            @keydown.shift.enter.exact="handleShiftEnter"
           />
         </ElForm>
         <div class="input-footer">
-          <span class="input-hint">Enter 发送 / Shift + Enter 换行</span>
+          <span class="input-hint"
+            >Enter 发送 / Shift + Enter 换行；附件选取片段请查看回答依据</span
+          >
           <div class="input-actions">
             <ElUpload
               ref="uploadRef"
@@ -42,20 +55,31 @@
               :accept="acceptTypes"
               :multiple="true"
             >
-              <ElButton :icon="Paperclip" class="upload-btn" circle />
+              <ElButton
+                :icon="Paperclip"
+                class="upload-btn"
+                circle
+                aria-label="添加文档附件"
+                :disabled="disabled || sending"
+              />
             </ElUpload>
             <ElButton
               :disabled="
-                (!inputMessage.trim() && uploadedFiles.length === 0) || disabled || sending
+                (!inputMessage.trim() && uploadedFiles.length === 0) ||
+                disabled ||
+                sending ||
+                uploadedFiles.some((file) => file.status !== 'ready')
               "
               :loading="sending"
               class="send-button"
               type="primary"
               circle
+              aria-label="发送消息"
               @click="handleSend"
             >
               <ElIcon><Promotion /></ElIcon>
             </ElButton>
+            <ElButton v-if="sending" @click="emit('stop')">停止生成</ElButton>
           </div>
         </div>
       </div>
@@ -66,8 +90,10 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { Promotion, Paperclip, Document, Close } from "@element-plus/icons-vue";
-import type { UploadFile } from "element-plus";
+import type { UploadFile, UploadInstance } from "element-plus";
 import type { UploadedFile } from "../types";
+import { AiChatAPI } from "@/api/module_ai/chat";
+import { ElMessage } from "element-plus";
 
 interface Props {
   disabled?: boolean;
@@ -77,6 +103,7 @@ interface Props {
 
 interface Emits {
   (e: "send", message: string, files?: UploadedFile[]): void;
+  (e: "stop"): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -88,10 +115,11 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 
 const inputMessage = ref("");
+const uploadRef = ref<UploadInstance>();
 const uploadedFiles = ref<UploadedFile[]>([]);
 
 const acceptTypes = computed(() => {
-  return ".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.mp3,.wav,.mp4,.avi,.mov";
+  return ".pdf,.docx,.txt,.md";
 });
 
 const placeholder = computed(() => {
@@ -103,8 +131,16 @@ const handleFileChange = (uploadFile: UploadFile) => {
   if (!file) return;
 
   const maxSize = 10 * 1024 * 1024;
+  if (props.sending || uploadedFiles.value.length >= 5) {
+    ElMessage.warning("最多添加 5 个附件，请等待当前回答结束");
+    return;
+  }
+  if (!/\.(txt|md|pdf|docx)$/i.test(file.name)) {
+    ElMessage.error("仅支持 TXT、MD、PDF、DOCX 附件");
+    return;
+  }
   if (file.size > maxSize) {
-    alert("文件大小不能超过10MB");
+    ElMessage.error("文件大小不能超过10MB");
     return;
   }
 
@@ -114,9 +150,28 @@ const handleFileChange = (uploadFile: UploadFile) => {
     size: file.size,
     type: file.type,
     file,
+    status: "uploading",
   };
 
   uploadedFiles.value.push(uploadedFile);
+  void parseFile(uploadedFiles.value[uploadedFiles.value.length - 1]!);
+};
+
+const parseFile = async (file: UploadedFile) => {
+  if (!file.file) return;
+  file.status = "uploading";
+  file.error = undefined;
+  const body = new FormData();
+  body.append("file", file.file);
+  try {
+    const response = await AiChatAPI.parseAttachment(body);
+    Object.assign(file, response.data.data, { status: "ready" });
+    if (file.truncated)
+      ElMessage.warning(`${file.name} 较长，已截取解析正文；实际用于回答的范围以回答依据为准`);
+  } catch {
+    file.status = "error";
+    file.error = "解析失败";
+  }
 };
 
 const removeFile = (id: string) => {
@@ -128,19 +183,23 @@ const removeFile = (id: string) => {
 
 const handleSend = () => {
   const message = inputMessage.value.trim();
-  if ((!message && uploadedFiles.value.length === 0) || props.disabled || props.sending) {
+  if (
+    (!message && uploadedFiles.value.length === 0) ||
+    props.disabled ||
+    props.sending ||
+    uploadedFiles.value.some((file) => file.status !== "ready")
+  ) {
     return;
   }
   emit("send", message, uploadedFiles.value.length > 0 ? [...uploadedFiles.value] : undefined);
-  inputMessage.value = "";
-  uploadedFiles.value = [];
-};
-
-const handleShiftEnter = () => {
-  inputMessage.value += "\n";
 };
 
 defineExpose({
+  clearDraft: () => {
+    inputMessage.value = "";
+    uploadedFiles.value = [];
+    uploadRef.value?.clearFiles();
+  },
   focus: () => {
     const input = document.querySelector(".message-input textarea") as HTMLTextAreaElement;
     input?.focus();

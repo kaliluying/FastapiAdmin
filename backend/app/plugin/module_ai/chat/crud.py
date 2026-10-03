@@ -120,7 +120,7 @@ class ChatSessionCRUD:
             logger.error(f"更新聊天会话失败: {e}")
             return False
 
-    async def append_run_crud(self, *, session_id: str, message: str, response: str) -> bool:
+    async def append_run_crud(self, *, session_id: str, message: str, response: str, citations: list[dict[str, Any]] | None = None) -> bool:
         try:
             obj = await self._get_model(session_id)
             if not obj:
@@ -135,7 +135,7 @@ class ChatSessionCRUD:
                     "created_at": int(time.time()),
                     "messages": [
                         {"role": "user", "content": message[:MAX_STORED_MESSAGE_CHARS]},
-                        {"role": "assistant", "content": response[:MAX_STORED_RESPONSE_CHARS]},
+                        {"role": "assistant", "content": response[:MAX_STORED_RESPONSE_CHARS], **({"citations": citations} if citations is not None else {})},
                     ],
                 }
             )
