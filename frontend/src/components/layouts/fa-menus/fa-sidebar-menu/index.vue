@@ -463,7 +463,7 @@ watch(menuOpen, (isMenuOpen: boolean) => {
 
             .art-svg-icon,
             span {
-              color: var(--theme-color) !important;
+              color: var(--fa-color-accent-text) !important;
             }
           }
         }
@@ -649,7 +649,7 @@ watch(menuOpen, (isMenuOpen: boolean) => {
         border-color 0.18s ease;
 
       &:hover {
-        color: var(--theme-color);
+        color: var(--fa-color-accent-text);
         background: color-mix(in srgb, var(--theme-color) 8%, transparent);
         border-color: color-mix(in srgb, var(--theme-color) 18%, transparent);
       }
@@ -812,7 +812,7 @@ $popup-menu-radius: 6px;
 }
 
 /* 通用选中样式 */
-@mixin menu-active($color, $bg-color, $icon-color: var(--theme-color)) {
+@mixin menu-active($color, $bg-color, $icon-color: var(--fa-color-accent-text)) {
   .el-menu-item.is-active {
     position: relative;
     color: $color !important;
@@ -1011,7 +1011,7 @@ $popup-menu-radius: 6px;
         .menu-icon {
           .art-svg-icon {
             // 选中菜单图标颜色
-            color: var(--theme-color) !important;
+            color: var(--fa-color-accent-text) !important;
           }
         }
       }
@@ -1032,7 +1032,7 @@ $popup-menu-radius: 6px;
   .el-menu-design {
     @include theme-menu-base;
     @include menu-active(
-      var(--theme-color),
+      var(--fa-color-accent-text),
       color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color))
     );
     @include menu-hover($hover-bg-color, var(--fa-gray-200));
@@ -1046,7 +1046,7 @@ $popup-menu-radius: 6px;
   .el-menu-dark {
     @include theme-menu-base;
     @include menu-active(
-      var(--theme-color),
+      var(--fa-color-accent-text),
       color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color))
     );
     @include menu-hover(rgb(255 255 255 / 8%), rgb(255 255 255 / 10%));
@@ -1059,7 +1059,7 @@ $popup-menu-radius: 6px;
   /* ---------------------- Light theme menu ---------------------- */
   .el-menu-light {
     .el-menu-item.is-active {
-      color: var(--theme-color) !important;
+      color: var(--fa-color-accent-text) !important;
       background: color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color)) !important;
       border: none;
       border-radius: 0;
@@ -1077,14 +1077,14 @@ $popup-menu-radius: 6px;
       }
 
       .menu-icon {
-        color: var(--theme-color) !important;
+        color: var(--fa-color-accent-text) !important;
         background: color-mix(in srgb, var(--theme-color) 14%, transparent);
         box-shadow: none;
       }
 
       .art-svg-icon,
       .menu-name {
-        color: var(--theme-color) !important;
+        color: var(--fa-color-accent-text) !important;
       }
     }
 
@@ -1144,7 +1144,7 @@ $popup-menu-radius: 6px;
     .el-menu-item.is-active {
       span,
       .menu-icon .art-svg-icon {
-        color: var(--theme-color) !important;
+        color: var(--fa-color-accent-text) !important;
       }
 
       .menu-icon {
@@ -1174,7 +1174,7 @@ $popup-menu-radius: 6px;
     }
 
     .el-menu-item.is-active {
-      color: var(--theme-color) !important;
+      color: var(--fa-color-accent-text) !important;
       background: color-mix(in srgb, var(--theme-color) 14%, transparent) !important;
       border-color: transparent !important;
       border-radius: 0;
@@ -1192,7 +1192,7 @@ $popup-menu-radius: 6px;
       }
 
       .menu-icon {
-        color: var(--theme-color) !important;
+        color: var(--fa-color-accent-text) !important;
         background: color-mix(in srgb, var(--theme-color) 16%, transparent);
         box-shadow: none;
       }
@@ -1200,7 +1200,7 @@ $popup-menu-radius: 6px;
       span,
       .menu-icon .art-svg-icon,
       .menu-name {
-        color: var(--theme-color) !important;
+        color: var(--fa-color-accent-text) !important;
       }
     }
   }

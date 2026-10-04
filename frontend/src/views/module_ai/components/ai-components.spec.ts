@@ -73,4 +73,23 @@ describe("AI workspace primitives", () => {
     wrapper.get(".fa-citation-item__title").trigger("click");
     expect(wrapper.emitted("select")?.[0]?.[0]).toMatchObject({ title: "权限管理指南" });
   });
+  it("shows real provenance including chunk zero, without inventing missing metadata", async () => {
+    const citation = {
+      id: "doc-7-0",
+      title: "操作手册",
+      document_id: 7,
+      chunk_index: 0,
+      snippet: "真实片段",
+    };
+    const wrapper = mount(FaCitationList, { props: { citations: [citation] } });
+    expect(wrapper.get(".fa-citation-item__meta").text()).toContain("文档 7");
+    expect(wrapper.get(".fa-citation-item__meta").text()).toContain("分块 0");
+    await wrapper.get("button[aria-expanded]").trigger("click");
+    expect(wrapper.get(".fa-citation-item__snippet").text()).toBe("真实片段");
+    await wrapper.get(".fa-citation-item__title").trigger("click");
+    expect(wrapper.emitted("select")?.[0]).toEqual([citation]);
+    await wrapper.setProps({ citations: [{ id: "attachment", title: "附件" }] });
+    expect(wrapper.find(".fa-citation-item__meta").exists()).toBe(false);
+    expect(wrapper.text()).not.toMatch(/得分|页码/);
+  });
 });

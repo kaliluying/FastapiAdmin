@@ -30,7 +30,7 @@
  *   以及 $button / $messagebox / $popover 等组件样式偏好。
  * - primary 由运行时 setElementThemeColor() 动态写入 :root
  *   （因为用户在设置面板里可切换 themeColorPresets）
- * - SCSS 注入的 primary 退化为 Quiet Operations teal；运行时仍可覆盖它。
+ * - SCSS 注入的 primary 退化为 默认品牌蓝；运行时仍可覆盖它。
  */
 
 @use "../core/fa-tokens.scss" as *;
@@ -60,17 +60,17 @@
 
   // Quiet Operations controls retain a compact, stable geometry.
   $button: (
-      "hover-bg-color": var(--el-color-primary-light-9),
-      "hover-border-color": var(--el-color-primary),
-      "border-color": var(--el-color-primary),
-      "text-color": var(--el-color-primary),
+      "hover-bg-color": var(--el-fill-color-light),
+      "hover-border-color": var(--fa-color-control-border),
+      "border-color": var(--fa-color-control-border),
+      "text-color": var(--fa-color-text),
     ),
 
-  // 浮层圆角上限为 8px。
+  // 浮层圆角为 14px。
   $messagebox: (
-      "border-radius": "8px",
+      "border-radius": "14px",
     ),
   $popover: (
-    "border-radius": "8px",
+    "border-radius": "14px",
   )
 );

@@ -289,7 +289,7 @@ onMounted(loadData);
 
 h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: var(--fa-text-page);
   font-weight: 600;
   color: var(--fa-color-text);
 }

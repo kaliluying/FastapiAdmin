@@ -27,7 +27,7 @@
   --el-bg-color-page: var(--fa-color-canvas) !important;
   --el-bg-color: var(--fa-color-surface) !important;
   --el-bg-color-overlay: var(--fa-color-surface-raised) !important;
-  --el-border-color: var(--fa-color-border) !important;
+  --el-border-color: var(--fa-color-control-border) !important;
   --el-border-color-light: var(--fa-color-border) !important;
   --el-border-color-lighter: color-mix(in srgb, var(--fa-color-border) 70%, transparent) !important;
   --el-fill-color: color-mix(
@@ -581,7 +581,7 @@ html.dark .el-card {
   --el-bg-color-page: var(--fa-color-canvas) !important;
   --el-bg-color: var(--fa-color-surface) !important;
   --el-bg-color-overlay: var(--fa-color-surface-raised) !important;
-  --el-border-color: var(--fa-color-border) !important;
+  --el-border-color: var(--fa-color-control-border) !important;
   --el-border-color-light: var(--fa-color-border) !important;
   --el-border-color-lighter: color-mix(in srgb, var(--fa-color-border) 70%, transparent) !important;
   --el-fill-color: color-mix(
@@ -619,7 +619,7 @@ html.dark .el-card {
 }
 
 .el-button--primary {
-  border-color: var(--theme-color) !important;
+  border-color: var(--el-color-primary) !important;
   box-shadow: none !important;
 }
 
@@ -627,7 +627,7 @@ html.dark .el-card {
 .el-textarea__inner,
 .el-select__wrapper {
   background-color: var(--fa-color-surface) !important;
-  border: 1px solid var(--fa-color-border) !important;
+  border: 1px solid var(--fa-color-control-border) !important;
   border-radius: var(--fa-radius-control) !important;
   box-shadow: none !important;
   transition:
@@ -762,8 +762,9 @@ html.dark .el-card {
 }
 
 .el-pagination.is-background .el-pager li.is-active {
-  background: var(--theme-color) !important;
-  border-color: var(--theme-color) !important;
+  color: var(--fa-color-on-accent) !important;
+  background: var(--el-color-primary) !important;
+  border-color: var(--el-color-primary) !important;
 }
 
 .el-popover,
@@ -836,4 +837,108 @@ html.dark .el-card {
 .el-table--border::before,
 .el-table__inner-wrapper::before {
   background-color: var(--fa-color-border) !important;
+}
+
+// Semantic status colors must also reach component-local variables in both modes.
+:root,
+html.dark {
+  --el-font-size-base: var(--fa-text-body);
+  --el-text-color-placeholder: var(--fa-color-text-muted);
+  @each $status in success, warning, danger, info {
+    --el-color-#{$status}: var(--fa-color-#{$status});
+    --el-color-#{$status}-light-9: var(--fa-color-#{$status}-soft);
+    --el-color-#{$status}-light-8: var(--fa-color-border-strong);
+  }
+}
+
+@each $status in success, warning, danger, info {
+  .el-tag.el-tag--#{$status}:not(.el-tag--dark) {
+    --el-tag-text-color: var(--fa-color-#{$status}-text);
+    --el-tag-bg-color: var(--fa-color-#{$status}-soft);
+    --el-tag-border-color: var(--fa-color-border-strong);
+  }
+  .el-button--#{$status}:not(.is-plain, .is-text, .is-link) {
+    --el-button-text-color: var(--fa-color-on-#{$status});
+    --el-button-hover-text-color: var(--fa-color-on-#{$status});
+    --el-button-hover-bg-color: var(--fa-color-#{$status});
+    --el-button-hover-border-color: var(--fa-color-#{$status});
+    --el-button-active-text-color: var(--fa-color-on-#{$status});
+    --el-button-active-bg-color: var(--fa-color-#{$status});
+    --el-button-active-border-color: var(--fa-color-#{$status});
+  }
+}
+
+.el-button--primary:not(.is-plain, .is-text, .is-link) {
+  --el-button-text-color: var(--fa-color-on-accent);
+  --el-button-hover-text-color: var(--el-color-primary-hover-contrast);
+  --el-button-active-text-color: var(--el-color-primary-hover-contrast);
+  --el-button-hover-bg-color: var(--el-color-primary-dark-2);
+  --el-button-hover-border-color: var(--el-color-primary-dark-2);
+  --el-button-active-bg-color: var(--el-color-primary-dark-2);
+  --el-button-active-border-color: var(--el-color-primary-dark-2);
+}
+
+.el-button--primary:is(.is-text, .is-link),
+.el-link--primary,
+.el-tag.el-tag--primary:not(.el-tag--dark) {
+  color: var(--fa-color-accent-text);
+}
+
+// Destructive actions remain recognizable without dominating the toolbar.
+.el-button.el-button--danger:not(.is-disabled, .is-text, .is-link) {
+  --el-button-text-color: var(--fa-color-danger-text);
+  --el-button-bg-color: var(--fa-color-surface);
+  --el-button-border-color: var(--fa-color-danger-text);
+  --el-button-hover-text-color: var(--fa-color-danger-text);
+  --el-button-hover-bg-color: var(--fa-color-danger-soft);
+  --el-button-hover-border-color: var(--fa-color-danger-text);
+  --el-button-active-text-color: var(--fa-color-danger-text);
+  --el-button-active-bg-color: var(--fa-color-danger-soft);
+  --el-button-active-border-color: var(--fa-color-danger-text);
+}
+
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused,
+.el-textarea__inner:focus {
+  border-color: var(--fa-color-focus) !important;
+}
+
+.el-dropdown-selfdefine:focus-visible {
+  outline: 2px solid var(--fa-color-focus) !important;
+  outline-offset: 2px;
+}
+
+@media (width > 768px) {
+  .el-table td.el-table__cell {
+    box-sizing: border-box;
+    height: 44px;
+    padding: 4px 0;
+    font-size: var(--fa-text-data);
+  }
+}
+
+.el-button--primary.is-plain {
+  --el-button-text-color: var(--fa-color-accent-text);
+  --el-button-hover-text-color: var(--fa-color-on-accent);
+  --el-button-active-text-color: var(--el-color-primary-hover-contrast);
+}
+
+@each $status in success, warning, danger, info {
+  .el-button--#{$status}.is-plain {
+    --el-button-text-color: var(--fa-color-#{$status}-text);
+    --el-button-hover-text-color: var(--fa-color-on-#{$status});
+    --el-button-active-text-color: var(--fa-color-on-#{$status});
+    --el-button-active-bg-color: var(--fa-color-#{$status});
+    --el-button-active-border-color: var(--fa-color-#{$status});
+  }
+  .el-button--#{$status}:is(.is-link, .is-text):not(.is-disabled),
+  .el-alert--#{$status}.is-light {
+    color: var(--fa-color-#{$status}-text);
+  }
+  .el-message--#{$status} {
+    --el-message-text-color: var(--fa-color-#{$status}-text);
+  }
+  .el-tag.el-tag--#{$status}.el-tag--dark {
+    --el-tag-text-color: var(--fa-color-on-#{$status});
+  }
 }

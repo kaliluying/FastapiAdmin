@@ -112,21 +112,28 @@
         </FaAsyncState>
 
         <div v-else-if="asyncState === 'done'" class="result-list">
-          <div v-for="(item, index) in results" :key="index" class="result-rank">
-            <ElCard shadow="never" class="result-card">
-              <div class="result-meta">
-                <ElTag type="primary">#{{ index + 1 }}</ElTag>
-                <span>知识库 {{ item.metadata.knowledge_base_id ?? "-" }}</span>
-                <span>文档 {{ item.metadata.document_id ?? "-" }}</span>
-                <span>分块 {{ item.metadata.chunk_index ?? "-" }}</span>
-                <span v-if="item.distance != null"
-                  >距离 {{ Number(item.distance).toFixed(4) }}</span
-                >
-                <span v-if="item.score != null">BM25 得分 {{ Number(item.score).toFixed(4) }}</span>
-              </div>
-              <p class="result-content">{{ item.content }}</p>
-            </ElCard>
-          </div>
+          <article v-for="(item, index) in results" :key="index" class="result-card">
+            <div class="result-meta fa-data fa-num">
+              <span class="result-number">#{{ index + 1 }}</span>
+              <span v-if="item.metadata.knowledge_base_id != null"
+                >知识库 {{ item.metadata.knowledge_base_id }}</span
+              >
+              <span v-if="item.metadata.document_id != null"
+                >文档 {{ item.metadata.document_id }}</span
+              >
+              <span v-if="item.metadata.chunk_index != null"
+                >分块 {{ item.metadata.chunk_index }}</span
+              >
+              <span v-if="Number.isFinite(item.distance)"
+                >距离 {{ Number(item.distance).toFixed(4) }}</span
+              >
+              <span v-if="Number.isFinite(item.score)"
+                >{{ retrievalMode === "bm25" ? "BM25 得分" : "融合得分" }}
+                {{ Number(item.score).toFixed(4) }}</span
+              >
+            </div>
+            <p class="result-content">{{ item.content }}</p>
+          </article>
         </div>
       </div>
     </ElCard>
@@ -150,6 +157,7 @@ const bases = ref<KnowledgeBase[]>([]);
 const basesError = ref(false);
 const isNarrowViewport = useMediaQuery("(max-width: 640px)");
 const results = ref<RetrievalHit[]>([]);
+const retrievalMode = ref<"vector" | "bm25" | "hybrid">("vector");
 const showAdvanced = ref(false);
 const asyncState = ref<"idle" | "loading" | "empty" | "error" | "done">("idle");
 
@@ -190,6 +198,7 @@ const testRetrieval = async () => {
   try {
     const res = await KnowledgeAPI.testRetrieval({ ...form });
     results.value = res.data?.data?.results || [];
+    retrievalMode.value = res.data?.data?.retrieval_mode || "vector";
     asyncState.value = results.value.length ? "done" : "empty";
   } catch {
     asyncState.value = "error";
@@ -229,7 +238,7 @@ onMounted(async () => {
 
 .advanced-toggle {
   padding: 0;
-  font-size: 13px;
+  font-size: var(--fa-text-body);
 }
 
 .toggle-icon {
@@ -245,7 +254,7 @@ onMounted(async () => {
 
 .results-title {
   margin: 0 0 12px;
-  font-size: 17px;
+  font-size: var(--fa-text-section);
   font-weight: 650;
   color: var(--el-text-color-primary);
 }
@@ -256,13 +265,13 @@ onMounted(async () => {
   gap: 12px;
 }
 
-.result-rank {
-  width: 100%;
+.result-card {
+  padding: 8px 0 8px 8px;
+  border-left: 2px solid var(--fa-color-accent-soft);
 }
 
-.result-card {
-  background: var(--fa-color-canvas);
-  border-radius: 9px;
+.result-number {
+  color: var(--fa-color-text);
 }
 
 .result-meta {
@@ -276,7 +285,8 @@ onMounted(async () => {
 
 .result-content {
   margin: 0;
-  line-height: 1.7;
+  font-size: var(--fa-text-body);
+  line-height: var(--fa-leading-normal);
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }

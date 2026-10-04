@@ -38,17 +38,6 @@ html.dark {
   // 表格头在深色下避免使用默认浅色背景。
   --el-table-header-bg-color: #181f2a;
 
-  // element-plus 功能性色（与 light 模式一致 —— 用户未要求 dark 模式独立色板）
-  // 用 SCSS 插值强制解析变量（避免被字面量输出）。
-  // 注意：实际上 dark mode 下不需要这些覆写 —— element-plus 的 dark/css-vars.scss
-  // 经 SCSS 注入后会用我们的 colors（含 dark 适配的 light-x/dark-2），
-  // 见 html.dark#1 块。这里仅作为冗余防御，万一 EP dark/css-vars.scss 未走注入路径也能兜底。
-  --el-color-success: #{$fa-success};
-  --el-color-warning: #{$fa-warning};
-  --el-color-danger: #{$fa-danger};
-  --el-color-error: #{$fa-danger};
-  --el-color-info: #{$fa-info};
-
   // 富文本编辑器
   // 工具栏背景颜色
   --w-e-toolbar-bg-color: var(--fa-color-surface-raised);

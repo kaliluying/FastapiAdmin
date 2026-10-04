@@ -315,17 +315,17 @@ const submit = async () => {
 
 const goUploadDocuments = (row: KnowledgeBase) => {
   if (!row.id) return;
-  router.push({ path: "/module_ai/document", query: { knowledge_base_id: row.id, upload: "1" } });
+  router.push({ path: "/ai/document", query: { knowledge_base_id: row.id, upload: "1" } });
 };
 
 const goViewDocuments = (row: KnowledgeBase) => {
   if (!row.id) return;
-  router.push({ path: "/module_ai/document", query: { knowledge_base_id: row.id } });
+  router.push({ path: "/ai/document", query: { knowledge_base_id: row.id } });
 };
 
 const goRetrievalTest = (row: KnowledgeBase) => {
   if (!row.id) return;
-  router.push({ path: "/module_ai/retrieval", query: { knowledge_base_id: row.id } });
+  router.push({ path: "/ai/retrieval", query: { knowledge_base_id: row.id } });
 };
 
 const handleRowAction = (command: string, row: KnowledgeBase) => {

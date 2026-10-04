@@ -115,7 +115,7 @@ describe("Knowledge page actions", () => {
     await uploadButton!.trigger("click");
 
     expect(routerPush).toHaveBeenCalledWith({
-      path: "/module_ai/document",
+      path: "/ai/document",
       query: { knowledge_base_id: 7, upload: "1" },
     });
   });
@@ -128,7 +128,7 @@ describe("Knowledge page actions", () => {
     await wrapper.get('[data-test="more-action"]').trigger("click");
 
     expect(routerPush).toHaveBeenCalledWith({
-      path: "/module_ai/retrieval",
+      path: "/ai/retrieval",
       query: { knowledge_base_id: 7 },
     });
   });

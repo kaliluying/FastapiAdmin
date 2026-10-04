@@ -49,7 +49,7 @@ defineProps<Props>();
 
   &__title {
     margin: 0;
-    font-size: clamp(21px, 1.8vw, 26px);
+    font-size: var(--fa-text-page);
     font-weight: 680;
     line-height: 1.3;
     color: var(--fa-color-text, var(--el-text-color-primary));
@@ -58,7 +58,7 @@ defineProps<Props>();
 
   &__description {
     margin: 7px 0 0;
-    font-size: 13px;
+    font-size: var(--fa-text-body);
     line-height: 1.7;
     color: var(--fa-color-text-muted, var(--el-text-color-secondary));
   }

@@ -3,9 +3,16 @@
 
 :root {
   --fa-font-sans:
-    "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", "Avenir Next", system-ui, sans-serif;
-  --fa-font-mono: "JetBrains Mono", ui-monospace, sfmono-regular, menlo, monospace;
+    -apple-system, "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", "Avenir Next", system-ui,
+    sans-serif;
+  --fa-font-mono: ui-monospace, "SFMono-Regular", "SF Mono", menlo, consolas, monospace;
+  --fa-text-page: 26px;
+  --fa-text-section: 16px;
+  --fa-text-body: 13px;
+  --fa-text-data: 13px;
+  --fa-text-caption: 12px;
 
+  // 兼容既有阅读、图标和统计字号；管理组件使用上面的角色。
   // 字号阶梯（4px 基线上的节奏）
   --fa-text-xs: 0.75rem; // 12
   --fa-text-sm: 0.875rem; // 14
@@ -41,4 +48,10 @@ html {
 .mc-value {
   font-feature-settings: "tnum" 1;
   font-variant-numeric: tabular-nums;
+}
+
+.fa-data {
+  font-family: var(--fa-font-mono);
+  font-size: var(--fa-text-data);
+  line-height: var(--fa-leading-tight);
 }

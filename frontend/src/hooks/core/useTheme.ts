@@ -35,7 +35,7 @@ import { useSettingsStore } from "@stores";
 import { SystemThemeEnum } from "@/enums/appEnum";
 import AppConfig from "@/config";
 import { SystemThemeTypes } from "@/types/store";
-import { getDarkColor, getLightColor, setElementThemeColor } from "@utils";
+import { setElementThemeColor } from "@utils";
 import { usePreferredDark } from "@vueuse/core";
 import { watch } from "vue";
 
@@ -64,7 +64,6 @@ export function useTheme() {
     disableTransitions();
 
     const el = document.getElementsByTagName("html")[0]!;
-    const isDark = theme === SystemThemeEnum.DARK;
 
     if (!themeMode) {
       themeMode = theme;
@@ -76,18 +75,8 @@ export function useTheme() {
       el.setAttribute("class", currentTheme.className);
     }
 
-    // 设置按钮颜色加深或变浅
-    const primary = settingStore.systemThemeColor;
-
-    for (let i = 1; i <= 9; i++) {
-      document.documentElement.style.setProperty(
-        `--el-color-primary-light-${i}`,
-        isDark ? `${getDarkColor(primary!, i / 10)}` : `${getLightColor(primary!, i / 10)}`
-      );
-    }
-
-    // 更新store中的主题设置
     settingStore.setGlopTheme(theme, themeMode);
+    setElementThemeColor(settingStore.systemThemeColor!);
 
     // 使用 requestAnimationFrame 确保在下一帧恢复过渡效果
     requestAnimationFrame(() => {

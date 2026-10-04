@@ -61,3 +61,12 @@ html {
 body {
   background-color: var(--bg-animation-color);
 }
+
+@media (prefers-reduced-motion: reduce) {
+  html::view-transition-old(*),
+  html::view-transition-new(*),
+  html.dark::view-transition-old(*),
+  html.dark::view-transition-new(*) {
+    animation: none !important;
+  }
+}

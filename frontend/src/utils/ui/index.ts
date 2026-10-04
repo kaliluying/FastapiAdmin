@@ -140,21 +140,7 @@ export function getDarkColor(color: string, level: number): string {
 }
 
 export function handleElementThemeColor(theme: string, isDark: boolean = false): void {
-  document.documentElement.style.setProperty("--el-color-primary", theme);
-
-  for (let i = 1; i <= 9; i++) {
-    document.documentElement.style.setProperty(
-      `--el-color-primary-light-${i}`,
-      getLightColor(theme, i / 10, isDark)
-    );
-  }
-
-  for (let i = 1; i <= 9; i++) {
-    document.documentElement.style.setProperty(
-      `--el-color-primary-dark-${i}`,
-      getDarkColor(theme, i / 10)
-    );
-  }
+  applyTheme(generateThemeColors(theme, isDark ? ThemeMode.DARK : ThemeMode.LIGHT));
 }
 
 export function setElementThemeColor(color: string): void {
@@ -174,19 +160,58 @@ export function setElementThemeColor(color: string): void {
 // Theme utils
 // -----------------------------
 
-export function generateThemeColors(primary: string, theme: ThemeMode): Record<string, string> {
-  const colors: Record<string, string> = { primary };
+/** WCAG contrast for solid sRGB colors; shared by theme text and its regression checks. */
+export function colorContrast(foreground: string, background: string): number {
+  const luminance = (color: string) => {
+    const channels = hexToRgb(color).map((channel) => {
+      const value = channel / 255;
+      return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return channels[0]! * 0.2126 + channels[1]! * 0.7152 + channels[2]! * 0.0722;
+  };
+  const first = luminance(foreground);
+  const second = luminance(background);
+  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+}
 
-  for (let i = 1; i <= 9; i++) {
-    colors[`primary-light-${i}`] =
-      theme === ThemeMode.LIGHT
-        ? `${getLightColor(primary, i / 10)}`
-        : `${getDarkColor(primary, i / 10)}`;
+function contrastForeground(background: string): string {
+  return colorContrast("#ffffff", background) >= colorContrast("#000000", background)
+    ? "#ffffff"
+    : "#000000";
+}
+
+export function generateThemeColors(
+  selectedColor: string,
+  theme: ThemeMode
+): Record<string, string> {
+  const isDark = theme === ThemeMode.DARK;
+  const surface = isDark ? "#141922" : "#ffffff";
+  // Keep the saved brand swatch. Its default action fill has a separate readable pair.
+  let primary = selectedColor;
+  if (selectedColor.toLowerCase() === "#3b73e8") {
+    primary = isDark ? "#6f9bff" : "#3267d6";
   }
-
-  colors["primary-dark-2"] =
-    theme === ThemeMode.LIGHT ? `${getLightColor(primary, 0.2)}` : `${getDarkColor(primary, 0.3)}`;
-
+  const hover = isDark ? getLightColor(primary, 0.2) : getDarkColor(primary, 0.15);
+  const soft = colourBlend(primary, surface, 0.9);
+  let text = primary;
+  const destination = isDark ? "#ffffff" : "#000000";
+  for (
+    let step = 1;
+    (colorContrast(text, surface) < 4.5 || colorContrast(text, soft) < 4.5) && step <= 10;
+    step++
+  ) {
+    text = colourBlend(primary, destination, step / 10);
+  }
+  const colors: Record<string, string> = {
+    primary,
+    "primary-text": text,
+    "primary-contrast": contrastForeground(primary),
+    "primary-hover-contrast": contrastForeground(hover),
+    "primary-dark-2": hover,
+  };
+  for (let i = 1; i <= 9; i++) {
+    colors[`primary-light-${i}`] = colourBlend(primary, surface, i / 10);
+  }
   return colors;
 }
 
@@ -276,6 +301,10 @@ export const EmojiText: { [key: string]: string } = {
 const { LIGHT, DARK } = SystemThemeEnum;
 
 export const themeAnimation = (e: MouseEvent) => {
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    toggleTheme();
+    return;
+  }
   const x = e.clientX;
   const y = e.clientY;
   const endRadius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));

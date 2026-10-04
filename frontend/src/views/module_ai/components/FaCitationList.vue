@@ -3,7 +3,7 @@
     <template v-if="citations && citations.length > 0">
       <div v-for="(citation, index) in citations" :key="citation.id" class="fa-citation-item">
         <div class="fa-citation-item__header">
-          <span class="fa-citation-item__number">{{ index + 1 }}</span>
+          <span class="fa-citation-item__number fa-data fa-num">{{ index + 1 }}</span>
           <button type="button" class="fa-citation-item__title" @click="emit('select', citation)">
             {{ citation.title }}
           </button>
@@ -18,6 +18,13 @@
               :icon="expandedIds.has(citation.id) ? 'ri:arrow-up-s-line' : 'ri:arrow-down-s-line'"
             />
           </button>
+        </div>
+        <div
+          v-if="citation.document_id != null || citation.chunk_index != null"
+          class="fa-citation-item__meta fa-data fa-num"
+        >
+          <span v-if="citation.document_id != null">文档 {{ citation.document_id }}</span>
+          <span v-if="citation.chunk_index != null">分块 {{ citation.chunk_index }}</span>
         </div>
         <div
           v-if="expandedIds.has(citation.id) && citation.snippet"
@@ -37,16 +44,10 @@ import { Icon } from "@iconify/vue";
 
 defineOptions({ name: "FaCitationList" });
 
-interface AiCitation {
-  id: string;
-  title: string;
-  snippet?: string;
-  source?: string;
-  score?: number;
-}
+import type { ChatCitation } from "../chat/types";
 
-defineProps<{ citations: AiCitation[] }>();
-const emit = defineEmits<{ select: [citation: AiCitation] }>();
+defineProps<{ citations: ChatCitation[] }>();
+const emit = defineEmits<{ select: [citation: ChatCitation] }>();
 
 const expandedIds = ref(new Set<string>());
 
@@ -69,37 +70,36 @@ function toggleExpand(id: string) {
 
   &__empty {
     padding: 16px;
-    font-size: 13px;
+    font-size: var(--fa-text-body);
     color: var(--el-text-color-secondary);
     text-align: center;
   }
 }
 
 .fa-citation-item {
-  overflow: hidden;
-  border: 1px solid var(--fa-color-border, var(--el-border-color));
-  border-radius: var(--fa-radius-panel, 6px);
+  padding-left: 8px;
+  border-left: 2px solid var(--fa-color-accent-soft);
+
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 0 4px 8px;
+    color: var(--fa-color-text-muted);
+  }
 
   &__header {
     display: flex;
     gap: 8px;
     align-items: center;
-    padding: 8px 12px;
+    padding: 4px;
     background: var(--fa-color-surface, var(--el-bg-color));
   }
 
   &__number {
-    display: flex;
     flex-shrink: 0;
-    align-items: center;
-    justify-content: center;
-    width: 20px;
-    height: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--el-color-primary);
-    background: var(--el-color-primary-light-9);
-    border-radius: 50%;
+    min-width: 20px;
+    color: var(--fa-color-text-muted);
   }
 
   &__title {
@@ -108,16 +108,18 @@ function toggleExpand(id: string) {
     padding: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 13px;
+    font-size: var(--fa-text-body);
+    line-height: var(--fa-leading-normal);
     color: var(--el-text-color-primary);
     text-align: left;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    white-space: normal;
     cursor: pointer;
     background: none;
     border: none;
 
     &:hover {
-      color: var(--el-color-primary);
+      color: var(--fa-color-accent-text);
     }
   }
 
@@ -126,31 +128,42 @@ function toggleExpand(id: string) {
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     color: var(--el-text-color-secondary);
     cursor: pointer;
     background: none;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--fa-radius-control);
 
     &:hover {
       background: var(--el-fill-color-light);
     }
 
     &:focus-visible {
-      outline: 2px solid var(--el-color-primary);
+      outline: 2px solid var(--fa-color-focus);
       outline-offset: 2px;
     }
   }
 
   &__snippet {
-    padding: 8px 12px;
-    font-size: 12px;
+    padding: 4px;
+    font-size: var(--fa-text-caption);
     line-height: 1.5;
     color: var(--el-text-color-secondary);
     background: var(--el-fill-color-lighter);
     border-top: 1px solid var(--fa-color-border, var(--el-border-color));
+  }
+}
+
+@media (width <= 768px) {
+  .fa-citation-item__expand {
+    width: 44px;
+    height: 44px;
+  }
+
+  .fa-citation-item__title {
+    min-height: 44px;
   }
 }
 </style>
