@@ -24,8 +24,5 @@ ENV_DIR = BASE_DIR / "env"
 # 初始化脚本
 SCRIPT_DIR: Path = BASE_DIR / "app" / "scripts" / "data"
 
-# ??????
-TEMPLATE_DIR: Path = BASE_DIR / "templates"
-
 # banner.txt 文件路径
 BANNER_FILE = BASE_DIR / "banner.txt"

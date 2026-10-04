@@ -10,14 +10,13 @@ from uuid import uuid4
 
 from app.common.request import paginate
 from app.core.base_schema import AuthSchema
-from app.core.database import async_db_session
 from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.plugin.module_ai.config import validate_model_base_url
 from app.plugin.module_ai.knowledge.public import accessible_knowledge_base_ids
+from app.plugin.module_ai.memory.service import extract_conversation_in_background
 
 from .crud import ChatSession, ChatSessionCRUD
-from .memory_extractor import MemoryExtractor
 from .model_config_service import (
     get_active_chat_model_config,
     load_runtime_chat_model_config,
@@ -278,33 +277,9 @@ class ChatService:
         if not auth or user_id is None:
             return
         try:
-
-            async def _extract() -> None:
-                try:
-                    from types import SimpleNamespace
-
-                    from app.plugin.module_ai.memory.crud import MemoryCRUD
-
-                    async with async_db_session() as background_db:
-                        async with background_db.begin():
-                            background_auth = AuthSchema(
-                                user=SimpleNamespace(id=user_id),
-                                db=background_db,
-                                check_data_scope=False,
-                            )
-                            crud = MemoryCRUD(background_auth)
-                            extractor = MemoryExtractor()
-                            saved = await extractor.extract_and_save(
-                                crud=crud,
-                                user_message=user_message,
-                                assistant_response=assistant_response,
-                            )
-                            if saved > 0:
-                                logger.info(f"记忆提取完成: 已保存 {saved} 条")
-                except Exception as e:
-                    logger.warning(f"记忆提取后台任务失败: {e}")
-
-            asyncio.create_task(_extract())
+            asyncio.create_task(extract_conversation_in_background(
+                user_id=user_id, user_message=user_message, assistant_response=assistant_response,
+            ))
         except Exception as e:
             logger.warning(f"启动记忆提取任务失败: {e}")
 

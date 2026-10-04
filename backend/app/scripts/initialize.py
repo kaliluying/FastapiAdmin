@@ -9,11 +9,14 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.v1.module_demo.category.model import CategoryModel
 from app.api.v1.module_platform.menu.model import MenuModel
 from app.api.v1.module_system.log.model import LoginLogModel, OperationLogModel
 from app.api.v1.module_system.role.model import RoleMenusModel, RoleModel
 from app.api.v1.module_system.user.model import UserModel, UserRolesModel
+from app.common.enums import EnvironmentEnum
 from app.config.path_conf import SCRIPT_DIR
+from app.config.setting import settings
 from app.core.database import async_db_session, create_tables, ensure_schema_indexes
 from app.core.logger import logger
 from app.core.plugins import load_ai_models
@@ -37,6 +40,7 @@ class InitializeData:
         RoleMenusModel,
         UserRolesModel,
         # ── 其他系统/业务表 ──
+        CategoryModel,
         # ── 日志表（追加写入） ──
         LoginLogModel,
         OperationLogModel,
@@ -305,6 +309,8 @@ class InitializeData:
             with open(json_path, encoding="utf-8") as f:
                 raw = json.loads(f.read())
             data = [self._parse_date_strings(item) for item in raw]
+            if filename == "platform_menu" and settings.ENVIRONMENT != EnvironmentEnum.DEV:
+                data = [item for item in data if item.get("route_name") != "Demo"]
             return data
         except json.JSONDecodeError as e:
             logger.error(f"❌️ 解析 {json_path} 失败: {e!s}")

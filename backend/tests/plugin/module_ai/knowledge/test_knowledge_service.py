@@ -152,7 +152,7 @@ async def test_bm25_indexing_skips_vector_dependencies_and_uses_chroma_ids(monke
 
     assert result.id == document.id
     assert [chunk["id"] for chunk in bm25_index.operations[0][1]] == chunk_crud.chroma_ids
-    assert db.commit.await_count == 3
+    assert db.commit.await_count == 4
 
 
 @pytest.mark.asyncio
@@ -202,7 +202,10 @@ async def test_delete_document_validates_all_ids_before_deleting_external_indexe
     monkeypatch.setattr(service_module, "KnowledgeChunkCRUD", lambda _auth: chunk_crud)
     monkeypatch.setattr(service_module.settings, "RETRIEVAL_MODE", "hybrid")
 
-    service = KnowledgeService(AuthSchema(), store=store, bm25_index=bm25_index)
+    db = AsyncMock(spec=AsyncSession)
+    db.execute.return_value = SimpleNamespace(rowcount=1)
+    db.get.return_value = SimpleNamespace(file_path=None)
+    service = KnowledgeService(AuthSchema(db=db), store=store, bm25_index=bm25_index)
     with pytest.raises(CustomException) as error:
         await service.delete_document([41, 99])
 
@@ -243,6 +246,7 @@ async def test_bm25_retrieval_test_skips_vector_dependencies(monkeypatch):
             ]
 
     monkeypatch.setattr(service_module.settings, "RETRIEVAL_MODE", "bm25")
+    monkeypatch.setattr(service_module.KnowledgeRetriever, "_filter_persisted_results", AsyncMock(side_effect=lambda results, _ids: results))
     result = await KnowledgeService(
         AuthSchema(),
         store=VectorDependency(),
@@ -337,6 +341,7 @@ async def test_hybrid_retrieval_response_uses_knowledge_search_results(monkeypat
     monkeypatch.setattr(service_module.settings, "HYBRID_ALPHA", 0.5)
     monkeypatch.setattr(service_module.settings, "RETRIEVAL_CANDIDATE_MULTIPLIER", 4)
     monkeypatch.setattr(service_module.settings, "RETRIEVAL_AUTO_ADJUST_ALPHA", False)
+    monkeypatch.setattr(service_module.KnowledgeRetriever, "_filter_persisted_results", AsyncMock(side_effect=lambda results, _ids: results))
     result = await KnowledgeService(
         AuthSchema(),
         store=ChromaStore(),

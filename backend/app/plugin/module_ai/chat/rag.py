@@ -6,11 +6,12 @@ from functools import lru_cache
 from typing import Any, Protocol
 
 from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 
 from app.core.logger import logger
 from app.plugin.module_ai.config import settings
+from app.plugin.module_ai.memory.service import MemoryService
 
 from .model_config_service import get_active_chat_model_config
 
@@ -55,6 +56,28 @@ class ChatModel(Protocol):
 
     async def stream(self, prompt: str) -> AsyncGenerator[str, None]:
         """Yield answer chunks."""
+
+
+class ToolChatModel(ChatModel, Protocol):
+    async def request_tools(self, messages: list[BaseMessage], tools: list[dict[str, Any]]) -> AIMessage:
+        """Return text and structured tool calls while preserving provider messages."""
+
+
+def content_to_text(content: Any) -> str:
+    """Normalize model text blocks without exposing provider implementation details."""
+    if isinstance(content, str):
+        return content
+    if not isinstance(content, list):
+        return ""
+    parts: list[str] = []
+    for part in content:
+        if isinstance(part, str):
+            parts.append(part)
+        elif isinstance(part, dict) and isinstance(part.get("text"), str):
+            parts.append(part["text"])
+        elif not isinstance(part, dict):
+            parts.append(str(part))
+    return "".join(parts)
 
 
 class KeywordKnowledgeRetriever:
@@ -297,40 +320,27 @@ class LangChainChatModel:
                 temperature=0.7,
             )
 
-    @staticmethod
-    def _content_to_text(content: Any) -> str:
-        if isinstance(content, str):
-            return content
-        if not isinstance(content, list):
-            return ""
-        parts: list[str] = []
-        for part in content:
-            if isinstance(part, str):
-                parts.append(part)
-            elif isinstance(part, dict) and isinstance(part.get("text"), str):
-                parts.append(part["text"])
-            elif not isinstance(part, dict):
-                parts.append(str(part))
-        return "".join(parts)
-
     async def complete(self, prompt: str) -> str:
         response = await self.llm.ainvoke([HumanMessage(content=prompt)])
-        return self._content_to_text(response.content)
+        return content_to_text(response.content)
 
     async def stream(self, prompt: str) -> AsyncGenerator[str, None]:
         async for chunk in self.llm.astream([HumanMessage(content=prompt)]):
-            text = self._content_to_text(chunk.content)
+            text = content_to_text(chunk.content)
             if text:
                 yield text
 
+    async def request_tools(self, messages: list[BaseMessage], tools: list[dict[str, Any]]) -> AIMessage:
+        return await self.llm.bind_tools(tools).ainvoke(messages)
+
 
 @lru_cache(maxsize=4)
-def _cached_chat_model(config: Any, factory: Any) -> ChatModel:
+def _cached_chat_model(config: Any, factory: Any) -> ToolChatModel:
     """Cache model clients by runtime config and factory identity."""
     return factory()
 
 
-def get_cached_chat_model() -> ChatModel:
+def get_cached_chat_model() -> ToolChatModel:
     """Reuse the process-local chat client until runtime config changes."""
     return _cached_chat_model(get_active_chat_model_config(), LangChainChatModel)
 
@@ -509,17 +519,7 @@ class RagChatChain:
     async def _fetch_memories(self) -> list[dict[str, Any]]:
         """Fetch active memories for the current user."""
         try:
-            from app.core.base_schema import AuthSchema
-            from app.plugin.module_ai.memory.crud import MemoryCRUD
-
-            # Build a minimal auth object for MemoryCRUD
-            class _FakeUser:
-                id = int(self.user_id) if self.user_id.isdigit() else self.user_id
-
-            auth = AuthSchema(user=_FakeUser(), db=self.db)
-            crud = MemoryCRUD(auth)
-            entries = await crud.get_active_memories()
-            return [entry.to_dict() for entry in entries]
+            return await MemoryService.for_user(self.db, self.user_id).get_active_memories()
         except Exception as e:
             logger.warning(f"获取长期记忆失败 (非致命): {e}")
             return []

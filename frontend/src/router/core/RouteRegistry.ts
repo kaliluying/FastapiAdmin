@@ -6,7 +6,7 @@ import type { AppRouteRecord } from "@/types/router";
 import { ComponentLoader } from "./ComponentLoader";
 import { RouteValidator } from "./RouteValidator";
 import { RouteTransformer } from "./RouteTransformer";
-import { ROOT_LAYOUT_ROUTE_NAME } from "../staticRoutes";
+import { IframeRouteManager, ROOT_LAYOUT_ROUTE_NAME } from "../staticRoutes";
 
 /** 与静态壳层冲突的一级 path 段。菜单服务端禁止写入，前端保留兜底。 */
 const RESERVED_SHELL_SEGMENTS = new Set([
@@ -74,24 +74,65 @@ export class RouteRegistry {
       console.warn(`[路由配置警告] ${warning}`);
     });
 
-    const removeRouteFns: (() => void)[] = [];
-
-    menuList.forEach((route, index) => {
+    const namedRoutes = menuList.map((route, index) => {
       const seg = pathFirstSegment(route.path || "");
       if (seg && RESERVED_SHELL_SEGMENTS.has(seg)) {
         throw new Error(`动态菜单路由与系统保留路径冲突: ${route.path}`);
       }
-
-      const namedRoute = registrationName(route, index);
-      if (this.router.hasRoute(routeNameKey(namedRoute))) {
-        return;
-      }
-
-      const routeConfig = this.transformer.transform(namedRoute);
-      removeRouteFns.push(
-        this.router.addRoute(ROOT_LAYOUT_ROUTE_NAME, routeConfig as RouteRecordRaw)
-      );
+      return registrationName(route, index);
     });
+    const names = new Set<string>();
+    const prepareRoute = (route: AppRouteRecord): AppRouteRecord => {
+      const name = routeNameKey(route);
+      if (name) {
+        if (names.has(name)) {
+          throw new Error(`动态菜单路由名称重复: ${name}`);
+        }
+        if (this.router.hasRoute(name)) {
+          throw new Error(`动态菜单子路由与已有路由名称冲突: ${name}`);
+        }
+        names.add(name);
+      }
+      return {
+        ...route,
+        meta: { ...route.meta },
+        children: route.children?.map(prepareRoute),
+      };
+    };
+    const routes = namedRoutes
+      .filter((route) => !this.router.hasRoute(routeNameKey(route)))
+      .map(prepareRoute);
+    const iframeRoutes = IframeRouteManager.getInstance().getAll();
+    const previousIframeRoutes = [...iframeRoutes];
+    const removeRouteFns: (() => void)[] = [];
+
+    try {
+      const routeConfigs = routes.map((route) => this.transformer.transform(route));
+      for (const routeConfig of routeConfigs) {
+        removeRouteFns.push(
+          this.router.addRoute(ROOT_LAYOUT_ROUTE_NAME, routeConfig as RouteRecordRaw)
+        );
+      }
+      IframeRouteManager.getInstance().save();
+    } catch (error) {
+      removeRouteFns.reverse().forEach((remove) => remove());
+      for (const route of routes) {
+        const name = routeNameKey(route);
+        if (this.router.hasRoute(name)) this.router.removeRoute(name);
+      }
+      iframeRoutes.splice(0, iframeRoutes.length, ...previousIframeRoutes);
+      throw error;
+    }
+    const addedIframeRoutes = iframeRoutes.filter((route) => !previousIframeRoutes.includes(route));
+    if (addedIframeRoutes.length) {
+      removeRouteFns.push(() => {
+        const currentIframeRoutes = IframeRouteManager.getInstance().getAll();
+        for (const route of addedIframeRoutes) {
+          const index = currentIframeRoutes.indexOf(route);
+          if (index !== -1) currentIframeRoutes.splice(index, 1);
+        }
+      });
+    }
 
     this.removeRouteFns = removeRouteFns;
     this.registered = true;
@@ -101,17 +142,10 @@ export class RouteRegistry {
     this.removeRouteFns.forEach((fn) => fn());
     this.removeRouteFns = [];
     this.registered = false;
+    IframeRouteManager.getInstance().save();
   }
 
   isRegistered(): boolean {
     return this.registered;
-  }
-
-  getRemoveRouteFns(): (() => void)[] {
-    return this.removeRouteFns;
-  }
-
-  markAsRegistered(): void {
-    this.registered = true;
   }
 }

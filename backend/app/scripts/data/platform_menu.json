@@ -451,5 +451,58 @@
         ]
       }
     ]
+  },
+  {
+    "name": "开发范例",
+    "title": "开发范例",
+    "type": 1,
+    "icon": "ri:code-box-line",
+    "order": 90,
+    "route_name": "Demo",
+    "route_path": "/demo",
+    "redirect": "/demo/category",
+    "children": [
+      {
+        "name": "分类管理",
+        "title": "分类管理",
+        "type": 2,
+        "icon": "ri:folder-line",
+        "order": 1,
+        "permission": "module_demo:category:query",
+        "route_name": "DemoCategory",
+        "route_path": "category",
+        "component_path": "module_demo/category/index",
+        "children": [
+          {
+            "name": "新增",
+            "title": "新增",
+            "type": 3,
+            "order": 1,
+            "permission": "module_demo:category:create"
+          },
+          {
+            "name": "编辑",
+            "title": "编辑",
+            "type": 3,
+            "order": 2,
+            "permission": "module_demo:category:update"
+          },
+          {
+            "name": "删除",
+            "title": "删除",
+            "type": 3,
+            "order": 3,
+            "permission": "module_demo:category:delete"
+          },
+          {
+            "name": "详情",
+            "title": "详情",
+            "type": 3,
+            "order": 4,
+            "permission": "module_demo:category:detail"
+          }
+        ]
+      }
+    ]
   }
 ]

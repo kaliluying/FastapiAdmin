@@ -6,13 +6,15 @@
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.core.logger import logger
-from app.plugin.module_ai.memory.crud import MemoryCRUD
-from app.plugin.module_ai.memory.schema import MemoryExtractAction, MemoryExtractResult
 
-from .rag import LangChainChatModel
+from .crud import MemoryCRUD
+from .schema import MemoryExtractAction, MemoryExtractResult
+
+if TYPE_CHECKING:
+    from app.plugin.module_ai.chat.rag import ChatModel
 
 # ── 配置 ──
 
@@ -161,13 +163,15 @@ def _parse_extract_result(raw: str) -> MemoryExtractResult:
 class MemoryExtractor:
     """从对话中提取长期记忆并写入数据库。"""
 
-    def __init__(self, confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD) -> None:
+    def __init__(self, confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD, *, chat_model: ChatModel | None = None) -> None:
         self.confidence_threshold = confidence_threshold
-        self._llm: LangChainChatModel | None = None
+        self._llm = chat_model
 
     @property
-    def llm(self) -> LangChainChatModel:
+    def llm(self) -> ChatModel:
         if self._llm is None:
+            from app.plugin.module_ai.chat.rag import LangChainChatModel
+
             self._llm = LangChainChatModel()
         return self._llm
 

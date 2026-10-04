@@ -422,7 +422,7 @@ def test_permission_codes_are_scoped_and_only_reused_within_same_page():
     walk(menus)
 
     assert all(
-        permission.startswith(("module_system:", "module_platform:", "module_ai:", "module_common:"))
+        permission.startswith(("module_system:", "module_platform:", "module_ai:", "module_common:", "module_demo:"))
         for permission in permissions_by_code
     )
 

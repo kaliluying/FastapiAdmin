@@ -2,13 +2,38 @@
 
 from __future__ import annotations
 
-from typing import Any
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.base_schema import AuthSchema
+from app.core.database import async_db_session
 from app.core.exceptions import CustomException
+from app.core.logger import logger
 
 from .crud import MemoryCRUD
+from .extractor import MemoryExtractor
 from .schema import MemoryCreateSchema, MemoryOutSchema, MemoryQueryParam, MemoryUpdateSchema
+
+if TYPE_CHECKING:
+    from app.plugin.module_ai.chat.rag import ChatModel
+
+
+async def extract_conversation_in_background(
+    *, user_id: int | str, user_message: str, assistant_response: str, chat_model: ChatModel | None = None,
+) -> None:
+    """Extract memories with an independent transaction without failing Chat."""
+    try:
+        async with async_db_session() as db:
+            async with db.begin():
+                saved = await MemoryService.for_user(db, user_id).extract_from_conversation(
+                    user_message=user_message, assistant_response=assistant_response, chat_model=chat_model,
+                )
+                if saved > 0:
+                    logger.info(f"记忆提取完成: 已保存 {saved} 条")
+    except Exception as e:
+        logger.warning(f"记忆提取后台任务失败: {e}")
 
 
 class MemoryService:
@@ -16,6 +41,12 @@ class MemoryService:
 
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth
+
+    @classmethod
+    def for_user(cls, db: AsyncSession, user_id: int | str) -> MemoryService:
+        """Use an already-authorized user identity for internal memory operations."""
+        normalized_id = int(user_id) if isinstance(user_id, str) and user_id.isdigit() else user_id
+        return cls(AuthSchema(user=SimpleNamespace(id=normalized_id), db=db, check_data_scope=False))
 
     async def page(
         self,
@@ -64,3 +95,11 @@ class MemoryService:
         crud = MemoryCRUD(self.auth)
         entries = await crud.get_active_memories(memory_type=memory_type)
         return [entry.to_dict() for entry in entries]
+
+    async def extract_from_conversation(
+        self, *, user_message: str, assistant_response: str, chat_model: ChatModel | None = None,
+    ) -> int:
+        """Extract and save the current user's memories in the caller's transaction."""
+        return await MemoryExtractor(chat_model=chat_model).extract_and_save(
+            crud=MemoryCRUD(self.auth), user_message=user_message, assistant_response=assistant_response,
+        )

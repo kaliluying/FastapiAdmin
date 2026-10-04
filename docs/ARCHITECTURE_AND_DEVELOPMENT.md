@@ -36,7 +36,7 @@ flowchart LR
 
 1. 从 `backend/` 运行 `uv run main.py run --env=dev`。CLI 先设置 `ENVIRONMENT`，再导入配置；`app/config/setting.py` 和 `app/plugin/module_ai/config.py` 读取对应 `backend/env/.env.dev`。
 2. `create_app()` 注册异常处理、中间件、通用路由、AI 路由和静态资源。通用路由在 `app/init_app.py:register_routers()` 显式挂载；AI 的 HTTP/WebSocket 路由、模型和启动钩子由 `app/plugin/module_ai/plugin.toml` 声明，交给 `app/core/plugins.py` 装配。当前没有目录扫描式插件发现。
-3. 应用生命周期先连接 Redis，再在 Redis 锁下应用已有 Alembic 迁移、按 ORM 创建缺失表并补齐种子数据，随后初始化 AI 模块、通用缓存及限流器。**启动可能修改目标数据库**，先确认环境文件与连接目标。
+3. 应用生命周期先连接必需的 Redis。开发环境仍在 Redis 锁下初始化数据库；生产环境只读检查迁移版本、必需表、列和索引，不自动迁移、建表或补种子，结构不匹配即拒绝启动。随后初始化 AI 核心模块、通用缓存及限流器；HTTP 与 WebSocket 使用 `RATE_LIMITER_TIMES` / `RATE_LIMITER_SECONDS`。开发初始化运行在可终止子进程中，锁续约失败会中止该进程。
 4. 前端使用 Hash 路由。登录后用户信息中的菜单进入 `MenuProcessor`，由 `menuRoutes.ts` 转换，再经 `RouteRegistry` 校验并注册；`beforeEach.ts` 负责权限与导航。个人中心是静态隐藏路由，资料与密码操作仍由后端登录态校验。
 
 前端 API 请求通过 `frontend/src/utils/http/` 发送。开发代理由 `frontend/vite.config.ts` 配置：`VITE_APP_BASE_API` 是浏览器使用的 API 前缀，`VITE_API_BASE_URL` 是代理目标；WebSocket 另用 `VITE_APP_WS_ENDPOINT`。Vite 会加载 `.env` 和对应模式的 `.env.development`，后者可覆盖同名值。仓库模板与当前开发文件可能不同，联调前以实际加载值和后端监听地址核对。
@@ -54,9 +54,25 @@ flowchart LR
 
 模型配置页可填写模型名，也可使用当前接口地址和 API Key 获取服务商模型列表后选择。获取列表不会保存配置；改用其他接口地址或在 OpenAI 与 Anthropic 之间切换时，保存前需填写对应接口的 API Key。
 
-**真实纵向链路示例：上传知识库文档。**前端 `src/api/module_ai/knowledge.ts` 调用 `POST /ai/knowledge/document/upload`；后端 `knowledge/controller.py` 校验文档创建权限，`knowledge/service.py` 保存原件和元数据，接口返回后由后台任务抽取文本、切块并按 `RETRIEVAL_MODE` 更新 Chroma、BM25 或两者，最后更新索引状态。上传成功只代表文件与记录已接收；应继续检查文档索引状态和检索结果。AI 对话在 `chat/` 中使用知识库检索结果，WebSocket 入口在 `chat/ws.py`，通过 ticket 鉴权。
+**真实纵向链路示例：上传知识库文档。**前端 `src/api/module_ai/knowledge.ts` 调用 `POST /ai/knowledge/document/upload`；后端 `knowledge/controller.py` 校验文档创建权限，`knowledge/service.py` 保存原件和持久化 `pending` 记录。进程内后台任务只是加速器；manifest 声明的恢复任务每 15 秒扫描可领取的文档，通过 SQL 条件更新领取，抽取文本、切块并按 `RETRIEVAL_MODE` 更新 Chroma、BM25 或两者，最后更新索引状态。上传成功只代表文件与记录已接收；应继续检查文档索引状态和检索结果。AI 对话在 `chat/` 中使用知识库检索结果，WebSocket 入口在 `chat/ws.py`，通过 ticket 鉴权。
+
+- 索引租约默认 300 秒，每 30 秒续约；失败后等待 60 秒自动重试，最多 3 次。硬终止后过期的任务可被重启进程接管，耗尽次数会明确失败而不是永久 `indexing`；手动重建可重新开始。
+- 每次索引生成使用独立分块标识，保存待清理列表；旧索引在新 SQL 分块提交后清理。删除先通过 SQL 阻止重新领取，外部索引和源文件清理由持久化删除状态恢复。检索须以未删除文档和当前 SQL 分块为准，不能仅信任外部索引命中。
+- SQL、Chroma 与 BM25 没有跨系统原子事务。恢复机制不等同于分布式事务，也不自动证明所有历史孤立文件已修复；存储不可访问或连续失败仍需管理员排查。
+
+**模块接口约定。**索引清理通过 Chroma 与 BM25 的 `delete_chunks(ids)` 删除指定代际，知识库处理逻辑不直接操作 collection 或索引 writer。Chat 通过 `MemoryService` 读取用户记忆并触发后台提取；身份转换、提取与保存、独立数据库事务由记忆模块负责，提取器位于 `memory/extractor.py`。这样存储实现或记忆规则变化时，调用方无需同步实现细节。
+
+对应回归检查位于 `tests/plugin/module_ai/knowledge/test_chunk_deletion.py` 与 `tests/plugin/module_ai/chat/test_memory_workflow.py`：分别使用临时真实 Chroma/Whoosh 索引，以及临时 SQLite 加确定性模型替身，验证代际删除、其他文档保留、用户隔离和后台提交。这些检查不代表外部模型或生产验收。
+
+文本模型使用 `ChatModel`；需要结构化工具调用的模型使用扩展协议 `ToolChatModel`。供应商内容块通过公共函数 `content_to_text()` 转换，调用方不依赖 LangChain 适配器的私有方法。知识任务的恢复扫描和自动领取共享 `KnowledgeService` 的状态、租约与重试条件；恢复 worker 只负责启动、轮询和停止。
+
+动态路由的移除回调和 iframe 缓存由 `RouteRegistry` 统一管理，菜单 store 只保存展示数据。退出登录同步清理路由，避免延迟清理影响再次登录；注册失败会回滚已添加的路由和 iframe 数据。此处采用 CodeVault `server-driven-route-registry` 的集中所有权原则；知识任务已有 SQL 租约和持久化状态，无需引入 `persistent-failure-guard` 的文件锁与 JSON 状态层。
+
+新增回归检查覆盖模型内容转换、恢复资格、路由重复清理及缓存写入失败回滚。`frontend/tests/route-lifecycle-e2e.cjs` 使用隔离的 SQLite、模拟 Redis 与确定性模型，在真实浏览器中验证登录、刷新、菜单重建、退出和重新登录；不代表生产数据库或外部模型验收。
 
 ## 本地开发
+
+新增业务可从 [标准模块模板：分类管理](STANDARD_MODULE_TEMPLATE.md) 开始，沿用其中的数据库约束、请求事务、功能权限、数据范围、菜单接入和端到端验收方式。范例接口和导航仅在开发环境启用；生产保留模型及迁移历史，正式业务应使用独立命名并正常注册。
 
 工具版本以 `backend/pyproject.toml` 与 `frontend/package.json` 为准：后端 Python 3.12+ 和 `uv`，前端 Node 20.19+ 与仓库声明的 `pnpm`。按所选后端配置准备关系数据库、Redis；使用 AI 对话或远程 embedding 时配置相应模型服务。`uv sync` 已安装 AI 核心依赖，无需额外的 `ai` extra。
 
@@ -76,6 +92,21 @@ pnpm dev
 ```
 
 前端运行前核对已跟踪的 `frontend/.env`、`frontend/.env.development`，尤其是代理与 WebSocket 目标。不要把模板地址、端口或账号当成当前环境的真实值。后端 `--env=dev` 读取 `backend/env/.env.dev`；本地配置和密钥不得提交。
+
+### 生产部署的数据库步骤
+
+从 `backend/` 执行，先确认 `env/.env.prod` 的目标及备份：
+
+```bash
+# 首次部署：创建缺失表并写入基础数据，不清空现有数据。
+uv run main.py bootstrap --env=prod
+
+# 后续部署：显式应用已审查的迁移（upgrade 为兼容命令）。
+uv run main.py migrate --env=prod
+uv run main.py run --env=prod
+```
+
+`bootstrap` 使用 Redis 初始化锁；部署侧应串行执行迁移。DDL 的回滚能力取决于数据库，取消子进程不能撤销已经提交的 DDL。结构检查失败应修复部署步骤，不要用 `reset` 绕过检查；`reset` 会删除数据。生产应用仍可进行正常业务写入和知识任务恢复，只禁止隐式结构修复及补种子。
 
 ### 常用验证
 
@@ -97,11 +128,12 @@ pnpm build
 
 跨层功能至少选择一个可重复的用户场景，验证真实登录与权限、浏览器操作、API 响应、持久化结果及错误态。例如知识库链路要等后台索引完成，再检查文档状态和实际召回；只看到上传接口成功不足以验收检索功能。
 
+
 ## 修改功能的路径
 
 - **系统 API**：从 `app/api/v1/module_*/<feature>/` 的 controller 进入，核对 service、数据访问、权限码与功能组 router；前端对应 `src/api/`、`src/views/` 和后端菜单。
 - **AI 能力**：先核对 `module_ai/plugin.toml` 的声明和现有 `chat/`、`knowledge/`、`memory/` 边界。跨功能调用依赖拥有方的公开用例，避免直接耦合对方内部 CRUD、索引或 Provider Client。
 - **前端页面**：核对用户菜单的 `route_path`、`route_name`、组件路径、`MenuProcessor`、`RouteRegistry` 与守卫；同时验证后端授权。
-- **数据库模型**：Alembic `script_location` 是 `backend/app/alembic`，版本目录为 `backend/app/alembic/versions/`。生成迁移后审查脚本和数据影响；启动只会应用已有迁移，不会替你生成迁移。需要交付的版本文件应与代码一起纳入版本管理。
+- **数据库模型**：Alembic `script_location` 是 `backend/app/alembic`，版本目录为 `backend/app/alembic/versions/`。生成迁移后审查脚本和数据影响；生产部署显式应用迁移，正常启动只检查结构，不会生成或应用迁移。需要交付的版本文件应与代码一起纳入版本管理。
 
 变更文档时，以代码入口、包脚本和环境模板为事实来源。入口总览放在根 `README.md`；子项目 README 只保留本子项目的操作说明；本文维护跨端调用链和验收边界。历史实现报告与设计稿保留其原始时间语境，不作为当前开发命令的依据。

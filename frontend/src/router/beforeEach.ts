@@ -23,7 +23,7 @@ import type { AppRouteRecord } from "@/types/router";
 import type { Router, RouteLocationNormalized } from "vue-router";
 import { nextTick } from "vue";
 import { useSettingsStore, useUserStore, useMenuStore, useWorktabStore } from "@stores";
-import { IframeRouteManager, ROUTE_PATH_LOGIN_ALT, staticRoutes } from "./staticRoutes";
+import { ROUTE_PATH_LOGIN_ALT, staticRoutes } from "./staticRoutes";
 import { useCommon } from "@/hooks/core/useCommon";
 import {
   NProgress,
@@ -258,16 +258,13 @@ function isStaticRoute(path: string): boolean {
 
 /**
  * 动态路由仍标记为已注册但侧边菜单已被清空时，先卸下动态路由再拉菜单。
- * 典型场景：`logout` 中 `resetRouterState(500)` 延迟执行，用户在 500ms 内再次登录，
- * 守卫若仅判断 `isRegistered()` 会跳过拉菜单，侧栏空白。
+ * 菜单状态被重置后不能沿用旧注册状态，必须重新拉取授权菜单。
  */
 function repairDynamicRoutesIfMenuEmpty(): void {
   if (!routeRegistry?.isRegistered()) return;
   const ms = useMenuStore();
   if (ms.menuList.length > 0) return;
   routeRegistry.unregister();
-  IframeRouteManager.getInstance().clear();
-  ms.removeAllDynamicRoutes();
   resetRouteInitState();
 }
 
@@ -306,12 +303,8 @@ async function handleDynamicRoutes(to: RouteLocationNormalized, router: Router) 
     // 5. 保存菜单数据到 store
     const menuStore = useMenuStore();
     menuStore.setMenuList(menuList);
-    menuStore.addRemoveRouteFns(routeRegistry?.getRemoveRouteFns() || []);
 
-    // 6. 保存 iframe 路由
-    IframeRouteManager.getInstance().save();
-
-    // 7. 验证工作标签页
+    // 6. 验证工作标签页
     useWorktabStore().validateWorktabs(router);
 
     // 8. 静态路由不依赖菜单权限，初始化后直接恢复目标地址。
@@ -375,15 +368,11 @@ async function fetchUserInfo(): Promise<void> {
 }
 
 /**
- * 立即卸下动态路由与菜单缓存（与 {@link resetRouterState} 回调一致，供刷新路由等同步场景）。
+ * 立即卸下动态路由并重置菜单和初始化状态，供登出、认证失效与刷新使用。
  */
 export function resetDynamicRoutesSync(): void {
   routeRegistry?.unregister();
-  IframeRouteManager.getInstance().clear();
-
-  const menuStore = useMenuStore();
-  menuStore.removeAllDynamicRoutes();
-  menuStore.setMenuList([]);
+  useMenuStore().setMenuList([]);
 
   resetRouteInitState();
 }
@@ -393,27 +382,12 @@ export function resetDynamicRoutesSync(): void {
  * 不拉取用户信息（由调用方并行完成），避免覆盖前端本地状态（主题色等）。
  */
 export async function refreshMenuAndRoutes(): Promise<void> {
-  routeRegistry?.unregister();
-  IframeRouteManager.getInstance().clear();
-
+  resetDynamicRoutesSync();
   const menuStore = useMenuStore();
-  menuStore.removeAllDynamicRoutes();
-  menuStore.setMenuList([]);
 
   const menuList = await menuProcessor.getMenuList();
   routeRegistry?.register(menuList);
   menuStore.setMenuList(menuList);
-  menuStore.addRemoveRouteFns(routeRegistry?.getRemoveRouteFns() || []);
-  IframeRouteManager.getInstance().save();
-}
-
-/**
- * 延迟重置路由相关状态（登出等场景避免与导航竞态）
- */
-export function resetRouterState(delay: number): void {
-  setTimeout(() => {
-    resetDynamicRoutesSync();
-  }, delay);
 }
 
 /**

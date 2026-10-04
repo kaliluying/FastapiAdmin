@@ -265,9 +265,8 @@ export const useUserStore = defineStore(
       }
 
       resetAllState();
-      sessionStorage.removeItem("iframeRoutes");
       useMenuStore().setHomePath("");
-      (await getRouterUtils()).resetRouterState(500);
+      (await getRouterUtils()).resetDynamicRoutesSync();
 
       if (shouldNavigate) {
         const currentRoute = router.currentRoute.value;

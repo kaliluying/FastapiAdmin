@@ -214,6 +214,23 @@ class BM25KnowledgeIndex:
 
         await anyio.to_thread.run_sync(_delete)
 
+    async def delete_chunks(self, ids: list[str]) -> None:
+        """删除指定分块，保留同一文档的其他代际；空列表不执行写入。"""
+        if not ids:
+            return
+
+        def _delete() -> None:
+            writer = self._get_index().writer()
+            try:
+                for chunk_id in ids:
+                    writer.delete_by_term("chunk_id", chunk_id)
+                writer.commit()
+            except Exception:
+                writer.cancel()
+                raise
+
+        await anyio.to_thread.run_sync(_delete)
+
     async def clear_index(self) -> None:
         """清空整个索引"""
 

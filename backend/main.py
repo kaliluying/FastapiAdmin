@@ -83,6 +83,40 @@ def run(
 
 
 @fastapiadmin_cli.command(
+    name="bootstrap",
+    help="首次部署显式建表并导入基础数据，运行 python main.py bootstrap --env=prod；不会清空现有数据",
+)
+def bootstrap(
+    env: Annotated[EnvironmentEnum, typer.Option("--env", help="运行环境 (dev, prod)")] = EnvironmentEnum.DEV,
+) -> None:
+    """Initialize the selected database under the same lock used by development startup."""
+    os.environ["ENVIRONMENT"] = env.value
+    from app.config.setting import get_settings
+
+    get_settings.cache_clear()
+    settings = get_settings()
+    if not settings.REDIS_ENABLE:
+        raise typer.BadParameter("Redis 是必需依赖，REDIS_ENABLE 必须为 true")
+
+    import asyncio
+
+    from redis.asyncio import Redis
+
+    from app.init_app import bootstrap_database
+
+    async def initialize() -> None:
+        redis = Redis.from_url(settings.REDIS_URI, decode_responses=True, socket_timeout=settings.POOL_TIMEOUT)
+        try:
+            await redis.ping()
+            await bootstrap_database(redis, environment=env)
+        finally:
+            await redis.aclose()
+
+    asyncio.run(initialize())
+    typer.echo("数据库结构与基础数据已初始化；正常生产启动只检查结构。")
+
+
+@fastapiadmin_cli.command(
     name="reset",
     help="删除所有表并重建 + 写入种子数据（危险操作）, 运行 python main.py reset --env=dev",
 )
@@ -166,6 +200,9 @@ def reset(
 
         async with async_engine.begin() as conn:
             await conn.run_sync(drop_reflected_tables)
+        from app.init_app import run_startup_migration
+
+        await run_startup_migration()
         # reset 清表后必须显式恢复完整模型结构，不能等待启动迁移。
         await create_tables()
         await InitializeData().init_db()
@@ -204,6 +241,10 @@ def revision(
     typer.echo("迁移脚本已生成")
 
 
+@fastapiadmin_cli.command(
+    name="migrate",
+    help="部署阶段显式应用迁移，运行 python main.py migrate --env=prod（与 upgrade 兼容）",
+)
 @fastapiadmin_cli.command(
     name="upgrade",
     help="应用最新的 Alembic 迁移, 运行 python main.py upgrade --env=dev",

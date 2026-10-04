@@ -4,8 +4,12 @@
 """
 
 import pytest
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from app.core.base_model import MappedBase
+from app.plugin.module_ai.knowledge import retrieval
 from app.plugin.module_ai.knowledge.bm25_index import BM25KnowledgeIndex
+from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeChunkModel, KnowledgeDocumentModel
 from app.plugin.module_ai.knowledge.retrieval import KnowledgeRetriever
 
 
@@ -13,9 +17,9 @@ from app.plugin.module_ai.knowledge.retrieval import KnowledgeRetriever
 class TestBM25Index:
     """BM25索引功能测试"""
 
-    async def test_add_and_search(self):
+    async def test_add_and_search(self, tmp_path):
         """测试添加文档和搜索"""
-        index = BM25KnowledgeIndex(index_dir="./data/test_bm25")
+        index = BM25KnowledgeIndex(index_dir=str(tmp_path / "bm25"))
 
         # 添加测试数据
         chunks = [
@@ -60,9 +64,9 @@ class TestBM25Index:
         # 清理
         await index.clear_index()
 
-    async def test_delete_document(self):
+    async def test_delete_document(self, tmp_path):
         """测试删除文档"""
-        index = BM25KnowledgeIndex(index_dir="./data/test_bm25_delete")
+        index = BM25KnowledgeIndex(index_dir=str(tmp_path / "bm25_delete"))
 
         chunks = [
             {
@@ -172,8 +176,9 @@ class TestRetrievalModes:
         retriever = KnowledgeRetriever(mode="hybrid", alpha=0.5, top_k=5)
         assert retriever.base_alpha == 0.5
 
-    async def test_bm25_mode_accepts_rag_scope_and_skips_vector_search(self):
+    async def test_bm25_mode_accepts_rag_scope_and_skips_vector_search(self, tmp_path, monkeypatch):
         """纯BM25必须兼容RAG协议，且不触发向量化。"""
+
         class FailingEmbeddingClient:
             async def embed_texts(self, _texts):
                 raise AssertionError("pure BM25 retrieval must not create embeddings")
@@ -200,21 +205,35 @@ class TestRetrievalModes:
             auto_adjust_alpha=False,
         )
 
-        documents = await retriever.search(
-            query="第123条",
-            knowledge_base_ids=[1],
-        )
-
-        assert [document.content for document in documents] == ["第123条规定"]
+        engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'retrieval.db'}")
+        sessions = async_sessionmaker(engine, expire_on_commit=False)
+        monkeypatch.setattr(retrieval, "async_db_session", sessions)
+        try:
+            async with engine.begin() as connection:
+                await connection.run_sync(MappedBase.metadata.create_all)
+            async with sessions() as database:
+                database.add_all(
+                    [
+                        KnowledgeBaseModel(id=1, name="BM25 scope", is_enabled=True),
+                        KnowledgeDocumentModel(id=1, knowledge_base_id=1, file_name="law.md", file_type="md", index_status="success"),
+                        KnowledgeChunkModel(knowledge_base_id=1, document_id=1, chunk_index=0, content="第123条规定", chroma_id="kb-1-doc-1-0"),
+                    ]
+                )
+                await database.commit()
+            documents = await retriever.search(query="第123条", knowledge_base_ids=[1])
+            assert [document.content for document in documents] == ["第123条规定"]
+            assert await retriever.search(query="第123条", knowledge_base_ids=[2]) == []
+        finally:
+            await engine.dispose()
 
 
 @pytest.mark.asyncio
 class TestChineseTokenization:
     """测试中文分词"""
 
-    async def test_chinese_search(self):
+    async def test_chinese_search(self, tmp_path):
         """测试中文分词和搜索"""
-        index = BM25KnowledgeIndex(index_dir="./data/test_chinese")
+        index = BM25KnowledgeIndex(index_dir=str(tmp_path / "chinese"))
 
         chunks = [
             {

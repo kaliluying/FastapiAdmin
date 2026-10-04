@@ -6,11 +6,15 @@ import asyncio
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from sqlalchemy import select
+
+from app.core.database import async_db_session
 from app.core.logger import logger
 
 from .bm25_index import BM25KnowledgeIndex, get_cached_bm25_index
 from .chroma_store import ChromaKnowledgeStore, get_cached_chroma_store
 from .embedding import EmbeddingClient, get_cached_embedding_client
+from .model import KnowledgeBaseModel, KnowledgeChunkModel, KnowledgeDocumentModel
 from .query_analyzer import QueryAnalyzer
 
 RetrievalMode = Literal["vector", "bm25", "hybrid"]
@@ -65,10 +69,39 @@ class KnowledgeRetriever:
 
         limit = self.top_k if top_k is None else top_k
         if self.mode == "vector":
-            return await self._vector_results(query, ids, limit)
-        if self.mode == "bm25":
-            return await self._bm25_results(query, ids, limit)
-        return await self._hybrid_results(query, ids, limit)
+            results = await self._vector_results(query, ids, limit * self.candidate_multiplier)
+        elif self.mode == "bm25":
+            results = await self._bm25_results(query, ids, limit * self.candidate_multiplier)
+        else:
+            results = await self._hybrid_results(query, ids, limit)
+        return (await self._filter_persisted_results(results, ids))[:limit]
+
+    @staticmethod
+    async def _filter_persisted_results(results: list[KnowledgeSearchResult], knowledge_base_ids: list[int]) -> list[KnowledgeSearchResult]:
+        if not results:
+            return []
+        async with async_db_session() as db:
+            active_ids = (
+                (
+                    await db.execute(
+                        select(KnowledgeChunkModel.chroma_id)
+                        .join(KnowledgeDocumentModel, KnowledgeDocumentModel.id == KnowledgeChunkModel.document_id)
+                        .join(KnowledgeBaseModel, KnowledgeBaseModel.id == KnowledgeChunkModel.knowledge_base_id)
+                        .where(
+                            KnowledgeChunkModel.chroma_id.in_([result.chunk_id for result in results]),
+                            KnowledgeChunkModel.knowledge_base_id.in_(knowledge_base_ids),
+                            KnowledgeChunkModel.is_deleted == False,
+                            KnowledgeDocumentModel.is_deleted == False,
+                            KnowledgeBaseModel.is_deleted == False,
+                            KnowledgeBaseModel.is_enabled == True,
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            )
+        allowed = set(active_ids)
+        return [result for result in results if result.chunk_id in allowed]
 
     async def _vector_results(
         self,
@@ -133,7 +166,7 @@ class KnowledgeRetriever:
             else:
                 bm25_results = result
 
-        fused_ids = self._rrf_fusion(vector_results, bm25_results, top_k, alpha)
+        fused_ids = self._rrf_fusion(vector_results, bm25_results, candidate_top_k, alpha)
         return self._build_results(fused_ids, vector_results, bm25_results)
 
     def _get_dynamic_alpha(self, query: str) -> float:
@@ -143,11 +176,7 @@ class KnowledgeRetriever:
         adjusted_alpha = self.query_analyzer.adjust_alpha(self.base_alpha, query)
         if adjusted_alpha != self.base_alpha:
             analysis = self.query_analyzer.analyze(query)
-            logger.info(
-                f"查询类型识别: {analysis.query_type} "
-                f"(置信度={analysis.confidence:.2f}), "
-                f"alpha调整: {self.base_alpha:.2f} → {adjusted_alpha:.2f}"
-            )
+            logger.info(f"查询类型识别: {analysis.query_type} (置信度={analysis.confidence:.2f}), alpha调整: {self.base_alpha:.2f} → {adjusted_alpha:.2f}")
         return adjusted_alpha
 
     async def _vector_search(
@@ -165,8 +194,8 @@ class KnowledgeRetriever:
             )
             logger.debug(f"向量检索召回: {len((raw.get('ids') or [[]])[0])} 个结果")
             return raw
-        except Exception as exc:
-            logger.warning(f"向量检索失败，返回空结果: {exc}")
+        except Exception:
+            logger.warning("向量检索失败，返回空结果")
             return {"ids": [[]], "documents": [[]], "metadatas": [[]], "distances": [[]]}
 
     async def _bm25_search(
@@ -183,8 +212,8 @@ class KnowledgeRetriever:
             )
             logger.debug(f"BM25检索召回: {len(results)} 个结果")
             return results
-        except Exception as exc:
-            logger.warning(f"BM25检索失败，返回空结果: {exc}")
+        except Exception:
+            logger.warning("BM25检索失败，返回空结果")
             return []
 
     @staticmethod
@@ -204,10 +233,7 @@ class KnowledgeRetriever:
 
         sorted_chunks = sorted(scores.items(), key=lambda item: item[1], reverse=True)
         fused_ids = [chunk_id for chunk_id, _ in sorted_chunks[:top_k]]
-        logger.debug(
-            f"RRF融合: 向量={len(vector_ids)} BM25={len(bm25_results)} "
-            f"去重后={len(scores)} 最终={len(fused_ids)} alpha={alpha:.2f}"
-        )
+        logger.debug(f"RRF融合: 向量={len(vector_ids)} BM25={len(bm25_results)} 去重后={len(scores)} 最终={len(fused_ids)} alpha={alpha:.2f}")
         return fused_ids
 
     @classmethod

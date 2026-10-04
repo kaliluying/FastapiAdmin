@@ -11,6 +11,11 @@ CORE_PERMISSION_CODES: frozenset[str] = frozenset(
     {
         "module_common:file:download",
         "module_common:file:upload",
+        "module_demo:category:create",
+        "module_demo:category:delete",
+        "module_demo:category:detail",
+        "module_demo:category:query",
+        "module_demo:category:update",
         "module_platform:menu:create",
         "module_platform:menu:delete",
         "module_platform:menu:detail",

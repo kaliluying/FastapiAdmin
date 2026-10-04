@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.base_model import ModelMixin, UserMixin
@@ -46,6 +46,10 @@ class KnowledgeDocumentModel(ModelMixin, UserMixin):
     error_message: Mapped[str | None] = mapped_column(Text, default=None, nullable=True)
     parsed_at: Mapped[datetime | None] = mapped_column(DateTime, default=None, nullable=True)
     indexed_at: Mapped[datetime | None] = mapped_column(DateTime, default=None, nullable=True)
+    index_attempts: Mapped[int] = mapped_column(Integer, default=0, server_default=text("0"), nullable=False)
+    index_token: Mapped[str | None] = mapped_column(String(32), default=None, nullable=True)
+    index_lease_until: Mapped[datetime | None] = mapped_column(DateTime, default=None, nullable=True)
+    index_cleanup_ids: Mapped[list[str] | None] = mapped_column(JSON(none_as_null=True), default=None, nullable=True)
 
     knowledge_base: Mapped[KnowledgeBaseModel] = relationship("KnowledgeBaseModel", back_populates="documents")
     chunks: Mapped[list["KnowledgeChunkModel"]] = relationship(

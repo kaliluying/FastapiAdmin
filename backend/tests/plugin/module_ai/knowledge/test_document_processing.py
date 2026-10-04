@@ -2,7 +2,7 @@ import asyncio
 import io
 import json
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi import BackgroundTasks, UploadFile
@@ -44,29 +44,18 @@ async def processing(monkeypatch, tmp_path):
         for chunk_id in ids:
             vectors.pop(chunk_id, None)
 
-    class Writer:
-        def __init__(self):
-            self.ids = []
-
-        def delete_by_term(self, field, chunk_id):
-            assert field == "chunk_id"
-            self.ids.append(chunk_id)
-
-        def commit(self):
-            for chunk_id in self.ids:
-                keywords.pop(chunk_id, None)
-
-        def cancel(self):
-            self.ids.clear()
+    def delete_keywords(ids):
+        for chunk_id in ids:
+            keywords.pop(chunk_id, None)
 
     store = SimpleNamespace(
         upsert_chunks=AsyncMock(side_effect=upsert_chunks),
-        collection=SimpleNamespace(delete=Mock(side_effect=delete_vectors)),
+        delete_chunks=AsyncMock(side_effect=lambda ids: delete_vectors(ids=ids)),
         delete_document=AsyncMock(side_effect=AssertionError("Never delete all existing vectors before replacement")),
     )
     bm25 = SimpleNamespace(
         add_chunks=AsyncMock(side_effect=add_chunks),
-        _get_index=lambda: SimpleNamespace(writer=Writer),
+        delete_chunks=AsyncMock(side_effect=delete_keywords),
         delete_by_document=AsyncMock(side_effect=AssertionError("Never delete the original keyword index before replacement")),
     )
     embeddings = SimpleNamespace(embed_texts=AsyncMock(return_value=[[0.5, 0.5]]))
@@ -211,7 +200,7 @@ async def test_index_failure_preserves_original_chunks_indexes_and_file(processi
         async def fail_final_commit():
             nonlocal attempts
             attempts += 1
-            if attempts == 3:
+            if attempts == 5:
                 raise secret_error
             await original_commit()
 
@@ -291,7 +280,7 @@ async def test_background_upload_reaches_searchable_status_without_real_indexes(
 
 
 async def test_old_index_cleanup_failure_keeps_new_index_and_exposes_safe_warning(processing):
-    processing.store.collection.delete.side_effect = RuntimeError("private storage detail")
+    processing.store.delete_chunks.side_effect = RuntimeError("private storage detail")
     result = await processing.service.index_document(processing.document_id)
     assert result.index_status == "success"
     assert "旧索引清理失败" in result.error_message

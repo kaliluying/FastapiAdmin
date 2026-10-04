@@ -63,6 +63,11 @@ class ChromaKnowledgeStore:
     async def delete_document(self, document_id: int) -> None:
         await anyio.to_thread.run_sync(lambda: self.collection.delete(where={"document_id": document_id}))
 
+    async def delete_chunks(self, ids: list[str]) -> None:
+        """Delete only the supplied chunk generation; empty lists are a no-op."""
+        if ids:
+            await anyio.to_thread.run_sync(lambda: self.collection.delete(ids=ids))
+
 
 @lru_cache(maxsize=4)
 def get_cached_chroma_store(

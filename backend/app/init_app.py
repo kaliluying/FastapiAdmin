@@ -1,4 +1,5 @@
 import asyncio
+import sys
 from collections.abc import AsyncGenerator
 from contextlib import suppress
 from typing import Any
@@ -14,14 +15,16 @@ from fastapi_limiter.depends import RateLimiter, WebSocketRateLimiter
 
 from app.core import cache_util
 
+from .common.enums import EnvironmentEnum
+from .config.path_conf import BASE_DIR
 from .config.setting import settings
 from .core.exceptions import handle_exception
 from .core.http_limit import http_limit_callback, ws_limit_callback
 from .core.logger import logger
 from .core.plugins import get_ai_routers, get_ai_websocket_routers, initialize_ai_plugin
 from .core.redis_crud import RedisCURD
-from .scripts.initialize import InitializeData
 from .scripts.migrate import upgrade_database
+from .scripts.startup_policy import validate_database_schema
 from .utils.common_util import import_module, import_modules_async
 from .utils.console import console_end, console_start
 
@@ -61,16 +64,28 @@ async def _startup_schema_lock(redis) -> AsyncGenerator[None, None]:
             raise TimeoutError("等待数据库启动锁超时")
         await asyncio.sleep(1)
 
+    owner_task = asyncio.current_task()
+    lease_lost = False
+
     async def renew() -> None:
+        nonlocal lease_lost
         while True:
             await asyncio.sleep(30)
             if not await redis_crud.renew_lock(lock_key, expire=300, value=lock_value):
-                logger.error("❌ 数据库启动锁续期失败，后续启动可能需要人工检查")
+                lease_lost = True
+                if owner_task is not None:
+                    owner_task.cancel()
                 return
 
     renewal_task = asyncio.create_task(renew())
     try:
         yield
+        if lease_lost:
+            raise RuntimeError("数据库启动锁已失效，初始化已中止")
+    except asyncio.CancelledError:
+        if lease_lost:
+            raise RuntimeError("数据库启动锁已失效，初始化已中止") from None
+        raise
     finally:
         renewal_task.cancel()
         with suppress(asyncio.CancelledError):
@@ -78,15 +93,48 @@ async def _startup_schema_lock(redis) -> AsyncGenerator[None, None]:
         await redis_crud.unlock(lock_key, lock_value)
 
 
+async def bootstrap_database(redis, environment: EnvironmentEnum | None = None) -> None:
+    """Run schema and seed initialization in a cancellable, lease-protected process."""
+    async with _startup_schema_lock(redis):
+        process = await asyncio.create_subprocess_exec(
+            sys.executable,
+            "-m",
+            "app.scripts.startup_policy",
+            "--env",
+            (environment or settings.ENVIRONMENT).value,
+            cwd=BASE_DIR,
+        )
+        try:
+            return_code = await process.wait()
+        except BaseException:
+            if process.returncode is None:
+                with suppress(ProcessLookupError):
+                    process.terminate()
+                try:
+                    await asyncio.wait_for(process.wait(), timeout=5)
+                except TimeoutError:
+                    with suppress(ProcessLookupError):
+                        process.kill()
+                    await process.wait()
+            raise
+        if return_code != 0:
+            raise RuntimeError(f"数据库初始化失败，退出码 {return_code}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
+    from app.plugin.module_ai.knowledge.recovery import stop_knowledge_recovery
+
     try:
+        if not settings.REDIS_ENABLE:
+            raise RuntimeError("Redis 是会话、请求限流和任务协调的必需依赖，REDIS_ENABLE 必须为 true")
         await import_modules_async(modules=settings.EVENT_LIST, desc="全局事件", app=app, status=True)
         logger.info("✅ 全局事件模块加载完成")
-        async with _startup_schema_lock(app.state.redis):
-            await run_startup_migration()
-            await InitializeData().init_db()
-        logger.info("✅ {}数据库初始化完成", settings.DATABASE_TYPE)
+        if settings.ENVIRONMENT == EnvironmentEnum.DEV:
+            await bootstrap_database(app.state.redis)
+        else:
+            await validate_database_schema()
+        logger.info("✅ {}数据库结构就绪", settings.DATABASE_TYPE)
         await initialize_ai_plugin()
         await cache_util.init(redis=app.state.redis)
         logger.info("✅ fastapi-admin-cache 初始化完成")
@@ -97,7 +145,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
             ws_callback=ws_limit_callback,
         )
         logger.info("✅ 请求限流器初始化完成")
-    except Exception as e:
+    except BaseException as e:
+        await stop_knowledge_recovery()
+        if not isinstance(e, Exception):
+            raise
         logger.error("❌ 应用初始化失败: {}", e)
         raise SystemExit(1)
 
@@ -113,27 +164,29 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
     except Exception:
         pass
 
-    yield
-
     try:
-        await cache_util.clear()
-        logger.info("✅ fastapi-admin-cache 已关闭")
-        await FastAPILimiter.close()
-        logger.info("✅ 请求限制器已关闭")
-        await import_modules_async(modules=settings.EVENT_LIST, desc="全局事件", app=app, status=False)
-        logger.info("✅ 全局事件模块卸载完成")
-        from app.core.database import async_engine
+        yield
+    finally:
+        try:
+            await stop_knowledge_recovery()
+            await cache_util.clear()
+            logger.info("✅ fastapi-admin-cache 已关闭")
+            await FastAPILimiter.close()
+            logger.info("✅ 请求限制器已关闭")
+            await import_modules_async(modules=settings.EVENT_LIST, desc="全局事件", app=app, status=False)
+            logger.info("✅ 全局事件模块卸载完成")
+            from app.core.database import async_engine
 
-        await async_engine.dispose()
-        logger.info("✅ 数据库引擎连接池已释放")
-    except Exception as e:
-        logger.error("❌ 应用关闭过程中发生错误: {}", e)
-        raise SystemExit(1)
+            await async_engine.dispose()
+            logger.info("✅ 数据库引擎连接池已释放")
+        except Exception as e:
+            logger.error("❌ 应用关闭过程中发生错误: {}", e)
+            raise SystemExit(1)
 
-    try:
-        console_end()
-    except Exception:
-        pass
+        try:
+            console_end()
+        except Exception:
+            pass
 
 
 def register_middlewares(app: FastAPI) -> None:
@@ -153,15 +206,22 @@ def register_routers(app: FastAPI) -> None:
     from app.api.v1.module_platform import platform_router
     from app.api.v1.module_system import system_router
 
-    app.include_router(common_router, dependencies=[Depends(RateLimiter(times=200, seconds=10))])
-    app.include_router(platform_router, dependencies=[Depends(RateLimiter(times=200, seconds=10))])
-    app.include_router(system_router, dependencies=[Depends(RateLimiter(times=200, seconds=10))])
+    times, seconds = settings.RATE_LIMITER_TIMES, settings.RATE_LIMITER_SECONDS
+    if times <= 0 or seconds <= 0:
+        raise ValueError("RATE_LIMITER_TIMES 和 RATE_LIMITER_SECONDS 必须为正整数")
+    app.include_router(common_router, dependencies=[Depends(RateLimiter(times=times, seconds=seconds))])
+    app.include_router(platform_router, dependencies=[Depends(RateLimiter(times=times, seconds=seconds))])
+    app.include_router(system_router, dependencies=[Depends(RateLimiter(times=times, seconds=seconds))])
+    if settings.ENVIRONMENT == EnvironmentEnum.DEV:
+        from app.api.v1.module_demo import demo_router
+
+        app.include_router(demo_router, dependencies=[Depends(RateLimiter(times=times, seconds=seconds))])
 
     for router in get_ai_websocket_routers():
-        app.include_router(router=router, dependencies=[Depends(WebSocketRateLimiter(times=200, seconds=10))])
+        app.include_router(router=router, dependencies=[Depends(WebSocketRateLimiter(times=times, seconds=seconds))])
 
     for router in get_ai_routers():
-        app.include_router(router=router, dependencies=[Depends(RateLimiter(times=200, seconds=10))])
+        app.include_router(router=router, dependencies=[Depends(RateLimiter(times=times, seconds=seconds))])
 
 
 def register_files(app: FastAPI) -> None:

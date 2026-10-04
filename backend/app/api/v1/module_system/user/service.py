@@ -8,6 +8,8 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.v1.module_platform.menu.crud import MenuCRUD
 from app.api.v1.module_platform.menu.schema import MenuOutSchema
+from app.common.enums import EnvironmentEnum
+from app.config.setting import settings
 from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.dependencies import invalidate_permission_cache
 from app.core.exceptions import CustomException
@@ -174,6 +176,13 @@ class UserService:
                 if menu_ids
                 else []
             )
+        if settings.ENVIRONMENT != EnvironmentEnum.DEV:
+            # 保留历史菜单记录，但不向生产客户端注册开发范例路由。
+            menus = [
+                menu for menu in menus
+                if menu.route_name not in {"Demo", "DemoCategory"}
+                and not (menu.permission or "").startswith("module_demo:")
+            ]
         user_dict.permissions = self._collect_permissions()
         user_dict.menus = traversal_to_tree([menu.model_dump() for menu in menus])
         return user_dict
@@ -190,6 +199,7 @@ class UserService:
                 if (
                     menu.status == 0
                     and menu.permission
+                    and (settings.ENVIRONMENT == EnvironmentEnum.DEV or not menu.permission.startswith("module_demo:"))
                 ):
                     permissions.add(menu.permission)
         return sorted(permissions)

@@ -31,7 +31,7 @@ fixture_spec.loader.exec_module(fixtures)
 from fastapi import FastAPI
 from sqlalchemy import select
 
-from app.core.database import async_db_session
+from app.core.database import async_db_session, async_engine
 from app.plugin.module_ai.chat import rag
 from app.plugin.module_ai.chat.model import ChatSessionModel
 from app.plugin.module_ai.chat.service import ChatService
@@ -92,10 +92,28 @@ def local_connect(connection, address):
 
 socket.socket.connect = local_connect
 inner_app = fixtures._ai_app
+demo_production_check = os.environ.get("UX_E2E_DEMO_ENV") == "prod"
+if demo_production_check:
+    from app.common.enums import EnvironmentEnum
+    from main import create_app
+
+    fixtures.settings.ENVIRONMENT = EnvironmentEnum.PROD
+    inner_app = create_app()
+
 
 
 @asynccontextmanager
 async def lifespan(application):
+    if demo_production_check:
+        # 初始化旧的开发菜单，验收切换到生产后不会暴露已有范例导航。
+        from app.scripts.startup_policy import validate_database_schema
+
+        fixtures.settings.ENVIRONMENT = EnvironmentEnum.DEV
+        async with fixtures._test_lifespan(inner_app):
+            fixtures.settings.ENVIRONMENT = EnvironmentEnum.PROD
+            await validate_database_schema()
+            yield
+        return
     async with fixtures._test_lifespan(inner_app):
         yield
 
@@ -112,7 +130,7 @@ async def evidence():
         citations = [citation for run in runs for message in run.get("messages", []) for citation in message.get("citations", [])]
     return {
         **observations,
-        "database": fixtures._TEST_DB_PATH,
+        "database": async_engine.url.database,
         "artifacts": str(ARTIFACTS),
         "sessions": len(sessions),
         "persisted_runs": len(runs),

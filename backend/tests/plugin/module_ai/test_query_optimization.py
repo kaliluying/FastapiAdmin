@@ -96,15 +96,15 @@ class TestJiebaTokenizer:
         assert "123" in token_texts
         assert "员工" in token_texts or "加班" in token_texts
 
-    async def test_jieba_vs_char_tokenizer(self):
+    async def test_jieba_vs_char_tokenizer(self, tmp_path):
         """对比jieba和单字分词"""
         from app.plugin.module_ai.knowledge.bm25_index import BM25KnowledgeIndex
 
         # 使用jieba分词
-        index_jieba = BM25KnowledgeIndex(index_dir="./data/test_jieba", tokenizer="jieba")
+        index_jieba = BM25KnowledgeIndex(index_dir=str(tmp_path / "jieba"), tokenizer="jieba")
 
         # 使用单字分词
-        index_char = BM25KnowledgeIndex(index_dir="./data/test_char", tokenizer="char")
+        index_char = BM25KnowledgeIndex(index_dir=str(tmp_path / "char"), tokenizer="char")
 
         chunks = [
             {

@@ -1,7 +1,21 @@
 from types import SimpleNamespace
 
+import pytest
+
 from app.plugin.module_ai.chat.schema import ChatQuerySchema
 from app.plugin.module_ai.chat.service import ChatService
+
+
+@pytest.mark.parametrize(("content", "expected"), [
+    ("plain answer", "plain answer"),
+    ([{"type": "text", "text": "first"}, {"type": "image", "source": "ignored"}, " second"], "first second"),
+    ([{"type": "text", "text": "response"}, {"type": "tool_use", "name": "tool"}], "response"),
+    (None, ""),
+])
+def test_public_model_text_normalization(content, expected):
+    from app.plugin.module_ai.chat.rag import content_to_text
+
+    assert content_to_text(content) == expected
 
 
 async def test_rag_chain_injects_retrieved_context_into_model_prompt() -> None:
@@ -206,14 +220,13 @@ async def test_langchain_chat_model_uses_openai_responses_protocol(monkeypatch) 
 async def test_chat_session_crud_persists_session_messages_with_sqlalchemy() -> None:
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-    from app.core.base_model import MappedBase
     from app.plugin.module_ai.chat.crud import ChatSessionCRUD
     from app.plugin.module_ai.chat.model import ChatSessionModel
     from app.plugin.module_ai.chat.schema import ChatSessionCreateSchema, ChatSessionUpdateSchema
 
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     async with engine.begin() as conn:
-        await conn.run_sync(ChatSessionModel.metadata.create_all)
+        await conn.run_sync(ChatSessionModel.__table__.create)
 
     session_factory = async_sessionmaker(engine, expire_on_commit=False)
     async with session_factory() as db:
@@ -245,7 +258,7 @@ async def test_chat_session_crud_persists_session_messages_with_sqlalchemy() -> 
         assert await crud.get_by_id_crud(session.session_id) is None
 
     await engine.dispose()
-    MappedBase.metadata.remove(ChatSessionModel.__table__)
+    assert ChatSessionModel.metadata.tables["ai_chat_session"] is ChatSessionModel.__table__
 
 
 async def test_chat_query_returns_config_message_for_placeholder_api_key(monkeypatch) -> None:
