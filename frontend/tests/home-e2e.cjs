@@ -96,7 +96,7 @@ async function run() {
     await page.waitForTimeout(1800);
     await page.evaluate(async () => {
       const { useSettingsStore } = await import("/src/store/modules/setting.store.ts");
-      useSettingsStore().updateTheme("dark");
+
       useSettingsStore().setGlopTheme("dark", "dark");
     });
     await page.waitForTimeout(1800);
@@ -118,7 +118,7 @@ async function run() {
     await page.screenshot({ path: path.join(artifacts, "home-dark.png"), fullPage: true });
     await page.evaluate(async () => {
       const { useSettingsStore } = await import("/src/store/modules/setting.store.ts");
-      useSettingsStore().updateTheme("light");
+
       useSettingsStore().setGlopTheme("light", "light");
     });
     checks.push("dark-mode rendering");

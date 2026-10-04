@@ -22,7 +22,6 @@ import { computed } from "vue";
 import { storeToRefs } from "pinia";
 import AppConfig from "@/config";
 import { defaultSettings } from "@/config/setting";
-import { ThemeMode } from "@/enums";
 import { hexToRgba } from "@utils";
 import { useSettingsStore } from "@stores";
 
@@ -65,7 +64,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const settingStore = useSettingsStore();
-const { watermarkVisible, themeColor, theme } = storeToRefs(settingStore);
+const { watermarkVisible, systemThemeColor, isDark } = storeToRefs(settingStore);
 
 /** 未指定 fontColor 时使用当前主题色半透明，与 App.vue 全局水印策略一致 */
 const watermarkFont = computed(() => {
@@ -73,12 +72,12 @@ const watermarkFont = computed(() => {
   if (props.fontColor) {
     color = props.fontColor;
   } else {
-    const hex = themeColor.value || defaultSettings.themeColor;
-    const alpha = theme.value === ThemeMode.DARK ? 0.22 : 0.16;
+    const hex = systemThemeColor.value || defaultSettings.systemThemeColor!;
+    const alpha = isDark.value ? 0.22 : 0.16;
     try {
       color = hexToRgba(hex, alpha).rgba;
     } catch {
-      color = hexToRgba(defaultSettings.themeColor, alpha).rgba;
+      color = hexToRgba(defaultSettings.systemThemeColor!, alpha).rgba;
     }
   }
   return { fontSize: props.fontSize, color };

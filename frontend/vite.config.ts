@@ -135,7 +135,7 @@ export default ({ mode }: { mode: string }) => {
             if (id.includes("highlight.js") || id.includes("highlightjs")) return "highlight";
             if (id.includes("markdown-it")) return "markdown";
             if (id.includes("@iconify-json")) return "iconify-icons";
-            if (id.includes("crypto-js")) return "crypto";
+
             if (id.includes("dayjs")) return "dayjs";
             if (
               id.includes("vue/") ||
@@ -250,10 +250,7 @@ export default ({ mode }: { mode: string }) => {
         "dompurify",
         "markdown-it",
         "markdown-it-highlightjs",
-        "crypto-js",
-        "file-saver",
         "mitt",
-        "ohash",
         "pinia-plugin-persistedstate",
         ...elementPlusStyleIncludes(),
       ],

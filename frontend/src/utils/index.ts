@@ -12,7 +12,6 @@ export * from "./oauth";
 
 // 通用
 export * from "./common";
-export * from "./download";
 export * from "./constants";
 export * from "./form";
 export * from "./i18n";
@@ -20,7 +19,6 @@ export * from "./icons";
 
 // 网络
 export * from "./http";
-export * from "./socket";
 
 // 浏览器 / 系统
 export * from "./storage";

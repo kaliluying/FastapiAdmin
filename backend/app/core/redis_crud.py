@@ -234,22 +234,6 @@ class RedisCURD:
             logger.error(f"释放分布式锁失败: {e!s}")
             return False
 
-    async def unlock_simple(self, key: str) -> bool:
-        """释放分布式锁（简单版本，不验证锁值）
-
-        参数:
-        - key (str): 锁键名
-
-        返回:
-        - bool: 如果释放锁成功则返回True,否则返回False
-        """
-        try:
-            await self.redis.delete(key)
-            return True
-        except Exception as e:
-            logger.error(f"释放分布式锁失败: {e!s}")
-            return False
-
     async def delete(self, *keys: str) -> bool:
         """删除缓存
 

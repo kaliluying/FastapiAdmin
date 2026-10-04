@@ -113,8 +113,6 @@ export const useSettingsStore = defineStore(
       SETTINGS_KEYS.LAYOUT,
       defaultSettings.layout as LayoutMode
     );
-    const themeColor = useStorage<string>(SETTINGS_KEYS.THEME_COLOR, defaultSettings.themeColor);
-    const theme = useStorage<ThemeMode>(SETTINGS_KEYS.THEME, defaultSettings.theme);
 
     // 系统设置 - 持久化
     const grayMode = useStorage<boolean>(SETTINGS_KEYS.GRAY_MODE, defaultSettings.grayMode);
@@ -166,11 +164,14 @@ export const useSettingsStore = defineStore(
     } as const;
 
     watch(
-      [theme, themeColor],
+      [systemThemeType, systemThemeColor],
       ([newTheme, newThemeColor]) => {
         try {
-          toggleDarkMode(newTheme === ThemeMode.DARK);
-          const colors = generateThemeColors(newThemeColor, newTheme);
+          toggleDarkMode(newTheme === SystemThemeEnum.DARK);
+          const colors = generateThemeColors(
+            newThemeColor!,
+            newTheme === SystemThemeEnum.DARK ? ThemeMode.DARK : ThemeMode.LIGHT
+          );
           applyTheme(colors);
         } catch (error) {
           console.error("[SettingStore] 主题初始化失败:", error);
@@ -316,14 +317,6 @@ export const useSettingsStore = defineStore(
       }
     }
 
-    function updateTheme(newTheme: ThemeMode): void {
-      theme.value = newTheme;
-    }
-
-    function updateThemeColor(newColor: string): void {
-      themeColor.value = newColor;
-    }
-
     function updateSidebarColorScheme(newScheme: string): void {
       sidebarColorScheme.value = newScheme;
     }
@@ -357,8 +350,8 @@ export const useSettingsStore = defineStore(
       // 布局和主题设置
       sidebarColorScheme.value = defaultSettings.sidebarColorScheme;
       layout.value = defaultSettings.layout as LayoutMode;
-      themeColor.value = defaultSettings.themeColor;
-      theme.value = defaultSettings.theme;
+      setGlopTheme(defaultSettings.systemThemeType, defaultSettings.systemThemeMode);
+      setElementTheme(defaultSettings.systemThemeColor!);
 
       // 系统设置
       grayMode.value = defaultSettings.grayMode;
@@ -411,8 +404,6 @@ export const useSettingsStore = defineStore(
       showNotification,
       sidebarColorScheme,
       layout,
-      themeColor,
-      theme,
       grayMode,
       pageSwitchingAnimation,
 
@@ -453,8 +444,6 @@ export const useSettingsStore = defineStore(
 
       // 从 settings.store.ts 来的方法
       updateSetting,
-      updateTheme,
-      updateThemeColor,
       updateSidebarColorScheme,
       updateLayout,
       updateGrayMode,

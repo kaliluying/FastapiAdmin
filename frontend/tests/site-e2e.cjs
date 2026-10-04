@@ -61,9 +61,14 @@ async function run() {
   async function setTheme(theme) {
     await page.evaluate(async (value) => {
       const { useSettingsStore } = await import("/src/store/modules/setting.store.ts");
-      useSettingsStore().updateTheme(value);
+
       useSettingsStore().setGlopTheme(value, value);
     }, theme);
+    assert.equal(
+      await page.evaluate(() => document.documentElement.classList.contains("dark")),
+      theme === "dark",
+      "theme setter must update the rendered page"
+    );
   }
 
   try {
@@ -237,7 +242,10 @@ async function run() {
     await page.getByRole("button", { name: "刷新列表", exact: true }).click();
     await page.locator(".fa-table [role='alert']").waitFor();
     listFixture = "empty";
-    await page.locator(".fa-table").getByRole("button", { name: "重试", exact: true }).click({ force: true });
+    await page
+      .locator(".fa-table")
+      .getByRole("button", { name: "重试", exact: true })
+      .click({ force: true });
     await page.locator(".fa-table .el-empty").waitFor();
     assert.equal(await page.locator(".fa-table [role='alert']").count(), 0);
     listFixture = "real";

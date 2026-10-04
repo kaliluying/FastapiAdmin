@@ -4,7 +4,6 @@
  * 约定：
  * - 凡对 `app.use(...)` 的封装，在本目录下独立文件导出 `initXxx(app)`（与 `icons.ts` 一致）。
  * - `echarts.ts` 为图表按需注册模块，供 `import { echarts } from '@/plugins/echarts'`，不由 `initPlugins` 挂载。
- * - 通用下载工具见 `@utils/download`，不属于 Vue 插件。
  */
 
 import type { App } from "vue";

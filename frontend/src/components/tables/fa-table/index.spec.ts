@@ -134,3 +134,48 @@ describe("table failure recovery", () => {
     second.wrapper.unmount();
   });
 });
+
+describe("table request lifecycle", () => {
+  it("fetches fresh results after completion while merging pending requests", async () => {
+    const pending = Promise.withResolvers<unknown>();
+    const api = vi
+      .fn()
+      .mockReturnValueOnce(pending.promise)
+      .mockResolvedValue({
+        records: [{ id: 2 }],
+        total: 1,
+        current: 1,
+        size: 10,
+      });
+    const { table, wrapper } = createTable(api);
+    const first = table.fetchData();
+    const duplicate = table.fetchData();
+    expect(api).toHaveBeenCalledOnce();
+    pending.resolve({ records: [{ id: 1 }], total: 1, current: 1, size: 10 });
+    await Promise.all([first, duplicate]);
+    expect(table.data.value).toEqual([{ id: 1 }]);
+    await table.refreshUpdate();
+    expect(api).toHaveBeenCalledTimes(2);
+    expect(table.data.value).toEqual([{ id: 2 }]);
+    wrapper.unmount();
+  });
+
+  it("ignores an older response after a new search replaces the request", async () => {
+    const oldRequest = Promise.withResolvers<unknown>();
+    const newRequest = Promise.withResolvers<unknown>();
+    const api = vi
+      .fn()
+      .mockReturnValueOnce(oldRequest.promise)
+      .mockReturnValueOnce(newRequest.promise);
+    const { table, wrapper } = createTable(api);
+    const first = table.getData({ username: "旧查询" });
+    const second = table.getData({ username: "新查询" });
+    newRequest.resolve({ records: [{ id: 2 }], total: 1, current: 1, size: 10 });
+    await second;
+    oldRequest.resolve({ records: [{ id: 1 }], total: 1, current: 1, size: 10 });
+    await first;
+    expect(table.data.value).toEqual([{ id: 2 }]);
+    expect(table.error.value).toBeNull();
+    wrapper.unmount();
+  });
+});

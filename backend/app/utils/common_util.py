@@ -1,12 +1,10 @@
 import importlib
 import uuid
 from collections.abc import Generator, Sequence
-from pathlib import Path
 from typing import Any
 
 from sqlalchemy.orm import DeclarativeBase
 
-from app.config.setting import settings
 from app.core.exceptions import CustomException
 from app.core.logger import logger
 
@@ -241,22 +239,3 @@ def bytes2file_response(bytes_info: bytes) -> Generator[bytes, Any, None]:
     - Generator[bytes, Any, None]: 仅 yield 一次的字节生成器。
     """
     yield bytes_info
-
-
-def get_filepath_from_url(url: str) -> Path:
-    """
-    工具方法：根据请求参数获取文件路径
-
-    参数:
-    - url (str): 请求参数中的 url 参数。
-
-    返回:
-    - Path: 文件路径。
-    """
-    file_info = url.split("?")[1].split("&")
-    task_id = file_info[0].split("=")[1]
-    file_name = file_info[1].split("=")[1]
-    task_path = file_info[2].split("=")[1]
-    filepath = settings.STATIC_ROOT.joinpath(task_path, task_id, file_name)
-
-    return filepath
