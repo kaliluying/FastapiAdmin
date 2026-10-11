@@ -1,6 +1,8 @@
-# 前端视觉与样式
+# FastCore 管理端视觉与样式
 
-当前界面面向单组织的知识库和后台管理工作。视觉以根目录 `dashboard-beautify-preview.html` 为参考：淡蓝灰画布、白色侧栏和内容面板、蓝色操作强调、克制阴影。操作密集的页面保持较高信息密度，状态色只表达状态。
+[文档目录](../../../docs/README.md) · [管理端说明](../../README.md) · [测试与验收](../../../docs/TESTING.md)
+
+当前界面用于企业后端骨架的单组织管理端，支持系统管理、知识库和 AI 工作。视觉以根目录 `dashboard-beautify-preview.html` 为参考：淡蓝灰画布、白色侧栏和内容面板、蓝色操作强调、克制阴影。操作密集的页面保持较高信息密度，状态色只表达状态。
 
 完整的颜色、排版、布局和首页信息层级约定见 [前端设计系统](../../../design-system/fastapiadmin-quiet-operations/MASTER.md)。预览稿提供视觉参考，其中的示例指标、活动和日志不作为真实产品数据；实现与文档不一致时，先核对当前代码和用户已确认的设计方向，再同步更新两处。
 
@@ -28,4 +30,4 @@
 
 ## 验证
 
-从 `frontend/` 执行 `pnpm type-check`、`pnpm test` 和 `pnpm build`。样式改动可对目标文件运行 `pnpm exec stylelint <文件>`。页面视觉需在浏览器检查桌面与窄屏；涉及真实菜单、登录或后端数据的结果还需在连接目标后端的环境中验收。
+新 checkout 先通过 Vite 生成自动导入声明，再从 `frontend/` 执行 `corepack pnpm type-check`、`corepack pnpm test` 和 `corepack pnpm build`。样式改动可对目标文件运行 `corepack pnpm exec stylelint <文件>`。页面视觉需在浏览器检查桌面与窄屏；涉及真实菜单、登录或后端数据的结果还需在连接目标后端的环境中验收。

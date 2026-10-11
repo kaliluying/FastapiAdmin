@@ -1,5 +1,9 @@
 # 首页：知识工作台
 
+[设计系统](../MASTER.md) · [文档目录](../../../docs/README.md)
+
+> 本文保留该页面设计与当轮验收记录；当前文件或测试脚本若尚未提交，新克隆中不保证包含。复验以[测试与验收](../../../docs/TESTING.md)及现有实现为准。
+
 ## 范围与设计取舍
 
 - 仅调整首页及其 Banner、登录活动组件，不改变共享主题、应用外壳和其他业务页面。
@@ -24,9 +28,9 @@
 从 `frontend/` 执行：
 
 ```sh
-pnpm exec vitest run src/views/home/index.spec.ts
-pnpm exec vue-tsc --noEmit
-pnpm exec vite build
+corepack pnpm exec vitest run src/views/home/index.spec.ts
+corepack pnpm exec vue-tsc --noEmit
+corepack pnpm exec vite build
 ```
 
 浏览器验收从仓库根目录执行，需要可用的 Playwright 与 Chrome：

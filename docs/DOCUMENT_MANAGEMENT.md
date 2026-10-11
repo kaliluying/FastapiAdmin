@@ -1,5 +1,7 @@
 # 知识库文档检查与维护
 
+[文档目录](README.md) · [质量评测](AI_QUALITY.md) · [备份与恢复](BACKUP_AND_RESTORE.md)
+
 文档列表的「查看内容」提供原文件下载、按分块编号排序的完整分块分页、全文纠错和文件替换。分块编号沿用检索引用的零基编号，正文不截断；读取、下载依照 `module_ai:document:query` 和现有数据范围，维护依照 `module_ai:document:create`，删除沿用 `module_ai:document:delete`。
 
 ## 维护与恢复

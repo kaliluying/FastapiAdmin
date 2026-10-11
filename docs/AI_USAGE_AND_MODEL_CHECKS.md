@@ -1,5 +1,7 @@
 # AI 用量、调用额度与模型能力验证
 
+[文档目录](README.md) · [质量评测](AI_QUALITY.md) · [测试与验收](TESTING.md)
+
 模型配置页可用当前输入验证普通回答、流式输出和工具调用，使用同一 LangChain Provider 适配器，不保存临时配置。按钮明确说明最多发出 3 次供应商调用，会计入额度并可能产生供应商费用。每项 20 秒超时，不执行工具；工具验证必须实际返回指定工具及合法参数。模型列表仅用于选择，不能证明能力。测试使用 SDK HTTP/SSE 替身，没有执行真实付费供应商请求。
 
 ## 用量与额度
@@ -17,7 +19,7 @@
 
 ## 设计与验证边界
 
-适配 `/Users/gml/code/CodeVault/patterns/ai-provider-compatibility/README.md` 的意图：供应商差异集中在已有 Adapter，能力检查和账本直接复用它，不新增 HTTP 客户端或自动 fallback。事务、额度与未知用量藏在 `chat/usage.py`，没有新增纯转发 Service。数据表注册于 `chat.usage_model`，迁移 `20261011_ai_usage` 接在文档管理迁移之后。
+适配 CodeVault `ai-provider-compatibility` Pattern 的意图：供应商差异集中在已有 Adapter，能力检查和账本直接复用它，不新增 HTTP 客户端或自动 fallback。事务、额度与未知用量藏在 `chat/usage.py`，没有新增纯转发 Service。数据表注册于 `chat.usage_model`，迁移 `20261011_ai_usage` 接在文档管理迁移之后。
 
 可重复验证：
 
@@ -29,4 +31,4 @@ corepack pnpm exec vitest run src/views/module_ai/model-config/model-usage.spec.
 corepack pnpm exec vue-tsc --noEmit
 ```
 
-SQLite 真实 SQL 回归覆盖 20 路并发、额度为 0、身份隔离、失败、取消、流式提前关闭、工具多轮、后台记忆标记、结果写入失败保留账本；HTTP/SSE 替身覆盖 OpenAI Chat Completions、Responses 和 Anthropic 三协议及用量解析。跨数据库并发、真实供应商行为和实际计费仍需相应环境验收。主代理统一执行隔离浏览器验收，单元测试不能代替完整 UI 验收。
+SQLite 真实 SQL 回归覆盖 20 路并发、额度为 0、身份隔离、失败、取消、流式提前关闭、工具多轮、后台记忆标记、结果写入失败保留账本；HTTP/SSE 替身覆盖 OpenAI Chat Completions、Responses 和 Anthropic 三协议及用量解析。跨数据库并发、真实供应商行为和实际计费仍需相应环境验收。隔离浏览器入口为 `node frontend/tests/model-usage-e2e.cjs`（仓库根目录）；单元测试不能代替完整 UI 验收。

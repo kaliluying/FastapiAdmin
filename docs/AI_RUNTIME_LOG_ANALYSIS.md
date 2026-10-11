@@ -1,5 +1,7 @@
 # AI 运行日志分析
 
+[文档目录](README.md) · [用量与模型验证](AI_USAGE_AND_MODEL_CHECKS.md) · [测试与验收](TESTING.md)
+
 ## 启用与使用
 
 该功能默认开启。超级管理员登录后即可使用，不需要额外环境变量、数据库迁移或日志平台。
@@ -26,7 +28,7 @@ HTTP 认证将已验证的登录会话 ID 传给 AI 服务。非流式聊天入�
 
 输入区明确显示日志追问状态，可「结束日志追问」回到普通知识问答；新会话、成功切换会话、清空显示或离开页面也会清除客户端 ID。退出追问不清除草稿或已选资料。追问与附件/知识库不能混用，界面提前提示，后端也独立拒绝。
 
-取消首次路由12秒及后续单次60秒的额外超时，整个工具循环仍保留90秒请求超时，防止失控循环；用户可随时停止。工具查询次数和模型请求次数不设固定上限。仅尚未查询、没有显式 `log_query`/`log_context_id` 的路由故障可转入普通 RAG；警告随回答显示，整轮不创建/追加会话、不提取长期记忆，不携带日志条件或正文。认证失败、模型限流、配置无效、权限失效、非法调用及读取后的失败不做自动降级。没有新增模型能力探测：状态接口仍只代表权限，不证明供应商支持工具。
+取消首次路由12秒及后续单次60秒的额外超时，整个工具循环仍保留90秒请求超时，防止失控循环；用户可随时停止。工具查询次数和模型请求次数不设固定上限。仅尚未查询、没有显式 `log_query`/`log_context_id` 的路由故障可转入普通 RAG；警告随回答显示，整轮不创建/追加会话、不提取长期记忆，不携带日志条件或正文。认证失败、模型限流、配置无效、权限失效、非法调用及读取后的失败不做自动降级。日志路由不自动探测模型能力：状态接口只代表权限。模型配置页提供[手动能力验证](AI_USAGE_AND_MODEL_CHECKS.md)，需要单独发送真实请求才能确认供应商是否支持工具。
 
 WebSocket 错误附带稳定的 `error_code`；不再施加每位管理员10秒的日志查询冷却；供应商自身的限流仍按模型错误返回。若其他错误事件带 `retry_after`，重试按钮显示倒计时并暂时禁用，结束后由用户手动重试，不自动发送；立即日志追问没有该冷却。重试保留原问题、附件/知识库和原临时查询 ID；失效的追问不提供盲目重试，需要重新填写查询条件。
 
@@ -53,10 +55,10 @@ WebSocket 错误附带稳定的 `error_code`；不再施加每位管理员10秒�
 cd backend
 .venv/bin/python -m pytest tests/test_runtime_logs.py tests/test_ai_log_analysis.py tests/test_ai_log_followup.py tests/test_auth_session.py tests/test_ai_chat_ux.py
 cd ../frontend
-pnpm exec vitest run
-pnpm exec vue-tsc --noEmit
-NODE_PATH=/path/to/installed/playwright/node_modules node tests/log-analysis-e2e.cjs
-NODE_PATH=/path/to/installed/playwright/node_modules node tests/log-followup-e2e.cjs
+corepack pnpm exec vitest run
+corepack pnpm exec vue-tsc --noEmit
+node tests/log-analysis-e2e.cjs
+node tests/log-followup-e2e.cjs
 ```
 
 浏览器验收使用隔离 SQLite、模拟 Redis、真实登录/HTTP/WebSocket/文件日志读取和本地确定性模型，经过实际 `bind_tools`/`ToolMessage` 边界，检查自然语言提问、批量与四次连续工具查询、70条 INFO 上下文、完整长堆栈、gzip归档、大小写匹配、立即追问、工具参数、脱敏证据、完整引用预览、不创建或写入会话、明暗主题及响应式布局。协议测试通过 MockTransport 验证三个真实 SDK 的工具定义、调用解析和工具结果序列化，不访问外部供应商。它们不证明生产环境、真实模型的工具选择质量或多实例日志分析已经验收。

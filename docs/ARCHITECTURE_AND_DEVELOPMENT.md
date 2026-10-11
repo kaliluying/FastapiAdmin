@@ -1,17 +1,19 @@
-# 架构与开发指南
+# FastCore 架构与开发指南
+
+[文档目录](README.md) · [后端说明](../backend/README.md) · [管理端说明](../frontend/README.md) · [测试与验收](TESTING.md)
 
 本文描述当前 `backend/` 与 `frontend/` 的运行链路。实际行为以源码、`backend/pyproject.toml`、`frontend/package.json` 和环境文件为准；历史设计稿与实现总结不作为运行说明。
 
 ## 系统概览
 
-FastapiAdmin 是单组织后台。前端负责登录、菜单导航、系统管理和 AI 工作界面；后端负责认证与权限、业务 API、数据初始化及 AI 知识库与对话。正常启动会连接关系数据库和 Redis；知识库还使用本地文件、Chroma 与 BM25 索引，AI 对话使用配置的模型服务。
+FastCore 是面向单组织企业应用的后端骨架，配套管理端并内置 AI 能力。前端负责登录、菜单导航、系统管理和 AI 工作界面；后端负责认证与权限、业务 API、数据初始化及 AI 知识库与对话。正常启动会连接关系数据库和 Redis；知识库还使用本地文件、Chroma 与 BM25 索引，AI 对话使用配置的模型服务。
 
 ```mermaid
 flowchart LR
     U[浏览器：Vue 3] -->|HTTP /api/v1| A[FastAPI]
     U -->|WebSocket ticket| A
     A --> S[系统与平台模块]
-    A --> K[AI 模块：对话、知识库、记忆]
+    A --> K[AI 模块：对话、知识库、记忆与质量]
     S --> DB[(关系数据库)]
     K --> DB
     A --> R[(Redis)]
@@ -27,7 +29,7 @@ flowchart LR
 | 前端鉴权与导航 | `src/store/modules/user.store.ts`、`src/router/` | 登录状态、授权菜单转换、动态路由注册和导航守卫 |
 | 后端组装 | `backend/main.py`、`app/init_app.py` | 装配中间件、路由、生命周期和静态文件 |
 | 通用后台 API | `app/api/v1/module_common/`、`module_platform/`、`module_system/` | 文件与健康检查、菜单、认证及系统管理 |
-| AI 核心模块 | `app/plugin/module_ai/`、`app/core/plugins.py` | 对话、知识库、记忆及模型配置；通过显式清单组装 |
+| AI 核心模块 | `app/plugin/module_ai/`、`app/core/plugins.py` | 对话、知识库、记忆、模型配置、用量与质量；通过显式清单组装 |
 | 数据初始化 | `app/scripts/initialize.py`、`app/scripts/migrate.py` | ORM 建表与种子数据、已有 Alembic 迁移 |
 
 表中 `app/` 和 `src/` 分别相对于 `backend/`、`frontend/`。模块按功能组织；新增功能先沿现有调用链打通完整用例，再决定是否需要拆分更多文件。
@@ -70,82 +72,15 @@ flowchart LR
 
 新增回归检查覆盖模型内容转换、恢复资格、路由重复清理及缓存写入失败回滚。`frontend/tests/route-lifecycle-e2e.cjs` 使用隔离的 SQLite、模拟 Redis 与确定性模型，在真实浏览器中验证登录、刷新、菜单重建、退出和重新登录；不代表生产数据库或外部模型验收。
 
-## 本地开发
+## 开发与验收入口
 
-新增业务可从 [标准模块模板：分类管理](STANDARD_MODULE_TEMPLATE.md) 开始，沿用其中的数据库约束、请求事务、功能权限、数据范围、菜单接入和端到端验收方式。范例接口和导航仅在开发环境启用；生产保留模型及迁移历史，正式业务应使用独立命名并正常注册。
+新增业务从[标准模块模板：分类管理](STANDARD_MODULE_TEMPLATE.md)开始，沿用数据库约束、请求事务、功能权限、数据范围、菜单接入和端到端验收方式。范例接口和导航仅在开发环境启用；生产保留模型及迁移历史，正式业务使用独立命名并正常注册。
 
-工具版本以 `backend/pyproject.toml` 与 `frontend/package.json` 为准：后端 Python 3.12+ 和 `uv`，前端 Node 20.19+ 与仓库声明的 `pnpm`。按所选后端配置准备关系数据库、Redis；使用 AI 对话或远程 embedding 时配置相应模型服务。`uv sync` 已安装 AI 核心依赖，无需额外的 `ai` extra。
+配置与运行命令分别维护在[后端说明](../backend/README.md)和[管理端说明](../frontend/README.md)。开发启动会迁移与初始化目标库；生产首次部署显式 bootstrap，后续显式 migrate，正常启动只检查结构。前端通过 Corepack 使用仓库声明的 pnpm；新 checkout 先通过 Vite 生成自动导入声明。
 
-```bash
-# 在仓库根目录：复制后端模板，先填写本机连接与密钥
-cp backend/env/.env.dev.example backend/env/.env.dev
+单测、组合检查、隔离浏览器、真实依赖与供应商的边界统一见[测试与验收](TESTING.md)。跨层验收需验证登录与权限、页面操作、API 响应、持久化及错误态。知识库上传要等待索引终态并检查实际召回，不能只看上传成功。
 
-# 终端 1：后端
-cd backend
-uv sync
-uv run main.py run --env=dev
-
-# 终端 2：从仓库根目录启动前端
-cd frontend
-pnpm install
-pnpm dev
-```
-
-前端运行前核对已跟踪的 `frontend/.env`、`frontend/.env.development`，尤其是代理与 WebSocket 目标。不要把模板地址、端口或账号当成当前环境的真实值。后端 `--env=dev` 读取 `backend/env/.env.dev`；本地配置和密钥不得提交。
-
-### 生产部署的数据库步骤
-
-从 `backend/` 执行，先确认 `env/.env.prod` 的目标及备份：
-
-```bash
-# 首次部署：创建缺失表并写入基础数据，不清空现有数据。
-uv run main.py bootstrap --env=prod
-
-# 后续部署：显式应用已审查的迁移（upgrade 为兼容命令）。
-uv run main.py migrate --env=prod
-uv run main.py run --env=prod
-```
-
-`bootstrap` 使用 Redis 初始化锁；部署侧应串行执行迁移。DDL 的回滚能力取决于数据库，取消子进程不能撤销已经提交的 DDL。结构检查失败应修复部署步骤，不要用 `reset` 绕过检查；`reset` 会删除数据。生产应用仍可进行正常业务写入和知识任务恢复，只禁止隐式结构修复及补种子。
-
-### 常用验证
-
-以下命令分别在对应子目录运行，按改动范围选择；它们本身不构成跨层功能的端到端验收。
-
-```bash
-# backend/
-uv run pytest tests/test_api_module_ai.py -q
-uv run pytest tests/plugin/module_ai -q
-uv run ruff check app tests --no-fix --output-format concise
-
-# frontend/
-pnpm lint:check
-pnpm test
-pnpm type-check
-pnpm build
-```
-
-`backend/tests/conftest.py` 将数据库切到临时 SQLite，并模拟 Redis、限流器等；测试通过不能证明 MySQL/Redis、浏览器或外部模型的运行行为。`pnpm lint:check` 和 Ruff 默认只报告问题；`pnpm lint` 会修复或重写前端文件，后端需要修复时显式使用 `ruff check --fix`。
-
-前端依赖安装后的 `prepare` 会从仓库根目录安装 Husky；已有 checkout 在 `frontend/` 执行 `pnpm prepare` 启用。提交前按暂存文件运行前端 lint 与后端 Ruff，只报告错误，不自动修复；Python 检查复用 `backend/.venv`，需先完成 `uv sync`。检查失败会阻止提交，类型检查、测试及跨层验收仍按改动范围执行。`pnpm test:hooks` 在临时 Git 仓库验证 hook 安装、前后端错误拦截及暂存和未暂存内容保留。
-
-本地检查入口从 `frontend/` 执行，复用现有命令，任何步骤失败即停止并返回失败：
-
-```bash
-corepack pnpm check frontend  # 前端类型与单测
-corepack pnpm check backend   # 后端测试，临时 SQLite/模拟 Redis
-corepack pnpm check table     # 前端类型/单测 + 375/390/640px 普通点击回归
-corepack pnpm check logs      # 前端类型/单测 + 后端日志目标测试 + 日志追问浏览器验收
-corepack pnpm test:tooling    # hook 暂存隔离、入口与验收产物保留回归
-```
-
-Husky 和 fixture 从 frontend 的 `packageManager` 经 Corepack 选择 pnpm，避免继承 Corepack 环境后误用全局版本。需先准备项目工具链与依赖；检查不安装依赖、不启动普通开发服务，也不代替真实数据库或供应商验收。
-
-检查结果及隔离浏览器产物保留在仓库忽略的 `.local/acceptance/` 独立目录。只导出规定的结果 JSON 和 PNG；JSON 中的凭据字段及标记会脱敏，不保存原始日志、环境文件或数据库。manifest 标记成功/失败、提交、工作区是否有改动和差异摘要；有改动的证据不能仅以提交号代表源码。本地 fixture 截图只含专用测试数据，外部服务模式不自动归档。
-
-跨层功能至少选择一个可重复的用户场景，验证真实登录与权限、浏览器操作、API 响应、持久化结果及错误态。例如知识库链路要等后台索引完成，再检查文档状态和实际召回；只看到上传接口成功不足以验收检索功能。
-
-`backend/integration/README.md` 提供不继承测试 mocks 的真实 MySQL/Redis 隔离验收，覆盖显式初始化、生产结构检查、真实限流窗口以及 SIGKILL 后文档恢复和 BM25 召回。GitHub Actions 工作流已移除，真实依赖和浏览器验收按对应说明手动执行；本地验收不代表外部模型或生产验收。
+文档维护、调用额度与质量模块的操作限制分别见[文档管理](DOCUMENT_MANAGEMENT.md)、[用量与模型验证](AI_USAGE_AND_MODEL_CHECKS.md)、[回答反馈与评测](AI_QUALITY.md)。关系库、原件及索引的恢复流程见[备份与恢复](BACKUP_AND_RESTORE.md)。
 
 ## 修改功能的路径
 

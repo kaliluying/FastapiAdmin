@@ -1,4 +1,4 @@
-# FastapiAdmin 项目协作约束
+# FastCore 项目协作约束
 
 本文件只规定本仓库的特殊约束；通用授权、工作区保护和验收要求遵循用户级规则。整体架构与开发路径见 `docs/ARCHITECTURE_AND_DEVELOPMENT.md`，实际命令和配置以当前代码、`backend/pyproject.toml`、`frontend/package.json` 及环境文件为准。
 

@@ -1,36 +1,53 @@
-# FastapiAdmin
+# FastCore
 
-FastapiAdmin is a single-organization admin application with user and role permissions, menus, system configuration, audit logs, AI chat, knowledge bases, and document retrieval. The backend uses FastAPI; the frontend uses Vue 3.
+FastCore is an enterprise backend scaffold for single-organization applications, built with FastAPI and accompanied by a Vue 3 administration frontend. It includes authentication, role permissions, menus, audit logs and file management, plus built-in AI chat, knowledge bases, document retrieval, usage limits and quality evaluation.
 
-For the current module map, startup flow, data ownership, development steps, and end-to-end acceptance path, see the [architecture and development guide](docs/ARCHITECTURE_AND_DEVELOPMENT.md) (Chinese). The [Chinese README](README.md) is the primary project entry point.
+[中文](README.md) · [Documentation index](docs/README.md) · [Architecture](docs/ARCHITECTURE_AND_DEVELOPMENT.md) · [Business module template](docs/STANDARD_MODULE_TEMPLATE.md)
 
-## Code and documentation
+## Structure
 
-| Location | Purpose |
-| --- | --- |
-| [`backend/`](backend/README.md) | FastAPI service, system and AI modules, database startup, backend tests |
-| [`frontend/`](frontend/README.md) | Vue application, login state, authorized menus, dynamic routes |
-| [`docs/ARCHITECTURE_AND_DEVELOPMENT.md`](docs/ARCHITECTURE_AND_DEVELOPMENT.md) | Cross-layer architecture and development workflow |
+| Location                                            | Purpose                                                                                               |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| [backend/](backend/README.md)                       | FastAPI, SQLAlchemy, Alembic, authentication, users, roles, menus, logs, files and health checks      |
+| [frontend/](frontend/README.md)                     | Vue 3, TypeScript, Vite, Pinia and Element Plus administration frontend                               |
+| `backend/app/plugin/module_ai/`                     | Chat, knowledge bases, memory, model configuration, usage limits, feedback and retrieval evaluation   |
+| [Module template](docs/STANDARD_MODULE_TEMPLATE.md) | A development-only category example covering data constraints, permissions, navigation and acceptance |
+| [Backup and restore](docs/BACKUP_AND_RESTORE.md)    | Offline backup and recovery of the database, private files, Chroma and BM25 indexes                   |
 
-The backend entry point is `backend/main.py`; the frontend entry point is `frontend/src/main.ts`. Backend dependencies and frontend scripts are defined by `backend/pyproject.toml` and `frontend/package.json`.
+AI is a core module assembled through an explicit manifest. The scaffold uses a single-organization permission model.
 
 ## Local development
 
-Use Python 3.12+, `uv`, Node.js 20.19+, and the pnpm version declared in `frontend/package.json`. Prepare the database and Redis selected by your backend environment file. Configure the frontend proxy and WebSocket targets in `.env` and `.env.development`; values in the example file may be overridden by the current development file.
+Use Python 3.12+, `uv`, Node.js 20.19+, and the pnpm version declared in `frontend/package.json` through Corepack. Prepare the configured relational database and Redis.
 
 ```bash
-# From the repository root
+git clone git@github.com:kaliluying/fastcore.git
+cd fastcore
 cp backend/env/.env.dev.example backend/env/.env.dev
+```
 
-# Terminal 1
+Fill in database, Redis and secret settings before starting. Check the frontend API proxy and WebSocket targets in `.env` and `.env.development` against the actual backend configuration.
+
+```bash
+# Terminal 1, from the repository root
 cd backend
 uv sync
 uv run main.py run --env=dev
-
-# Terminal 2, from the repository root
-cd frontend
-pnpm install
-pnpm dev
 ```
 
-Backend startup applies existing Alembic migrations, creates missing tables, and seeds base data in the configured database. Check that target before starting. Core AI dependencies are included in `uv sync`; no extra `ai` dependency group is needed. The guide covers model configuration, indexing status, tests, and full user-flow verification.
+```bash
+# Terminal 2, from the repository root
+cd frontend
+corepack pnpm install --frozen-lockfile
+corepack pnpm dev
+```
+
+Development startup migrates and initializes the selected database. Production startup only validates its structure: use `bootstrap --env=prod` for initial provisioning and `migrate --env=prod` for later schema upgrades. See the [backend guide](backend/README.md). AI dependencies are included in `uv sync`; external model services and OCR tools require separate configuration.
+
+## Development and maintenance
+
+Start new business modules with the [module template](docs/STANDARD_MODULE_TEMPLATE.md). Use the [architecture guide](docs/ARCHITECTURE_AND_DEVELOPMENT.md) for call chains and the [testing guide](docs/TESTING.md) for commands and acceptance boundaries. `main` is the default branch; `dev` is the development branch. Detailed documentation is maintained primarily in Chinese.
+
+The repository and documentation are named FastCore. Existing `fastapiadmin` database names, Redis prefixes, log names, internal symbols and design directory names remain compatibility identifiers. Renaming the repository does not migrate application data or require renaming an existing local checkout.
+
+Current source, dependency declarations and effective environment settings take precedence over historical implementation reports. Collaboration rules are in [AGENTS.md](AGENTS.md).
