@@ -18,7 +18,7 @@ function printBanner(env: Record<string, string>, mode: string) {
       "",
       `  ${dim("┌")}${line}${dim("┐")}`,
       row(""),
-      row(`${bold(cyan("fastapiadmin"))}  ${bold(magenta(`v${env.VITE_VERSION || "3.0.0"}`))}`),
+      row(`${bold(cyan("fastcore"))}  ${bold(magenta(`v${env.VITE_VERSION || "3.0.0"}`))}`),
       row(""),
       row(`${dim("mode")}     ${yellow(env.VITE_APP_ENV || mode)}`),
       row(`${dim("api")}      ${blue(env.VITE_API_BASE_URL || "")}`),

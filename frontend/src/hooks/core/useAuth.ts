@@ -26,7 +26,7 @@
  * ```
  *
  * @module useAuth
- * @author FastapiAdmin Team
+ * @author FastCore Team
  */
 
 import { useUserStore } from "@stores";

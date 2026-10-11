@@ -46,8 +46,8 @@ Development startup migrates and initializes the selected database. Production s
 
 ## Development and maintenance
 
-Start new business modules with the [module template](docs/STANDARD_MODULE_TEMPLATE.md). Use the [architecture guide](docs/ARCHITECTURE_AND_DEVELOPMENT.md) for call chains and the [testing guide](docs/TESTING.md) for commands and acceptance boundaries. `main` is the default branch; `dev` is the development branch. Detailed documentation is maintained primarily in Chinese.
+Start new business modules with the [module template](docs/STANDARD_MODULE_TEMPLATE.md). Use the [architecture guide](docs/ARCHITECTURE_AND_DEVELOPMENT.md) for call chains and the [testing guide](docs/TESTING.md) for commands and acceptance boundaries. `main` is the default and current delivery branch. Detailed documentation is maintained primarily in Chinese.
 
-The repository and documentation are named FastCore. Existing `fastapiadmin` database names, Redis prefixes, log names, internal symbols and design directory names remain compatibility identifiers. Renaming the repository does not migrate application data or require renaming an existing local checkout.
+All project identifiers use FastCore: the default database is `fastcore`, Redis brand prefixes are `fastcore:` / `fastcore-cache:`, logs use `backend/logs/fastcore.log`, the CLI object is `fastcore_cli`, and design documentation lives in `design-system/fastcore-quiet-operations/`. The local directory is named `FastCore`. Existing installations must back up and migrate their database and update environment settings before activating the new version; old brand aliases are not retained.
 
 Current source, dependency declarations and effective environment settings take precedence over historical implementation reports. Collaboration rules are in [AGENTS.md](AGENTS.md).

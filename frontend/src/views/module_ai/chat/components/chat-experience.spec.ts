@@ -57,7 +57,7 @@ describe("runtime log evidence", () => {
       returned_count: 4,
       truncated: true,
       notice: "仅本实例日志文件",
-      scanned_files: ["fastapiadmin.log", "fastapiadmin.2026-10-03.log.gz"],
+      scanned_files: ["fastcore.log", "fastcore.2026-10-03.log.gz"],
       query_index: 1,
       query: { minutes: 60, levels: ["ERROR"], keyword: "timeout", correlation_id: "request42" },
     };
@@ -72,7 +72,7 @@ describe("runtime log evidence", () => {
     wrappers.push(wrapper);
     expect(wrapper.findAll(".query-card")).toHaveLength(2);
     expect(wrapper.text()).toContain("日志不完整");
-    expect(wrapper.text()).toContain("fastapiadmin.2026-10-03.log.gz");
+    expect(wrapper.text()).toContain("fastcore.2026-10-03.log.gz");
     expect(wrapper.text()).toContain("不能据此判断系统正常");
     expect(wrapper.text()).toContain("request42");
     expect(

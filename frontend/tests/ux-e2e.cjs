@@ -462,7 +462,7 @@ async function main(runCheck = run) {
     console.log("Acceptance dependencies and Chrome are available; no services started");
     return;
   }
-  const artifacts = fs.mkdtempSync(path.join(os.tmpdir(), "fastapiadmin-ux-e2e-"));
+  const artifacts = fs.mkdtempSync(path.join(os.tmpdir(), "fastcore-ux-e2e-"));
   const children = [];
   const logs = [];
   let spawnError;

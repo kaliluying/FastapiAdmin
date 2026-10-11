@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     # ******************* API文档配置 ****************** #
     # ================================================= #
     DEBUG: bool = False  # 调试模式
-    TITLE: str = "FastapiAdmin"  # 文档标题
+    TITLE: str = "FastCore"  # 文档标题
     VERSION: str = "0.1.0"  # 版本号
     DESCRIPTION: str = "单组织后台服务，提供 RBAC、系统配置、审计日志和核心 AI/RAG 能力。"
     SUMMARY: str = "管理接口"
@@ -99,7 +99,7 @@ class Settings(BaseSettings):
     DATABASE_PORT: int = 3306
     DATABASE_USER: str = "root"
     DATABASE_PASSWORD: str = ""
-    DATABASE_NAME: str = "fastapiadmin"
+    DATABASE_NAME: str = "fastcore"
 
     # ================================================= #
     # ******************** Redis配置 ******************* #
@@ -211,7 +211,7 @@ class Settings(BaseSettings):
     # ================================================= #
     # ******************* 请求限制配置 ****************** #
     # ================================================= #
-    REQUEST_LIMITER_REDIS_PREFIX: str = "fastapiadmin:request_limiter:"
+    REQUEST_LIMITER_REDIS_PREFIX: str = "fastcore:request_limiter:"
     RATE_LIMITER_TIMES: int = 200
     RATE_LIMITER_SECONDS: int = 10
 

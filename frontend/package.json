@@ -1,6 +1,6 @@
 {
-  "name": "fastapiadmin",
-  "description": "FastapiAdmin 管理控制台",
+  "name": "fastcore",
+  "description": "FastCore 管理控制台",
   "version": "3.0.0",
   "private": true,
   "type": "module",
@@ -157,7 +157,7 @@
     "npm": ">=10.0.0",
     "pnpm": ">=8.8.0"
   },
-  "author": "fastapiadmin <948080782@qq.com>",
+  "author": "fastcore <948080782@qq.com>",
   "license": "MIT",
   "browserslist": [
     "Chrome >= 84",

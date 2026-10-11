@@ -51,7 +51,7 @@ async def run_startup_migration() -> bool:
 @asynccontextmanager
 async def _startup_schema_lock(redis) -> AsyncGenerator[None, None]:
     """Serialize schema and seed work when several workers start together."""
-    lock_key = "fastapiadmin:startup:schema"
+    lock_key = "fastcore:startup:schema"
     lock_value = uuid4().hex
     redis_crud = RedisCURD(redis)
     deadline = asyncio.get_running_loop().time() + 120
@@ -137,7 +137,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
         logger.info("✅ {}数据库结构就绪", settings.DATABASE_TYPE)
         await initialize_ai_plugin()
         await cache_util.init(redis=app.state.redis)
-        logger.info("✅ fastapi-admin-cache 初始化完成")
+        logger.info("✅ fastcore-cache 初始化完成")
         await FastAPILimiter.init(
             redis=app.state.redis,
             prefix=settings.REQUEST_LIMITER_REDIS_PREFIX,
@@ -170,7 +170,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
         try:
             await stop_knowledge_recovery()
             await cache_util.clear()
-            logger.info("✅ fastapi-admin-cache 已关闭")
+            logger.info("✅ fastcore-cache 已关闭")
             await FastAPILimiter.close()
             logger.info("✅ 请求限制器已关闭")
             await import_modules_async(modules=settings.EVENT_LIST, desc="全局事件", app=app, status=False)

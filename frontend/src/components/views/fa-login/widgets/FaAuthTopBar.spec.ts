@@ -34,7 +34,7 @@ vi.mock("@/locales", () => ({
   ],
 }));
 vi.mock("@/config", () => ({
-  default: { systemInfo: { name: "FastapiAdmin" }, systemMainColor: ["#3B73E8", "#0F9D77"] },
+  default: { systemInfo: { name: "FastCore" }, systemMainColor: ["#3B73E8", "#0F9D77"] },
 }));
 
 function renderTopBar() {

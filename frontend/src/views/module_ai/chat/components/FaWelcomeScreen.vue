@@ -47,7 +47,7 @@ const promptCards = [
   {
     title: "系统介绍",
     body: "了解这个工作台的主要功能",
-    prompt: "请介绍一下FastApiAdmin系统",
+    prompt: "请介绍一下FastCore系统",
     icon: "ri:dashboard-3-line",
   },
   {

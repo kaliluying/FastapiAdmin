@@ -11,7 +11,7 @@
  * - menuStyles: 菜单风格预览图（设计/暗色/亮色）
  *
  * @module config/assets/images
- * @author FastapiAdmin Team
+ * @author FastCore Team
  */
 
 import lightTheme from "@imgs/settings/theme_styles/light.png";

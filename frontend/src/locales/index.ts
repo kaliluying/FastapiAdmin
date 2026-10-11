@@ -18,7 +18,7 @@
  * - en: English
  *
  * @module locales
- * @author FastapiAdmin Team
+ * @author FastCore Team
  */
 
 import { createI18n } from "vue-i18n";

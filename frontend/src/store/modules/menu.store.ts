@@ -21,7 +21,7 @@
  * 2. 设置菜单列表和首页路径
  *
  * @module store/modules/menu.store
- * @author FastapiAdmin Team
+ * @author FastCore Team
  */
 import { defineStore } from "pinia";
 import { ref } from "vue";

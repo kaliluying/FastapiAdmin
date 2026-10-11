@@ -77,7 +77,7 @@ def _run_dump(database: dict, target: Path) -> None:
         raise BackupError(f"缺少 {program}，请先安装与数据库服务版本兼容的客户端")
     env = os.environ.copy()
     # Credentials exist only in a private temporary file/environment, never the manifest or argv.
-    with tempfile.TemporaryDirectory(prefix="fastapiadmin-db-auth-") as auth_dir:
+    with tempfile.TemporaryDirectory(prefix="fastcore-db-auth-") as auth_dir:
         if kind == "mysql":
             config = Path(auth_dir) / "client.cnf"
 
@@ -255,7 +255,7 @@ def _project_sources(env: str) -> tuple[dict, dict[str, Path]]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="FastapiAdmin 离线备份、完整性校验和安全恢复")
+    parser = argparse.ArgumentParser(description="FastCore 离线备份、完整性校验和安全恢复")
     commands = parser.add_subparsers(dest="command", required=True)
     create = commands.add_parser("create")
     create.add_argument("--env", choices=("dev", "prod"), required=True)

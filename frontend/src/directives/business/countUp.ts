@@ -17,7 +17,7 @@
  * ```
  *
  * @module directives/countUp
- * @author FastapiAdmin Team
+ * @author FastCore Team
  */
 
 import type { App, Directive, DirectiveBinding } from "vue";

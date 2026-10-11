@@ -43,7 +43,7 @@ def log_chat(monkeypatch, tmp_path):
 
     monkeypatch.setattr(rag, "get_cached_chat_model", Model)
     current = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:23]
-    (tmp_path / "fastapiadmin.log").write_text(
+    (tmp_path / "fastcore.log").write_text(
         f"{current} | ERROR    | app.knowledge:index:42 - LOG-ACCEPTANCE-42 retrieval failed token=fixture-secret | cid=abcd1234\n",
         encoding="utf-8",
     )
@@ -148,7 +148,7 @@ async def test_empty_logs_are_returned_as_tool_result(log_chat):
     assert captured["calls"] == 2
     auth.redis.set.reset_mock()
     query = ChatQuerySchema(message="查询", request_id="empty", log_query={})
-    (runtime_logs.LOG_DIR / "fastapiadmin.log").write_text("", encoding="utf-8")
+    (runtime_logs.LOG_DIR / "fastcore.log").write_text("", encoding="utf-8")
     events = [event async for event in service.ChatService(auth).chat_query(query, structured=True)]
     assert events[-1]["type"] == "done"
     assert next(event for event in events if event["type"] == "log_result")["returned_count"] == 0

@@ -22,14 +22,15 @@ FastCore 是单组织企业后端项目骨架，配套管理端并内置 AI 能�
 | [回答反馈与检索质量评测](AI_QUALITY.md)               | 反馈闭环、数据集、指标与历史比较     |
 | [AI 运行日志分析](AI_RUNTIME_LOG_ANALYSIS.md)         | 日志权限、工具调用、追问与证据安全   |
 | [数据备份与恢复](BACKUP_AND_RESTORE.md)               | 离线备份、完整性检查和数据库恢复演练 |
+| [FastCore 品牌迁移](BRAND_MIGRATION.md)               | 数据库、Redis、日志和本地目录的改名顺序与验收 |
 
 ## 视觉与协作
 
 | 文档                                                                         | 内容                               |
 | ---------------------------------------------------------------------------- | ---------------------------------- |
 | [管理端样式说明](../frontend/src/styles/README.md)                           | 样式入口与页面规范                 |
-| [设计系统](../design-system/fastapiadmin-quiet-operations/MASTER.md)         | 颜色、布局、交互和可访问性         |
-| [首页设计记录](../design-system/fastapiadmin-quiet-operations/pages/home.md) | 首页设计与当时的验收结果           |
+| [设计系统](../design-system/fastcore-quiet-operations/MASTER.md)         | 颜色、布局、交互和可访问性         |
+| [首页设计记录](../design-system/fastcore-quiet-operations/pages/home.md) | 首页设计与当时的验收结果           |
 | [项目协作规则](../AGENTS.md)                                                 | 修改范围、数据保护、验证与交付约束 |
 
 ## 历史与本地材料
@@ -40,4 +41,4 @@ FastCore 是单组织企业后端项目骨架，配套管理端并内置 AI 能�
 
 ## 维护约定
 
-根 README 保留定位与快速开始；子项目 README 维护各自命令；架构指南维护跨端调用链；专题文档维护用例、限制与验收方式。历史记录不改写成当前事实。文档名称为 FastCore，旧目录、日志、数据库或内部代码标识保留兼容性。
+根 README 保留定位与快速开始；子项目 README 维护各自命令；架构指南维护跨端调用链；专题文档维护用例、限制与验收方式。历史记录不改写成当前事实。名称与内部标识统一为 FastCore；数据库、Redis 前缀、日志和目录变更需在现有实例中完成迁移后再启用。

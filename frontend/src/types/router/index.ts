@@ -17,7 +17,7 @@
  * - 权限控制
  *
  * @module types/router/index
- * @author FastapiAdmin Team
+ * @author FastCore Team
  */
 
 import { RouteRecordRaw } from "vue-router";

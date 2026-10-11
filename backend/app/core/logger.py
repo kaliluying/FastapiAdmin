@@ -63,7 +63,7 @@ def setup_logger() -> None:
     log_level = _get_log_level()
     logger.add(sys.stdout, format=LOG_FMT, level=log_level)
     logger.add(
-        str(LOG_DIR / "fastapiadmin.log"),
+        str(LOG_DIR / "fastcore.log"),
         format=LOG_FMT,
         level=log_level,
         rotation="00:00",

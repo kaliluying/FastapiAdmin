@@ -7,7 +7,7 @@ describe("brand and setting defaults", () => {
     vi.resetModules();
     vi.stubGlobal("__APP_INFO__", {
       pkg: {
-        name: "fastapiadmin",
+        name: "fastcore",
         version: "3.0.0",
       },
     });
@@ -50,8 +50,8 @@ describe("brand and setting defaults", () => {
   it("uses generic admin brand and premium console defaults", async () => {
     const { AppConfig, SETTING_DEFAULT_CONFIG, themeColorPresets } = await loadConfig();
 
-    expect(AppConfig.systemInfo.name).toBe("FastAPI Admin");
-    expect(SETTING_DEFAULT_CONFIG.title).toBe("FastAPI Admin");
+    expect(AppConfig.systemInfo.name).toBe("FastCore");
+    expect(SETTING_DEFAULT_CONFIG.title).toBe("FastCore");
     expect(SETTING_DEFAULT_CONFIG.layout).toBe(LayoutMode.LEFT);
     expect(SETTING_DEFAULT_CONFIG.theme).toBe(ThemeMode.LIGHT);
     expect(SETTING_DEFAULT_CONFIG.themeColor).toBe("#3b73e8");

@@ -20,7 +20,7 @@
  * - 配置数据验证
  *
  * @module types/config/index
- * @author FastapiAdmin Team
+ * @author FastCore Team
  */
 
 import { MenuTypeEnum, SystemThemeEnum } from "@/enums/appEnum";

@@ -1,6 +1,6 @@
 # FastCore 管理端设计系统
 
-> 本目录保留历史名称以避免旧链接失效。当前视觉以仓库根目录的 `dashboard-beautify-preview.html` 为参考，以 `frontend/src/styles/core/_fa-tokens.scss` 和实际组件为落地依据。预览稿里的指标、趋势、活动和日志是静态示例，只有真实接口支持的数据才能进入产品页面。
+> 本目录名称与项目品牌统一为 FastCore。当前视觉以仓库根目录的 `dashboard-beautify-preview.html` 为参考，以 `frontend/src/styles/core/_fa-tokens.scss` 和实际组件为落地依据。预览稿里的指标、趋势、活动和日志是静态示例，只有真实接口支持的数据才能进入产品页面。
 
 ## 产品与方向
 

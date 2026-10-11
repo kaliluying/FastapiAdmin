@@ -20,10 +20,10 @@
 
 ```bash
 umask 077
-mkdir -p /private/fastapiadmin-backups
+mkdir -p /private/fastcore-backups
 uv run python -m app.scripts.backup create --env=prod \
-  --writers-stopped --output=/private/fastapiadmin-backups/2026-10-11.zip
-uv run python -m app.scripts.backup verify /private/fastapiadmin-backups/2026-10-11.zip
+  --writers-stopped --output=/private/fastcore-backups/2026-10-11.zip
+uv run python -m app.scripts.backup verify /private/fastcore-backups/2026-10-11.zip
 ```
 
 目录示例须替换为实际可写的私有磁盘路径。已有输出不覆盖；输出不能位于被备份的存储源内。失败时不会发布 ZIP，暂存文件自动清理；进程被强制终止可能留下 `.backup-*` 私有暂存目录，确认无活动进程后人工清理。
@@ -36,8 +36,8 @@ MySQL/PostgreSQL 需要与数据库服务版本兼容的 `mysqldump`/`pg_dump`�
 
 ```bash
 uv run python -m app.scripts.backup restore \
-  /private/fastapiadmin-backups/2026-10-11.zip \
-  --target=/private/fastapiadmin-restore-drill
+  /private/fastcore-backups/2026-10-11.zip \
+  --target=/private/fastcore-restore-drill
 ```
 
 恢复目标必须不存在，父目录必须已存在。程序先校验整个归档，在私有暂存目录恢复并复核摘要，SQLite 再执行 `integrity_check`，最后发布完整目录。失败不会覆盖目标或现有应用数据；同目标并发恢复会被锁拒绝。强制终止可能残留 `.restore-*` 和 `.目标名.restore.lock`，确认恢复进程已退出后再清理。
@@ -45,7 +45,7 @@ uv run python -m app.scripts.backup restore \
 恢复目录结构：
 
 ```text
-fastapiadmin-restore-drill/
+fastcore-restore-drill/
   database.db        # SQLite；MySQL 是 database.sql；PostgreSQL 是 database.dump
   knowledge/         # 存在时恢复，包含空目录
   upload/
@@ -59,15 +59,15 @@ CLI 到这里完成离线文件恢复，**不会连接或导入 MySQL/PostgreSQL
 
 ### SQLite
 
-直接用恢复的 `database.db` 查询关系表并检查约束。隔离应用配置中 `DATABASE_TYPE=sqlite`，`DATABASE_NAME=/private/fastapiadmin-restore-drill/database`（应用会追加 `.db`）。不要把生产环境文件改成演练配置。
+直接用恢复的 `database.db` 查询关系表并检查约束。隔离应用配置中 `DATABASE_TYPE=sqlite`，`DATABASE_NAME=/private/fastcore-restore-drill/database`（应用会追加 `.db`）。不要把生产环境文件改成演练配置。
 
 ### MySQL
 
 由管理员在隔离服务新建专用的空数据库和最小授权账号。核对 `information_schema.tables`、`routines`、`triggers` 与 `events` 中该库均为空，记录目标主机、端口和数据库名。通过 `mysql --login-path=restore-drill` 或权限 `0600` 的客户端配置文件提供连接信息；不要把密码写到 shell 参数。向空库导入，例如：
 
 ```bash
-mysql --login-path=restore-drill --database=fastapiadmin_restore_drill \
-  < /private/fastapiadmin-restore-drill/database.sql
+mysql --login-path=restore-drill --database=fastcore_restore_drill \
+  < /private/fastcore-restore-drill/database.sql
 ```
 
 示例登录路径和数据库名必须事先由管理员设置。MySQL DDL 不保证全导入回滚，失败可能留下部分结构；失败目标不能继续作为完整恢复结果，只能重新准备新的空库重试。导出包含触发器、过程及事件，导入前审查其执行权限及 DEFINER；隔离演练服务关闭 event scheduler，避免执行定时事件。
@@ -78,7 +78,7 @@ mysql --login-path=restore-drill --database=fastapiadmin_restore_drill \
 
 ```bash
 pg_restore --dbname=service=restore-drill --exit-on-error --single-transaction \
-  --no-owner --no-acl /private/fastapiadmin-restore-drill/database.dump
+  --no-owner --no-acl /private/fastcore-restore-drill/database.dump
 ```
 
 `--no-owner --no-acl` 让空库中的对象归恢复账号所有；生产授权须单独审查后重建。扩展、所有权、字符集/排序规则和服务端版本兼容性需要在隔离服务验证，不能仅靠文件校验判定成功。

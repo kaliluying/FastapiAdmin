@@ -529,7 +529,7 @@ class CaptchaService:
 class AutoLoginService:
     """免登录服务"""
 
-    AUTO_LOGIN_PREFIX = "fastapiadmin:auto_login:"
+    AUTO_LOGIN_PREFIX = "fastcore:auto_login:"
     TOKEN_EXPIRE = 300
 
     @classmethod

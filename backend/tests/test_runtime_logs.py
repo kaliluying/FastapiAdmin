@@ -48,7 +48,7 @@ def record(message, *, timestamp=None, level="ERROR", source="app.worker:run:42"
 
 def write_records(logs, messages):
     data = ("".join(messages) + record("next record boundary", level="INFO", timestamp=NOW + timedelta(minutes=1))).encode()
-    (logs.LOG_DIR / "fastapiadmin.log").write_bytes(data)
+    (logs.LOG_DIR / "fastcore.log").write_bytes(data)
     return data
 
 
@@ -72,11 +72,11 @@ async def test_complete_evidence_includes_info_casefold_and_long_exception(logs)
 async def test_full_active_file_and_rotated_archives_are_queried(logs):
     old_time = NOW - timedelta(days=2)
     active = record("ACTIVE-BEGIN") + record("large trace\n" + " frame\n" * 320000) + record("ACTIVE-END")
-    (logs.LOG_DIR / "fastapiadmin.log").write_text(active)
+    (logs.LOG_DIR / "fastcore.log").write_text(active)
     archive = record("ARCHIVE-ROOT token=archive-secret", timestamp=old_time)
-    with gzip.open(logs.LOG_DIR / "fastapiadmin.2026-10-01_12-00-00_123456.log.gz", "wt") as handle:
+    with gzip.open(logs.LOG_DIR / "fastcore.2026-10-01_12-00-00_123456.log.gz", "wt") as handle:
         handle.write(archive)
-    (logs.LOG_DIR / "fastapiadmin.2026-10-02.log").write_text(record("PLAIN-ARCHIVE", timestamp=old_time))
+    (logs.LOG_DIR / "fastcore.2026-10-02.log").write_text(record("PLAIN-ARCHIVE", timestamp=old_time))
     (logs.LOG_DIR / "unrelated.log").write_text(record("MUST-NOT-READ"))
     result = await query(logs, minutes=3 * 1440)
     messages = "\n".join(entry["message"] for entry in result["entries"])
@@ -90,9 +90,9 @@ async def test_full_active_file_and_rotated_archives_are_queried(logs):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("name", [
-    "fastapiadmin.2026-10-01_12-00-00_123456.2.log.gz",
-    "fastapiadmin.2026-10-01_12-00-00_123456.2.2026-10-02_12-00-00_654321.2.log.gz",
-    "fastapiadmin.log.gz",
+    "fastcore.2026-10-01_12-00-00_123456.2.log.gz",
+    "fastcore.2026-10-01_12-00-00_123456.2.2026-10-02_12-00-00_654321.2.log.gz",
+    "fastcore.log.gz",
 ])
 async def test_loguru_archive_collision_names_are_included(logs, name):
     with gzip.open(logs.LOG_DIR / name, "wt") as archive:
@@ -105,7 +105,7 @@ async def test_loguru_archive_collision_names_are_included(logs, name):
 @pytest.mark.asyncio
 @pytest.mark.parametrize("contents", [b"not gzip", gzip.compress(b"record")[:-4]])
 async def test_corrupt_archive_fails_without_exposing_content(logs, contents):
-    (logs.LOG_DIR / "fastapiadmin.2026-10-02.log.gz").write_bytes(contents)
+    (logs.LOG_DIR / "fastcore.2026-10-02.log.gz").write_bytes(contents)
     with pytest.raises(logs.CustomException) as caught:
         await query(logs)
     assert caught.value.status_code == 503
@@ -116,7 +116,7 @@ async def test_corrupt_archive_fails_without_exposing_content(logs, contents):
 async def test_archive_symlink_is_rejected(logs):
     actual = logs.LOG_DIR / "private.txt"
     actual.write_text(record("DO-NOT-READ"))
-    (logs.LOG_DIR / "fastapiadmin.2026-10-02.log").symlink_to(actual)
+    (logs.LOG_DIR / "fastcore.2026-10-02.log").symlink_to(actual)
     with pytest.raises(logs.CustomException) as caught:
         await query(logs)
     assert caught.value.status_code == 503
@@ -214,7 +214,7 @@ async def test_symlinks_are_rejected_without_read(logs, monkeypatch, target):
         link.symlink_to(directory, target_is_directory=True)
         monkeypatch.setattr(logs, "LOG_DIR", link)
     else:
-        (directory / "fastapiadmin.log").symlink_to(actual if target == "file" else directory / "absent")
+        (directory / "fastcore.log").symlink_to(actual if target == "file" else directory / "absent")
     read = Mock(side_effect=AssertionError("must not read"))
     monkeypatch.setattr(logs.os, "read", read)
     with pytest.raises(logs.CustomException) as caught:
@@ -227,7 +227,7 @@ async def test_symlinks_are_rejected_without_read(logs, monkeypatch, target):
 async def test_fifo_rejected_and_secure_open_flags(logs, monkeypatch):
     if not hasattr(os, "mkfifo"):
         pytest.skip("FIFO unavailable")
-    path = logs.LOG_DIR / "fastapiadmin.log"
+    path = logs.LOG_DIR / "fastcore.log"
     os.mkfifo(path)
     with pytest.raises(logs.CustomException):
         await query(logs)
@@ -243,7 +243,7 @@ async def test_fifo_rejected_and_secure_open_flags(logs, monkeypatch):
     monkeypatch.setattr(logs.os, "open", capture_open)
     monkeypatch.setattr(logs.os, "supports_dir_fd", {*os.supports_dir_fd, capture_open})
     await query(logs)
-    file_open = next(item for item in opened if item[0] == "fastapiadmin.log")
+    file_open = next(item for item in opened if item[0] == "fastcore.log")
     assert file_open[1] & os.O_NOFOLLOW
     assert file_open[1] & os.O_NONBLOCK
     assert file_open[1] & os.O_ACCMODE == os.O_RDONLY
@@ -299,14 +299,14 @@ async def test_full_cid_matches_exactly_and_unsafe_cid_is_not_exposed(logs):
 async def test_multiline_utf8_and_incomplete_edges(logs, monkeypatch):
     prefix = "中文首条" * 40
     content = (record(prefix) + record("中文异常") + 'Traceback (most recent call last):\n  File "worker.py", line 12\nValueError: 操作失败\n' + record("incomplete")[:-3]).encode()
-    (logs.LOG_DIR / "fastapiadmin.log").write_bytes(content)
+    (logs.LOG_DIR / "fastcore.log").write_bytes(content)
     result = await query(logs)
     assert result["matched_count"] == 2
     assert prefix in json.dumps(result, ensure_ascii=False)
     assert "中文异常" in json.dumps(result, ensure_ascii=False)
     assert result["truncated"] is True
     content = content[: -len(record("incomplete")[:-3].encode())] + record("boundary", level="INFO").encode()
-    (logs.LOG_DIR / "fastapiadmin.log").write_bytes(content)
+    (logs.LOG_DIR / "fastcore.log").write_bytes(content)
     result = await query(logs, levels=["ERROR"])
     assert result["matched_count"] == 2
     message = "\n".join(entry["message"] for entry in result["entries"])
@@ -393,7 +393,7 @@ async def test_all_matching_records_have_stable_ids_without_character_clipping(l
 @pytest.mark.asyncio
 async def test_complete_file_is_read_in_chunks_on_background_thread(logs, monkeypatch):
     content = b"x" * (3 * 1024 * 1024) + b"\n" + record("tail record").encode() + record("boundary", level="INFO").encode()
-    (logs.LOG_DIR / "fastapiadmin.log").write_bytes(content)
+    (logs.LOG_DIR / "fastcore.log").write_bytes(content)
     original_read = os.read
     calls = []
     main_thread = threading.get_ident()
@@ -415,7 +415,7 @@ async def test_complete_file_is_read_in_chunks_on_background_thread(logs, monkey
 @pytest.mark.parametrize("mutation", ["append", "rotate", "truncate"])
 async def test_snapshot_not_followed_or_reopened(logs, monkeypatch, mutation):
     data = write_records(logs, [record("original")])
-    path = logs.LOG_DIR / "fastapiadmin.log"
+    path = logs.LOG_DIR / "fastcore.log"
     original_read = os.read
     reads = 0
 
@@ -452,7 +452,7 @@ async def test_identity_changed_before_open_rejected_without_read(logs, monkeypa
     original_open = os.open
 
     def swapped_open(path, flags, *args, **kwargs):
-        if path == "fastapiadmin.log":
+        if path == "fastcore.log":
             actual = logs.LOG_DIR / path
             actual.rename(logs.LOG_DIR / "old.log")
             actual.write_text(record("different identity"))
@@ -513,7 +513,7 @@ async def test_audit_records_only_admin_id_and_counts(logs):
 @pytest.mark.asyncio
 async def test_single_complete_active_file_record_is_returned(logs):
     data = record("LOG-ACCEPTANCE-42 retrieval failed token=fixture-secret", source="app.knowledge:index:42", cid="abcd1234").encode()
-    (logs.LOG_DIR / "fastapiadmin.log").write_bytes(data)
+    (logs.LOG_DIR / "fastcore.log").write_bytes(data)
     result = await query(logs)
     assert result["scanned_bytes"] == len(data)
     assert result["matched_count"] == len(result["entries"]) == 1
@@ -521,7 +521,7 @@ async def test_single_complete_active_file_record_is_returned(logs):
     assert result["entries"][0]["correlation_id"] == "abcd1234"
     assert "fixture-secret" not in result["entries"][0]["message"]
     assert result["truncated"] is False
-    (logs.LOG_DIR / "fastapiadmin.log").write_bytes(data[:-1])
+    (logs.LOG_DIR / "fastcore.log").write_bytes(data[:-1])
     result = await query(logs)
     assert result["matched_count"] == 0 and result["entries"] == [] and result["truncated"]
 
@@ -533,10 +533,10 @@ async def test_multiline_message_cid_and_id_survive_append_and_archives(logs, mo
     first = await query(logs, correlation_id="abcdefgh-full")
     assert first["matched_count"] == 1
     assert "second line" in first["entries"][0]["message"]
-    with (logs.LOG_DIR / "fastapiadmin.log").open("ab") as handle:
+    with (logs.LOG_DIR / "fastcore.log").open("ab") as handle:
         handle.write(record("next boundary", level="INFO").encode())
     assert first["entries"][0]["id"] == (await query(logs, correlation_id="abcdefgh-full"))["entries"][0]["id"]
-    (logs.LOG_DIR / "fastapiadmin.2026-10-02.log").write_text(record("other archive"))
+    (logs.LOG_DIR / "fastcore.2026-10-02.log").write_text(record("other archive"))
     assert first["entries"][0]["id"] == (await query(logs, correlation_id="abcdefgh-full"))["entries"][0]["id"]
 
 

@@ -28,7 +28,7 @@ describe("AI workspace primitives", () => {
     });
     expect(wrapper.findAll("button.prompt-card")).toHaveLength(4);
     await wrapper.get("button.prompt-card").trigger("click");
-    expect(wrapper.emitted("prompt-click")?.[0]).toEqual(["请介绍一下FastApiAdmin系统"]);
+    expect(wrapper.emitted("prompt-click")?.[0]).toEqual(["请介绍一下FastCore系统"]);
   });
 
   it("labels the workspace and knowledge selection while preserving actions", async () => {

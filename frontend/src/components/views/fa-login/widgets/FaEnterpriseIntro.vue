@@ -3,7 +3,7 @@
     <div class="fa-enterprise-intro__content">
       <div class="fa-enterprise-intro__eyebrow">
         <span aria-hidden="true"></span>
-        FASTAPIADMIN / 工作空间
+        FASTCORE / 工作空间
       </div>
 
       <div class="fa-enterprise-intro__header">

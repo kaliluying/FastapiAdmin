@@ -11,7 +11,7 @@
  * - 开关控制 - 支持通过 enabled 字段启用/禁用组件
  *
  * @module config/component
- * @author FastapiAdmin Team
+ * @author FastCore Team
  */
 
 import { defineAsyncComponent } from "vue";

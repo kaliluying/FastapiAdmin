@@ -32,7 +32,7 @@ if TYPE_CHECKING:
 LogLevel = Literal["DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
 _REDACTED = "[REDACTED]"
 _NOTICE = (
-    "仅本实例 fastapiadmin.log 完整活动文件及轮转归档，非全局日志。"
+    "仅本实例 fastcore.log 完整活动文件及轮转归档，非全局日志。"
     "使用服务器本地时间；并发写入的多行 trace 可能不完整。"
     "完整 CID 按日志前 8 位兼容匹配，可能碰撞。"
     "自动脱敏非绝对保证，输出仍可能包含敏感信息。"
@@ -105,7 +105,7 @@ def redact_log_text(text: str) -> str:
 
 
 _ARCHIVE_SUFFIX = r"\.\d{4}-\d{2}-\d{2}(?:_\d{2}-\d{2}-\d{2}_\d+)?(?:\.\d+)?"
-_LOG_FILENAME = re.compile(rf"fastapiadmin(?:{_ARCHIVE_SUFFIX})*\.log(?:\.gz)?")
+_LOG_FILENAME = re.compile(rf"fastcore(?:{_ARCHIVE_SUFFIX})*\.log(?:\.gz)?")
 
 
 class _SnapshotReader(io.RawIOBase):
@@ -202,7 +202,7 @@ def _matching_entry(record: bytes, identity: tuple[int, int], offset: int, filen
 
 def _query_snapshot(query: RuntimeLogQuerySchema, start_time: datetime, end_time: datetime, cancelled: Event) -> dict:
     result = {
-        "source": "fastapiadmin.log",
+        "source": "fastcore.log",
         "start_time": start_time.isoformat(),
         "end_time": end_time.isoformat(),
         "scanned_bytes": 0,

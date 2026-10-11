@@ -10,11 +10,11 @@ from starlette.responses import Response
 
 _ENABLE: bool = True
 _EXPIRE: int = 300
-_PREFIX: str = "fastapi-admin-cache"
+_PREFIX: str = "fastcore-cache"
 _REDIS: Redis | None = None
 
 
-async def init(redis: Redis, prefix: str = "fastapi-admin-cache", expire: int = 300, enable: bool = True) -> None:
+async def init(redis: Redis, prefix: str = "fastcore-cache", expire: int = 300, enable: bool = True) -> None:
     global _REDIS, _PREFIX, _EXPIRE, _ENABLE
     _REDIS = redis
     _PREFIX = prefix

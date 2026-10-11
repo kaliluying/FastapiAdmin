@@ -39,7 +39,7 @@
 - 2026-10-03：隔离浏览器核心链路通过：真实 HTTP/WebSocket/认证、附件正文进入 RAG、流式完成、引用持久化/恢复、停止不落库、失败重试与新草稿均有证据；浏览器报告的菜单 `indexPath` 异常属于既有导航基线，不计入本次改动。小屏在修复后尚未重新完成全流程复验。
 - 2026-10-03：OCR 委托审查整改：为隔离验收服务增加精确的 Ruff E402 例外，按上游核实的完整 SHA 固定两项第三方 CI Action，修正角色导出为 GET 查询参数。索引重建、文档删除和知识库删除统一清理当前模式、注入实例或磁盘上已存在的索引后端；保留失败时仅清理本轮新增分块的边界，不新增迁移、模式状态表或跨系统事务抽象。
 - 2026-10-03：整改回归：后端 103 项、前端 79 项、类型检查、构建和改动文件 Ruff 均通过；真实 SQLite/Chroma/BM25 回归覆盖模式切换、失败保留和两种删除入口。CI 原有 Ruff 命令在临时副本执行通过，未自动改写工作区；GitHub CI 尚未在线运行。
-- 2026-10-03：独立浏览器导出验收通过：用户和角色均为 GET/200，实际下载并读取 Excel，各 3 条记录，核对列名且不包含密码列。证据位于 `/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastapiadmin-ux-e2e-VOcLIW/export-report.json`。完整 UX 脚本仍在小屏输入区越出视口处失败，证据位于 `/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastapiadmin-ux-e2e-ADqQcf/failure.json`；原始菜单 `indexPath` 异常均保留，未将完整套件描述为通过。
+- 2026-10-03：独立浏览器导出验收通过：用户和角色均为 GET/200，实际下载并读取 Excel，各 3 条记录，核对列名且不包含密码列。证据位于 `/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastcore-ux-e2e-VOcLIW/export-report.json`。完整 UX 脚本仍在小屏输入区越出视口处失败，证据位于 `/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastcore-ux-e2e-ADqQcf/failure.json`；原始菜单 `indexPath` 异常均保留，未将完整套件描述为通过。
 
 ## 复现命令
 
@@ -82,9 +82,9 @@ NODE_PATH=/Users/gml/.cache/codex-runtimes/codex-primary-runtime/dependencies/no
 
 任务按不相交文件范围委派；主代理负责整合、实际渲染检查与最终验收。本表状态不授权外部操作。
 
-- 首页最新浏览器证据：`/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastapiadmin-ux-e2e-bX4SDR/home-results.json`，六种尺寸与深色实测，无浏览器运行异常；默认亮/暗主题的入口链接达到 4.5:1 对比度。
-- 登录回归证据：`/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastapiadmin-ux-e2e-F0AEGm/login-results.json`，42 种布局/主题/尺寸渲染及表单核心链路通过。
-- 最终代码真实运行态证据：`/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastapiadmin-integration-ywkq0ycq/runtime-results.json`。临时 MySQL 8.4、Redis 实例已停止，测试只创建和删除随机临时库。证明 BM25 模式的真实进程恢复，不证明外部 embedding、真实模型或生产环境。
+- 首页最新浏览器证据：`/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastcore-ux-e2e-bX4SDR/home-results.json`，六种尺寸与深色实测，无浏览器运行异常；默认亮/暗主题的入口链接达到 4.5:1 对比度。
+- 登录回归证据：`/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastcore-ux-e2e-F0AEGm/login-results.json`，42 种布局/主题/尺寸渲染及表单核心链路通过。
+- 最终代码真实运行态证据：`/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastcore-integration-ywkq0ycq/runtime-results.json`。临时 MySQL 8.4、Redis 实例已停止，测试只创建和删除随机临时库。证明 BM25 模式的真实进程恢复，不证明外部 embedding、真实模型或生产环境。
 - 最终工程回归：后端全量运行 292 项及 5 个子断言通过，随后新增断言 helper 的 4 项独立回归通过；前端 124 项、类型检查、生产构建、目标 ESLint/Stylelint/Prettier 与差异检查通过。后端目标 Ruff 通过；全库 `--no-fix` 仍有 3 个未改动文件的基线问题（旧迁移和模型配置的导入排序、日志服务的未使用导入），本轮不扩大范围修复。CI 现有 Ruff 按项目配置在 CI 副本自动修复，不代表本地全库只读检查通过。
 
 生产部署须先应用 `20261003_knowledge_recovery` 迁移；首次空库使用显式 `bootstrap`。执行顺序与 DDL 风险见 `docs/ARCHITECTURE_AND_DEVELOPMENT.md`。本轮本地修改未提交、未推送，GitHub 工作流尚未在线运行。
@@ -103,7 +103,7 @@ NODE_PATH=/Users/gml/.cache/codex-runtimes/codex-primary-runtime/dependencies/no
 
 复用现有组件和主题变量；页面已有优秀结构时只调整真实不足。达到可重复验收标准后停止，不承诺获奖或绝对没有改进空间。仅主代理更新状态；不包含提交、推送和上线。
 
-- 2026-10-03：隔离浏览器矩阵覆盖登录、首页、系统四页、AI 六页（含临时挂载的记忆管理）、个人中心和 401/403/404/500；浅色 1440/1024/768/375、深色 1440/375 共 108 个页面检查通过，页面错误 0。证据目录 `/tmp/fastapiadmin-site-SEPfTZ`，报告 `site-results.json`。
+- 2026-10-03：隔离浏览器矩阵覆盖登录、首页、系统四页、AI 六页（含临时挂载的记忆管理）、个人中心和 401/403/404/500；浅色 1440/1024/768/375、深色 1440/375 共 108 个页面检查通过，页面错误 0。证据目录 `/tmp/fastcore-site-SEPfTZ`，报告 `site-results.json`。
 - 2026-10-03：核心聊天浏览器验收通过：真实认证、附件进入 RAG、流式事件、引用持久化/恢复、停止、失败重试、新草稿保留；390×844 输入区完整在视口内。报告 `report.json` 与 `mobile-viewport-audit.json` 位于上述证据目录。
 - 2026-10-03：全量前端组件测试 106 项通过，Vite production build 通过；定向 ESLint、Stylelint、Prettier 和 `git diff --check` 通过。验收均为隔离 SQLite、内存 Redis 和确定性本地模型替身，不代表真实生产模型、数据库或线上发布。
 
@@ -118,7 +118,7 @@ NODE_PATH=/Users/gml/.cache/codex-runtimes/codex-primary-runtime/dependencies/no
 - 等待：后端发送实际工具判断、日志查询和证据分析阶段；普通 RAG 继续检索/生成阶段。输入区显示等待秒数，取消、错误和完成后停止计时，不模拟完成百分比。
 - 依据：默认不挤占正文；桌面按需打开可关闭侧栏，小屏使用挂载到 body 的抽屉，避免被全局侧栏遮挡。保留同一回答内两次实际查询的独立卡片、条件与数量，折叠时间及读取边界，明确空结果和截断不能证明系统正常。
 - 适配 CodeVault `vertical-feature-module` 的功能内聚原则：阶段契约、聊天状态、查询卡片和回归沿现有聊天模块落地，复用模型与 WebSocket 边界；不复制示例业务代码，不增加 Agent 框架、存储或全局状态管理层。卡片同时用于桌面与抽屉，保留这一实际复用边界。
-- 后端定向 150 项通过；前端全量 130 项通过。日志浏览器报告：`/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastapiadmin-ux-e2e-OMB10k/log-analysis-results.json`；普通聊天、附件、历史引用、停止、新草稿及重试报告：`/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastapiadmin-ux-e2e-0ujPVI/report.json`。均使用真实浏览器/登录/HTTP/WebSocket、本地确定性模型、临时 SQLite 和模拟 Redis，不证明生产供应商质量。
+- 后端定向 150 项通过；前端全量 130 项通过。日志浏览器报告：`/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastcore-ux-e2e-OMB10k/log-analysis-results.json`；普通聊天、附件、历史引用、停止、新草稿及重试报告：`/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastcore-ux-e2e-0ujPVI/report.json`。均使用真实浏览器/登录/HTTP/WebSocket、本地确定性模型、临时 SQLite 和模拟 Redis，不证明生产供应商质量。
 - 范围：不扩大日志权限、不写入日志分析历史、不改环境文件。跨轮日志追问、工具故障隔离、模型能力探测与错误分类属于下一批，尚未实施；本批未提交、未推送。
 
 ## AI 对话体验第二批改进（2026-10-04）
@@ -128,5 +128,5 @@ NODE_PATH=/Users/gml/.cache/codex-runtimes/codex-primary-runtime/dependencies/no
 - HTTP：补齐已认证登录会话 ID；仅在 AI 非流式入口独立读取认证用户快照，避免工具授权回滚导致 ORM 属性过期，保留其他后台事务行为。HTTP 操作审计保留调用元数据，省略问题、回答、工具结果与临时 ID；不扩大工具权限。
 - 适配 CodeVault `ttl-inflight-cache` 的单调时钟、快照防御性复制与生命周期边界，增加实际需要的容量限制；拒绝通用异步加载/请求合并，因为这里是独立的私有条件快照。结合 `ai-provider-compatibility` 区分工具故障、认证和限流，不增加 Provider 客户端或 Agent 框架。上下文模块保留的职责是所有权、过期和容量，不缓存对话正文。
 - 验证：后端定向186项、前端全量133项通过；生产构建、定向 Ruff/ESLint/Stylelint/Prettier、`git diff --check` 通过。浏览器/真实认证/HTTP/WebSocket 已验证连续追问重新读取、同请求条件继承、限流倒计时恢复、失效拒绝、工具降级不保存、HTTP 追问及审计正文省略。375/1440 明暗主题实际渲染无横向溢出。
-- 证据：`/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastapiadmin-ux-e2e-5tcHSv/log-followup-results.json`；普通聊天、附件、引用恢复、停止、草稿和重试：`/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastapiadmin-ux-e2e-Hq86xm/report.json`。本批之前的两次查询卡片与主题矩阵回归也通过，报告位于 `fastapiadmin-ux-e2e-4cAtY9/log-analysis-results.json`。
+- 证据：`/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastcore-ux-e2e-5tcHSv/log-followup-results.json`；普通聊天、附件、引用恢复、停止、草稿和重试：`/var/folders/lv/t5gkrrk97fg6p3849hl_ndmc0000gn/T/fastcore-ux-e2e-Hq86xm/report.json`。本批之前的两次查询卡片与主题矩阵回归也通过，报告位于 `fastcore-ux-e2e-4cAtY9/log-analysis-results.json`。
 - 边界：使用临时 SQLite、模拟 Redis、确定性本地模型，不代表生产供应商回答质量、真实 Redis 过期或多实例验收。缓存过期/容量由单调时钟回归验证；浏览器验证限流倒计时和模拟失效。进程重启或 HTTP 切换工作进程会要求重新描述查询条件。真实模型工具能力探测仍未实施；未提交、未推送。

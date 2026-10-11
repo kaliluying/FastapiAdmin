@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from alembic import command
 from app.common.enums import EnvironmentEnum
 
-fastapiadmin_cli = typer.Typer()
+fastcore_cli = typer.Typer()
 
 
 def create_app() -> FastAPI:
@@ -37,9 +37,9 @@ def create_app() -> FastAPI:
 
 
 # typer.Option是非必填；typer.Argument是必填
-@fastapiadmin_cli.command(
+@fastcore_cli.command(
     name="run",
-    help="启动 FastapiAdmin 服务, 运行 uv run main.py run --env=dev 不加参数默认 dev 环境",
+    help="启动 FastCore 服务, 运行 uv run main.py run --env=dev 不加参数默认 dev 环境",
 )
 def run(
     env: Annotated[
@@ -64,7 +64,7 @@ def run(
     from app.utils.banner import worship
 
     typer.secho(
-        message="FastapiAdmin 服务启动",
+        message="FastCore 服务启动",
         fg=typer.colors.GREEN,
     )
     logger.info(worship(env.value))
@@ -82,7 +82,7 @@ def run(
     )
 
 
-@fastapiadmin_cli.command(
+@fastcore_cli.command(
     name="bootstrap",
     help="首次部署显式建表并导入基础数据，运行 python main.py bootstrap --env=prod；不会清空现有数据",
 )
@@ -116,7 +116,7 @@ def bootstrap(
     typer.echo("数据库结构与基础数据已初始化；正常生产启动只检查结构。")
 
 
-@fastapiadmin_cli.command(
+@fastcore_cli.command(
     name="reset",
     help="删除所有表并重建 + 写入种子数据（危险操作）, 运行 python main.py reset --env=dev",
 )
@@ -214,7 +214,7 @@ def reset(
     )
 
 
-@fastapiadmin_cli.command(
+@fastcore_cli.command(
     name="revision",
     help="生成新的 Alembic 迁移脚本, 运行 python main.py revision --env=dev",
 )
@@ -241,11 +241,11 @@ def revision(
     typer.echo("迁移脚本已生成")
 
 
-@fastapiadmin_cli.command(
+@fastcore_cli.command(
     name="migrate",
     help="部署阶段显式应用迁移，运行 python main.py migrate --env=prod（与 upgrade 兼容）",
 )
-@fastapiadmin_cli.command(
+@fastcore_cli.command(
     name="upgrade",
     help="应用最新的 Alembic 迁移, 运行 python main.py upgrade --env=dev",
 )
@@ -274,4 +274,4 @@ def upgrade(
 
 
 if __name__ == "__main__":
-    fastapiadmin_cli()
+    fastcore_cli()

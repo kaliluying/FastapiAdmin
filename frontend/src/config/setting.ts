@@ -28,9 +28,9 @@ const { pkg } = __APP_INFO__;
  */
 export const SETTING_DEFAULT_CONFIG = {
   /** 项目名称 */
-  name: "FastAPI Admin",
+  name: "FastCore",
   /** 系统标题 */
-  title: "FastAPI Admin",
+  title: "FastCore",
   /** 系统版本 */
   version: pkg.version as string,
   /** 是否显示菜单搜索 */
@@ -60,7 +60,7 @@ export const SETTING_DEFAULT_CONFIG = {
   /** 是否显示水印 */
   showWatermark: false,
   /** 水印内容 */
-  watermarkContent: "FastAPI Admin",
+  watermarkContent: "FastCore",
   /** 侧边栏配色方案 */
   sidebarColorScheme: SidebarColor.CLASSIC_BLUE,
   /** 项目引导可见性 */

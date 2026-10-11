@@ -15,7 +15,7 @@ from pathlib import Path
 from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACTS = Path(os.environ.get("UX_E2E_DIR") or tempfile.mkdtemp(prefix="fastapiadmin-ux-e2e-"))
+ARTIFACTS = Path(os.environ.get("UX_E2E_DIR") or tempfile.mkdtemp(prefix="fastcore-ux-e2e-"))
 ARTIFACTS.mkdir(parents=True, exist_ok=True)
 tempfile.tempdir = str(ARTIFACTS)
 sys.path.insert(0, str(ROOT))
@@ -63,7 +63,7 @@ if os.environ.get("UX_E2E_LOG_ANALYSIS") == "1":
         logger.info("FULL-LOG-E2E context-{} | cid=fulle042", index)
     logger.error("FULL-LOG-E2E Traceback\n{}ValueError: FULL-ROOT-CAUSE api_key=SYNTHETIC-LOG-SECRET-42 | cid=fulle042", "  worker frame\n" * 1000)
     archive_time = datetime.now() - timedelta(days=2)
-    archive_name = f"fastapiadmin.{archive_time:%Y-%m-%d_%H-%M-%S_%f}.log.gz"
+    archive_name = f"fastcore.{archive_time:%Y-%m-%d_%H-%M-%S_%f}.log.gz"
     with gzip.open(path_conf.LOG_DIR / archive_name, "wt", encoding="utf-8") as archive:
         archive.write(f"{archive_time:%Y-%m-%d %H:%M:%S.%f}"[:23] + " | ERROR    | app.worker:run:42 - FULL-LOG-E2E ARCHIVE-ROOT api_key=SYNTHETIC-LOG-SECRET-42 | cid=fulle042\n")
 

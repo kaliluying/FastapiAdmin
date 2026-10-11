@@ -7,8 +7,8 @@ const { runAcceptance } = require("./ux-e2e.cjs");
 
 const root = path.resolve(__dirname, "../..");
 const python = path.join(root, "backend/.venv/bin/python");
-if (process.env.FASTAPIADMIN_OCR_RUNTIME) {
-  const runtime = JSON.parse(fs.readFileSync(process.env.FASTAPIADMIN_OCR_RUNTIME, "utf8"));
+if (process.env.FASTCORE_OCR_RUNTIME) {
+  const runtime = JSON.parse(fs.readFileSync(process.env.FASTCORE_OCR_RUNTIME, "utf8"));
   Object.assign(process.env, runtime.env);
   process.env.PATH = `${path.dirname(runtime.binary)}:${process.env.PATH}`;
 }

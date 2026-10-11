@@ -40,7 +40,7 @@ if (scope === "table" || scope === "logs") {
     scope === "table" ? "tests/site-e2e.cjs" : "tests/log-followup-e2e.cjs",
   ]);
 }
-const source = fs.mkdtempSync(path.join(os.tmpdir(), "fastapiadmin-check-"));
+const source = fs.mkdtempSync(path.join(os.tmpdir(), "fastcore-check-"));
 const checks = [];
 try {
   for (const [cwd, command, ...args] of commands) {

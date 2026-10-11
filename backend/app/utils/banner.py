@@ -4,7 +4,7 @@ from app.config.path_conf import BANNER_FILE
 def worship(env: str) -> str:
     """
     读取启动 Banner（优先 `banner.txt`，并附带当前环境名）。
-    获取地址：https://patorjk.com/software/taag/#p=testall&f=Fire+Font-k&t=fastapiadmin%0A&x=none&v=4&h=4&w=80&we=false
+    获取地址：https://patorjk.com/software/taag/#p=testall&f=Fire+Font-k&t=fastcore%0A&x=none&v=4&h=4&w=80&we=false
 
     参数:
     - env (str): 当前运行环境标识。

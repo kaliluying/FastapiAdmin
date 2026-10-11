@@ -25,7 +25,7 @@
  * - 图表事件处理
  *
  * @module types/component/chart
- * @author FastapiAdmin Team
+ * @author FastCore Team
  */
 import type { EChartsOption } from "@/plugins/echarts";
 

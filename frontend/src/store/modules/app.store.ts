@@ -21,7 +21,7 @@
  * - 新手引导展示
  *
  * @module store/modules/app.store
- * @author FastapiAdmin Team
+ * @author FastCore Team
  */
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";

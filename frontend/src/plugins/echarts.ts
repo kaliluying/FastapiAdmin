@@ -5,7 +5,7 @@
  * 只注册项目中实际使用的图表类型和组件。
  *
  * @module plugins/echarts
- * @author FastapiAdmin Team
+ * @author FastCore Team
  */
 
 // ECharts 按需导入配置

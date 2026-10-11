@@ -46,8 +46,8 @@ corepack pnpm dev
 
 ## 开发与维护
 
-新增业务从[标准模块模板](docs/STANDARD_MODULE_TEMPLATE.md)开始；跨端调用链见[架构指南](docs/ARCHITECTURE_AND_DEVELOPMENT.md)，验证命令与证据边界见[测试与验收](docs/TESTING.md)。`main` 为默认分支，`dev` 为开发分支。
+新增业务从[标准模块模板](docs/STANDARD_MODULE_TEMPLATE.md)开始；跨端调用链见[架构指南](docs/ARCHITECTURE_AND_DEVELOPMENT.md)，验证命令与证据边界见[测试与验收](docs/TESTING.md)。`main` 为默认及当前交付分支。
 
-仓库与文档品牌名统一为 FastCore。现有 `fastapiadmin` 数据库名、Redis 前缀、日志文件名、内部符号和设计目录名属于兼容标识，继续保留；仓库改名不包含数据迁移。本地目录名可保持原样。
+项目名称统一为 FastCore：数据库默认名为 `fastcore`，Redis 品牌前缀为 `fastcore:` / `fastcore-cache:`，日志为 `backend/logs/fastcore.log`，CLI 对象为 `fastcore_cli`，设计目录为 `design-system/fastcore-quiet-operations/`。本地目录使用 `FastCore`，不保留旧品牌别名；已有实例应先备份、迁移数据库并同步环境配置，再启用新版本。
 
 当前运行说明集中在文档目录和子项目 README；历史任务记录保留原始时间与验证结果。实际行为以当前源码、依赖声明和有效环境配置为准。项目协作规则见 [AGENTS.md](AGENTS.md)。

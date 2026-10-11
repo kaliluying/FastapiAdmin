@@ -24,7 +24,7 @@
  * - headerBar: 顶部栏功能配置
  *
  * @module config
- * @author FastapiAdmin Team
+ * @author FastCore Team
  */
 
 import { MenuThemeEnum, MenuTypeEnum, SystemThemeEnum } from "@/enums/appEnum";
@@ -35,7 +35,7 @@ import { headerBarConfig } from "./modules/headerBar";
 const appConfig: SystemConfig = {
   // 系统信息
   systemInfo: {
-    name: "FastAPI Admin", // 系统名称
+    name: "FastCore", // 系统名称
   },
   // 系统主题
   systemThemeStyles: {

@@ -28,7 +28,7 @@
  * ```
  *
  * @module useTheme
- * @author FastapiAdmin Team
+ * @author FastCore Team
  */
 
 import { useSettingsStore } from "@stores";
