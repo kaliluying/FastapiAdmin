@@ -24,6 +24,7 @@ export * from "./http";
 export * from "./storage";
 export * from "./sys";
 export * from "./ui";
+export * from "./version-check";
 
 // 路由与导航
 export * from "./navigation";

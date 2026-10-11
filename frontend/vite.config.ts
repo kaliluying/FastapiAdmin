@@ -16,9 +16,11 @@ import { name, version, engines, dependencies, devDependencies } from "./package
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const buildTimestamp = Date.now();
+
 const __APP_INFO__ = {
   pkg: { name, version, engines, dependencies, devDependencies },
-  buildTimestamp: Date.now(),
+  buildTimestamp,
 };
 
 /**
@@ -191,6 +193,23 @@ export default ({ mode }: { mode: string }) => {
     },
     plugins: [
       vue(),
+      {
+        name: "fastcore-version-manifest",
+        generateBundle() {
+          this.emitFile({
+            type: "asset",
+            fileName: "version.json",
+            source: JSON.stringify(
+              {
+                version: env.VITE_VERSION || version,
+                buildTimestamp,
+              },
+              null,
+              2
+            ),
+          });
+        },
+      },
       vitePluginStart(),
       tailwindcss(),
       AutoImport({

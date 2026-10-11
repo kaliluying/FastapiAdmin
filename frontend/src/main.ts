@@ -9,7 +9,7 @@ import "@styles/index.scss";
 // ---------------------------------------------------------------------------
 import App from "./App.vue";
 import { createApp } from "vue";
-import { printConsoleBanner } from "@utils";
+import { printConsoleBanner, startVersionCheck } from "@utils";
 import { initPlugins } from "@/plugins";
 
 /**
@@ -29,4 +29,5 @@ document.addEventListener("touchstart", function () {}, { passive: false });
   printConsoleBanner();
   await initPlugins(app);
   app.mount("#app");
+  startVersionCheck();
 })();
