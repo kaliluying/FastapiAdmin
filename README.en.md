@@ -2,6 +2,8 @@
 
 FastCore is an enterprise backend scaffold for single-organization applications, built with FastAPI and accompanied by a Vue 3 administration frontend. It includes authentication, role permissions, menus, audit logs and file management, plus built-in AI chat, knowledge bases, document retrieval, usage limits and quality evaluation.
 
+FastCore is a secondary development of the predecessor [FastapiAdmin](https://github.com/fastapiadmin/FastapiAdmin) project. It inherits and extends the backend and administration capabilities while reorganizing the brand, directories, configuration, database and product experience. FastapiAdmin is retained only as the project origin name, not as a runtime compatibility identifier.
+
 [中文](README.md) · [Documentation index](docs/README.md) · [Architecture](docs/ARCHITECTURE_AND_DEVELOPMENT.md) · [Business module template](docs/STANDARD_MODULE_TEMPLATE.md)
 
 ## Structure
