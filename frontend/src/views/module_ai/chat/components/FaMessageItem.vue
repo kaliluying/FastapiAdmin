@@ -58,11 +58,30 @@
           </div>
         </div>
       </div>
-      <p v-if="message.error" role="alert">{{ message.error }}</p>
+      <p v-if="message.warning" class="message-note" role="status">{{ message.warning }}</p>
+      <p v-if="message.error" class="message-note" role="alert">{{ message.error }}</p>
       <p v-if="message.stopped" class="message-note">已停止生成；当前回答可能未保存</p>
       <div v-if="message.type === 'assistant'" class="message-actions">
-        <ElButton v-if="message.error && message.request" link type="primary" @click="emit('retry')"
-          >重试这条问题</ElButton
+        <FaAnswerFeedback
+          v-if="
+            message.sessionId &&
+            message.runId &&
+            !message.loading &&
+            !message.error &&
+            !message.stopped
+          "
+          :session-id="message.sessionId"
+          :run-id="message.runId"
+          :initial-rating="message.feedbackRating"
+          :initial-comment="message.feedbackComment"
+        />
+        <ElButton
+          v-if="message.error && message.request && message.errorCode !== 'log_context_expired'"
+          link
+          type="primary"
+          :disabled="retrySeconds > 0"
+          @click="emit('retry')"
+          >{{ retrySeconds > 0 ? `${retrySeconds} 秒后重试` : "重试这条问题" }}</ElButton
         >
         <ElButton
           v-if="message.citations?.length"
@@ -77,7 +96,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, watch } from "vue";
+import { useNow } from "@vueuse/core";
 import { ElMessage } from "element-plus";
 import {
   User,
@@ -89,6 +109,7 @@ import {
 } from "@element-plus/icons-vue";
 import { useUserStoreHook } from "@stores";
 import type { ChatMessage } from "../types";
+import FaAnswerFeedback from "./FaAnswerFeedback.vue";
 
 interface Props {
   message: ChatMessage;
@@ -102,6 +123,22 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const { now, pause, resume } = useNow({ controls: true, interval: 1000, immediate: false });
+const retrySeconds = computed(() =>
+  Math.max(0, Math.ceil(((props.message.retryUntil || 0) - now.value.getTime()) / 1000))
+);
+watch(
+  () => props.message.retryUntil,
+  (until) => {
+    now.value = new Date();
+    if (until && until > Date.now()) resume();
+    else pause();
+  },
+  { immediate: true }
+);
+watch(retrySeconds, (seconds) => {
+  if (!seconds) pause();
+});
 
 const userStore = useUserStoreHook();
 
@@ -160,6 +197,13 @@ const formatFileSize = (bytes: number): string => {
 </script>
 
 <style lang="scss" scoped>
+.message-note {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--fa-color-text);
+}
+
 .message-group {
   display: flex;
   gap: 16px;
@@ -347,8 +391,9 @@ const formatFileSize = (bytes: number): string => {
 
       .message-body .message-text {
         padding: 10px 14px;
-        background: var(--el-color-primary-light-9);
-        border: 1px solid var(--el-border-color-light);
+        color: var(--fa-color-text);
+        background: color-mix(in srgb, var(--theme-color) 9%, var(--fa-color-surface));
+        border: 1px solid var(--fa-color-border);
         border-radius: 12px;
       }
     }

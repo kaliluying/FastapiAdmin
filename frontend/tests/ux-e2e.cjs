@@ -3,8 +3,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 const os = require("node:os");
 const net = require("node:net");
-const { spawn } = require("node:child_process");
+const { spawn, spawnSync } = require("node:child_process");
 const { chromium } = require("playwright");
+const { retainArtifacts } = require("../scripts/acceptance-artifacts.cjs");
 
 async function run() {
   const backend = "http://127.0.0.1:8009";
@@ -90,6 +91,8 @@ async function run() {
       .getByRole("button", { name: "停止生成" })
       .waitFor({ state: "hidden", timeout: 20000 });
     await waitVisible(".message-actions");
+    assert.equal(await page.locator(".evidence-panel").count(), 0);
+    await page.getByRole("button", { name: "查看 1 条依据", exact: true }).click();
     await page.locator(".fa-citation-item__title").first().click();
     const preview = page.getByRole("dialog", { name: "引用片段" });
     await preview.waitFor();
@@ -115,6 +118,7 @@ async function run() {
     await page.locator(".session-item").first().waitFor();
     await page.locator(".session-item").first().click();
     await page.locator(".message-group.assistant .message-text").waitFor();
+    await page.getByRole("button", { name: "查看 1 条依据", exact: true }).click();
     await page.locator(".fa-citation-item__title").first().waitFor();
     assert.match(
       await page.locator(".message-group.assistant .message-text").innerText(),
@@ -123,9 +127,14 @@ async function run() {
     await page.locator(".message-input textarea").fill("停止测试：请慢速回复");
     await page.getByRole("button", { name: "发送消息", exact: true }).click();
     await page.getByRole("button", { name: "停止生成" }).waitFor();
+    await page.locator(".message-input textarea").fill("停止后仍保留的新草稿");
     await page.waitForTimeout(700);
     await page.getByRole("button", { name: "停止生成" }).click();
     await waitVisible(".message-note");
+    assert.equal(
+      await page.locator(".message-input textarea").inputValue(),
+      "停止后仍保留的新草稿"
+    );
     await page.waitForTimeout(800);
     const final = await (await fetch(`${backend}/__ux_e2e/evidence`)).json();
     assert.equal(final.persisted_runs, completed.persisted_runs);
@@ -173,6 +182,7 @@ async function run() {
       .filter({ hasText: "查看 1 条依据" })
       .first()
       .click();
+    await page.getByRole("button", { name: "关闭回答依据", exact: true }).click();
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(500);
     const globalCollapse = page.getByRole("button", { name: "收起侧边栏", exact: true });
@@ -213,26 +223,65 @@ async function run() {
     });
     await preview.locator(".el-dialog__headerbtn").click();
     await evidenceDrawer.locator(".el-drawer__close-btn").click();
-    const mobileAudit = await page.locator(".chat-workspace, .chat-header, .chat-main, .chat-footer").evaluateAll((elements) => {
-      const workspace = document.querySelector(".chat-workspace");
-      const footer = document.querySelector(".chat-footer");
-      const workspaceRect = workspace?.getBoundingClientRect();
-      const footerRect = footer?.getBoundingClientRect();
-      return {
-        viewport: { width: innerWidth, height: innerHeight },
-        workspace: workspaceRect ? { top: workspaceRect.top, bottom: workspaceRect.bottom, height: workspaceRect.height } : null,
-        composer: footerRect ? { top: footerRect.top, bottom: footerRect.bottom, height: footerRect.height, inViewport: footerRect.top >= 0 && footerRect.bottom <= innerHeight } : null,
-        elements: elements.map((element) => ({ class: element.className, width: element.getBoundingClientRect().width, height: element.getBoundingClientRect().height })),
-      };
-    });
-    fs.writeFileSync(path.join(artifacts, "mobile-viewport-audit.json"), JSON.stringify(mobileAudit, null, 2));
+    const mobileAudit = await page
+      .locator(".chat-workspace, .chat-header, .chat-main, .chat-footer")
+      .evaluateAll((elements) => {
+        const workspace = document.querySelector(".chat-workspace");
+        const footer = document.querySelector(".chat-footer");
+        const workspaceRect = workspace?.getBoundingClientRect();
+        const footerRect = footer?.getBoundingClientRect();
+        return {
+          viewport: { width: innerWidth, height: innerHeight },
+          workspace: workspaceRect
+            ? { top: workspaceRect.top, bottom: workspaceRect.bottom, height: workspaceRect.height }
+            : null,
+          composer: footerRect
+            ? {
+                top: footerRect.top,
+                bottom: footerRect.bottom,
+                height: footerRect.height,
+                inViewport: footerRect.top >= 0 && footerRect.bottom <= innerHeight,
+              }
+            : null,
+          elements: elements.map((element) => ({
+            class: element.className,
+            width: element.getBoundingClientRect().width,
+            height: element.getBoundingClientRect().height,
+          })),
+        };
+      });
+    fs.writeFileSync(
+      path.join(artifacts, "mobile-viewport-audit.json"),
+      JSON.stringify(mobileAudit, null, 2)
+    );
     console.log(`Mobile viewport audit: ${JSON.stringify(mobileAudit)}`);
-    assert.equal(mobileAudit.composer?.inViewport, true, "Mobile composer is not fully inside the viewport");
+    assert.equal(
+      mobileAudit.composer?.inViewport,
+      true,
+      "Mobile composer is not fully inside the viewport"
+    );
     if (process.env.UX_E2E_EXTENDED !== "1") {
-      const report = { passed: errors.length === 0, functionalScenariosPassed: true, scenarios: ["real chat attachment/RAG/stream/citations", "session citation restore", "stop", "model error/retry with draft preservation", "mobile composer viewport audit"], evidence: recovered, pageErrors: errors, artifacts };
+      const report = {
+        passed: errors.length === 0,
+        functionalScenariosPassed: true,
+        scenarios: [
+          "real chat attachment/RAG/stream/citations",
+          "session citation restore",
+          "stop",
+          "model error/retry with draft preservation",
+          "mobile composer viewport audit",
+        ],
+        evidence: recovered,
+        pageErrors: errors,
+        artifacts,
+      };
       fs.writeFileSync(path.join(artifacts, "report.json"), JSON.stringify(report, null, 2));
       console.log(JSON.stringify(report, null, 2));
-      assert.deepEqual(errors, [], "Raw browser errors remain in report.json; no errors are excluded");
+      assert.deepEqual(
+        errors,
+        [],
+        "Raw browser errors remain in report.json; no errors are excluded"
+      );
       return;
     }
     await page.setViewportSize({ width: 1440, height: 1000 });
@@ -388,11 +437,36 @@ async function run() {
 }
 
 async function main(runCheck = run) {
-  if (process.env.UX_E2E_EXTERNAL_SERVICES === "1") return runCheck();
+  if (process.env.UX_E2E_EXTERNAL_SERVICES === "1" && !process.argv.includes("--preflight"))
+    return runCheck();
   const root = path.resolve(__dirname, "../..");
+  for (const [command, args, hint] of [
+    [
+      path.join(root, "backend/.venv/bin/python"),
+      ["-c", "import fastapi, sqlalchemy, redis, langchain_core"],
+      "backend: uv sync",
+    ],
+    [
+      process.execPath,
+      [path.join(root, "frontend/node_modules/vite/bin/vite.js"), "--version"],
+      "frontend: corepack pnpm install",
+    ],
+  ]) {
+    const probe = spawnSync(command, args, { cwd: path.join(root, "frontend"), encoding: "utf8" });
+    if (probe.error || probe.status !== 0)
+      throw new Error(`Acceptance dependency unavailable (${hint})`);
+  }
+  if (process.argv.includes("--preflight")) {
+    const browser = await chromium.launch({ channel: "chrome", headless: true });
+    await browser.close();
+    console.log("Acceptance dependencies and Chrome are available; no services started");
+    return;
+  }
   const artifacts = fs.mkdtempSync(path.join(os.tmpdir(), "fastapiadmin-ux-e2e-"));
   const children = [];
   const logs = [];
+  let spawnError;
+  let passed = false;
   try {
     for (const port of [8009, 5179]) {
       await new Promise((resolve, reject) => {
@@ -414,8 +488,15 @@ async function main(runCheck = run) {
         "backend",
       ],
       [
-        "pnpm",
-        ["exec", "vite", "--host", "127.0.0.1", "--port", "5179", "--strictPort"],
+        process.execPath,
+        [
+          path.join(root, "frontend/node_modules/vite/bin/vite.js"),
+          "--host",
+          "127.0.0.1",
+          "--port",
+          "5179",
+          "--strictPort",
+        ],
         path.join(root, "frontend"),
         {
           BROWSER: "none",
@@ -435,11 +516,17 @@ async function main(runCheck = run) {
         stdio: ["ignore", log, log],
       });
       children.push(child);
-      child.on("error", () => {});
+      child.on("error", (error) => {
+        spawnError = error;
+      });
     }
     for (const url of ["http://127.0.0.1:8009/__ux_e2e/evidence", "http://127.0.0.1:5179"]) {
       let ready = false;
       for (let attempt = 0; attempt < 120; attempt += 1) {
+        if (spawnError)
+          throw new Error(
+            `Acceptance service could not start (${spawnError.code}); see ${artifacts}`
+          );
         if (children.some((child) => child.exitCode !== null))
           throw new Error(`Acceptance service exited; see ${artifacts}`);
         try {
@@ -451,6 +538,13 @@ async function main(runCheck = run) {
       if (!ready) throw new Error(`Acceptance service did not become ready; see ${artifacts}`);
     }
     await runCheck();
+    passed = true;
+  } catch (error) {
+    fs.writeFileSync(
+      path.join(artifacts, "acceptance-results.json"),
+      JSON.stringify({ passed: false, error: { name: error.name, message: error.message } })
+    );
+    throw error;
   } finally {
     for (const child of children) {
       if (!child.pid) continue;
@@ -474,6 +568,7 @@ async function main(runCheck = run) {
       )
     );
     for (const log of logs) fs.closeSync(log);
+    retainArtifacts(artifacts, root, passed);
   }
 }
 

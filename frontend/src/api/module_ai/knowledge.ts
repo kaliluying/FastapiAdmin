@@ -50,6 +50,46 @@ const KnowledgeAPI = {
     });
   },
 
+  downloadDocument(id: number) {
+    return request<Blob>({
+      url: `${API_PATH}/document/${id}/file`,
+      method: "get",
+      responseType: "blob",
+    });
+  },
+
+  listChunks(id: number, query: PageQuery) {
+    return request<ApiResponse<PageResult<KnowledgeChunk>>>({
+      url: `${API_PATH}/document/${id}/chunks`,
+      method: "get",
+      params: query,
+    });
+  },
+
+  documentContent(id: number) {
+    return request<ApiResponse<string>>({
+      url: `${API_PATH}/document/${id}/content`,
+      method: "get",
+    });
+  },
+
+  updateDocumentContent(id: number, content: string) {
+    return request<ApiResponse<KnowledgeDocument>>({
+      url: `${API_PATH}/document/${id}/content`,
+      method: "put",
+      data: { content },
+    });
+  },
+
+  replaceDocument(id: number, body: FormData) {
+    return request<ApiResponse<KnowledgeDocument>>({
+      url: `${API_PATH}/document/${id}/replace`,
+      method: "post",
+      headers: { "Content-Type": "multipart/form-data" },
+      data: body,
+    });
+  },
+
   uploadDocument(body: FormData) {
     return request<ApiResponse<KnowledgeDocument>>({
       url: `${API_PATH}/document/upload`,
@@ -120,6 +160,7 @@ export interface KnowledgeDocument extends BaseType {
   index_status: string;
   error_message?: string | null;
   chunk_count: number;
+  replacement_pending?: boolean;
 }
 
 export interface RetrievalTestForm {
@@ -139,4 +180,10 @@ export interface RetrievalTestResult {
   query: string;
   retrieval_mode: "vector" | "bm25" | "hybrid";
   results: RetrievalHit[];
+}
+
+export interface KnowledgeChunk extends BaseType {
+  chunk_index: number;
+  content: string;
+  token_count: number;
 }

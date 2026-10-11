@@ -86,7 +86,7 @@ class Permission:
 
         只显示用户角色授权的菜单，不再叠加额外运营级约束。
         """
-        roles = [role for role in (getattr(self.auth.user, "roles", []) or []) if role.status == 0]
+        roles = [role for role in (getattr(self.auth.user, "roles", []) or []) if role.status == 0 and not getattr(role, "is_deleted", False)]
         if not roles:
             id_attr = getattr(self.model, "id", None)
             if id_attr is not None:
@@ -98,7 +98,7 @@ class Permission:
             for role in roles
             if hasattr(role, "menus") and role.menus
             for menu in role.menus
-            if menu.status == 0
+            if menu.status == 0 and not getattr(menu, "is_deleted", False)
         }
 
         if menu_ids:
@@ -117,7 +117,7 @@ class Permission:
 
         只显示当前用户绑定的角色
         """
-        roles = [role for role in (getattr(self.auth.user, "roles", []) or []) if role.status == 0]
+        roles = [role for role in (getattr(self.auth.user, "roles", []) or []) if role.status == 0 and not getattr(role, "is_deleted", False)]
         if not roles:
             id_attr = getattr(self.model, "id", None)
             if id_attr is not None:
@@ -148,7 +148,7 @@ class Permission:
         if not hasattr(self.model, "created_id"):
             return None
 
-        roles = [role for role in (getattr(self.auth.user, "roles", []) or []) if role.status == 0]
+        roles = [role for role in (getattr(self.auth.user, "roles", []) or []) if role.status == 0 and not getattr(role, "is_deleted", False)]
         if any(role.data_scope == self.DATA_SCOPE_ALL for role in roles):
             return None
 

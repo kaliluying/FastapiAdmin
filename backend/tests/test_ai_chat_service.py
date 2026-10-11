@@ -5,6 +5,8 @@ import pytest
 from app.plugin.module_ai.chat.schema import ChatQuerySchema
 from app.plugin.module_ai.chat.service import ChatService
 
+pytest_plugins = ("ai_usage_fixtures",)
+
 
 @pytest.mark.parametrize(("content", "expected"), [
     ("plain answer", "plain answer"),
@@ -89,7 +91,7 @@ def test_ai_chat_stack_uses_langchain_not_legacy_agent_framework() -> None:
     assert offenders == []
 
 
-async def test_langchain_chat_model_invokes_and_streams_messages(monkeypatch) -> None:
+async def test_langchain_chat_model_invokes_and_streams_messages(monkeypatch, usage_storage) -> None:
     from app.plugin.module_ai.chat import model_config_service, rag
 
     captured: dict[str, object] = {}
@@ -124,6 +126,9 @@ async def test_langchain_chat_model_invokes_and_streams_messages(monkeypatch) ->
     assert [chunk async for chunk in model.stream("hello")] == ["part ", "two"]
     assert captured["init"] == {
         "api_key": "test_key",
+        "timeout": 30,
+        "max_retries": 0,
+        "stream_usage": True,
         "base_url": "https://example.test/v1",
         "model": "test-model",
         "temperature": 0.7,
@@ -132,7 +137,7 @@ async def test_langchain_chat_model_invokes_and_streams_messages(monkeypatch) ->
     assert captured["stream_messages"][0].content == "hello"
 
 
-async def test_langchain_chat_model_uses_anthropic_protocol(monkeypatch) -> None:
+async def test_langchain_chat_model_uses_anthropic_protocol(monkeypatch, usage_storage) -> None:
     from app.plugin.module_ai.chat import model_config_service, rag
 
     captured: dict[str, object] = {}
@@ -172,13 +177,15 @@ async def test_langchain_chat_model_uses_anthropic_protocol(monkeypatch) -> None
     assert [chunk async for chunk in model.stream("hello")] == ["Claude ", "stream"]
     assert captured["init"] == {
         "api_key": "test_claude_key",
+        "timeout": 30,
+        "max_retries": 0,
         "base_url": "https://api.anthropic.com",
         "model_name": "claude-sonnet-4-6",
         "temperature": 0.7,
     }
 
 
-async def test_langchain_chat_model_uses_openai_responses_protocol(monkeypatch) -> None:
+async def test_langchain_chat_model_uses_openai_responses_protocol(monkeypatch, usage_storage) -> None:
     from app.plugin.module_ai.chat import model_config_service, rag
 
     captured: dict[str, object] = {}
@@ -210,6 +217,8 @@ async def test_langchain_chat_model_uses_openai_responses_protocol(monkeypatch) 
     assert [chunk async for chunk in model.stream("hello")] == ["responses stream"]
     assert captured == {
         "api_key": "test-key",
+        "timeout": 30,
+        "max_retries": 0,
         "base_url": "https://example.test/v1",
         "model": "reasoning-model",
         "use_responses_api": True,

@@ -5,6 +5,8 @@ import DocumentPage from "@/views/module_ai/document/index.vue";
 import KnowledgeAPI from "@/api/module_ai/knowledge";
 import { ElMessage } from "element-plus";
 
+vi.mock("@/hooks/core/useAuth", () => ({ useAuth: () => ({ hasAuth: () => true }) }));
+
 const visibility = ref("visible");
 vi.mock("@vueuse/core", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@vueuse/core")>()),
@@ -40,6 +42,7 @@ vi.mock("vue-router", () => ({
 }));
 
 const stubs = {
+  DocumentInspector: true,
   ElButton: {
     emits: ["click"],
     props: ["disabled", "loading"],

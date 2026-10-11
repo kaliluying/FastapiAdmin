@@ -51,6 +51,9 @@ class KnowledgeDocumentModel(ModelMixin, UserMixin):
     index_lease_until: Mapped[datetime | None] = mapped_column(DateTime, default=None, nullable=True)
     index_cleanup_ids: Mapped[list[str] | None] = mapped_column(JSON(none_as_null=True), default=None, nullable=True)
 
+    pending_file: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), default=None, nullable=True)
+    file_cleanup_paths: Mapped[list[str] | None] = mapped_column(JSON(none_as_null=True), default=None, nullable=True)
+
     knowledge_base: Mapped[KnowledgeBaseModel] = relationship("KnowledgeBaseModel", back_populates="documents")
     chunks: Mapped[list["KnowledgeChunkModel"]] = relationship(
         "KnowledgeChunkModel",

@@ -47,7 +47,7 @@ describe("AI workspace primitives", () => {
         },
       },
     });
-    expect(wrapper.get("h1").text()).toBe("知识问答");
+    expect(wrapper.get("h1").text()).toBe("AI 对话");
     expect(wrapper.get("el-select-stub").attributes("aria-label")).toBe("用于回答的知识库");
     await wrapper.get(".collapse-btn").trigger("click");
     expect(wrapper.emitted("toggle-sidebar")).toHaveLength(1);

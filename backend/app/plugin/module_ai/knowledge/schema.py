@@ -43,6 +43,17 @@ class KnowledgeDocumentOutSchema(BaseSchema, UserBySchema):
     index_status: str
     error_message: str | None = None
     chunk_count: int = 0
+    replacement_pending: bool = False
+
+
+class KnowledgeChunkOutSchema(BaseSchema):
+    chunk_index: int
+    content: str
+    token_count: int
+
+
+class DocumentContentUpdateSchema(BaseModel):
+    content: str = Field(min_length=1, max_length=2_000_000)
 
 
 class RetrievalTestSchema(BaseModel):

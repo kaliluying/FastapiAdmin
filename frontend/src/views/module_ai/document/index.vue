@@ -2,7 +2,13 @@
   <div class="document-page">
     <FaAiPageHeader title="文档" description="查看资料处理状态，上传新文档并在需要时重建索引。">
       <template #actions>
-        <ElButton type="primary" :icon="Upload" @click="openUploadDialog">上传文档</ElButton>
+        <ElButton
+          v-if="hasAuth('module_ai:document:create')"
+          type="primary"
+          :icon="Upload"
+          @click="openUploadDialog"
+          >上传文档</ElButton
+        >
       </template>
     </FaAiPageHeader>
     <ElCard shadow="never" class="document-card">
@@ -87,9 +93,11 @@
         </ElTableColumn>
         <ElTableColumn prop="chunk_count" label="分块数" width="90" />
         <ElTableColumn prop="created_time" label="创建时间" width="180" show-overflow-tooltip />
-        <ElTableColumn label="操作" width="160" :fixed="isNarrowViewport ? false : 'right'">
+        <ElTableColumn label="操作" width="230" :fixed="isNarrowViewport ? false : 'right'">
           <template #default="{ row }">
+            <ElButton link type="primary" @click="selectedDocument = row">查看内容</ElButton>
             <ElButton
+              v-if="hasAuth('module_ai:document:create')"
               link
               type="primary"
               :loading="reindexingIds.has(row.id || 0)"
@@ -102,6 +110,7 @@
               >重新索引</ElButton
             >
             <ElButton
+              v-if="hasAuth('module_ai:document:delete')"
               link
               type="danger"
               :disabled="
@@ -127,6 +136,12 @@
         @current-change="loadData()"
       />
     </ElCard>
+
+    <DocumentInspector
+      :document="selectedDocument"
+      @close="selectedDocument = null"
+      @changed="loadData()"
+    />
 
     <ElDialog v-model="uploadDialogVisible" title="上传文档" width="min(92vw, 520px)">
       <ElForm label-width="90px" :label-position="isNarrowViewport ? 'top' : 'right'">
@@ -190,9 +205,14 @@ import KnowledgeAPI, {
 import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
 
+import DocumentInspector from "./DocumentInspector.vue";
+import { useAuth } from "@/hooks/core/useAuth";
+
 defineOptions({ name: "AiKnowledgeDocument" });
 
 const route = useRoute();
+const { hasAuth } = useAuth();
+const selectedDocument = ref<KnowledgeDocument | null>(null);
 const isNarrowViewport = useMediaQuery("(max-width: 800px)");
 const loading = ref(false);
 const loadError = ref(false);

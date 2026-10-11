@@ -41,7 +41,7 @@ async def test_bm25_delete_failure_cancels_writer_and_propagates(monkeypatch, tm
     store = BM25KnowledgeIndex(index_dir=str(tmp_path), tokenizer="char")
     writer = Mock()
     writer.commit.side_effect = RuntimeError("write failed")
-    monkeypatch.setattr(store, "_get_index", lambda: SimpleNamespace(writer=lambda: writer))
+    monkeypatch.setattr(store, "_get_index", lambda: SimpleNamespace(writer=lambda **kwargs: writer))
 
     with pytest.raises(RuntimeError, match="write failed"):
         await store.delete_chunks(["old-generation"])

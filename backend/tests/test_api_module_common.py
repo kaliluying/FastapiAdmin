@@ -3,6 +3,9 @@
 每个接口一个测试用例，验证路由存在且返回码正确。
 """
 
+from unittest.mock import Mock
+
+import pytest
 from conftest import assert_route
 from fastapi.testclient import TestClient
 
@@ -40,12 +43,27 @@ class TestFile:
     """文件管理接口。"""
 
     def test_upload_file(self, test_client: TestClient) -> None:
-        assert_route(test_client, "POST", "/common/file/upload")
+        assert_route(test_client, "POST", "/common/file/upload", expected_status=401)
 
     def test_download_file(self, test_client: TestClient) -> None:
         assert_route(
             test_client,
             "POST",
             "/common/file/download",
+            expected_status=401,
             json={"file_path": "test.txt", "delete": False},
         )
+
+
+class TestRouteAssertion:
+    def test_server_errors_fail(self) -> None:
+        client = Mock()
+        client.request.return_value.status_code = 500
+        with pytest.raises(AssertionError, match="实际 500"):
+            assert_route(client, "GET", "/broken")
+
+    def test_request_exceptions_propagate(self) -> None:
+        client = Mock()
+        client.request.side_effect = RuntimeError("request failed")
+        with pytest.raises(RuntimeError, match="request failed"):
+            assert_route(client, "GET", "/broken")

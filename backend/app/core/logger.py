@@ -65,11 +65,13 @@ def setup_logger() -> None:
     logger.add(
         str(LOG_DIR / "fastapiadmin.log"),
         format=LOG_FMT,
-        level="INFO",
+        level=log_level,
         rotation="00:00",
         retention=30,
         compression="gz",
         encoding="utf-8",
+        diagnose=False,
+        backtrace=False,
     )
 
     logging.basicConfig(handlers=[InterceptHandler()], level=log_level, force=True)

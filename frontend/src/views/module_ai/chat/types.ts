@@ -3,14 +3,46 @@ export interface ChatMessage {
   id: string;
   type: "user" | "assistant";
   content: string;
+  runId?: string;
+  sessionId?: string;
+  feedbackRating?: "helpful" | "incorrect";
+  feedbackComment?: string;
   timestamp: number;
   loading?: boolean;
   thinkingCollapsed?: boolean;
   files?: UploadedFile[];
   citations?: ChatCitation[];
   error?: string;
+  errorCode?: string;
+  retryUntil?: number;
+  warning?: string;
   stopped?: boolean;
-  request?: { message: string; files?: UploadedFile[]; knowledgeBaseIds: number[] };
+  logResults?: RuntimeLogResult[];
+  request?: {
+    message: string;
+    files?: UploadedFile[];
+    knowledgeBaseIds: number[];
+    logContextId?: string | null;
+  };
+}
+
+export interface RuntimeLogQuery {
+  minutes: number;
+  levels: ("DEBUG" | "INFO" | "SUCCESS" | "WARNING" | "ERROR" | "CRITICAL")[];
+  keyword: string;
+  correlation_id: string;
+}
+
+export interface RuntimeLogResult {
+  start_time: string;
+  end_time: string;
+  returned_count: number;
+  matched_count: number;
+  truncated: boolean;
+  notice: string;
+  scanned_files?: string[];
+  query?: RuntimeLogQuery;
+  query_index?: number;
 }
 
 export interface ChatCitation {
@@ -56,3 +88,15 @@ export interface SessionDetail {
 
 // 工作区面板类型
 export type ChatWorkspacePanel = "sessions" | "conversation" | "evidence";
+
+export type ChatProcessStage =
+  | "idle"
+  | "preparing"
+  | "routing"
+  | "querying_logs"
+  | "analyzing"
+  | "retrieving"
+  | "reranking"
+  | "generating"
+  | "complete"
+  | "error";

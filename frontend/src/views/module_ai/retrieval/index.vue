@@ -1,7 +1,14 @@
 <template>
   <div class="retrieval-page">
-    <FaAiPageHeader title="检索测试" description="选择知识库并输入问题，检查哪些内容会被找到。" />
-    <ElCard shadow="never" class="retrieval-card">
+    <FaAiPageHeader title="检索测试" description="选择知识库并输入问题，检查哪些内容会被找到。">
+      <template #actions
+        ><ElButton @click="qualityVisible = !qualityVisible">{{
+          qualityVisible ? "返回单次检索" : "批量评测与反馈"
+        }}</ElButton></template
+      >
+    </FaAiPageHeader>
+    <QualityPanel v-if="qualityVisible" :bases="bases" />
+    <ElCard v-show="!qualityVisible" shadow="never" class="retrieval-card">
       <FaAsyncState
         v-if="basesError"
         state="error"
@@ -149,10 +156,12 @@ import { useRoute } from "vue-router";
 import KnowledgeAPI, { type KnowledgeBase, type RetrievalHit } from "@/api/module_ai/knowledge";
 import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
+import QualityPanel from "./QualityPanel.vue";
 
 defineOptions({ name: "AiRetrievalTest" });
 
 const route = useRoute();
+const qualityVisible = ref(false);
 const bases = ref<KnowledgeBase[]>([]);
 const basesError = ref(false);
 const isNarrowViewport = useMediaQuery("(max-width: 640px)");

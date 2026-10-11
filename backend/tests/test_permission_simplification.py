@@ -106,14 +106,14 @@ def _user(**overrides):
 
 
 @pytest.mark.asyncio
-async def test_load_user_from_db_keeps_enabled_roles_and_drops_disabled_roles():
+async def test_load_user_from_db_preserves_role_relationships():
     enabled_role = _role(id=1, code="USER", status=0)
     disabled_role = _role(id=2, code="DISABLED", status=1)
     user = _user(roles=[enabled_role, disabled_role])
 
     loaded = await _load_user_from_db(_FakeDb(user), "user")
 
-    assert loaded.roles == [enabled_role]
+    assert loaded.roles == [enabled_role, disabled_role]
 
 
 @pytest.mark.asyncio

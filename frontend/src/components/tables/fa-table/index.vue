@@ -531,6 +531,11 @@ defineExpose({
     height: 100%;
   }
 
+  :deep(.el-table__empty-text) {
+    width: 100%;
+    line-height: normal;
+  }
+
   :deep(.el-loading-mask) {
     z-index: 100;
     background-color: var(--default-box-color) !important;

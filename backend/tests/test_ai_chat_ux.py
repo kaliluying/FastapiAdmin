@@ -10,15 +10,17 @@ from uuid import uuid4
 import pytest
 from docx import Document
 from fastapi import UploadFile
+from langchain_core.messages import AIMessage
 from pydantic import ValidationError
 from pypdf import PdfWriter
 from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.api.v1.module_platform.menu.model import MenuModel
-from app.api.v1.module_system.role.model import RoleModel
-from app.api.v1.module_system.user.model import UserModel
+from app.api.v1.module_system.log.model import LoginLogModel, OperationLogModel
+from app.api.v1.module_system.role.model import RoleMenusModel, RoleModel
+from app.api.v1.module_system.user.model import UserModel, UserRolesModel
 from app.config.setting import settings
 from app.core.database import async_db_session
 from app.core.exceptions import CustomException
@@ -51,6 +53,8 @@ def configured_chat(monkeypatch):
     monkeypatch.setattr(service, "load_runtime_chat_model_config", AsyncMock())
     monkeypatch.setattr(service.ChatService, "_validate_ai_config", staticmethod(lambda: None))
     monkeypatch.setattr(service.ChatService, "_trigger_memory_extraction", lambda *args, **kwargs: None)
+    monkeypatch.setattr(service.ChatService, "_authorize_log_analysis", AsyncMock())
+    monkeypatch.setattr(service.rag, "get_cached_chat_model", lambda: SimpleNamespace(request_tools=AsyncMock(return_value=AIMessage(content="ordinary question"))))
 
 
 @pytest.fixture(scope="module")
@@ -78,9 +82,29 @@ def websocket_scope_data(ai_client):
                 database.add(KnowledgeChunkModel(knowledge_base_id=base.id, document_id=document.id, chunk_index=0, content=marker, chroma_id=f"ws-scope-{suffix}-{user.id}", created_id=user.id))
                 bases.append({"id": base.id, "document_id": document.id, "marker": marker})
             await database.commit()
-            return {"username": owner.username, "user_id": owner.id, "own": bases[0], "foreign": bases[1]}
+            return {"username": owner.username, "user_id": owner.id, "user_ids": [owner.id, other.id], "usernames": [owner.username, other.username], "role_id": role.id, "menu_ids": [menu.id for menu in menus], "own": bases[0], "foreign": bases[1]}
 
-    return ai_client.portal.call(seed)
+    data = ai_client.portal.call(seed)
+    try:
+        yield data
+    finally:
+        async def cleanup():
+            base_ids = [data["own"]["id"], data["foreign"]["id"]]
+            async with async_db_session() as database:
+                await database.execute(delete(ChatSessionModel).where(ChatSessionModel.user_id.in_([str(identifier) for identifier in data["user_ids"]])))
+                await database.execute(delete(KnowledgeChunkModel).where(KnowledgeChunkModel.knowledge_base_id.in_(base_ids)))
+                await database.execute(delete(KnowledgeDocumentModel).where(KnowledgeDocumentModel.knowledge_base_id.in_(base_ids)))
+                await database.execute(delete(KnowledgeBaseModel).where(KnowledgeBaseModel.id.in_(base_ids)))
+                await database.execute(delete(LoginLogModel).where(LoginLogModel.username.in_(data["usernames"])))
+                await database.execute(delete(OperationLogModel).where(OperationLogModel.created_id.in_(data["user_ids"])))
+                await database.execute(delete(UserRolesModel).where(UserRolesModel.user_id.in_(data["user_ids"])))
+                await database.execute(delete(RoleMenusModel).where(RoleMenusModel.role_id == data["role_id"]))
+                await database.execute(delete(RoleModel).where(RoleModel.id == data["role_id"]))
+                await database.execute(delete(MenuModel).where(MenuModel.id.in_(data["menu_ids"])))
+                await database.execute(delete(UserModel).where(UserModel.id.in_(data["user_ids"])))
+                await database.commit()
+
+        ai_client.portal.call(cleanup)
 
 
 class QueueWebSocket:
@@ -129,6 +153,13 @@ async def running_socket(monkeypatch, chat_query):
 
     monkeypatch.setattr(ws, "async_db_session", database_session)
     monkeypatch.setattr(ws, "_resolve_ws_auth", AsyncMock(return_value=auth))
+
+    async def verify_session(session_id, db, redis):
+        return SimpleNamespace(user=auth.user, db=db, model_copy=lambda **kwargs: SimpleNamespace(user=auth.user, db=db))
+
+    auth.session_id = "socket-fixture"
+    auth.redis = None
+    monkeypatch.setattr(ws, "_verify_session", verify_session)
     monkeypatch.setattr(ws.ChatService, "chat_query", chat_query)
     websocket = QueueWebSocket()
     task = asyncio.create_task(ws.websocket_chat_controller(websocket))
@@ -173,11 +204,13 @@ async def test_structured_query_streams_real_rag_and_persists_citations(chat_aut
 
     assert [event["type"] for event in events] == ["stage", "citations", "stage", "chunk", "chunk", "done"]
     assert [event["stage"] for event in events if event["type"] == "stage"] == ["retrieving", "generating"]
-    assert events[-1] == {"type": "done", "session_id": session.session_id}
+    assert events[-1]["type"] == "done"
+    assert events[-1]["session_id"] == session.session_id
     assert captured["query"]["files"] == files
     assert "attachment policy approved" in captured["prompt"]
     assert events[1]["citations"] == [{"id": "1", "title": "policy.md", "snippet": "attachment policy approved"}]
     stored = await ChatSessionCRUD(chat_auth).get_by_id_crud(session.session_id)
+    assert events[-1]["run_id"] == stored.runs[0]["run_id"]
     assert stored.runs[0]["messages"][1]["content"] == "policy approved"
     assert stored.runs[0]["messages"][1]["citations"] == events[1]["citations"]
     assert "private_path" not in json.dumps(stored.runs)
@@ -418,7 +451,8 @@ def test_authenticated_attachment_websocket_and_history_flow(ai_client, configur
             events.append(event)
             if event["type"] in {"done", "error"}:
                 break
-    assert [event["type"] for event in events] == ["stage", "citations", "stage", "chunk", "done"]
+    assert [event["type"] for event in events] == ["stage", "stage", "citations", "stage", "chunk", "done"]
+    assert [event["stage"] for event in events if event["type"] == "stage"] == ["routing", "retrieving", "generating"]
     assert all(event["request_id"] == "api-flow" for event in events)
     detail = ai_client.get(f"/ai/chat/detail/{session_id}", headers=headers)
     assert detail.status_code == 200
@@ -486,14 +520,19 @@ def test_real_websocket_ticket_auth_enforces_knowledge_creator_scope(ai_client, 
         assert prompts == []
         assert derived_auth == []
     else:
-        assert [event["type"] for event in events] == ["stage", "citations", "stage", "chunk", "done"]
+        expected = ["stage", "citations", "stage", "chunk", "done"]
+        if scenario == "superuser_allowed":
+            expected.insert(0, "stage")
+            assert events[0]["stage"] == "routing"
+        assert [event["type"] for event in events] == expected
         assert searched_ids == [[base["id"]]]
         assert derived_auth == [(True, scenario == "superuser_allowed")]
         assert len(prompts) == 1 and base["marker"] in prompts[0]
-        assert events[1]["citations"] == [{"id": "1", "title": f"{base['marker']}.md", "snippet": base["marker"], "knowledge_base_id": base["id"], "document_id": base["document_id"]}]
+        citations = next(event for event in events if event["type"] == "citations")["citations"]
+        assert citations == [{"id": "1", "title": f"{base['marker']}.md", "snippet": base["marker"], "knowledge_base_id": base["id"], "document_id": base["document_id"]}]
         detail = ai_client.get(f"/ai/chat/detail/{events[-1]['session_id']}", headers=headers)
         assert detail.status_code == 200
-        assert detail.json()["data"]["messages"][-1]["citations"] == events[1]["citations"]
+        assert detail.json()["data"]["messages"][-1]["citations"] == citations
 
 
 def pdf_bytes(with_text=True):

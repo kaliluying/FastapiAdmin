@@ -32,7 +32,8 @@
     "lint:prettier": "prettier --write \"**/*.{js,cjs,ts,json,tsx,css,less,scss,vue,html,md}\"",
     "lint:stylelint": "stylelint \"**/*.{css,scss,vue}\" --cache --fix",
     "lint:lint-staged": "lint-staged -c ./.husky/lintstagedrc.cjs",
-    "commit": "git-cz"
+    "commit": "git-cz",
+    "check": "node scripts/check.cjs"
   },
   "config": {
     "commitizen": {
@@ -147,7 +148,8 @@
     "vitest": "^4.1.7",
     "vue-eslint-parser": "^10.4.0",
     "vue-img-cutter": "^3.0.5",
-    "vue-tsc": "^3.2.9"
+    "vue-tsc": "^3.2.9",
+    "playwright": "1.62.1"
   },
   "packageManager": "pnpm@10.34.5",
   "engines": {

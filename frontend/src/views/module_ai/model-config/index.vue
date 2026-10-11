@@ -96,6 +96,38 @@
         </ElFormItem>
       </ElForm>
 
+      <ElDivider content-position="left">模型能力验证</ElDivider>
+      <p class="check-note">
+        使用当前输入实际请求回答、流式输出和工具调用，最多 3
+        次调用，会消耗用户额度并可能产生供应商费用；不会保存配置。
+      </p>
+      <ElButton
+        v-auth="'module_ai:model_config:update'"
+        :loading="checking"
+        :disabled="loading || loadError || !canEdit"
+        @click="checkCapabilities"
+        >验证 3 项能力</ElButton
+      >
+      <ElDescriptions
+        v-if="capabilityCheck"
+        :column="1"
+        border
+        class="check-results"
+        aria-live="polite"
+      >
+        <ElDescriptionsItem
+          v-for="result in capabilityCheck.results"
+          :key="result.capability"
+          :label="capabilityLabels[result.capability]"
+        >
+          <ElTag :type="result.status === 'passed' ? 'success' : 'danger'">{{
+            result.status === "passed" ? "通过" : "失败"
+          }}</ElTag>
+          {{ result.message }} · {{ result.latency_ms }} ms
+        </ElDescriptionsItem>
+      </ElDescriptions>
+      <p v-if="checkError" role="alert">{{ checkError }}</p>
+
       <ElDivider content-position="left">向量运行状态</ElDivider>
       <ElDescriptions :column="isNarrowViewport ? 1 : 2" border>
         <ElDescriptionsItem label="向量来源">
@@ -112,6 +144,7 @@
         }}</ElDescriptionsItem>
       </ElDescriptions>
     </ElCard>
+    <ElCard shadow="never" class="usage-card"><UsagePanel :self-only="false" /></ElCard>
   </div>
 </template>
 
@@ -123,9 +156,40 @@ import FaAiPageHeader from "@/views/module_ai/components/FaAiPageHeader.vue";
 import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 import { Check, Refresh } from "@element-plus/icons-vue";
 import { useAuth } from "@/hooks/core/useAuth";
-import AiChatAPI, { type AiModelConfig, type AiModelConfigUpdate } from "@/api/module_ai/chat";
+import UsagePanel from "./UsagePanel.vue";
+import AiChatAPI, {
+  type AiModelConfig,
+  type AiModelConfigUpdate,
+  type AiModelCapabilityCheck,
+} from "@/api/module_ai/chat";
 
 defineOptions({ name: "AiModelConfig" });
+
+const checking = ref(false);
+const checkError = ref("");
+const capabilityCheck = ref<AiModelCapabilityCheck>();
+const capabilityLabels = { complete: "普通回答", stream: "流式输出", tools: "工具调用" };
+const checkCapabilities = async () => {
+  await formRef.value?.validate();
+  checking.value = true;
+  checkError.value = "";
+  capabilityCheck.value = undefined;
+  const request = {
+    ...form,
+    ...(form.openai_api_key?.trim()
+      ? { openai_api_key: form.openai_api_key.trim() }
+      : { openai_api_key: undefined }),
+  };
+  const selection = JSON.stringify(form);
+  try {
+    const res = await AiChatAPI.checkModelCapabilities(request);
+    if (selection === JSON.stringify(form)) capabilityCheck.value = res.data.data;
+  } catch {
+    checkError.value = "验证失败，请检查配置或稍后重试。";
+  } finally {
+    checking.value = false;
+  }
+};
 
 const loading = ref(false);
 const loadError = ref(false);
@@ -176,8 +240,16 @@ const suggestModels = (query: string, callback: (items: { value: string }[]) => 
 };
 
 watch(
+  () => [form.chat_protocol, form.openai_base_url, form.openai_api_key, form.openai_model],
+  () => {
+    capabilityCheck.value = undefined;
+  }
+);
+
+watch(
   () => [form.chat_protocol, form.openai_base_url, form.openai_api_key],
   () => {
+    capabilityCheck.value = undefined;
     modelOptions.value = [];
     showAllModels.value = false;
   }
@@ -248,6 +320,16 @@ onMounted(loadConfig);
 </script>
 
 <style scoped>
+.usage-card,
+.check-results {
+  margin-top: 16px;
+}
+
+.check-note {
+  line-height: 1.6;
+  color: var(--fa-color-text-muted);
+}
+
 .model-config-page {
   min-width: 0;
 }

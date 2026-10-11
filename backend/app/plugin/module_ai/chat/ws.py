@@ -8,7 +8,7 @@ from starlette.status import WS_1008_POLICY_VIOLATION
 
 from app.core.base_schema import AuthSchema
 from app.core.database import async_db_session
-from app.core.dependencies import _verify_ws_ticket
+from app.core.dependencies import _verify_session, _verify_ws_ticket
 from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.core.router_class import OperationLogRoute
@@ -76,9 +76,12 @@ async def websocket_chat_controller(websocket: WebSocket) -> None:
     async def stream_query(query: ChatQuerySchema) -> None:
         try:
             async with async_db_session() as db:
-                auth.db = db
+                current_auth = await _verify_session(auth.session_id, db, auth.redis)
+                if not _has_ws_permission(current_auth, "module_ai:chat:ws"):
+                    raise CustomException(msg="无权限操作", code=10403, status_code=403)
+                current_auth = current_auth.model_copy(update={"check_data_scope": True})
                 options = {"structured": True} if query.request_id else {}
-                async for chunk in ChatService(auth).chat_query(query=query, **options):
+                async for chunk in ChatService(current_auth).chat_query(query=query, **options):
                     if chunk:
                         event = chunk if isinstance(chunk, dict) else {"type": "chunk", "content": chunk}
                         await send_event(query.request_id, event)
@@ -86,6 +89,10 @@ async def websocket_chat_controller(websocket: WebSocket) -> None:
             with suppress(Exception):
                 await send_event(query.request_id, {"type": "cancelled"})
             raise
+        except CustomException as exc:
+            with suppress(Exception):
+                await send_event(query.request_id, {"type": "error", "message": exc.msg})
+                await websocket.close(code=WS_1008_POLICY_VIOLATION)
         except Exception:
             logger.exception("聊天流处理失败")
             with suppress(Exception):

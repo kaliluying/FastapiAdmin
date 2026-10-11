@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import Request, Response
 from fastapi.routing import APIRoute
-from starlette.background import BackgroundTask
+from starlette.background import BackgroundTasks
 
 from app.config.setting import settings
 from app.core.base_schema import AuthSchema
@@ -41,6 +41,7 @@ def _redact_sensitive_values(value: Any, key: str | None = None) -> Any:
     normalized_key = "".join(character for character in (key or "").lower() if character.isalnum())
     if normalized_key and (
         normalized_key in _SENSITIVE_FIELD_NAMES
+        or "apikey" in normalized_key
         or "password" in normalized_key
         or "token" in normalized_key
         or "captcha" in normalized_key
@@ -98,28 +99,32 @@ class OperationLogRoute(APIRoute):
 
             try:
                 oper_param: dict[str, Any] = {}
-                content_type = request.headers.get("Content-Type", "")
-                if content_type.startswith(("multipart/form-data", "application/x-www-form-urlencoded")):
-                    form_data = await request.form()
-                    oper_param["form"] = dict(form_data.items())
-                else:
-                    payload = await request.body()
-                    if payload:
-                        try:
-                            oper_param["body"] = json.loads(payload.decode())
-                        except (json.JSONDecodeError, UnicodeDecodeError):
-                            oper_param["body"] = "非 JSON 请求体已省略"
-
-                if request.path_params:
-                    oper_param["path_params"] = dict(request.path_params)
-
-                is_json = "application/json" in response.headers.get("Content-Type", "")
                 response_payload: Any = {}
-                if is_json and getattr(response, "body", None):
-                    try:
-                        response_payload = json.loads(response.body.decode())
-                    except (json.JSONDecodeError, UnicodeDecodeError):
-                        response_payload = {"message": "响应不是可解析的 JSON，已省略"}
+                if route and (route.openapi_extra or {}).get("x-audit-payload") is False:
+                    oper_param = {"omitted": True}
+                    response_payload = {"omitted": True}
+                else:
+                    content_type = request.headers.get("Content-Type", "")
+                    if content_type.startswith(("multipart/form-data", "application/x-www-form-urlencoded")):
+                        form_data = await request.form()
+                        oper_param["form"] = dict(form_data.items())
+                    else:
+                        payload = await request.body()
+                        if payload:
+                            try:
+                                oper_param["body"] = json.loads(payload.decode())
+                            except (json.JSONDecodeError, UnicodeDecodeError):
+                                oper_param["body"] = "非 JSON 请求体已省略"
+
+                    if request.path_params:
+                        oper_param["path_params"] = dict(request.path_params)
+
+                    is_json = "application/json" in response.headers.get("Content-Type", "")
+                    if is_json and getattr(response, "body", None):
+                        try:
+                            response_payload = json.loads(response.body.decode())
+                        except (json.JSONDecodeError, UnicodeDecodeError):
+                            response_payload = {"message": "响应不是可解析的 JSON，已省略"}
 
                 ctx = getattr(request.state, "ctx", None)
                 current_user_id = ctx.user_id if ctx else None
@@ -135,7 +140,11 @@ class OperationLogRoute(APIRoute):
                     "created_id": current_user_id,
                     "updated_id": current_user_id,
                 }
-                response.background = BackgroundTask(_write_operation_log_async, log_data)
+                tasks = BackgroundTasks()
+                if response.background is not None:
+                    tasks.add_task(response.background)
+                tasks.add_task(_write_operation_log_async, log_data)
+                response.background = tasks
             except Exception:
                 logger.warning("操作日志采集异常: {}", request.url.path, exc_info=True)
             return response

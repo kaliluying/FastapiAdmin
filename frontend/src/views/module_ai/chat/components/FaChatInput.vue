@@ -19,33 +19,25 @@
         </div>
       </div>
       <div class="input-container">
-        <div class="composer-topline">
-          <span class="composer-context">
-            <FaSvgIcon icon="ri:database-2-line" />
-            知识库问答
-          </span>
-          <span class="composer-status" :class="{ 'composer-status--offline': !isConnected }">
-            {{ isConnected ? "已连接" : "未连接" }}
-          </span>
-        </div>
         <ElForm>
           <ElInput
             v-model="inputMessage"
             type="textarea"
             aria-label="问题或消息"
             :placeholder="placeholder"
-            :disabled="disabled || sending"
+            :disabled="disabled"
             :autosize="{ minRows: isNarrowViewport ? 2 : 3, maxRows: isNarrowViewport ? 4 : 6 }"
             resize="none"
             class="message-input"
             maxlength="8000"
             show-word-limit
-            @keydown.enter.exact.prevent="handleSend"
+            @keydown="handleKeydown"
+            @compositionstart="isComposing = true"
+            @compositionend="isComposing = false"
           />
         </ElForm>
         <div class="input-footer">
-          <span class="input-hint">Enter 发送 · Shift + Enter 换行</span>
-          <div class="input-actions">
+          <div class="input-actions input-actions--leading">
             <ElUpload
               ref="uploadRef"
               :auto-upload="false"
@@ -55,30 +47,49 @@
               :multiple="true"
             >
               <ElButton
-                :icon="Paperclip"
                 class="upload-btn"
                 circle
                 aria-label="添加文档附件"
                 :disabled="disabled || sending"
-              />
+                ><FaSvgIcon icon="ri:add-line"
+              /></ElButton>
             </ElUpload>
+            <span class="composer-divider" aria-hidden="true"></span>
+            <span class="composer-mode">
+              <FaSvgIcon icon="ri:chat-3-line" />
+              AI 助手
+            </span>
+          </div>
+          <div class="input-actions input-actions--trailing">
+            <span class="input-hint">Enter 发送 · Shift + Enter 换行</span>
+            <span class="composer-status" :class="{ 'composer-status--offline': !isConnected }">
+              <i aria-hidden="true"></i>{{ isConnected ? "已连接" : "未连接" }}
+            </span>
             <ElButton
+              v-if="!sending"
               :disabled="
                 (!inputMessage.trim() && uploadedFiles.length === 0) ||
                 disabled ||
                 sending ||
                 uploadedFiles.some((file) => file.status !== 'ready')
               "
-              :loading="sending"
               class="send-button"
               type="primary"
               circle
               aria-label="发送消息"
               @click="handleSend"
             >
-              <ElIcon><Promotion /></ElIcon>
+              <FaSvgIcon icon="ri:arrow-up-line" />
             </ElButton>
-            <ElButton v-if="sending" @click="emit('stop')">停止生成</ElButton>
+            <ElButton
+              v-else
+              class="send-button stop-button"
+              circle
+              aria-label="停止生成"
+              @click="emit('stop')"
+            >
+              <FaSvgIcon icon="ri:stop-fill" />
+            </ElButton>
           </div>
         </div>
       </div>
@@ -89,7 +100,7 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { useMediaQuery } from "@vueuse/core";
-import { Promotion, Paperclip, Document, Close } from "@element-plus/icons-vue";
+import { Document, Close } from "@element-plus/icons-vue";
 import type { UploadFile, UploadInstance } from "element-plus";
 import type { UploadedFile } from "../types";
 import { AiChatAPI } from "@/api/module_ai/chat";
@@ -115,6 +126,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>();
 
 const inputMessage = ref("");
+const isComposing = ref(false);
 const isNarrowViewport = useMediaQuery("(max-width: 640px)");
 const uploadRef = ref<UploadInstance>();
 const uploadedFiles = ref<UploadedFile[]>([]);
@@ -124,7 +136,9 @@ const acceptTypes = computed(() => {
 });
 
 const placeholder = computed(() => {
-  return props.isConnected ? "输入问题，或添加文档后提问" : "请先重新连接，再发送问题";
+  if (!props.isConnected) return "请先重新连接，再发送问题";
+  if (props.sending) return "正在回答，你可以先写下一个问题";
+  return "输入问题，或添加文档后提问";
 });
 
 const handleFileChange = (uploadFile: UploadFile) => {
@@ -182,12 +196,30 @@ const removeFile = (id: string) => {
   }
 };
 
+const handleKeydown = (event: Event | KeyboardEvent) => {
+  if (!(event instanceof KeyboardEvent)) return;
+  if (
+    event.key !== "Enter" ||
+    event.shiftKey ||
+    event.ctrlKey ||
+    event.altKey ||
+    event.metaKey ||
+    event.isComposing ||
+    event.keyCode === 229 ||
+    isComposing.value
+  )
+    return;
+  event.preventDefault();
+  handleSend();
+};
+
 const handleSend = () => {
   const message = inputMessage.value.trim();
   if (
     (!message && uploadedFiles.value.length === 0) ||
     props.disabled ||
     props.sending ||
+    isComposing.value ||
     uploadedFiles.value.some((file) => file.status !== "ready")
   ) {
     return;
@@ -211,12 +243,12 @@ defineExpose({
 <style lang="scss" scoped>
 .chat-input {
   color: var(--fa-color-text);
-  background: var(--fa-color-surface);
+  background: transparent;
 }
 
 .input-wrapper {
-  max-width: 860px;
-  padding: 14px 20px;
+  max-width: 900px;
+  padding: 16px 20px 18px;
   margin: 0 auto;
 }
 
@@ -249,63 +281,80 @@ defineExpose({
 }
 
 .input-container {
-  padding: 10px 12px;
+  position: relative;
+  padding: 16px 18px 12px;
+  overflow: hidden;
+  color: var(--fa-color-text);
   background: var(--fa-color-surface);
   border: 1px solid var(--fa-color-border);
-  border-radius: var(--fa-radius-control);
+  border-radius: 24px;
+  box-shadow: var(--fa-panel-shadow);
 }
 
 .input-container:focus-within {
   border-color: var(--theme-color);
-  box-shadow: var(--fa-focus-ring);
+  box-shadow: var(--fa-focus-ring), var(--fa-panel-shadow);
 }
 
-.composer-topline,
 .input-footer,
 .input-actions,
-.composer-context {
+.composer-mode {
   display: flex;
   gap: 8px;
   align-items: center;
 }
 
-.composer-topline,
-.input-footer {
-  justify-content: space-between;
-}
-
-.composer-topline {
-  margin-bottom: 6px;
-  font-size: 12px;
-  color: var(--fa-color-text-muted);
-}
-
 .composer-status {
-  color: var(--fa-color-success);
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--fa-color-text-muted);
+
+  i {
+    width: 6px;
+    height: 6px;
+    background: var(--fa-color-success);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--fa-color-success) 12%, transparent);
+  }
 }
 
 .composer-status--offline {
-  color: var(--fa-color-text-muted);
+  i {
+    background: var(--fa-color-text-muted);
+    box-shadow: none;
+  }
 }
 
 .message-input :deep(.el-textarea__inner) {
-  max-height: 144px;
-  padding: 4px 0;
-  line-height: 1.6;
-  background: transparent;
-  border: 0;
+  min-height: 72px !important;
+  max-height: 180px;
+  padding: 4px 2px 18px;
+  line-height: 1.55;
+  color: var(--fa-color-text);
+  background: transparent !important;
+  border: 0 !important;
   border-radius: 0;
-  box-shadow: none;
+  box-shadow: none !important;
+
+  &::placeholder {
+    color: var(--fa-color-text-muted);
+  }
 }
 
 .message-input :deep(.el-input__count) {
-  background: var(--fa-color-surface);
+  right: 2px;
+  bottom: 2px;
+  color: var(--fa-color-text-muted);
+  background: transparent;
 }
 
 .input-footer {
-  padding-top: 8px;
-  margin-top: 6px;
-  border-top: 1px solid var(--fa-color-border);
+  justify-content: space-between;
+  min-height: 34px;
+  padding-top: 4px;
+  margin-top: 2px;
 }
 
 .input-hint {
@@ -317,29 +366,102 @@ defineExpose({
   flex-shrink: 0;
 }
 
+.input-actions--leading {
+  color: var(--fa-color-text);
+}
+
+.input-actions--trailing {
+  gap: 12px;
+}
+
+.composer-mode {
+  font-size: 12px;
+  color: var(--fa-color-text-muted);
+}
+
+.composer-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--fa-color-border);
+}
+
+.upload-btn,
+.send-button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+
+.upload-btn {
+  color: var(--fa-color-text);
+  background: transparent;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--theme-color);
+    background: var(--fa-hover-color);
+  }
+}
+
+.send-button {
+  color: var(--el-color-white);
+  background: var(--theme-color);
+
+  &:not(:disabled):hover,
+  &:not(:disabled):focus-visible {
+    background: var(--el-color-primary-dark-2);
+  }
+
+  &:disabled {
+    color: var(--fa-color-text-muted);
+    background: var(--fa-color-surface-raised);
+  }
+}
+
+.upload-btn:focus-visible,
+.send-button:focus-visible {
+  outline: 2px solid var(--theme-color);
+  outline-offset: 2px;
+}
+
 .input-actions :deep(.el-button + .el-button) {
   margin-left: 0;
 }
 
+@media (width <= 768px) {
+  .upload-btn,
+  .send-button {
+    width: 44px;
+    height: 44px;
+  }
+}
+
 @media (width <= 640px) {
   .input-wrapper {
-    padding: 10px 12px;
+    padding: 10px 12px 12px;
   }
 
-  .composer-topline {
-    margin-bottom: 2px;
+  .input-container {
+    padding: 14px 14px 10px;
+    border-radius: 20px;
   }
 
   .input-hint {
     display: none;
   }
 
-  .input-footer {
-    justify-content: flex-end;
+  .message-input :deep(.el-textarea__inner) {
+    min-height: 64px !important;
+    max-height: 120px;
   }
 
-  .message-input :deep(.el-textarea__inner) {
-    max-height: 100px;
+  .composer-mode {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 </style>

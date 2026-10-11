@@ -1,3 +1,4 @@
+from datetime import date
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Path, UploadFile
@@ -6,7 +7,8 @@ from fastapi.responses import JSONResponse
 from app.common.response import ResponseSchema, SuccessResponse
 from app.core.base_params import PaginationQueryParam
 from app.core.base_schema import AuthSchema
-from app.core.dependencies import AuthPermission
+from app.core.database import async_db_session
+from app.core.dependencies import AuthPermission, _load_user_from_db
 from app.core.router_class import OperationLogRoute
 from app.plugin.module_ai.knowledge.public import extract_chat_attachment
 
@@ -16,6 +18,7 @@ from .schema import (
     AiModelConfigOutSchema,
     AiModelConfigUpdateSchema,
     AiModelListRequestSchema,
+    AiUsageQuotaUpdateSchema,
     ChatSessionCreateSchema,
     ChatSessionQueryParam,
     ChatSessionUpdateSchema,
@@ -23,6 +26,14 @@ from .schema import (
 from .service import ChatService
 
 ChatRouter = APIRouter(route_class=OperationLogRoute, prefix="/chat", tags=["AI管理", "AI对话"])
+
+
+@ChatRouter.get("/runtime-logs/status", summary="运行日志分析可用状态", response_model=ResponseSchema[dict[str, Any]])
+async def runtime_log_status_controller(
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:chat:ws"]))],
+) -> JSONResponse:
+    can_query = getattr(auth.user, "is_superuser", False) is True
+    return SuccessResponse(data={"can_query": can_query, "enabled": can_query})
 
 
 @ChatRouter.post("/attachment", summary="解析聊天附件", response_model=ResponseSchema[dict[str, Any]])
@@ -115,16 +126,20 @@ async def delete_session_controller(
     "/ai-chat",
     summary="AI 对话（非流式）",
     response_model=ResponseSchema[AiChatResponseSchema],
+    openapi_extra={"x-audit-payload": False},
 )
 async def ai_chat_controller(
     data: AiChatRequestSchema,
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:chat:ws"]))],
 ) -> JSONResponse:
-    service = ChatService(auth)
+    async with async_db_session() as auth_db:
+        user = await _load_user_from_db(auth_db, auth.user.username)
+    service = ChatService(auth.model_copy(update={"user": user}))
     result = await service.chat_non_stream(
         message=data.message,
         session_id=data.session_id,
         knowledge_base_ids=data.knowledge_base_ids,
+        log_context_id=data.log_context_id,
     )
     return SuccessResponse(
         data=AiChatResponseSchema(
@@ -132,6 +147,7 @@ async def ai_chat_controller(
             session_id=result["session_id"],
             function_calls=result.get("function_calls"),
             action=result.get("action"),
+            log_context_id=result.get("log_context_id"),
         ),
         msg="chat success",
     )
@@ -173,3 +189,63 @@ async def update_model_config_controller(
 ) -> JSONResponse:
     result = await ChatService(auth).update_model_config(data)
     return SuccessResponse(data=result, msg="update AI model configuration success")
+
+
+@ChatRouter.post("/model-config/check", summary="实际验证模型回答、流式与工具调用能力", response_model=ResponseSchema[dict])
+async def check_model_capabilities_controller(
+    data: AiModelConfigUpdateSchema,
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:model_config:update"]))],
+) -> JSONResponse:
+    from .capabilities import check_model_capabilities
+    return SuccessResponse(data=await check_model_capabilities(auth, data))
+
+
+@ChatRouter.get("/usage", summary="本人今日 AI 用量", response_model=ResponseSchema[dict])
+async def own_ai_usage_controller(
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:chat:ws"]))],
+) -> JSONResponse:
+    from .usage import usage_day, usage_summary
+    return SuccessResponse(data=await usage_summary(auth.user.id, usage_day()))
+
+
+@ChatRouter.get("/usage/admin", summary="管理员查询用户 AI 用量", response_model=ResponseSchema[dict])
+async def admin_ai_usage_controller(
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:model_config:query"]))],
+    user_id: int | None = None,
+    day: date | None = None,
+) -> JSONResponse:
+    from sqlalchemy import select
+
+    from app.api.v1.module_system.user.model import UserModel
+    from app.core.exceptions import CustomException
+
+    from .usage import usage_day, usage_summary
+    if auth.user.is_superuser is not True:
+        raise CustomException(msg="仅超级管理员可查看他人用量", status_code=403)
+    users = (await auth.db.execute(select(UserModel.id, UserModel.username).where(UserModel.is_deleted.is_(False)).order_by(UserModel.id))).all()
+    selected = user_id if user_id is not None else auth.user.id
+    if selected not in {user.id for user in users}:
+        raise CustomException(msg="用户不存在", status_code=404)
+    await auth.db.rollback()
+    return SuccessResponse(data={**await usage_summary(selected, day or usage_day()), "users": [{"id": user.id, "username": user.username} for user in users]})
+
+
+@ChatRouter.put("/usage/quota/{user_id}", summary="设置用户每日 AI 调用额度", response_model=ResponseSchema[dict])
+async def update_ai_usage_quota_controller(
+    user_id: Annotated[int, Path(ge=1)],
+    data: AiUsageQuotaUpdateSchema,
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:model_config:update"]))],
+) -> JSONResponse:
+    from sqlalchemy import select
+
+    from app.api.v1.module_system.user.model import UserModel
+    from app.core.exceptions import CustomException
+
+    from .usage import set_quota, usage_day, usage_summary
+    if auth.user.is_superuser is not True:
+        raise CustomException(msg="仅超级管理员可设置调用额度", status_code=403)
+    if not await auth.db.scalar(select(UserModel.id).where(UserModel.id == user_id, UserModel.is_deleted.is_(False))):
+        raise CustomException(msg="用户不存在", status_code=404)
+    await auth.db.rollback()
+    await set_quota(user_id, data.daily_limit)
+    return SuccessResponse(data=await usage_summary(user_id, usage_day()), msg="调用额度已更新")

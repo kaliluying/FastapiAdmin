@@ -5,42 +5,40 @@
 每个接口一个测试用例，覆盖会话 CRUD 与 AI 对话。
 """
 
+import pytest
 from conftest import assert_route
 from fastapi.testclient import TestClient
 
 
 class TestAiChat:
-    """AI 对话接口。"""
+    """会话真实 CRUD，以及未经认证的 AI 请求边界。"""
 
-    def test_ai_chat_list(self, ai_client: TestClient) -> None:
-        assert_route(ai_client, "GET", "/ai/chat/list")
+    def test_session_crud(self, ai_client: TestClient, auth_headers: dict) -> None:
+        response = ai_client.post("/ai/chat/create", headers=auth_headers, json={"title": "测试会话"})
+        assert response.status_code == 200
+        session_id = response.json()["data"]["session_id"]
+        try:
+            assert_route(ai_client, "GET", "/ai/chat/list", auth=auth_headers)
+            detail = ai_client.get(f"/ai/chat/detail/{session_id}", headers=auth_headers)
+            assert detail.status_code == 200
+            assert detail.json()["data"]["title"] == "测试会话"
+            assert_route(ai_client, "PUT", f"/ai/chat/update/{session_id}", auth=auth_headers, json={"title": "更新会话"})
+            updated = ai_client.get(f"/ai/chat/detail/{session_id}", headers=auth_headers)
+            assert updated.status_code == 200
+            assert updated.json()["data"]["title"] == "更新会话"
+        finally:
+            assert_route(ai_client, "DELETE", "/ai/chat/delete", auth=auth_headers, json=[session_id])
 
-    def test_ai_chat_detail(self, ai_client: TestClient) -> None:
-        assert_route(ai_client, "GET", "/ai/chat/detail/test_session")
-
-    def test_ai_chat_create(self, ai_client: TestClient) -> None:
-        assert_route(
-            ai_client,
-            "POST",
-            "/ai/chat/create",
-            json={"title": "测试会话"},
-        )
-
-    def test_ai_chat_update(self, ai_client: TestClient) -> None:
-        assert_route(
-            ai_client,
-            "PUT",
-            "/ai/chat/update/test_session",
-            json={"title": "更新会话"},
-        )
-
-    def test_ai_chat_delete(self, ai_client: TestClient) -> None:
-        assert_route(ai_client, "DELETE", "/ai/chat/delete", json=["test_session"])
-
-    def test_ai_chat_non_stream(self, ai_client: TestClient) -> None:
-        assert_route(
-            ai_client,
-            "POST",
-            "/ai/chat/ai-chat",
-            json={"message": "你好", "session_id": "test_session"},
-        )
+    @pytest.mark.parametrize(
+        ("method", "path", "payload"),
+        [
+            ("GET", "/ai/chat/list", None),
+            ("GET", "/ai/chat/detail/test_session", None),
+            ("POST", "/ai/chat/create", {"title": "测试会话"}),
+            ("PUT", "/ai/chat/update/test_session", {"title": "更新会话"}),
+            ("DELETE", "/ai/chat/delete", ["test_session"]),
+            ("POST", "/ai/chat/ai-chat", {"message": "你好", "session_id": "test_session"}),
+        ],
+    )
+    def test_requires_authentication(self, ai_client: TestClient, method: str, path: str, payload) -> None:
+        assert_route(ai_client, method, path, expected_status=401, json=payload)

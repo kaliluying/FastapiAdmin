@@ -13,7 +13,7 @@
           class="size-6"
         />
       </button>
-      <h1 class="workspace-title">知识问答</h1>
+      <h1 class="workspace-title">AI 对话</h1>
     </div>
     <div class="navbar-right">
       <ElSelect
@@ -58,6 +58,7 @@
       </ElTag>
       <ElButton v-if="hasMessages" text :icon="Delete" @click="handleClearChat">清空对话</ElButton>
       <ElButton text @click="emit('show-evidence')">回答依据</ElButton>
+      <ElButton text @click="emit('show-usage')">今日用量</ElButton>
     </div>
   </div>
 </template>
@@ -82,6 +83,7 @@ interface Emits {
   (e: "toggle-connection"): void;
   (e: "toggle-sidebar"): void;
   (e: "show-evidence"): void;
+  (e: "show-usage"): void;
   (e: "update:knowledgeBaseIds", value: number[]): void;
 }
 
@@ -132,8 +134,8 @@ const handleKnowledgeChange = (value: number[]) => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  color: #fff;
-  background: #182b46;
+  color: var(--fa-color-text);
+  background: var(--fa-color-surface);
 }
 
 .navbar-left,
@@ -172,16 +174,16 @@ const handleKnowledgeChange = (value: number[]) => {
   color: inherit;
   cursor: pointer;
   background: transparent;
-  border: 1px solid rgb(255 255 255 / 24%);
+  border: 1px solid var(--fa-color-border);
   border-radius: var(--fa-radius-control);
 }
 
 .collapse-btn:hover {
-  background: rgb(255 255 255 / 10%);
+  background: var(--fa-hover-color);
 }
 
 .collapse-btn:focus-visible {
-  outline: 2px solid #fff;
+  outline: 2px solid var(--theme-color);
   outline-offset: 2px;
 }
 
@@ -191,11 +193,11 @@ const handleKnowledgeChange = (value: number[]) => {
 
 .navbar-right :deep(.el-button) {
   margin: 0;
-  color: #fff;
+  color: var(--fa-color-text);
 }
 
 .navbar-right :deep(.el-button:hover) {
-  background: rgb(255 255 255 / 12%);
+  background: var(--fa-hover-color);
 }
 
 .connection-status :deep(.el-tag__content) {
@@ -219,14 +221,21 @@ const handleKnowledgeChange = (value: number[]) => {
   }
 }
 
+@media (width <= 768px) {
+  .collapse-btn,
+  .navbar-right :deep(.el-button) {
+    min-height: 44px;
+  }
+}
+
 @media (width <= 640px) {
   .navbar-right {
     width: 100%;
   }
 
   .knowledge-select {
-    flex: 1;
-    width: auto;
+    flex: 0 0 100%;
+    width: 100%;
     min-width: 0;
   }
 

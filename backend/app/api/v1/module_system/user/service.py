@@ -11,7 +11,6 @@ from app.api.v1.module_platform.menu.schema import MenuOutSchema
 from app.common.enums import EnvironmentEnum
 from app.config.setting import settings
 from app.core.base_schema import AuthSchema, BatchSetAvailable
-from app.core.dependencies import invalidate_permission_cache
 from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.utils.common_util import traversal_to_tree
@@ -90,8 +89,8 @@ class UserService:
         new_user = await UserCRUD(self.auth).create(data=user_dict)
         if data.role_ids and len(data.role_ids) > 0:
             await UserCRUD(self.auth).set_user_roles(user_ids=[new_user.id], role_ids=data.role_ids)
-            await invalidate_permission_cache(getattr(self.auth, "redis", None))
-        return UserOutSchema.model_validate(new_user)
+        loaded_user = await UserCRUD(self.auth).get(id=new_user.id)
+        return UserOutSchema.model_validate(loaded_user or new_user)
 
     async def update(self, id: int, data: UserUpdateSchema) -> UserOutSchema:
         if not data.username:
@@ -118,7 +117,6 @@ class UserService:
 
         if "role_ids" in data.model_fields_set:
             await UserCRUD(self.auth).set_user_roles(user_ids=[id], role_ids=data.role_ids or [])
-            await invalidate_permission_cache(getattr(self.auth, "redis", None))
 
         return UserOutSchema.model_validate(new_user)
 
@@ -140,7 +138,6 @@ class UserService:
 
         await UserCRUD(self.auth).set_user_roles(user_ids=ids, role_ids=[])
         await UserCRUD(self.auth).delete(ids=ids)
-        await invalidate_permission_cache(getattr(self.auth, "redis", None))
 
     async def current_info(self) -> UserOutSchema:
         if not self.auth.user or not self.auth.user.id:
@@ -160,9 +157,9 @@ class UserService:
             menu_ids = {
                 menu.id
                 for role in self.auth.user.roles or []
-                if role.status == 0
+                if role.status == 0 and not getattr(role, "is_deleted", False)
                 for menu in role.menus
-                if menu.status == 0
+                if menu.status == 0 and not getattr(menu, "is_deleted", False)
             }
 
             menus = (
@@ -193,11 +190,12 @@ class UserService:
 
         permissions: set[str] = set()
         for role in self.auth.user.roles or []:
-            if role.status != 0:
+            if role.status != 0 or getattr(role, "is_deleted", False):
                 continue
             for menu in role.menus or []:
                 if (
                     menu.status == 0
+                    and not getattr(menu, "is_deleted", False)
                     and menu.permission
                     and (settings.ENVIRONMENT == EnvironmentEnum.DEV or not menu.permission.startswith("module_demo:"))
                 ):
@@ -331,7 +329,6 @@ class UserService:
                             new_user = await UserCRUD(self.auth).create(data=user_create_data)
                             if user_create_schema.role_ids and len(user_create_schema.role_ids) > 0:
                                 await UserCRUD(self.auth).set_user_roles(user_ids=[new_user.id], role_ids=user_create_schema.role_ids)
-                                await invalidate_permission_cache(getattr(self.auth, "redis", None))
                     success_count += 1
                 except ValidationError as error:
                     message = "；".join(f"{'.'.join(map(str, detail['loc']))}: {detail['msg']}" for detail in error.errors(include_input=False))

@@ -3,7 +3,7 @@ conftest — 模块化 API 接口测试共享 fixture。
 
 提供:
 - test_client: FastAPI TestClient 实例 (session 级复用)
-- assert_route: 验证接口路由存在 (status_code != 404)
+- assert_route: 验证接口返回明确的预期状态码，异常直接失败
 """
 
 import os
@@ -261,9 +261,9 @@ def test_client(_api_client: TestClient) -> TestClient:
     return _api_client
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def auth_headers(_api_client: TestClient) -> dict[str, str]:
-    """session 级 admin 认证头，登录一次，所有测试复用。"""
+    """每个测试独立登录，避免退出登录或刷新令牌污染其他测试。"""
     resp = _api_client.post(
         "/system/auth/login",
         data={"username": "admin", "password": "admin123"},
@@ -283,7 +283,7 @@ def assert_route(
     method: str,
     path: str,
     *,
-    expected_status: int | None = None,
+    expected_status: int = 200,
     auth: dict[str, str] | None = None,
     **kwargs,
 ) -> None:
@@ -293,7 +293,7 @@ def assert_route(
         test_client: FastAPI TestClient 实例。
         method: HTTP 方法 (GET/POST/PUT/DELETE 等)。
         path: 接口路径。
-        expected_status: 期望的 HTTP 状态码。为 None 时仅校验路由存在 (!= 404)。
+        expected_status: 期望的 HTTP 状态码，默认要求成功 (200)。
         auth: 认证 headers（dict），传入则合并到请求头。
         **kwargs: 传递给 TestClient 请求方法的额外参数 (json/data/params/headers 等)。
     """
@@ -305,13 +305,5 @@ def assert_route(
     if headers:
         kwargs["headers"] = headers
 
-    try:
-        response = test_client.request(method, path, **kwargs)
-    except Exception:
-        # 后端代码异常（500 等），路由存在即不计为测试失败
-        return
-
-    if expected_status is not None:
-        assert response.status_code == expected_status, f"{method} {path} 期望 {expected_status}，实际 {response.status_code}"
-    else:
-        assert response.status_code != 404, f"{method} {path} 返回 404，路由未注册"
+    response = test_client.request(method, path, **kwargs)
+    assert response.status_code == expected_status, f"{method} {path} 期望 {expected_status}，实际 {response.status_code}"

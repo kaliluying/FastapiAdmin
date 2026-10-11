@@ -119,15 +119,33 @@ uv run pytest tests/plugin/module_ai -q
 uv run ruff check app tests --no-fix --output-format concise
 
 # frontend/
+pnpm lint:check
 pnpm test
 pnpm type-check
 pnpm build
 ```
 
-`backend/tests/conftest.py` 将数据库切到临时 SQLite，并模拟 Redis、限流器等；测试通过不能证明 MySQL/Redis、浏览器或外部模型的运行行为。`pnpm lint` 中的 ESLint、Prettier、Stylelint 脚本会修复或重写文件，仅在需要格式化且已检查工作区差异时运行。
+`backend/tests/conftest.py` 将数据库切到临时 SQLite，并模拟 Redis、限流器等；测试通过不能证明 MySQL/Redis、浏览器或外部模型的运行行为。`pnpm lint:check` 和 Ruff 默认只报告问题；`pnpm lint` 会修复或重写前端文件，后端需要修复时显式使用 `ruff check --fix`。
+
+前端依赖安装后的 `prepare` 会从仓库根目录安装 Husky；已有 checkout 在 `frontend/` 执行 `pnpm prepare` 启用。提交前按暂存文件运行前端 lint 与后端 Ruff，只报告错误，不自动修复；Python 检查复用 `backend/.venv`，需先完成 `uv sync`。检查失败会阻止提交，类型检查、测试及跨层验收仍按改动范围执行。`pnpm test:hooks` 在临时 Git 仓库验证 hook 安装、前后端错误拦截及暂存和未暂存内容保留。
+
+本地检查入口从 `frontend/` 执行，复用现有命令，任何步骤失败即停止并返回失败：
+
+```bash
+corepack pnpm check frontend  # 前端类型与单测
+corepack pnpm check backend   # 后端测试，临时 SQLite/模拟 Redis
+corepack pnpm check table     # 前端类型/单测 + 375/390/640px 普通点击回归
+corepack pnpm check logs      # 前端类型/单测 + 后端日志目标测试 + 日志追问浏览器验收
+corepack pnpm test:tooling    # hook 暂存隔离、入口与验收产物保留回归
+```
+
+Husky 和 fixture 从 frontend 的 `packageManager` 经 Corepack 选择 pnpm，避免继承 Corepack 环境后误用全局版本。需先准备项目工具链与依赖；检查不安装依赖、不启动普通开发服务，也不代替真实数据库或供应商验收。
+
+检查结果及隔离浏览器产物保留在仓库忽略的 `.local/acceptance/` 独立目录。只导出规定的结果 JSON 和 PNG；JSON 中的凭据字段及标记会脱敏，不保存原始日志、环境文件或数据库。manifest 标记成功/失败、提交、工作区是否有改动和差异摘要；有改动的证据不能仅以提交号代表源码。本地 fixture 截图只含专用测试数据，外部服务模式不自动归档。
 
 跨层功能至少选择一个可重复的用户场景，验证真实登录与权限、浏览器操作、API 响应、持久化结果及错误态。例如知识库链路要等后台索引完成，再检查文档状态和实际召回；只看到上传接口成功不足以验收检索功能。
 
+`backend/integration/README.md` 提供不继承测试 mocks 的真实 MySQL/Redis 隔离验收，覆盖显式初始化、生产结构检查、真实限流窗口以及 SIGKILL 后文档恢复和 BM25 召回。GitHub Actions 工作流已移除，真实依赖和浏览器验收按对应说明手动执行；本地验收不代表外部模型或生产验收。
 
 ## 修改功能的路径
 

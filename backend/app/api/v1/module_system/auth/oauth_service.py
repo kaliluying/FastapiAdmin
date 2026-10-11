@@ -394,9 +394,9 @@ async def complete_oauth_login(
     if user.status == 1:
         raise CustomException(msg="用户已被停用")
 
-    user = await UserCRUD(AuthSchema(db=db, user=None, check_data_scope=False)).update_last_login_crud(id=user.id)
-    if not user:
-        raise CustomException(msg="用户不存在")
+    await UserCRUD(AuthSchema(db=db, user=None, check_data_scope=False)).update_last_login(id=user.id)
+    # The callback is GET, so persist the login timestamp before its read-only dependency rolls back.
+    await db.commit()
 
     login_type = f"oauth_{provider}"
     token = await LoginService.create_token(request=request, redis=redis, user=user, login_type=login_type)

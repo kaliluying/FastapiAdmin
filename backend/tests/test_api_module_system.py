@@ -27,7 +27,7 @@ class TestAuth:
         assert_route(test_client, "POST", "/system/auth/logout", auth=auth_headers, json={"token": "mock_token"})
 
     def test_auth_refresh(self, test_client: TestClient) -> None:
-        assert_route(test_client, "POST", "/system/auth/token/refresh", json={"refresh_token": "mock_refresh_token"})
+        assert_route(test_client, "POST", "/system/auth/token/refresh", expected_status=401, json={"refresh_token": "mock_refresh_token"})
 
     def test_auth_auto_login_users(self, test_client: TestClient, auth_headers: dict) -> None:
         assert_route(test_client, "GET", "/system/auth/auto-login/users", auth=auth_headers)

@@ -29,6 +29,7 @@ vi.mock("element-plus", () => ({
   ElMessageBox: { confirm: vi.fn().mockResolvedValue(true) },
 }));
 vi.mock("@vueuse/core", () => ({
+  useIntervalFn: () => ({ pause: vi.fn(), resume: vi.fn() }),
   useMediaQuery: () => false,
   useElementBounding: () => ({ top: { value: 0 } }),
   useWindowSize: () => ({ height: { value: 1000 } }),
@@ -123,25 +124,19 @@ afterEach(() => {
 });
 
 describe("chat request lifecycle", () => {
-  it("invalidates pending session creation on connection loss without replaying", async () => {
-    let resolve!: (response: unknown) => void;
-    createSession.mockImplementationOnce(
-      () =>
-        new Promise((done) => {
-          resolve = done;
-        })
-    );
-    const pending = page.handleSendMessage("断线前的问题");
+  it("ignores late completion after connection loss without replaying or precreating a session", async () => {
+    await page.handleSendMessage("断线前的问题");
+    const request = socket.sent[0]!;
     socket.onclose?.();
     page.toggleConnection();
     await flushPromises();
     const reconnected = TestSocket.instances[1]!;
     reconnected.onopen?.();
-    resolve({ data: { code: 200, data: { id: "late-session" } } });
-    await pending;
-    expect(socket.sent).toHaveLength(0);
+    socket.event("done", request.request_id, { session_id: "late-session" });
+    expect(socket.sent).toHaveLength(1);
     expect(reconnected.sent).toHaveLength(0);
-    expect(clearDraft).not.toHaveBeenCalled();
+    expect(clearDraft).toHaveBeenCalledOnce();
+    expect(createSession).not.toHaveBeenCalled();
     expect(page.currentSessionId).toBeNull();
     expect(page.sending).toBe(false);
   });
@@ -188,25 +183,22 @@ describe("chat request lifecycle", () => {
     expect(page.sending).toBe(false);
   });
 
-  it("keeps draft when session creation fails and suppresses late creation", async () => {
-    createSession.mockRejectedValueOnce(new Error("offline"));
+  it("keeps draft when sending fails and suppresses completion after a new conversation", async () => {
+    socket.send = () => {
+      throw new Error("offline");
+    };
     await page.handleSendMessage("保留草稿");
     expect(clearDraft).not.toHaveBeenCalled();
     expect(page.sending).toBe(false);
     expect(page.error).toContain("草稿已保留");
-    let resolve!: (response: unknown) => void;
-    createSession.mockImplementationOnce(
-      () =>
-        new Promise((done) => {
-          resolve = done;
-        })
-    );
-    const pending = page.handleSendMessage("未完成创建");
+    socket.send = TestSocket.prototype.send;
+    await page.handleSendMessage("等待服务端会话");
+    const request = socket.sent[0]!;
     page.handleNewSession();
-    resolve({ data: { code: 200, data: { id: "obsolete" } } });
-    await pending;
+    socket.event("done", request.request_id, { session_id: "obsolete" });
     expect(page.currentSessionId).toBeNull();
-    expect(socket.sent).toHaveLength(0);
+    expect(socket.sent[1]).toEqual({ type: "cancel", request_id: request.request_id });
+    expect(createSession).not.toHaveBeenCalled();
   });
 
   it("makes failures retryable and restores history sources", async () => {

@@ -12,6 +12,7 @@ from typing import Any
 import anyio
 from whoosh import index
 from whoosh.fields import ID, STORED, TEXT, Schema
+from whoosh.query import Or, Term
 
 from app.config.path_conf import BASE_DIR
 from app.core.logger import logger
@@ -102,7 +103,7 @@ class BM25KnowledgeIndex:
 
         def _write():
             ix = self._get_index()
-            writer = ix.writer()
+            writer = ix.writer(timeout=10)
             try:
                 for chunk in chunks:
                     writer.add_document(
@@ -143,7 +144,7 @@ class BM25KnowledgeIndex:
                 - knowledge_base_id: 知识库ID
                 - document_id: 文档ID
         """
-        if not query.strip():
+        if not query.strip() or not knowledge_base_ids or top_k <= 0:
             return []
 
         def _search():
@@ -161,19 +162,12 @@ class BM25KnowledgeIndex:
                     q = parser.parse(query)
                 except Exception:
                     # 查询解析失败，使用通配符查询
-                    from whoosh.query import Term
-
                     q = Term("content", query)
 
-                search_results = searcher.search(q, limit=top_k * 2)  # 过滤前多召回一些
-
-                kb_id_set = {str(kb_id) for kb_id in knowledge_base_ids}
+                scope = Or([Term("knowledge_base_id", str(kb_id)) for kb_id in knowledge_base_ids])
+                search_results = searcher.search(q, limit=top_k, filter=scope)
 
                 for hit in search_results:
-                    # 过滤知识库范围
-                    if hit["knowledge_base_id"] not in kb_id_set:
-                        continue
-
                     results.append(
                         {
                             "chunk_id": hit["chunk_id"],
@@ -202,7 +196,7 @@ class BM25KnowledgeIndex:
 
         def _delete():
             ix = self._get_index()
-            writer = ix.writer()
+            writer = ix.writer(timeout=10)
             try:
                 writer.delete_by_term("document_id", str(document_id))
                 writer.commit()
@@ -220,7 +214,7 @@ class BM25KnowledgeIndex:
             return
 
         def _delete() -> None:
-            writer = self._get_index().writer()
+            writer = self._get_index().writer(timeout=10)
             try:
                 for chunk_id in ids:
                     writer.delete_by_term("chunk_id", chunk_id)

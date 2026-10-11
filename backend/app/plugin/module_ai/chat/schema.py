@@ -7,6 +7,8 @@ from pydantic import BaseModel, Field, field_validator
 from app.core.base_params import BaseQueryParam, UserByQueryParam
 from app.plugin.module_ai.config import validate_model_base_url
 
+from .runtime_logs import RuntimeLogQuerySchema
+
 
 class ChatQuerySchema(BaseModel):
     """WebSocket chat request."""
@@ -16,6 +18,8 @@ class ChatQuerySchema(BaseModel):
     files: list[dict[str, Any]] | None = Field(None, description="Ad-hoc file context")
     knowledge_base_ids: list[int] = Field(default_factory=list, max_length=20, description="Knowledge base IDs")
     request_id: str | None = Field(None, max_length=64, pattern=r"^[A-Za-z0-9_-]+$")
+    log_query: RuntimeLogQuerySchema | None = None
+    log_context_id: str | None = Field(None, max_length=32, pattern=r"^[a-f0-9]{32}$")
 
     @field_validator("files")
     @classmethod
@@ -66,6 +70,7 @@ class AiChatRequestSchema(BaseModel):
     message: str = Field(..., min_length=1, max_length=8_000, description="User message")
     session_id: str | None = Field(None, description="Session ID; creates a new session when omitted")
     knowledge_base_ids: list[int] = Field(default_factory=list, max_length=20, description="Knowledge base IDs")
+    log_context_id: str | None = Field(None, max_length=32, pattern=r"^[a-f0-9]{32}$")
 
     @field_validator("message")
     @classmethod
@@ -83,6 +88,7 @@ class AiChatResponseSchema(BaseModel):
     session_id: str = Field(..., description="Session ID")
     function_calls: list[dict[str, Any]] | None = Field(None, description="Function call metadata")
     action: dict[str, Any] | None = Field(None, description="Suggested action")
+    log_context_id: str | None = None
 
 
 ChatProtocol = Literal["openai", "openai_responses", "anthropic"]
@@ -151,3 +157,7 @@ class AiModelListRequestSchema(BaseModel):
     @classmethod
     def normalize_api_key(cls, value: str | None) -> str | None:
         return (value.strip() or None) if value is not None else None
+
+
+class AiUsageQuotaUpdateSchema(BaseModel):
+    daily_limit: int | None = Field(default=None, ge=0, le=1_000_000, strict=True, description="每日供应商调用次数；null 表示不限")

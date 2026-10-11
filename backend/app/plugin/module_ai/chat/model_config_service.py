@@ -6,15 +6,14 @@ from dataclasses import dataclass
 from urllib.parse import urlsplit
 
 import httpx
-
 from cryptography.fernet import Fernet, InvalidToken
 from sqlalchemy import select
 
 from app.config.setting import settings as core_settings
 from app.core.base_schema import AuthSchema
 from app.core.database import async_db_session
-from app.core.logger import logger
 from app.core.exceptions import CustomException
+from app.core.logger import logger
 from app.plugin.module_ai.config import settings, validate_model_base_url
 
 from .model import AiModelConfigModel

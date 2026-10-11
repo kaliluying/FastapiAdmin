@@ -10,6 +10,13 @@ export interface ChatSessionListQuery extends PageQuery {
 }
 
 export const AiChatAPI = {
+  getRuntimeLogStatus() {
+    return request<ApiResponse<{ can_query: boolean; enabled: boolean }>>({
+      url: `${API_PATH}/runtime-logs/status`,
+      method: "get",
+      showSuccessMessage: false,
+    });
+  },
   parseAttachment(body: FormData) {
     return request<
       ApiResponse<{ name: string; size: number; type: string; content: string; truncated: boolean }>
@@ -54,7 +61,12 @@ export const AiChatAPI = {
     });
   },
 
-  chat(body: { message: string; session_id?: string | null; knowledge_base_ids?: number[] }) {
+  chat(body: {
+    message: string;
+    session_id?: string | null;
+    knowledge_base_ids?: number[];
+    log_context_id?: string | null;
+  }) {
     return request<ApiResponse<AiChatResponse>>({
       url: `${API_PATH}/ai-chat`,
       method: "post",
@@ -66,6 +78,35 @@ export const AiChatAPI = {
     return request<ApiResponse<ChatSessionDetail>>({
       url: `${API_PATH}/detail/${sessionId}`,
       method: "get",
+    });
+  },
+
+  getUsage() {
+    return request<ApiResponse<AiUsageSummary>>({ url: `${API_PATH}/usage`, method: "get" });
+  },
+
+  getAdminUsage(userId?: number, day?: string) {
+    return request<ApiResponse<AiUsageSummary>>({
+      url: `${API_PATH}/usage/admin`,
+      method: "get",
+      params: { user_id: userId, day },
+    });
+  },
+
+  updateUsageQuota(userId: number, dailyLimit: number | null) {
+    return request<ApiResponse<AiUsageSummary>>({
+      url: `${API_PATH}/usage/quota/${userId}`,
+      method: "put",
+      data: { daily_limit: dailyLimit },
+    });
+  },
+
+  checkModelCapabilities(body: AiModelConfigUpdate) {
+    return request<ApiResponse<AiModelCapabilityCheck>>({
+      url: `${API_PATH}/model-config/check`,
+      method: "post",
+      data: body,
+      timeout: 70_000,
     });
   },
 
@@ -150,6 +191,7 @@ export interface AiChatResponse {
     arguments: Record<string, any>;
   }> | null;
   action: Record<string, any> | null;
+  log_context_id?: string | null;
 }
 
 export interface ChatSessionDetail {
@@ -202,4 +244,37 @@ export interface AiModelConfigUpdate {
   openai_base_url: string;
   openai_model: string;
   openai_api_key?: string;
+}
+
+export interface AiUsageSummary {
+  user_id: number;
+  day: string;
+  timezone: string;
+  calls: number;
+  daily_limit: number | null;
+  remaining: number | null;
+  users?: { id: number; username: string }[];
+  items: {
+    model: string;
+    protocol: string;
+    purpose: string;
+    status: string;
+    calls: number;
+    input_tokens: number | null;
+    output_tokens: number | null;
+    total_tokens: number | null;
+    known_usage_calls: number;
+    latency_ms: number | null;
+  }[];
+}
+
+export interface AiModelCapabilityCheck {
+  protocol: string;
+  model: string;
+  results: {
+    capability: "complete" | "stream" | "tools";
+    status: "passed" | "failed";
+    message: string;
+    latency_ms: number;
+  }[];
 }

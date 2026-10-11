@@ -8,13 +8,15 @@ const { listProviderModels } = vi.hoisted(() => ({ listProviderModels: vi.fn() }
 vi.mock("@/api/module_ai/chat", () => ({
   default: {
     getModelConfig: vi.fn().mockResolvedValue({
-      data: { data: {
-        chat_protocol: "openai",
-        openai_base_url: "https://api.example.test/v1",
-        openai_model: "old-model",
-        openai_api_key_configured: true,
-        embedding_provider: "local",
-      } },
+      data: {
+        data: {
+          chat_protocol: "openai",
+          openai_base_url: "https://api.example.test/v1",
+          openai_model: "old-model",
+          openai_api_key_configured: true,
+          embedding_provider: "local",
+        },
+      },
     }),
     listProviderModels,
   },
@@ -29,7 +31,10 @@ const AutocompleteStub = defineComponent({
   setup(props, { emit, expose }) {
     const options = ref<{ value: string }[]>([]);
     expose({
-      focus: () => props.fetchSuggestions?.(props.modelValue, (items: { value: string }[]) => { options.value = items; }),
+      focus: () =>
+        props.fetchSuggestions?.(props.modelValue, (items: { value: string }[]) => {
+          options.value = items;
+        }),
     });
     return { options, emit };
   },
@@ -43,18 +48,19 @@ const AutocompleteStub = defineComponent({
 
 const stubs = {
   ElAutocomplete: AutocompleteStub,
-  ElButton: { template: '<button @click="$emit(\'click\')"><slot /></button>' },
+  ElButton: { template: "<button @click=\"$emit('click')\"><slot /></button>" },
   ElCard: { template: '<section><slot name="header" /><slot /></section>' },
-  ElForm: { template: '<form><slot /></form>' },
-  ElFormItem: { template: '<div><slot /></div>' },
-  ElSelect: { template: '<select><slot /></select>' },
-  ElOption: { template: '<option><slot /></option>' },
-  ElInput: { template: '<input />' },
-  ElTag: { template: '<span><slot /></span>' },
-  ElDivider: { template: '<hr /><slot />' },
-  ElDescriptions: { template: '<div><slot /></div>' },
-  ElDescriptionsItem: { template: '<div><slot /></div>' },
+  ElForm: { template: "<form><slot /></form>" },
+  ElFormItem: { template: "<div><slot /></div>" },
+  ElSelect: { template: "<select><slot /></select>" },
+  ElOption: { template: "<option><slot /></option>" },
+  ElInput: { template: "<input />" },
+  ElTag: { template: "<span><slot /></span>" },
+  ElDivider: { template: "<hr /><slot />" },
+  ElDescriptions: { template: "<div><slot /></div>" },
+  ElDescriptionsItem: { template: "<div><slot /></div>" },
   FaAiPageHeader: true,
+  UsagePanel: { template: '<div data-test="usage-panel" />' },
 };
 
 describe("Model configuration page", () => {
@@ -63,16 +69,29 @@ describe("Model configuration page", () => {
     const wrapper = mount(ModelConfigPage, { global: { stubs, directives: { auth: {} } } });
     await flushPromises();
 
-    await wrapper.findAll("button").find((button) => button.text() === "获取模型")!.trigger("click");
+    await wrapper
+      .findAll("button")
+      .find((button) => button.text() === "获取模型")!
+      .trigger("click");
     await flushPromises();
 
-    expect(listProviderModels).toHaveBeenCalledWith({ chat_protocol: "openai", openai_base_url: "https://api.example.test/v1" });
-    expect(wrapper.findAll(".model-option").map((option) => option.text())).toEqual(["model-a", "model-b"]);
+    expect(listProviderModels).toHaveBeenCalledWith({
+      chat_protocol: "openai",
+      openai_base_url: "https://api.example.test/v1",
+    });
+    expect(wrapper.findAll(".model-option").map((option) => option.text())).toEqual([
+      "model-a",
+      "model-b",
+    ]);
 
     await wrapper.findAll(".model-option")[1]!.trigger("click");
-    expect((wrapper.get('[data-test="model-input"').element as HTMLInputElement).value).toBe("model-b");
+    expect((wrapper.get('[data-test="model-input"').element as HTMLInputElement).value).toBe(
+      "model-b"
+    );
 
     await wrapper.get('[data-test="model-input"]').setValue("custom-model");
-    expect((wrapper.get('[data-test="model-input"').element as HTMLInputElement).value).toBe("custom-model");
+    expect((wrapper.get('[data-test="model-input"').element as HTMLInputElement).value).toBe(
+      "custom-model"
+    );
   });
 });

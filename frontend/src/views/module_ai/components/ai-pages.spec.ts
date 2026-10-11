@@ -14,7 +14,14 @@ const api = vi.hoisted(() => ({
 }));
 
 vi.mock("@/api/module_ai/memory", () => ({ AiMemoryAPI: { list: api.memoryList } }));
-vi.mock("@/api/module_ai/chat", () => ({ default: { getModelConfig: api.modelConfig } }));
+vi.mock("@/api/module_ai/chat", () => ({
+  default: {
+    getModelConfig: api.modelConfig,
+    getRuntimeLogStatus: vi
+      .fn()
+      .mockResolvedValue({ data: { data: { can_query: false, enabled: false } } }),
+  },
+}));
 vi.mock("@/api/module_ai/knowledge", () => ({
   default: { optionselect: api.bases, testRetrieval: api.retrieval },
 }));

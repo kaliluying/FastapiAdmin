@@ -76,6 +76,8 @@ async def test_bm25_indexing_skips_vector_dependencies_and_uses_chroma_ids(monke
         parse_status="pending",
         index_status="pending",
         error_message=None,
+        pending_file=None,
+        file_cleanup_paths=None,
     )
 
     class DocumentCrud:
@@ -204,7 +206,7 @@ async def test_delete_document_validates_all_ids_before_deleting_external_indexe
 
     db = AsyncMock(spec=AsyncSession)
     db.execute.return_value = SimpleNamespace(rowcount=1)
-    db.get.return_value = SimpleNamespace(file_path=None)
+    db.get.return_value = SimpleNamespace(file_path=None, file_cleanup_paths=None, pending_file=None)
     service = KnowledgeService(AuthSchema(db=db), store=store, bm25_index=bm25_index)
     with pytest.raises(CustomException) as error:
         await service.delete_document([41, 99])

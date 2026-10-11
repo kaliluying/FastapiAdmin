@@ -65,7 +65,7 @@ url = "https://pypi.org/simple"
 line-length = 200
 indent-width = 4
 preview = false
-fix = true
+fix = false
 show-fixes = true
 exclude = [
     ".bzr",

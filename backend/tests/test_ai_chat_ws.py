@@ -2,6 +2,7 @@ import json
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
 from typing import Any
+from unittest.mock import AsyncMock
 
 
 async def test_websocket_chat_rejects_missing_ticket(monkeypatch) -> None:
@@ -81,7 +82,12 @@ async def test_websocket_chat_rejects_invalid_token(monkeypatch) -> None:
 async def test_websocket_chat_uses_authenticated_service_instance(monkeypatch) -> None:
     from app.plugin.module_ai.chat import ws
 
-    auth = SimpleNamespace(user=SimpleNamespace(username="admin", is_superuser=True))
+    auth = SimpleNamespace(
+        user=SimpleNamespace(username="admin", is_superuser=True),
+        session_id="test_session",
+        redis=object(),
+    )
+    auth.model_copy = lambda **_: auth
 
     class FakeTransaction:
         async def __aenter__(self):
@@ -135,6 +141,7 @@ async def test_websocket_chat_uses_authenticated_service_instance(monkeypatch) -
 
     monkeypatch.setattr(ws, "async_db_session", fake_db_session)
     monkeypatch.setattr(ws, "_resolve_ws_auth", fake_resolve_auth)
+    monkeypatch.setattr(ws, "_verify_session", AsyncMock(return_value=auth))
     monkeypatch.setattr(ws.ChatService, "chat_query", fake_chat_query)
 
     websocket = FakeWebSocket()
@@ -154,7 +161,13 @@ async def test_websocket_chat_does_not_hold_transaction_during_stream(monkeypatc
             self.commit_count = 0
 
     fake_db = FakeDb()
-    auth = SimpleNamespace(user=SimpleNamespace(username="admin", is_superuser=True), db=fake_db)
+    auth = SimpleNamespace(
+        user=SimpleNamespace(username="admin", is_superuser=True),
+        db=fake_db,
+        session_id="test_session",
+        redis=object(),
+    )
+    auth.model_copy = lambda **_: auth
 
     @asynccontextmanager
     async def fake_db_session():
@@ -195,6 +208,7 @@ async def test_websocket_chat_does_not_hold_transaction_during_stream(monkeypatc
 
     monkeypatch.setattr(ws, "async_db_session", fake_db_session)
     monkeypatch.setattr(ws, "_resolve_ws_auth", fake_resolve_auth)
+    monkeypatch.setattr(ws, "_verify_session", AsyncMock(return_value=auth))
     monkeypatch.setattr(ws.ChatService, "chat_query", fake_chat_query)
 
     websocket = FakeWebSocket()

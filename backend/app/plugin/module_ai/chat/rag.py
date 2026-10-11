@@ -13,7 +13,8 @@ from app.core.logger import logger
 from app.plugin.module_ai.config import settings
 from app.plugin.module_ai.memory.service import MemoryService
 
-from .model_config_service import get_active_chat_model_config
+from .model_config_service import ChatModelRuntimeConfig, get_active_chat_model_config
+from .usage import provider_call
 
 MAX_QUERY_CHARS = 8_000
 MAX_DOCUMENT_CHARS = 6_000
@@ -192,6 +193,7 @@ class RagPromptBuilder:
             "你的任务是根据用户问题和检索上下文，帮助用户梳理事实、提炼依据、形成可执行的下一步建议。\n"
             "请优先根据检索上下文回答；如果上下文不足，请明确说明不确定，并提示用户需要补充哪些事实或材料。\n"
             "不要编造不存在的资料，不要给出超出上下文支持的确定结论。\n"
+            "当前知识问答没有运行日志工具结果，不得声称已查询后台日志或据此确认故障。\n"
             "回答必须包含：初步判断、依据方向、补充材料建议、下一步行动、风险提示。\n"
             "回答使用中文，表达清楚、具体、可执行。\n",
         ]
@@ -294,12 +296,14 @@ class RagPromptBuilder:
 
 
 class LangChainChatModel:
-    def __init__(self) -> None:
-        self.config = get_active_chat_model_config()
+    def __init__(self, config: ChatModelRuntimeConfig | None = None) -> None:
+        self.config = config or get_active_chat_model_config()
         self.llm: ChatOpenAI | ChatAnthropic
         if self.config.protocol == "anthropic":
             self.llm = ChatAnthropic(
                 api_key=self.config.api_key,
+                timeout=30,
+                max_retries=0,
                 base_url=self.config.base_url,
                 model_name=self.config.model,
                 temperature=0.7,
@@ -307,6 +311,8 @@ class LangChainChatModel:
         elif self.config.protocol == "openai_responses":
             self.llm = ChatOpenAI(
                 api_key=self.config.api_key,
+                timeout=30,
+                max_retries=0,
                 base_url=self.config.base_url,
                 model=self.config.model,
                 use_responses_api=True,
@@ -315,23 +321,34 @@ class LangChainChatModel:
         else:
             self.llm = ChatOpenAI(
                 api_key=self.config.api_key,
+                timeout=30,
+                max_retries=0,
                 base_url=self.config.base_url,
                 model=self.config.model,
                 temperature=0.7,
+                stream_usage=True,
             )
 
     async def complete(self, prompt: str) -> str:
-        response = await self.llm.ainvoke([HumanMessage(content=prompt)])
-        return content_to_text(response.content)
+        async with provider_call(self.config, "chat") as outcome:
+            response = await self.llm.ainvoke([HumanMessage(content=prompt)])
+            outcome["response"] = response
+            return content_to_text(response.content)
 
     async def stream(self, prompt: str) -> AsyncGenerator[str, None]:
-        async for chunk in self.llm.astream([HumanMessage(content=prompt)]):
-            text = content_to_text(chunk.content)
-            if text:
-                yield text
+        async with provider_call(self.config, "chat_stream") as outcome:
+            async for chunk in self.llm.astream([HumanMessage(content=prompt)]):
+                previous = outcome["response"]
+                outcome["response"] = previous + chunk if previous is not None and hasattr(previous, "__add__") else chunk
+                text = content_to_text(chunk.content)
+                if text:
+                    yield text
 
     async def request_tools(self, messages: list[BaseMessage], tools: list[dict[str, Any]]) -> AIMessage:
-        return await self.llm.bind_tools(tools).ainvoke(messages)
+        async with provider_call(self.config, "tools") as outcome:
+            response = await self.llm.bind_tools(tools).ainvoke(messages)
+            outcome["response"] = response
+            return response
 
 
 @lru_cache(maxsize=4)

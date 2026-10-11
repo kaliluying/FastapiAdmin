@@ -51,17 +51,24 @@ def test_current_user_can_change_password_and_login_with_new_password(
     )
     assert created.status_code == 200, created.text
 
-    login = test_client.post("/system/auth/login", data={"username": username, "password": old_password})
-    assert login.status_code == 200, login.text
-    own_headers = {"Authorization": f"Bearer {login.json()['data']['access_token']}"}
+    try:
+        login = test_client.post("/system/auth/login", data={"username": username, "password": old_password})
+        assert login.status_code == 200
+        own_headers = {"Authorization": f"Bearer {login.json()['data']['access_token']}"}
 
-    changed = test_client.put(
-        "/system/user/password/change",
-        headers=own_headers,
-        json={"old_password": old_password, "new_password": new_password},
-    )
-    assert changed.status_code == 200, changed.text
-    assert changed.json()["data"]["username"] == username
+        changed = test_client.put(
+            "/system/user/password/change",
+            headers=own_headers,
+            json={"old_password": old_password, "new_password": new_password},
+        )
+        assert changed.status_code == 200
+        assert changed.json()["data"]["username"] == username
 
-    assert test_client.post("/system/auth/login", data={"username": username, "password": old_password}).status_code != 200
-    assert test_client.post("/system/auth/login", data={"username": username, "password": new_password}).status_code == 200
+        assert test_client.post("/system/auth/login", data={"username": username, "password": old_password}).status_code == 401
+        assert test_client.post("/system/auth/login", data={"username": username, "password": new_password}).status_code == 200
+    finally:
+        user_id = created.json()["data"]["id"]
+        disabled = test_client.patch("/system/user/status/batch", headers=headers, json={"ids": [user_id], "status": 1})
+        assert disabled.status_code == 200
+        deleted = test_client.request("DELETE", "/system/user/delete", headers=headers, json=[user_id])
+        assert deleted.status_code == 200

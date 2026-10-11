@@ -1,5 +1,6 @@
 import json
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -10,6 +11,33 @@ from app.core import dependencies
 from app.core.base_schema import JWTOutSchema, RefreshTokenPayloadSchema
 from app.core.exceptions import CustomException
 from app.core.security import decode_access_token
+
+
+@pytest.mark.parametrize("cached", [False, True])
+async def test_http_auth_preserves_verified_login_session(monkeypatch, cached):
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    user_info = {"user_name": "admin", "session_id": "verified-http-session"}
+    state = SimpleNamespace()
+    if cached:
+        state.ctx = dependencies.RequestContext(jwt_user_info=user_info)
+    request = SimpleNamespace(state=state)
+    redis = FakeRedis()
+    user = SimpleNamespace(id=7, username="admin")
+    decode = AsyncMock(return_value=(user_info, user_info["session_id"]))
+    online = AsyncMock()
+    monkeypatch.setattr(dependencies, "_decode_token_info", decode)
+    monkeypatch.setattr(dependencies, "_check_token_online", online)
+    monkeypatch.setattr(dependencies, "_try_sliding_refresh", AsyncMock())
+    load_user = AsyncMock(return_value=user)
+    monkeypatch.setattr(dependencies, "_load_user_from_db", load_user)
+    async with AsyncSession() as db:
+        auth = await dependencies.get_current_user(request=request, db=db, redis=redis, token="synthetic-http-token")
+        assert auth.session_id == user_info["session_id"]
+        assert request.state.ctx.session_id == auth.session_id
+        assert "session_id" not in auth.model_dump()
+        online.assert_awaited_once_with(redis, auth.session_id)
+        assert decode.await_count == (0 if cached else 1)
 
 
 class FakeRedis:
@@ -226,11 +254,14 @@ async def test_websocket_ticket_is_single_use(monkeypatch) -> None:
 
     monkeypatch.setattr(dependencies, "_load_user_from_db", load_user)
     from sqlalchemy.ext.asyncio import AsyncSession
+    monkeypatch.setattr(dependencies, "async_db_session", lambda: AsyncSession())
 
     db = AsyncSession()
     first = await dependencies._verify_ws_ticket(ticket, db, redis)
 
     assert first.user.username == "admin"
+    assert first.session_id == session_id
+    assert "session_id" not in first.model_dump()
     with pytest.raises(CustomException) as replay_error:
         await dependencies._verify_ws_ticket(ticket, db, redis)
     assert replay_error.value.status_code == 401

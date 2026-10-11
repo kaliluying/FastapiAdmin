@@ -1,4 +1,4 @@
-﻿import json
+import json
 from collections.abc import AsyncGenerator
 from dataclasses import replace
 from typing import Any
@@ -20,9 +20,6 @@ from app.core.request_context import RequestContext
 from app.core.security import OAuth2Schema, decode_access_token
 
 WS_TICKET_PREFIX = "auth:ws_ticket:"
-PERMISSION_CACHE_PREFIX = "auth:permissions:"
-PERMISSION_CACHE_VERSION_KEY = "auth:permissions:version"
-PERMISSION_CACHE_TTL = 300
 
 
 def _write_request_transaction(method: str) -> bool:
@@ -138,42 +135,14 @@ async def _try_sliding_refresh(redis: Redis, session_id: str) -> None:
 def _build_permission_map(user: Any) -> dict[str, int]:
     permissions: dict[str, int] = {}
     for role in getattr(user, "roles", []) or []:
-        if getattr(role, "status", None) != 0:
+        if getattr(role, "status", None) != 0 or getattr(role, "is_deleted", False):
             continue
         for menu in getattr(role, "menus", []) or []:
             permission = getattr(menu, "permission", None)
-            if getattr(menu, "status", None) == 0 and permission:
+            if getattr(menu, "status", None) == 0 and not getattr(menu, "is_deleted", False) and permission:
                 permissions[permission] = menu.id
     return permissions
 
-
-async def _load_permission_map(redis: Redis, user: Any) -> dict[str, int]:
-    """Load permission IDs from Redis, rebuilding after a global version bump."""
-    try:
-        version = await RedisCURD(redis).get(PERMISSION_CACHE_VERSION_KEY) or "0"
-        raw = await RedisCURD(redis).get(f"{PERMISSION_CACHE_PREFIX}{version}:{user.id}")
-        if raw:
-            if isinstance(raw, bytes):
-                raw = raw.decode("utf-8")
-            parsed = json.loads(raw) if isinstance(raw, str) else raw
-            if isinstance(parsed, dict):
-                return {str(key): int(value) for key, value in parsed.items()}
-        permissions = _build_permission_map(user)
-        await RedisCURD(redis).set(f"{PERMISSION_CACHE_PREFIX}{version}:{user.id}", permissions, expire=PERMISSION_CACHE_TTL)
-        return permissions
-    except Exception as exc:
-        logger.debug("权限缓存不可用，回退到用户关系: {}", exc)
-        return _build_permission_map(user)
-
-
-async def invalidate_permission_cache(redis: Redis | None) -> None:
-    """Invalidate all derived permission maps after RBAC writes."""
-    if redis is None:
-        return
-    try:
-        await redis.incr(PERMISSION_CACHE_VERSION_KEY)
-    except Exception as exc:
-        logger.debug("权限缓存失效失败: {}", exc)
 
 async def _load_user_from_db(db: AsyncSession, username: str):
     """从数据库加载用户（含角色、菜单等关联的全量预加载）
@@ -206,11 +175,14 @@ async def _load_user_from_db(db: AsyncSession, username: str):
     if user.status == 1:
         raise CustomException(msg="用户已被停用", code=10401, status_code=401)
 
-    # 过滤不可用的角色和职位（在会话内完成，确保关联数据已加载）
-    if hasattr(user, "roles"):
-        user.roles = [role for role in user.roles if role and role.status == 0]
-
     return user
+
+
+async def _load_authenticated_user(username: str):
+    """Use a short-lived read session so request rollbacks cannot expire auth objects."""
+    async with async_db_session() as auth_db:
+        return await _load_user_from_db(auth_db, username)
+
 
 async def get_current_user(
     request: Request,
@@ -261,8 +233,8 @@ async def get_current_user(
     if not username:
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
 
-    user = await _load_user_from_db(db, username)
-    permission_map = await _load_permission_map(redis, user)
+    user = await _load_authenticated_user(username)
+    permission_map = _build_permission_map(user)
 
     # 设置请求上下文（仅在当前 request 对象上，业务方通过 request.state.ctx 读取）
     request.state.ctx = replace(
@@ -274,7 +246,7 @@ async def get_current_user(
     )
 
     # 返回的 auth.db 指向请求级事务会话，供后续读写操作使用
-    auth = AuthSchema(db=db, redis=redis, permission_map=permission_map, check_data_scope=False)
+    auth = AuthSchema(db=db, redis=redis, permission_map=permission_map, check_data_scope=False, session_id=session_id)
     auth.user = user
     return auth
 
@@ -325,6 +297,11 @@ async def _verify_ws_ticket(ticket: str, db: AsyncSession, redis: Redis) -> Auth
     session_id = str(ticket_data.get("session_id") or "")
     if not session_id:
         raise CustomException(msg="WebSocket ticket 无效", code=10401, status_code=401)
+    return await _verify_session(session_id, db, redis)
+
+
+async def _verify_session(session_id: str, db: AsyncSession, redis: Redis) -> AuthSchema:
+    """Revalidate the live session and current grants for each WebSocket request."""
     await _check_token_online(redis, session_id)
     session_raw = await RedisCURD(redis).get(f"{RedisInitKeyConfig.USER_SESSION.key}:{session_id}")
     if not session_raw:
@@ -338,8 +315,8 @@ async def _verify_ws_ticket(ticket: str, db: AsyncSession, redis: Redis) -> Auth
     username = user_info.get("user_name")
     if not username:
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
-    user = await _load_user_from_db(db, username)
-    auth = AuthSchema(db=db, redis=redis, permission_map=await _load_permission_map(redis, user), check_data_scope=False)
+    user = await _load_authenticated_user(username)
+    auth = AuthSchema(db=db, redis=redis, permission_map=_build_permission_map(user), check_data_scope=False, session_id=session_id)
     auth.user = user
     return auth
 
@@ -374,9 +351,9 @@ async def _verify_token(
     if not username:
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
 
-    user = await _load_user_from_db(db, username)
+    user = await _load_authenticated_user(username)
 
-    auth = AuthSchema(db=db, redis=redis, permission_map=await _load_permission_map(redis, user), check_data_scope=False)
+    auth = AuthSchema(db=db, redis=redis, permission_map=_build_permission_map(user), check_data_scope=False, session_id=session_id)
     auth.user = user
     return auth
 

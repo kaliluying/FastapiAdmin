@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import time
 import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.core.base_schema import AuthSchema
 from app.core.logger import logger
@@ -16,6 +18,11 @@ from .schema import ChatSessionCreateSchema, ChatSessionUpdateSchema
 MAX_STORED_MESSAGE_CHARS = 8_000
 MAX_STORED_RESPONSE_CHARS = 16_000
 MAX_STORED_RUNS = 50
+
+
+def run_identifier(run: dict[str, Any]) -> str:
+    """Keep legacy answers addressable without rewriting stored transcripts."""
+    return run.get("run_id") or hashlib.sha256(json.dumps(run, sort_keys=True, ensure_ascii=False, default=str).encode()).hexdigest()
 
 
 @dataclass(slots=True)
@@ -62,6 +69,7 @@ class ChatSessionCRUD:
         self.db = auth.db
         self.user_id = str(auth.user.id) if auth and auth.user and auth.user.id is not None else "anonymous"
         self.team_id = None
+        self.last_run_id: str | None = None
 
     async def get_by_id_crud(self, session_id: str) -> ChatSession | None:
         try:
@@ -122,12 +130,28 @@ class ChatSessionCRUD:
 
     async def append_run_crud(self, *, session_id: str, message: str, response: str, citations: list[dict[str, Any]] | None = None) -> bool:
         try:
-            obj = await self._get_model(session_id)
+            conditions = (
+                ChatSessionModel.session_id == session_id,
+                ChatSessionModel.user_id == self.user_id,
+                ChatSessionModel.is_deleted == False,  # noqa: E712
+            )
+            # Take the write lock before reading, including on SQLite; only saving holds this lock.
+            await self.db.execute(
+                update(ChatSessionModel).where(*conditions).values(runs=ChatSessionModel.runs)
+                .execution_options(synchronize_session=False)
+            )
+            result = await self.db.execute(
+                select(ChatSessionModel).where(*conditions).with_for_update()
+                .execution_options(populate_existing=True)
+            )
+            obj = result.scalars().first()
             if not obj:
                 return False
             runs = list(obj.runs or [])
+            self.last_run_id = uuid.uuid4().hex
             runs.append(
                 {
+                    "run_id": self.last_run_id,
                     "session_id": session_id,
                     "team_id": self.team_id,
                     "user_id": self.user_id,

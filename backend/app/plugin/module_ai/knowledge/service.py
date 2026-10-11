@@ -4,6 +4,8 @@ import asyncio
 import uuid
 from contextlib import suppress
 from datetime import datetime, timedelta
+from functools import partial
+from io import BytesIO
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -23,7 +25,7 @@ from .bm25_index import BM25KnowledgeIndex, get_cached_bm25_index
 from .chroma_store import ChromaKnowledgeStore, get_cached_chroma_store
 from .crud import KnowledgeBaseCRUD, KnowledgeChunkCRUD, KnowledgeDocumentCRUD
 from .embedding import EmbeddingClient, get_cached_embedding_client
-from .extractors import extract_text
+from .extractors import DocumentExtractionError, extract_text
 from .model import KnowledgeBaseModel, KnowledgeDocumentModel
 from .public import KnowledgeRetriever, accessible_knowledge_base_ids
 from .schema import (
@@ -31,6 +33,7 @@ from .schema import (
     KnowledgeBaseOutSchema,
     KnowledgeBaseQueryParam,
     KnowledgeBaseUpdateSchema,
+    KnowledgeChunkOutSchema,
     KnowledgeDocumentOutSchema,
     KnowledgeDocumentQueryParam,
     RetrievalTestSchema,
@@ -109,12 +112,7 @@ class KnowledgeService:
                 .values(index_status="failed", index_token=None, index_lease_until=None, error_message="文档处理多次中断，已停止自动重试，请检查服务后手动重建索引。")
             )
             jobs = (
-                await db.execute(
-                    select(KnowledgeDocumentModel.id, KnowledgeDocumentModel.created_id)
-                    .where(*cls._automatic_index_conditions(now))
-                    .order_by(KnowledgeDocumentModel.id)
-                    .limit(20)
-                )
+                await db.execute(select(KnowledgeDocumentModel.id, KnowledgeDocumentModel.created_id).where(*cls._automatic_index_conditions(now)).order_by(KnowledgeDocumentModel.id).limit(20))
             ).all()
             cleanup_ids = (
                 (
@@ -123,7 +121,7 @@ class KnowledgeService:
                         .where(
                             KnowledgeDocumentModel.is_deleted == False,
                             available,
-                            KnowledgeDocumentModel.index_cleanup_ids.is_not(None),
+                            or_(KnowledgeDocumentModel.index_cleanup_ids.is_not(None), KnowledgeDocumentModel.file_cleanup_paths.is_not(None)),
                             or_(KnowledgeDocumentModel.index_status == "success", and_(KnowledgeDocumentModel.index_status == "failed", KnowledgeDocumentModel.index_attempts >= INDEX_MAX_ATTEMPTS)),
                         )
                         .order_by(KnowledgeDocumentModel.id)
@@ -244,7 +242,77 @@ class KnowledgeService:
         for item in result.items:
             item["chunk_count"] = chunk_counts.get(item["id"], 0)
             item["file_path"] = self._safe_knowledge_path(item.get("file_path"))
+        pending_ids = set(
+            (await self.auth.db.execute(select(KnowledgeDocumentModel.id).where(KnowledgeDocumentModel.id.in_(document_ids), KnowledgeDocumentModel.pending_file.is_not(None)))).scalars().all()
+        )
+        for item in result.items:
+            item["replacement_pending"] = item["id"] in pending_ids
         return result.model_dump()
+
+    async def document_file(self, document_id: int) -> tuple[Path, str]:
+        document = await KnowledgeDocumentCRUD(self.auth).get_or_404(id=document_id)
+        await self.auth.db.refresh(document)
+        if not document.file_path:
+            raise CustomException(msg="原文件不存在", status_code=404)
+        return self._resolve_knowledge_path(document.file_path), Path(document.file_name.replace("\\", "/")).name
+
+    async def page_chunks(self, document_id: int, *, page_no: int, page_size: int) -> dict[str, Any]:
+        await KnowledgeDocumentCRUD(self.auth).get_or_404(id=document_id)
+        result = await KnowledgeChunkCRUD(self.auth).page(
+            offset=(page_no - 1) * page_size, limit=page_size, search={"document_id": document_id}, order_by=[{"chunk_index": "asc"}], out_schema=KnowledgeChunkOutSchema
+        )
+        return result.model_dump()
+
+    async def document_content(self, document_id: int) -> str:
+        path, _name = await self.document_file(document_id)
+        try:
+            content = await extract_text(path)
+        except DocumentExtractionError as exc:
+            raise CustomException(msg=str(exc)) from None
+        except Exception:
+            raise CustomException(msg="无法读取文档内容，请检查文件是否损坏或加密") from None
+        if len(content) > 2_000_000:
+            raise CustomException(msg="文档内容超过在线编辑上限，请下载后替换文件")
+        return content
+
+    async def update_document_content(self, document_id: int, content: str, background_tasks: Any) -> KnowledgeDocumentOutSchema:
+        if not content.strip():
+            raise CustomException(msg="文档内容不能为空")
+        document = await KnowledgeDocumentCRUD(self.auth).get_or_404(id=document_id)
+        filename = f"{Path(document.file_name).stem}.txt"
+        return await self.replace_document(document_id, UploadFile(filename=filename, file=BytesIO(content.encode("utf-8"))), background_tasks)
+
+    async def replace_document(self, document_id: int, file: UploadFile, background_tasks: Any) -> KnowledgeDocumentOutSchema:
+        document = await KnowledgeDocumentCRUD(self.auth).get_or_404(id=document_id)
+        saved = await self._save_upload_file(file)
+        pending = {
+            "file_path": self._safe_knowledge_path(saved),
+            "file_name": Path((file.filename or saved.name).replace("\\", "/")).name,
+            "file_type": saved.suffix.lstrip("."),
+            "file_size": saved.stat().st_size,
+        }
+        previous_pending = document.pending_file
+        cleanup_paths = list(document.file_cleanup_paths or [])
+        if previous_pending:
+            cleanup_paths.append(previous_pending["file_path"])
+        claimed = await self.auth.db.execute(
+            update(KnowledgeDocumentModel)
+            .where(
+                KnowledgeDocumentModel.id == document_id,
+                KnowledgeDocumentModel.is_deleted == False,
+                KnowledgeDocumentModel.index_status.not_in(("indexing", "deleting", "pending")),
+                KnowledgeDocumentModel.index_token.is_(None),
+            )
+            .values(pending_file=pending, file_cleanup_paths=cleanup_paths or None, parse_status="pending", index_status="pending", index_attempts=0, index_lease_until=None, error_message=None)
+        )
+        if claimed.rowcount != 1:
+            await self.auth.db.rollback()
+            saved.unlink(missing_ok=True)
+            raise CustomException(msg="文档正在处理，请完成后再替换", status_code=409)
+        await self.auth.db.commit()
+        await self.auth.db.refresh(document)
+        background_tasks.add_task(index_document_in_background, document_id, getattr(getattr(self.auth, "user", None), "id", None))
+        return self._document_output(document)
 
     async def upload_document(
         self,
@@ -279,7 +347,6 @@ class KnowledgeService:
 
     async def index_document(self, document_id: int, *, automatic: bool = False) -> KnowledgeDocumentOutSchema:
         document = await KnowledgeDocumentCRUD(self.auth).get_or_404(id=document_id, msg="knowledge document not found")
-        knowledge_base_id, file_name, file_path = document.knowledge_base_id, document.file_name, document.file_path
         now = datetime.now()
         token = uuid.uuid4().hex
         available = or_(KnowledgeDocumentModel.index_lease_until.is_(None), KnowledgeDocumentModel.index_lease_until <= now)
@@ -287,12 +354,14 @@ class KnowledgeService:
         if automatic:
             conditions.extend(self._automatic_index_conditions(now))
         else:
-            conditions.extend([
-                KnowledgeDocumentModel.is_deleted == False,
-                KnowledgeDocumentModel.index_status != "deleting",
-                or_(KnowledgeDocumentModel.index_token.is_(None), available),
-                or_(KnowledgeDocumentModel.index_status != "indexing", available),
-            ])
+            conditions.extend(
+                [
+                    KnowledgeDocumentModel.is_deleted == False,
+                    KnowledgeDocumentModel.index_status != "deleting",
+                    or_(KnowledgeDocumentModel.index_token.is_(None), available),
+                    or_(KnowledgeDocumentModel.index_status != "indexing", available),
+                ]
+            )
         claim = await self.auth.db.execute(
             update(KnowledgeDocumentModel)
             .where(*conditions)
@@ -308,6 +377,11 @@ class KnowledgeService:
         if claim.rowcount != 1:
             raise CustomException(msg="文档正在处理，请稍后刷新状态", status_code=409)
         await self.auth.db.refresh(document)
+        knowledge_base_id = document.knowledge_base_id
+        original_file_path = document.file_path
+        pending_file = document.pending_file
+        file_name = pending_file["file_name"] if pending_file else document.file_name
+        file_path = pending_file["file_path"] if pending_file else document.file_path
         await self.auth.db.commit()
         heartbeat = asyncio.create_task(self._renew_index_lease(document_id, token, asyncio.current_task()))
         doc_crud = KnowledgeDocumentCRUD(self.auth)
@@ -378,7 +452,13 @@ class KnowledgeService:
                 await self.auth.db.commit()
 
             failure_message = "索引记录保存失败，请稍后重建索引；若仍失败，请联系管理员检查数据库连接。"
-            await self._update_index_claim(document_id, token, index_cleanup_ids=old_ids or None, index_token=None, index_lease_until=None)
+            file_changes = {}
+            if pending_file:
+                cleanup_paths = list(document.file_cleanup_paths or [])
+                if original_file_path:
+                    cleanup_paths.append(original_file_path)
+                file_changes = {**pending_file, "pending_file": None, "file_cleanup_paths": cleanup_paths or None}
+            await self._update_index_claim(document_id, token, index_cleanup_ids=old_ids or None, index_token=None, index_lease_until=None, **file_changes)
             await KnowledgeChunkCRUD(self.auth).replace_chunks(
                 knowledge_base_id=knowledge_base_id,
                 document_id=document_id,
@@ -395,6 +475,8 @@ class KnowledgeService:
             await self.auth.db.rollback()
             if isinstance(exc, asyncio.CancelledError):
                 failure_message = "文档处理已中断，请重新索引；若仍失败，请联系管理员检查服务状态。"
+            elif stage == "parse" and isinstance(exc, DocumentExtractionError):
+                failure_message = str(exc)
             elif stage == "parse" and isinstance(exc, FileNotFoundError):
                 failure_message = "原文件不存在，请重新上传文档；若仍失败，请联系管理员检查文件存储。"
             elif stage == "parse" and isinstance(exc, PermissionError):
@@ -442,7 +524,7 @@ class KnowledgeService:
                 await heartbeat
 
         try:
-            if old_ids:
+            if old_ids or pending_file or document.file_cleanup_paths:
                 await self.cleanup_document_indexes(document_id)
         except Exception:
             logger.error("清理旧索引分块失败: document_id={}", document_id)
@@ -463,7 +545,7 @@ class KnowledgeService:
                 KnowledgeDocumentModel.id == document_id,
                 KnowledgeDocumentModel.is_deleted == False,
                 KnowledgeDocumentModel.index_status.in_(("success", "failed")),
-                KnowledgeDocumentModel.index_cleanup_ids.is_not(None),
+                or_(KnowledgeDocumentModel.index_cleanup_ids.is_not(None), KnowledgeDocumentModel.file_cleanup_paths.is_not(None)),
                 or_(KnowledgeDocumentModel.index_token.is_(None), KnowledgeDocumentModel.index_lease_until <= datetime.now()),
             )
             .values(index_token=token, index_lease_until=datetime.now() + timedelta(seconds=INDEX_LEASE_SECONDS))
@@ -473,13 +555,21 @@ class KnowledgeService:
             return
         document = await self.auth.db.get(KnowledgeDocumentModel, document_id, populate_existing=True)
         cleanup_ids = document.index_cleanup_ids or []
+        file_cleanup_paths = document.file_cleanup_paths or []
         successful = document.index_status == "success"
         await self.auth.db.commit()
         heartbeat = asyncio.create_task(self._renew_index_lease(document_id, token, asyncio.current_task()))
         try:
             vector, bm25 = self._index_backends_to_clean()
             await self._delete_index_chunks(cleanup_ids, vector=vector, bm25=bm25)
-            await self._update_index_claim(document_id, token, index_cleanup_ids=None, index_token=None, index_lease_until=None, **({"error_message": None} if successful else {}))
+            for path in file_cleanup_paths:
+                safe = self._safe_knowledge_path(path)
+                if safe is None:
+                    raise CustomException(msg="知识库文档路径非法")
+                await anyio.to_thread.run_sync(partial((UPLOAD_DIR / safe).unlink, missing_ok=True))
+            await self._update_index_claim(
+                document_id, token, file_cleanup_paths=None, index_cleanup_ids=None, index_token=None, index_lease_until=None, **({"error_message": None} if successful else {})
+            )
             await self.auth.db.commit()
         except (Exception, asyncio.CancelledError):
             await self.auth.db.rollback()
@@ -563,7 +653,7 @@ class KnowledgeService:
                 KnowledgeDocumentModel.index_status.not_in(("indexing", "deleting")),
                 KnowledgeDocumentModel.index_token.is_(None),
             )
-            .values(index_status="deleting")
+            .values(index_status="deleting", index_lease_until=None)
         )
         if claimed.rowcount != len(normalized_ids):
             await self.auth.db.rollback()
@@ -599,7 +689,11 @@ class KnowledgeService:
             await self.auth.db.rollback()
             return
         document = await self.auth.db.get(KnowledgeDocumentModel, document_id, populate_existing=True)
-        file_path = document.file_path
+        file_paths = list(document.file_cleanup_paths or [])
+        if document.file_path:
+            file_paths.append(document.file_path)
+        if document.pending_file:
+            file_paths.append(document.pending_file["file_path"])
         await self.auth.db.commit()
         heartbeat = asyncio.create_task(self._renew_index_lease(document_id, token, asyncio.current_task()))
         try:
@@ -608,12 +702,14 @@ class KnowledgeService:
                 await self._get_store().delete_document(document_id)
             if bm25:
                 await self._get_bm25_index().delete_by_document(document_id)
-            if file_path:
+            for file_path in file_paths:
                 relative_path = self._safe_knowledge_path(file_path)
                 if relative_path is None:
                     raise CustomException(msg="知识库文档路径非法")
-                await anyio.to_thread.run_sync(lambda: (UPLOAD_DIR / relative_path).unlink(missing_ok=True))
-            await self._update_index_claim(document_id, token, file_path=None, index_status="deleted", index_token=None, index_lease_until=None, index_cleanup_ids=None)
+                await anyio.to_thread.run_sync(partial((UPLOAD_DIR / relative_path).unlink, missing_ok=True))
+            await self._update_index_claim(
+                document_id, token, file_path=None, pending_file=None, file_cleanup_paths=None, index_status="deleted", index_token=None, index_lease_until=None, index_cleanup_ids=None
+            )
             await self.auth.db.commit()
         except (Exception, asyncio.CancelledError):
             await self.auth.db.rollback()
@@ -752,6 +848,7 @@ class KnowledgeService:
         """Build a document response without exposing the server filesystem."""
         output = KnowledgeDocumentOutSchema.model_validate(document)
         output.file_path = cls._safe_knowledge_path(output.file_path)
+        output.replacement_pending = bool(getattr(document, "pending_file", None))
         return output
 
     def _get_store(self) -> ChromaKnowledgeStore:
