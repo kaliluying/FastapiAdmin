@@ -1,1 +1,1 @@
-pnpm dlx commitlint --edit $1
+frontend/node_modules/.bin/commitlint --config frontend/commitlint.config.cjs --edit "$1"

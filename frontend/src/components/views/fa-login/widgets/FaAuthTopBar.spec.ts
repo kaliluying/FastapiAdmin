@@ -39,6 +39,7 @@ vi.mock("@/config", () => ({
 
 function renderTopBar() {
   return mount(FaAuthTopBar, {
+    attachTo: document.body,
     props: { panelAlign: "right" },
     global: {
       mocks: { $t: (key: string) => key },
@@ -64,7 +65,7 @@ describe("login settings accessibility", () => {
   it("uses named native buttons and exposes selected theme colors", async () => {
     const wrapper = renderTopBar();
     const buttons = wrapper.findAll("button");
-    expect(buttons.length).toBe(6);
+    expect(buttons.length).toBe(7);
     for (const button of buttons) {
       expect(button.attributes("type")).toBe("button");
       expect(button.attributes("aria-label")).toBeTruthy();
@@ -75,6 +76,22 @@ describe("login settings accessibility", () => {
     await wrapper.get('button[aria-label="主题色 #0F9D77"]').trigger("click");
     expect(changeTheme).toHaveBeenCalledWith("#0F9D77");
     expect(reload).toHaveBeenCalledOnce();
+    wrapper.unmount();
+  });
+
+  it("reveals mobile settings and returns focus to the trigger on Escape", async () => {
+    const wrapper = renderTopBar();
+    const trigger = wrapper.get(".auth-mobile-settings");
+    expect(trigger.attributes("aria-expanded")).toBe("false");
+    expect(trigger.attributes("aria-controls")).toBe("auth-page-settings");
+    await trigger.trigger("click");
+    expect(trigger.attributes("aria-expanded")).toBe("true");
+    expect(wrapper.get("#auth-page-settings").classes()).toContain(
+      "auth-top-bar-actions-panel--open"
+    );
+    await wrapper.get("header").trigger("keydown", { key: "Escape" });
+    expect(trigger.attributes("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(trigger.element);
     wrapper.unmount();
   });
 

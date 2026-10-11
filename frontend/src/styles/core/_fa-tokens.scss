@@ -55,6 +55,15 @@ $fa-info: #647387;
   --fa-motion-control: 120ms;
   --fa-motion-page: 200ms;
   --fa-overlay-shadow: 0 18px 40px rgb(15 23 42 / 12%);
+  --fa-color-brand-panel: #152548;
+  --fa-color-brand-panel-border: #304057;
+  --fa-color-brand-panel-text: #f4f7fb;
+  --fa-color-brand-panel-muted: #c1cede;
+  --fa-color-brand-panel-accent: #aac3ff;
+  --fa-color-brand-panel-surface: rgb(255 255 255 / 5%);
+  --fa-color-brand-panel-surface-hover: rgb(255 255 255 / 10%);
+  --fa-color-brand-panel-divider: rgb(255 255 255 / 15%);
+  --fa-color-brand-panel-action-hover: #dce7f5;
 
   // Compatibility aliases retained for existing runtime theme and Tailwind consumers.
   --default-bg-color: var(--fa-color-canvas);

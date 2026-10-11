@@ -1,14 +1,19 @@
 <template>
   <section class="fa-enterprise-intro" aria-labelledby="enterprise-intro-title">
+    <div class="fa-enterprise-intro__visual" aria-hidden="true">
+      <div class="fa-enterprise-intro__sheet"></div>
+      <div class="fa-enterprise-intro__sheet"></div>
+      <div class="fa-enterprise-intro__sheet"></div>
+    </div>
     <div class="fa-enterprise-intro__content">
       <div class="fa-enterprise-intro__eyebrow">
         <span aria-hidden="true"></span>
-        FASTCORE / 工作空间
+        知识 · 对话 · 协作
       </div>
 
       <div class="fa-enterprise-intro__header">
-        <h2 id="enterprise-intro-title">让知识进入<br />日常工作。</h2>
-        <p>在一个地方整理内部资料、获取有依据的回答，并管理团队的工作权限。</p>
+        <h2 id="enterprise-intro-title">让知识流动，<br />让工作向前。</h2>
+        <p>从一份文档，到一个有依据的回答。<br />在这里，连接团队的知识与日常工作。</p>
       </div>
 
       <div class="fa-enterprise-intro__highlights" aria-label="主要能力">
@@ -25,7 +30,10 @@
         </article>
       </div>
 
-      <div class="fa-enterprise-intro__footer">知识库 / AI 对话 / 系统管理</div>
+      <div class="fa-enterprise-intro__footer">
+        <span>FastCore</span>
+        <span>你的团队知识空间</span>
+      </div>
     </div>
   </section>
 </template>
@@ -37,17 +45,17 @@ const highlights = [
   {
     icon: "ri:book-open-line",
     title: "整理知识",
-    description: "集中管理文档与检索内容",
+    description: "让团队资料有序可寻",
   },
   {
     icon: "ri:chat-3-line",
     title: "获得回答",
-    description: "在对话中查看回答依据",
+    description: "在对话中，追溯回答依据",
   },
   {
     icon: "ri:shield-user-line",
     title: "控制访问",
-    description: "按角色管理页面和操作权限",
+    description: "为不同角色，划定工作边界",
   },
 ];
 </script>
@@ -60,22 +68,72 @@ const highlights = [
   width: 100%;
   height: 100%;
   min-height: 100%;
-  padding: clamp(5rem, 8vw, 7.5rem) clamp(2rem, 6vw, 7rem) 3rem;
+  padding: 8rem clamp(2.5rem, 5vw, 5.5rem) 2.5rem;
   overflow: hidden;
-  color: #e7edf5;
-  background: #152548;
+  color: var(--fa-color-brand-panel-text);
+  background: var(--fa-color-brand-panel);
+  border-radius: 24px;
 }
 
 .fa-enterprise-intro::before {
   position: absolute;
-  inset: 0;
+  inset: auto 0 0;
+  height: 45%;
   pointer-events: none;
   content: "";
-  background: repeating-linear-gradient(
-    135deg,
-    transparent 0 82px,
-    rgb(255 255 255 / 3%) 83px 84px
-  );
+  background-image: radial-gradient(var(--fa-color-brand-panel-divider) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(transparent, #000);
+}
+
+.fa-enterprise-intro__visual {
+  position: absolute;
+  right: -110px;
+  bottom: 15%;
+  width: 330px;
+  height: 390px;
+  pointer-events: none;
+  transform: rotate(-12deg);
+}
+
+.fa-enterprise-intro__sheet {
+  position: absolute;
+  inset: 0;
+  background: var(--fa-color-brand-panel-surface);
+  border: 1px solid var(--fa-color-brand-panel-divider);
+  border-radius: 18px;
+}
+
+.fa-enterprise-intro__sheet:nth-child(1) {
+  transform: translate(-72px, -42px) rotate(-12deg);
+}
+
+.fa-enterprise-intro__sheet:nth-child(2) {
+  transform: translate(-36px, -21px) rotate(-6deg);
+}
+
+.fa-enterprise-intro__sheet:last-child::before {
+  position: absolute;
+  inset: 36px 32px auto;
+  height: 8px;
+  content: "";
+  background: var(--fa-color-brand-panel-divider);
+  border-radius: 4px;
+  box-shadow:
+    0 32px 0 var(--fa-color-brand-panel-surface-hover),
+    0 64px 0 var(--fa-color-brand-panel-surface-hover),
+    0 96px 0 var(--fa-color-brand-panel-surface-hover);
+}
+
+.fa-enterprise-intro__sheet:last-child::after {
+  position: absolute;
+  right: 32px;
+  bottom: 32px;
+  width: 42px;
+  height: 42px;
+  content: "";
+  border: 1px solid var(--fa-color-brand-panel-divider);
+  border-radius: 50%;
 }
 
 .fa-enterprise-intro__content {
@@ -83,121 +141,136 @@ const highlights = [
   z-index: 1;
   display: flex;
   flex-direction: column;
-  width: min(680px, 100%);
-  min-height: min(650px, 100%);
+  width: 100%;
+  max-width: 580px;
 }
 
 .fa-enterprise-intro__eyebrow {
   display: flex;
   gap: 12px;
   align-items: center;
-  font-size: 11px;
-  font-weight: 700;
-  color: #aac3ff;
-  letter-spacing: 0.12em;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fa-color-brand-panel-accent);
+  letter-spacing: 0.18em;
 }
 
 .fa-enterprise-intro__eyebrow span {
-  width: 24px;
-  height: 1px;
+  width: 7px;
+  height: 7px;
   background: currentcolor;
+  border-radius: 50%;
 }
 
 .fa-enterprise-intro__header {
-  margin-top: clamp(2.5rem, 5vw, 5rem);
+  margin-top: 2rem;
 }
 
 .fa-enterprise-intro__header h2 {
   margin: 0;
-  font-size: clamp(3rem, 4.4vw, 5.3rem);
-  font-weight: 670;
-  line-height: 1.12;
-  color: #fff;
-  letter-spacing: -0.055em;
+  font-size: clamp(2.75rem, 4.1vw, 4.5rem);
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--fa-color-brand-panel-text);
+  letter-spacing: -0.045em;
 }
 
 .fa-enterprise-intro__header p {
-  max-width: 30rem;
+  max-width: 25rem;
   margin: 1.5rem 0 0;
-  font-size: clamp(1rem, 1.2vw, 1.125rem);
+  font-size: 15px;
   line-height: 1.8;
-  color: #c5d4f4;
+  color: var(--fa-color-brand-panel-muted);
 }
 
 .fa-enterprise-intro__highlights {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0;
-  margin-top: clamp(3rem, 6vw, 5rem);
-  border-top: 1px solid rgb(255 255 255 / 20%);
+  gap: 1.25rem;
+  margin-top: 3rem;
 }
 
 .fa-enterprise-intro__highlight {
+  display: flex;
+  gap: 16px;
+  align-items: center;
   min-width: 0;
-  padding: 1.5rem 1.25rem 0 0;
-}
-
-.fa-enterprise-intro__highlight + .fa-enterprise-intro__highlight {
-  padding-left: 1.25rem;
-  border-left: 1px solid rgb(255 255 255 / 14%);
 }
 
 .fa-enterprise-intro__highlight > .fa-svg-icon {
-  font-size: 20px;
-  color: #aac3ff;
+  flex-shrink: 0;
+  padding: 10px;
+  font-size: 40px;
+  color: var(--fa-color-brand-panel-accent);
+  background: var(--fa-color-brand-panel-surface);
+  border: 1px solid var(--fa-color-brand-panel-divider);
+  border-radius: 12px;
 }
 
 .fa-enterprise-intro__highlight h3 {
-  margin: 1rem 0 0.35rem;
+  margin: 0 0 4px;
   font-size: 14px;
   font-weight: 650;
-  color: #fff;
+  color: var(--fa-color-brand-panel-text);
 }
 
 .fa-enterprise-intro__highlight p {
   margin: 0;
   font-size: 12px;
   line-height: 1.55;
-  color: #b7c8e8;
+  color: var(--fa-color-brand-panel-muted);
 }
 
 .fa-enterprise-intro__footer {
-  padding-top: 2rem;
-  margin-top: auto;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding-top: 1.25rem;
+  margin-top: 3rem;
   font-size: 11px;
-  color: #9eb5e2;
+  color: var(--fa-color-brand-panel-muted);
   letter-spacing: 0.1em;
+  border-top: 1px solid var(--fa-color-brand-panel-divider);
 }
 
-@media (width <= 1180px) {
+@media (height <= 800px) and (width >= 1181px) {
   .fa-enterprise-intro {
-    min-height: 18rem;
-    padding: 5rem 2rem 2rem;
+    padding-top: 6rem;
+    padding-bottom: 2rem;
   }
 
-  .fa-enterprise-intro__content {
-    min-height: 0;
+  .fa-enterprise-intro__header h2 {
+    font-size: clamp(2.5rem, 3.5vw, 3.5rem);
   }
-}
 
-@media (width <= 760px) {
-  .fa-enterprise-intro {
-    padding: 4.75rem 1.25rem 1.5rem;
+  .fa-enterprise-intro__header {
+    margin-top: 1.5rem;
   }
 
   .fa-enterprise-intro__highlights {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-    margin-top: 2rem;
-  }
-
-  .fa-enterprise-intro__highlight,
-  .fa-enterprise-intro__highlight + .fa-enterprise-intro__highlight {
-    padding: 0;
-    border-left: 0;
+    margin-top: 1.75rem;
   }
 
   .fa-enterprise-intro__footer {
+    margin-top: 1.75rem;
+  }
+}
+
+@media (height <= 680px) and (width >= 1181px) {
+  .fa-enterprise-intro__highlights {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .fa-enterprise-intro__highlight {
+    gap: 8px;
+  }
+
+  .fa-enterprise-intro__highlight h3 {
+    margin: 0;
+    font-size: 13px;
+  }
+
+  .fa-enterprise-intro__highlight p {
     display: none;
   }
 }

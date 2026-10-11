@@ -18,7 +18,7 @@ function readInitial(): LoginPanelAlign {
 
 /**
  * 登录页布局（本地持久化）
- * - left/right：交换插画与表单列左右位置（列宽约 65%/35%）
+ * - left/right：交换品牌与表单列左右位置（列宽约 56%/44%，另留列间距）
  * - center：隐藏插画，全宽背景 + 440px 卡片在顶栏与页脚之间居中悬浮
  */
 export function useLoginPanelAlign() {

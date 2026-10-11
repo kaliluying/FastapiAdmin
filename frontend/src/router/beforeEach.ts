@@ -158,9 +158,7 @@ async function handleRouteGuard(
     return to.matched.length > 0 ? true : { name: "500", replace: true };
   }
 
-  const menuStore = useMenuStore();
-  const shouldInitRoutes =
-    userStore.isLogin && (!routeRegistry?.isRegistered() || menuStore.menuList.length === 0);
+  const shouldInitRoutes = userStore.isLogin && !routeRegistry?.isRegistered();
 
   if (shouldInitRoutes) {
     if (routeInitInProgress) return false;
@@ -257,23 +255,9 @@ function isStaticRoute(path: string): boolean {
 }
 
 /**
- * 动态路由仍标记为已注册但侧边菜单已被清空时，先卸下动态路由再拉菜单。
- * 菜单状态被重置后不能沿用旧注册状态，必须重新拉取授权菜单。
- */
-function repairDynamicRoutesIfMenuEmpty(): void {
-  if (!routeRegistry?.isRegistered()) return;
-  const ms = useMenuStore();
-  if (ms.menuList.length > 0) return;
-  routeRegistry.unregister();
-  resetRouteInitState();
-}
-
-/**
  * 处理动态路由注册
  */
 async function handleDynamicRoutes(to: RouteLocationNormalized, router: Router) {
-  repairDynamicRoutesIfMenuEmpty();
-
   // 标记初始化进行中
   routeInitInProgress = true;
 

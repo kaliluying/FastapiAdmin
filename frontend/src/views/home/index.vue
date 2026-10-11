@@ -8,31 +8,34 @@
       @refresh="loadHealthStatus"
     />
     <section v-if="featuredLinks.length" class="knowledge-launch" aria-labelledby="launch-title">
-      <div class="knowledge-launch__intro">
-        <span class="knowledge-launch__eyebrow">知识与 AI</span>
-        <h2 id="launch-title">从知识出发，<br />让工作更进一步。</h2>
-        <p>整理资料，探索知识与答案。</p>
+      <h2 id="launch-title" class="workspace-section-title">知识工作</h2>
+      <nav class="knowledge-launch__resources" aria-label="知识工作入口">
         <RouterLink v-if="chatLink" :to="chatLink.path" class="knowledge-launch__action">
-          开始 AI 对话
-          <FaSvgIcon icon="ri:arrow-right-line" aria-hidden="true" />
-        </RouterLink>
-      </div>
-      <nav
-        v-if="knowledgeLinks.length"
-        class="knowledge-launch__resources"
-        aria-label="知识工作入口"
-      >
-        <RouterLink v-for="link in knowledgeLinks" :key="link.path" :to="link.path">
-          <FaSvgIcon :icon="link.icon" class="knowledge-launch__icon" aria-hidden="true" />
-          <span>
-            <strong>{{ $t(link.title) }}</strong>
-            <small>{{ link.path === "/ai/knowledge" ? "整理团队资料" : "上传与索引进度" }}</small>
+          <span class="knowledge-launch__icon" aria-hidden="true">
+            <FaSvgIcon :icon="chatLink.icon" />
           </span>
-          <FaSvgIcon
-            icon="ri:arrow-right-up-line"
-            class="knowledge-launch__arrow"
-            aria-hidden="true"
-          />
+          <strong>{{ $t(chatLink.title) }}</strong>
+          <p>围绕团队资料提问，获取带有来源的回答。</p>
+          <span class="knowledge-launch__link">
+            开始 AI 对话 <FaSvgIcon icon="ri:arrow-right-line" aria-hidden="true" />
+          </span>
+        </RouterLink>
+        <RouterLink v-for="link in knowledgeLinks" :key="link.path" :to="link.path">
+          <span class="knowledge-launch__icon" aria-hidden="true">
+            <FaSvgIcon :icon="link.icon" />
+          </span>
+          <strong>{{ $t(link.title) }}</strong>
+          <p>
+            {{
+              link.path === "/ai/knowledge"
+                ? "组织团队知识，管理资料与访问范围。"
+                : "上传文档，跟踪解析与索引处理进度。"
+            }}
+          </p>
+          <span class="knowledge-launch__link">
+            {{ link.path === "/ai/knowledge" ? "管理知识库" : "管理文档" }}
+            <FaSvgIcon icon="ri:arrow-right-line" aria-hidden="true" />
+          </span>
         </RouterLink>
       </nav>
     </section>
@@ -48,8 +51,8 @@
         aria-labelledby="quick-links-title"
       >
         <div class="quick-links__header">
-          <h2 id="quick-links-title">常用入口</h2>
-          <span>管理与配置</span>
+          <h2 id="quick-links-title">管理与配置</h2>
+          <span>快捷入口</span>
         </div>
         <nav aria-label="快捷入口">
           <RouterLink v-for="link in managementLinks" :key="link.path" :to="link.path">
@@ -212,15 +215,15 @@ onUnmounted(() => {
 .home-workspace {
   width: 100%;
   min-width: 0;
-  max-width: 1440px;
+  max-width: 1840px;
   margin: 0 auto;
 }
 
 .home-content {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 1fr);
-  gap: 24px;
-  align-items: stretch;
+  grid-template-columns: minmax(0, 1.8fr) minmax(300px, 1fr);
+  gap: 20px;
+  align-items: start;
 }
 
 .home-content--single {
@@ -242,7 +245,7 @@ onUnmounted(() => {
   gap: 6px 12px;
   align-items: baseline;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .quick-links h2 {
@@ -259,8 +262,8 @@ onUnmounted(() => {
 
 .quick-links nav {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
 }
 
 .quick-links a {
@@ -268,8 +271,8 @@ onUnmounted(() => {
   gap: 10px;
   align-items: center;
   min-width: 0;
-  min-height: 72px;
-  padding: 12px;
+  min-height: 48px;
+  padding: 8px 10px;
   font-size: 14px;
   color: var(--fa-color-text);
   background: transparent;
@@ -321,157 +324,139 @@ onUnmounted(() => {
 }
 
 .knowledge-launch {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 0.85fr);
-  gap: 32px;
-  align-items: center;
-  padding: 28px 36px;
   margin-bottom: 28px;
-  color: #f4f7fb;
-  background: #172438;
-  border: 1px solid #304057;
-  border-radius: 20px;
 }
 
-.knowledge-launch__eyebrow {
-  font-size: 12px;
-  color: #c1cede;
-}
-
-.knowledge-launch h2 {
-  margin: 14px 0 12px;
-  font-size: clamp(28px, 2.5vw, 34px);
-  font-weight: 600;
-  line-height: 1.35;
-  letter-spacing: -0.035em;
-}
-
-.knowledge-launch__intro > p {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.8;
-  color: #c1cede;
-}
-
-.knowledge-launch__action {
-  display: inline-flex;
-  gap: 24px;
-  align-items: center;
-  min-height: 44px;
-  padding: 10px 18px;
-  margin-top: 24px;
+.workspace-section-title {
+  margin: 0 0 12px;
   font-size: 14px;
   font-weight: 600;
-  color: #172438;
-  background: #f4f7fb;
-  border-radius: 10px;
-  transition: background-color 180ms ease;
-}
-
-.knowledge-launch__action:hover {
-  background: #dce7f5;
+  color: var(--fa-color-text-muted);
+  letter-spacing: 0.06em;
 }
 
 .knowledge-launch__resources {
   display: grid;
-  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 20px;
   min-width: 0;
 }
 
 .knowledge-launch__resources a {
   display: flex;
-  gap: 16px;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   min-width: 0;
-  min-height: 96px;
-  padding: 20px;
-  color: inherit;
-  background: rgb(255 255 255 / 5%);
-  border: 1px solid rgb(255 255 255 / 15%);
-  border-radius: 14px;
+  min-height: 206px;
+  padding: 24px;
+  color: var(--fa-color-text);
+  background: var(--fa-color-surface);
+  border: 1px solid var(--fa-color-border);
+  border-radius: var(--fa-radius-panel);
+  box-shadow: var(--fa-soft-shadow);
   transition:
-    border-color 180ms ease,
-    background-color 180ms ease;
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+.knowledge-launch__resources a.knowledge-launch__action {
+  background: color-mix(in srgb, var(--theme-color) 7%, var(--fa-color-surface));
+  border-color: color-mix(in srgb, var(--theme-color) 22%, var(--fa-color-border));
 }
 
 .knowledge-launch__resources a:hover {
-  background: rgb(255 255 255 / 10%);
-  border-color: rgb(255 255 255 / 35%);
-}
-
-.knowledge-launch__resources a > span {
-  display: grid;
-  gap: 7px;
-  min-width: 0;
+  background: color-mix(in srgb, var(--theme-color) 5%, var(--fa-color-surface));
+  border-color: color-mix(in srgb, var(--theme-color) 50%, var(--fa-color-border));
 }
 
 .knowledge-launch__resources strong {
-  font-size: 16px;
-  font-weight: 550;
+  margin-top: 16px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
-.knowledge-launch__resources small {
-  font-size: 12px;
-  line-height: 1.6;
-  color: #c1cede;
+.knowledge-launch__resources p {
+  margin: 6px 0 20px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--fa-color-text-muted);
+}
+
+.knowledge-launch__link {
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--theme-color) 75%, var(--fa-color-text));
 }
 
 .knowledge-launch__icon {
-  flex: 0 0 24px;
-  font-size: 24px;
-  color: #c1cede;
-}
-
-.knowledge-launch__arrow {
-  flex: 0 0 20px;
-  margin-left: auto;
-  font-size: 20px;
-  transition: transform 180ms ease;
-}
-
-.knowledge-launch__resources a:hover .knowledge-launch__arrow {
-  transform: translate(2px, -2px);
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+  color: var(--theme-color);
+  background: color-mix(in srgb, var(--theme-color) 9%, var(--fa-color-surface));
+  border-radius: 10px;
 }
 
 .knowledge-launch a:focus-visible {
-  outline: 2px solid #f4f7fb;
+  outline: 2px solid var(--theme-color);
   outline-offset: 4px;
 }
 
-@media (width <= 1200px) {
+:global(html.dark) .knowledge-launch__link,
+:global(html.dark) .knowledge-launch__icon {
+  color: color-mix(in srgb, var(--theme-color) 65%, var(--fa-color-text));
+}
+
+@media (width <= 1100px) {
   .home-content {
     grid-template-columns: minmax(0, 1fr);
   }
-}
 
-@media (width <= 760px) {
-  .knowledge-launch {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 24px;
-    padding: 24px;
-  }
-
-  .knowledge-launch__resources a {
-    min-height: 80px;
-    padding: 16px;
-  }
-}
-
-@media (width <= 900px) {
   .quick-links {
     order: -1;
+  }
+
+  .quick-links nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (width <= 520px) {
   .knowledge-launch {
-    padding: 22px;
     margin-bottom: 20px;
-    border-radius: 16px;
   }
 
-  .knowledge-launch__action {
-    margin-top: 18px;
+  .knowledge-launch__resources {
+    gap: 12px;
+  }
+
+  .knowledge-launch__resources a {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 4px 14px;
+    min-height: 0;
+    padding: 18px;
+  }
+
+  .knowledge-launch__icon {
+    grid-row: 1 / 4;
+  }
+
+  .knowledge-launch__resources strong {
+    margin-top: 0;
+    font-size: 16px;
+  }
+
+  .knowledge-launch__resources p {
+    margin: 0 0 8px;
+    font-size: 13px;
   }
 
   .quick-links {
@@ -497,13 +482,8 @@ onUnmounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-workspace a,
-  .knowledge-launch__arrow {
+  .home-workspace a {
     transition: none;
-  }
-
-  .knowledge-launch__resources a:hover .knowledge-launch__arrow {
-    transform: none;
   }
 }
 </style>

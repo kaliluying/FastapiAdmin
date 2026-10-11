@@ -1,1 +1,2 @@
-pnpm run lint:lint-staged
+cd frontend
+corepack pnpm run lint:lint-staged

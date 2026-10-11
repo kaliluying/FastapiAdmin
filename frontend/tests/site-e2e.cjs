@@ -50,7 +50,11 @@ async function run() {
       false,
       `horizontal overflow: ${name}/${width}/${theme}`
     );
-    assert.ok(await page.locator("h1").count(), `missing page heading: ${name}`);
+    if (name === "login") {
+      await page.locator('input[name="username"]').waitFor();
+    } else {
+      assert.ok(await page.locator("h1").count(), `missing page heading: ${name}`);
+    }
     await page.screenshot({
       path: path.join(evidence.artifacts, `site-${name}-${width}-${theme}.png`),
       fullPage: true,
@@ -121,6 +125,7 @@ async function run() {
             "/system/role": "角色管理",
             "/system/menu": "菜单管理",
             "/system/log": "操作日志|日志管理",
+            "/demo/category": "分类管理",
             "/ai/chat": "知识问答|AI 对话",
             "/ai/memory": "会话记录|AI 记忆",
             "/ai/memory-manage": "记忆管理",
@@ -130,6 +135,10 @@ async function run() {
             "/ai/document": "文档",
             "/profile": "个人中心",
           };
+          assert.ok(
+            titles[destination] || /^\/(401|403|404|500)$/.test(destination),
+            `missing heading mapping: ${destination}`
+          );
           const heading = titles[destination]
             ? page.getByRole("heading", { name: new RegExp(titles[destination]), level: 1 })
             : page.locator(`#exception-title-${destination.slice(1)}`);
@@ -177,7 +186,9 @@ async function run() {
 
     phase = "mobile-table-and-form";
     let listFixture = "many";
+    let listRequests = 0;
     await page.route("**/system/user/list*", async (route) => {
+      listRequests += 1;
       if (listFixture === "error") {
         return route.fulfill({
           status: 503,
@@ -238,16 +249,69 @@ async function run() {
         "fixture 2000-row pagination, visible mobile table and real form/fullscreen controls",
     });
 
-    listFixture = "error";
-    await page.getByRole("button", { name: "刷新列表", exact: true }).click();
-    await page.locator(".fa-table [role='alert']").waitFor();
-    listFixture = "empty";
-    await page
-      .locator(".fa-table")
-      .getByRole("button", { name: "重试", exact: true })
-      .click({ force: true });
-    await page.locator(".fa-table .el-empty").waitFor();
-    assert.equal(await page.locator(".fa-table [role='alert']").count(), 0);
+    for (const width of [375, 390, 640]) {
+      phase = `table-error-retry/${width}`;
+      await page.setViewportSize({ width, height: 844 });
+      listFixture = "many";
+      await page.getByRole("button", { name: "刷新列表", exact: true }).click();
+      await page.locator(".el-pagination__total").filter({ hasText: "2000" }).waitFor();
+      listFixture = "error";
+      await page.getByRole("button", { name: "刷新列表", exact: true }).click();
+      await page.locator(".fa-table [role='alert']").waitFor();
+      const retryGeometry = await page.locator(".fa-table").evaluate((table) => {
+        const selectors = [
+          "#fa-table-header",
+          ".fa-table",
+          ".el-table__body-wrapper",
+          ".el-table__empty-block",
+          ".el-table__empty-text",
+          ".fa-async-state",
+          ".fa-async-state button",
+        ];
+        return selectors.map((selector) => {
+          const element = document.querySelector(selector);
+          const rect = element?.getBoundingClientRect();
+          return {
+            selector,
+            rect: rect?.toJSON(),
+            hit: rect
+              ? document
+                  .elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2)
+                  ?.outerHTML.slice(0, 200)
+              : null,
+          };
+        });
+      });
+      fs.writeFileSync(
+        path.join(evidence.artifacts, `retry-geometry-${width}.json`),
+        JSON.stringify(retryGeometry, null, 2)
+      );
+      await page.screenshot({
+        path: path.join(evidence.artifacts, `table-error-${width}.png`),
+        fullPage: true,
+      });
+      listFixture = "empty";
+      const requestsBeforeRetry = listRequests;
+      await page
+        .locator(".fa-table")
+        .getByRole("button", { name: "重试", exact: true })
+        .click({ timeout: 3000 });
+      await page.locator(".fa-table .el-empty").waitFor();
+      assert.equal(listRequests, requestsBeforeRetry + 1, "retry must request the list once");
+      assert.equal(await page.locator(".fa-table [role='alert']").count(), 0);
+      assert.equal(
+        await page.locator(".el-pagination__total").filter({ hasText: "2000" }).count(),
+        0
+      );
+      await page.screenshot({
+        path: path.join(evidence.artifacts, `table-retry-${width}.png`),
+        fullPage: true,
+      });
+      checks.push({
+        interaction: "normal click retries the failed list and clears stale state",
+        width,
+      });
+    }
     listFixture = "real";
     await page.getByRole("button", { name: "刷新列表", exact: true }).click();
     await page.locator(".el-pagination__total").filter({ hasText: "3" }).waitFor();

@@ -76,7 +76,7 @@
             v-if="shouldShowGlobalSearch"
             type="button"
             :aria-label="$t('topBar.search.title')"
-            class="flex items-center justify-between w-40 h-9 px-2.5 cursor-pointer border border-g-400 rounded-custom-sm max-md:hidden! transition duration-300 hover:-translate-y-0.5 hover:shadow-md"
+            class="flex items-center justify-between w-40 h-9 px-2.5 cursor-pointer border border-g-400 rounded-custom-sm max-md:hidden! transition-colors duration-150"
             @click="openSearchDialog"
           >
             <div class="flex items-center">
@@ -297,77 +297,18 @@ html.dark .relative.box-border {
   background: transparent;
 }
 
-/* Custom animations */
-@keyframes rotate180 {
-  0% {
-    transform: rotate(0);
-  }
-
-  100% {
-    transform: rotate(180deg);
-  }
-}
-
-@keyframes expand {
-  0% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.1);
-  }
-
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes shrink {
-  0% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(0.9);
-  }
-
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes moveUp {
-  0% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-3px);
-  }
-
-  100% {
-    transform: translateY(0);
-  }
-}
-
-/* Hover animation classes */
-.refresh-btn:hover :deep(.fa-svg-icon) {
-  animation: rotate180 0.5s;
-}
-
+/* Toolbar states stay quiet; content changes, not decorative motion, carry attention. */
 #app-header-toolbar :deep(.fa-icon-button),
 #app-header-toolbar :deep(.el-button) {
   border-radius: 8px;
   transition:
     background-color 0.16s ease,
     border-color 0.16s ease,
-    color 0.16s ease,
-    transform 0.16s ease;
+    color 0.16s ease;
 }
 
 #app-header-toolbar :deep(.fa-icon-button:hover) {
   background: color-mix(in srgb, var(--theme-color) 8%, var(--default-box-color));
-  transform: translateY(-1px);
 }
 
 #app-header-toolbar :deep(.fa-icon-button:focus-visible) {
@@ -392,23 +333,6 @@ html.dark .relative.box-border {
   border-color: color-mix(in srgb, var(--theme-color) 32%, var(--fa-card-border));
 }
 
-.language-btn:hover :deep(.fa-svg-icon) {
-  animation: moveUp 0.4s;
-}
-
-.full-screen-btn:hover :deep(.fa-svg-icon) {
-  animation: expand 0.6s forwards;
-}
-
-:deep(.size-select-btn:hover .fa-svg-icon) {
-  animation: expand 0.6s forwards;
-}
-
-.exit-full-screen-btn:hover :deep(.fa-svg-icon) {
-  animation: shrink 0.6s forwards;
-}
-
-/* iPad breakpoint adjustments */
 @media screen and (width <= 768px) {
   .w-full {
     padding: 0 12px;

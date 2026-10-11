@@ -19,63 +19,45 @@
         class="login-auth-split__col login-auth-split__col--form login-page-panel relative flex min-h-0 min-w-0 flex-col"
         :class="panelAlign === 'center' ? 'bg-transparent' : 'bg-(--el-bg-color-page)'"
       >
-        <div
-          class="login-page-panel__main relative z-1 flex min-h-0 flex-1 flex-col overflow-hidden px-5 pb-2 pt-14 md:px-10 md:pt-18"
-        >
-          <ElScrollbar>
-            <div
-              class="login-page-panel__scroll pb-6"
-              :class="panelAlign === 'center' && 'login-page-panel__scroll--centered'"
-            >
-              <div
-                class="login-panel-align-row flex w-full items-center justify-center max-sm:min-h-0"
-                :class="
-                  panelAlign === 'center'
-                    ? 'min-h-0 flex-1 py-4'
-                    : 'min-h-[min(720px,calc(100vh-13rem))]'
-                "
-              >
-                <main class="auth-right-wrap" aria-labelledby="login-heading">
-                  <div class="form">
-                    <div class="form-intro">
-                      <h1 id="login-heading" class="title">{{ panelTitle }}</h1>
-                      <p class="sub-title">{{ panelSubTitle }}</p>
-                    </div>
+        <div class="login-page-panel__main relative z-1 flex min-h-0 flex-1 flex-col">
+          <main class="auth-right-wrap" aria-labelledby="login-heading">
+            <div class="form">
+              <div class="form-intro">
+                <div class="login-form-mark" aria-hidden="true">
+                  <FaSvgIcon icon="ri:door-open-line" />
+                </div>
+                <h1 id="login-heading" class="title">{{ panelTitle }}</h1>
+                <p class="sub-title">{{ panelSubTitle }}</p>
+              </div>
 
-                    <FaLoginAccountForm
-                      ref="accountFormRef"
-                      v-model:login-form="loginForm"
-                      :rules="rules"
-                      :form-key="formKey"
-                      :loading="loading"
-                      :captcha-enabled="captchaEnabled"
-                      :captcha-image="captchaImage"
-                      :captcha-loading="captchaLoading"
-                      @submit="handleSubmit"
-                      @refresh-captcha="loadCaptcha(true)"
-                    />
-                    <p v-if="loginError" class="auth-feedback" role="alert">{{ loginError }}</p>
-                    <div v-if="captchaError" class="auth-feedback" role="alert">
-                      <p>{{ captchaError }}</p>
-                      <ElButton
-                        link
-                        type="primary"
-                        :loading="captchaLoading"
-                        @click="loadCaptcha(captchaEnabled)"
-                        >重新获取验证码</ElButton
-                      >
-                    </div>
-                  </div>
-                </main>
+              <FaLoginAccountForm
+                ref="accountFormRef"
+                v-model:login-form="loginForm"
+                :rules="rules"
+                :form-key="formKey"
+                :loading="loading"
+                :captcha-enabled="captchaEnabled"
+                :captcha-image="captchaImage"
+                :captcha-loading="captchaLoading"
+                @submit="handleSubmit"
+                @refresh-captcha="loadCaptcha(true)"
+              />
+              <p v-if="loginError" class="auth-feedback" role="alert">{{ loginError }}</p>
+              <div v-if="captchaError" class="auth-feedback" role="alert">
+                <p>{{ captchaError }}</p>
+                <ElButton
+                  link
+                  type="primary"
+                  :loading="captchaLoading"
+                  @click="loadCaptcha(captchaEnabled)"
+                  >重新获取验证码</ElButton
+                >
               </div>
             </div>
-          </ElScrollbar>
+          </main>
         </div>
 
-        <footer
-          class="login-page-footer login-page-footer--pinned shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3"
-          :class="panelAlign === 'center' && 'login-page-footer--floating-layout'"
-        >
+        <footer class="login-page-footer login-page-footer--pinned shrink-0">
           <p class="login-footer-text">登录遇到问题，请联系管理员确认账号状态与访问权限。</p>
         </footer>
       </div>

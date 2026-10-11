@@ -12,6 +12,31 @@ async function run() {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   const errors = [];
   const checks = [];
+  const checkLinkContrast = async () => {
+    const contrasts = await page.locator(".knowledge-launch__link").evaluateAll((links) => {
+      const context = document.createElement("canvas").getContext("2d");
+      const luminance = (color) => {
+        context.fillStyle = color;
+        context.fillRect(0, 0, 1, 1);
+        const channels = [...context.getImageData(0, 0, 1, 1).data].slice(0, 3).map((channel) => {
+          const value = channel / 255;
+          return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+        });
+        return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+      };
+      return links.map((link) => {
+        const foreground = luminance(getComputedStyle(link).color);
+        const background = luminance(getComputedStyle(link.closest("a")).backgroundColor);
+        return (
+          (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05)
+        );
+      });
+    });
+    assert.ok(
+      contrasts.every((ratio) => ratio >= 4.5),
+      `low link contrast: ${contrasts}`
+    );
+  };
   let phase = "home";
   page.on("pageerror", (error) => errors.push({ phase, message: error.message }));
   await page.route("**/*", (route) => {
@@ -36,8 +61,9 @@ async function run() {
     await page.locator(".trend-summary").waitFor();
     await page.locator(".el-notification").waitFor({ state: "hidden", timeout: 10000 });
     checks.push("real login, authorized menus, readiness and login trend");
+    await checkLinkContrast();
 
-    for (const width of [1440, 1024, 768, 375]) {
+    for (const width of [2560, 2048, 1440, 1024, 768, 375]) {
       phase = "responsive-shell";
       await page.setViewportSize({ width, height: width >= 1024 ? 1100 : 1000 });
       await page.mouse.move(0, 0);
@@ -50,6 +76,25 @@ async function run() {
         () => document.documentElement.scrollWidth > window.innerWidth
       );
       assert.equal(overflow, false, `horizontal overflow at ${width}`);
+      if (width >= 1440) {
+        const proportions = await page.locator(".home-workspace").evaluate((node) => {
+          const content = document.querySelector("#app-content");
+          return {
+            workspace: node.getBoundingClientRect().width,
+            content: content.getBoundingClientRect().width,
+            cards: [...node.querySelectorAll(".knowledge-launch__resources a")].map((card) => ({
+              top: card.getBoundingClientRect().top,
+              height: card.getBoundingClientRect().height,
+            })),
+          };
+        });
+        assert.ok(proportions.workspace / proportions.content > 0.76, "workspace is too narrow");
+        assert.equal(new Set(proportions.cards.map((card) => card.top)).size, 1);
+        assert.ok(
+          proportions.cards.every((card) => card.height < 300),
+          "oversized launch panel"
+        );
+      }
       const links = await page
         .locator(".home-workspace a, .home-workspace button, .home-workspace summary")
         .evaluateAll((nodes) =>
@@ -70,7 +115,7 @@ async function run() {
       }
       await page.screenshot({ path: path.join(artifacts, `home-${width}.png`), fullPage: true });
     }
-    checks.push("1440/1024/768/375 layouts and 44px navigation targets");
+    checks.push("2560/2048/1440/1024/768/375 layouts, workspace proportions and 44px targets");
     phase = "home";
     await page.setViewportSize({ width: 1440, height: 1100 });
     await page.keyboard.press("Tab");
@@ -100,6 +145,7 @@ async function run() {
       useSettingsStore().setGlopTheme("dark", "dark");
     });
     await page.waitForTimeout(1800);
+    await checkLinkContrast();
     const chartBounds = await page.locator(".trend-chart").evaluate((node) => {
       const canvas = node.querySelector("canvas");
       return {
@@ -121,7 +167,7 @@ async function run() {
 
       useSettingsStore().setGlopTheme("light", "light");
     });
-    checks.push("dark-mode rendering");
+    checks.push("dark-mode rendering and AA link contrast in both default themes");
 
     const healthPattern = "**/common/health/ready";
     const healthy = await (

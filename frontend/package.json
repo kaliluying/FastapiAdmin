@@ -5,35 +5,44 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "i": "pnpm install",
+    "i": "corepack pnpm install",
     "dev": "vite",
     "dev:force": "vite --force",
     "prod": "vite --mode prod",
     "build": "vue-tsc --noEmit && vite build",
-    "build:pro": "pnpm vite build --mode pro",
-    "build:gitee": "pnpm vite build --mode gitee",
-    "build:dev": "pnpm vite build --mode dev",
-    "build:test": "pnpm vite build --mode test",
-    "serve:pro": "pnpm vite preview --mode pro",
-    "serve:dev": "pnpm vite preview --mode dev",
-    "serve:test": "pnpm vite preview --mode test",
+    "build:pro": "vite build --mode pro",
+    "build:gitee": "vite build --mode gitee",
+    "build:dev": "vite build --mode dev",
+    "build:test": "vite build --mode test",
+    "serve:pro": "vite preview --mode pro",
+    "serve:dev": "vite preview --mode dev",
+    "serve:test": "vite preview --mode test",
     "clean": "pnpx rimraf node_modules",
-    "ts:check": "pnpm vue-tsc --noEmit --skipLibCheck",
+    "ts:check": "vue-tsc --noEmit --skipLibCheck",
     "npm:check": "pnpx npm-check-updates -u",
     "clean:cache": "pnpx rimraf node_modules/.cache node_modules/.vite",
-    "prepare": "husky",
+    "prepare": "cd .. && husky frontend/.husky",
     "icon": "esno ./scripts/icon.ts",
     "preview": "vite preview",
     "type-check": "vue-tsc --noEmit",
     "test": "vitest run",
+    "test:e2e": "node tests/site-e2e.cjs",
+    "test:e2e:retry": "SITE_E2E_INTERACTIONS_ONLY=1 node tests/site-e2e.cjs",
+    "test:e2e:preflight": "node tests/ux-e2e.cjs --preflight",
+    "test:hooks": "node --test tests/git-hooks.test.cjs",
     "test:watch": "vitest",
-    "lint": "pnpm run lint:eslint && pnpm run lint:prettier && pnpm run lint:stylelint",
+    "lint": "corepack pnpm run lint:eslint && corepack pnpm run lint:prettier && corepack pnpm run lint:stylelint",
+    "lint:check": "corepack pnpm run lint:eslint:check && corepack pnpm run lint:prettier:check && corepack pnpm run lint:stylelint:check",
+    "lint:eslint:check": "eslint \"src/**/*.{vue,ts,js}\"",
+    "lint:prettier:check": "prettier --check \"**/*.{js,cjs,ts,json,tsx,css,less,scss,vue,html,md}\"",
+    "lint:stylelint:check": "stylelint \"**/*.{css,scss,vue}\"",
     "lint:eslint": "eslint --cache \"src/**/*.{vue,ts,js}\" --fix",
     "lint:prettier": "prettier --write \"**/*.{js,cjs,ts,json,tsx,css,less,scss,vue,html,md}\"",
     "lint:stylelint": "stylelint \"**/*.{css,scss,vue}\" --cache --fix",
-    "lint:lint-staged": "lint-staged -c ./.husky/lintstagedrc.cjs",
+    "lint:lint-staged": "lint-staged --config ./package.json",
     "commit": "git-cz",
-    "check": "node scripts/check.cjs"
+    "check": "node scripts/check.cjs",
+    "test:tooling": "node --test tests/git-hooks.test.cjs tests/acceptance-artifacts.test.cjs"
   },
   "config": {
     "commitizen": {
@@ -42,29 +51,32 @@
   },
   "lint-staged": {
     "*.{js,ts,mjs,mts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "eslint",
+      "prettier --check"
     ],
     "*.{cjs,json,jsonc}": [
-      "prettier --write"
+      "prettier --check"
     ],
     "*.vue": [
-      "eslint --fix",
-      "stylelint --fix --allow-empty-input",
-      "prettier --write"
+      "eslint",
+      "stylelint --allow-empty-input",
+      "prettier --check"
     ],
     "*.{html,htm}": [
-      "prettier --write"
+      "prettier --check"
     ],
     "*.{scss,css,less}": [
-      "stylelint --fix --allow-empty-input",
-      "prettier --write"
+      "stylelint --allow-empty-input",
+      "prettier --check"
     ],
     "*.{md,mdx}": [
-      "prettier --write"
+      "prettier --check"
     ],
     "*.{yaml,yml}": [
-      "prettier --write"
+      "prettier --check"
+    ],
+    "../backend/**/*.{py,pyw}": [
+      "uv run --directory ../backend --no-sync ruff check --no-fix --no-cache"
     ]
   },
   "dependencies": {
@@ -97,10 +109,10 @@
     "vue-router": "^5.0.7"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.3.3",
     "@commitlint/cli": "^21.2.1",
     "@commitlint/config-conventional": "^21.2.0",
     "@eslint/js": "^10.0.0",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/markdown-it": "^14.1.2",
     "@types/node": "^24.0.5",
     "@types/nprogress": "^0.2.3",
@@ -121,6 +133,7 @@
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "lint-staged": "^15.5.2",
+    "playwright": "1.62.1",
     "postcss": "^8.5.18",
     "postcss-html": "^1.8.0",
     "postcss-scss": "^4.0.9",
@@ -148,8 +161,7 @@
     "vitest": "^4.1.7",
     "vue-eslint-parser": "^10.4.0",
     "vue-img-cutter": "^3.0.5",
-    "vue-tsc": "^3.2.9",
-    "playwright": "1.62.1"
+    "vue-tsc": "^3.2.9"
   },
   "packageManager": "pnpm@10.34.5",
   "engines": {

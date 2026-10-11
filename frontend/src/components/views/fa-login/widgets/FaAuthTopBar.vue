@@ -3,6 +3,7 @@
   <header
     class="auth-top-bar pointer-events-none fixed left-0 right-0 top-0 z-100 flex items-center justify-between gap-3 bg-transparent px-5 py-4.5 md:gap-4 md:px-10"
     :class="{ 'auth-top-bar--on-illustration': panelAlign === 'right' }"
+    @keydown.esc="closeMobileSettings"
   >
     <div class="pointer-events-auto flex min-w-0 flex-1 items-center gap-3">
       <FaLogo class="icon shrink-0" size="46" :src="webLogoSrc" />
@@ -16,8 +17,22 @@
       </div>
     </div>
 
+    <button
+      ref="mobileSettingsButton"
+      type="button"
+      class="auth-mobile-settings pointer-events-auto"
+      aria-label="登录页面设置"
+      aria-controls="auth-page-settings"
+      :aria-expanded="mobileSettingsOpen"
+      @click="mobileSettingsOpen = !mobileSettingsOpen"
+    >
+      <FaSvgIcon icon="ri:settings-3-line" />
+    </button>
+
     <nav
+      id="auth-page-settings"
       class="auth-top-bar-actions-panel pointer-events-auto flex shrink-0 flex items-center justify-center gap-1.5 px-2 py-1.5 max-sm:mr-1"
+      :class="{ 'auth-top-bar-actions-panel--open': mobileSettingsOpen }"
       aria-label="登录页面设置"
     >
       <ElPopover placement="bottom-end" trigger="click" :width="224">
@@ -124,7 +139,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import { storeToRefs } from "pinia";
 import { useI18n } from "vue-i18n";
 import { useSettingsStore, useUserStore } from "@stores";
@@ -152,6 +167,14 @@ interface Emits {
 }
 
 const emit = defineEmits<Emits>();
+const mobileSettingsOpen = ref(false);
+const mobileSettingsButton = ref<HTMLButtonElement | null>(null);
+
+function closeMobileSettings() {
+  if (!mobileSettingsOpen.value) return;
+  mobileSettingsOpen.value = false;
+  mobileSettingsButton.value?.focus();
+}
 
 const layoutAlignOptions: {
   value: LoginPanelAlign;
@@ -214,6 +237,30 @@ const changeThemeColor = (color: string) => {
 </script>
 
 <style scoped>
+.auth-top-bar {
+  padding: 36px 52px;
+}
+
+.auth-mobile-settings {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  font-size: 22px;
+  color: var(--fa-color-text);
+  cursor: pointer;
+  background: var(--fa-color-surface);
+  border: 1px solid var(--fa-color-border);
+  border-radius: 12px;
+}
+
+.auth-mobile-settings:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 3px;
+}
+
 .auth-top-bar__site-title {
   max-width: 100%;
   margin: 0;
@@ -344,8 +391,17 @@ const changeThemeColor = (color: string) => {
   }
 
   .auth-top-bar-actions-panel {
+    position: absolute;
+    top: 76px;
+    right: 16px;
+    display: none;
     gap: 2px;
     padding: 4px;
+  }
+
+  .auth-top-bar-actions-panel--open,
+  .auth-mobile-settings {
+    display: flex;
   }
 
   .auth-top-bar__action {
@@ -359,6 +415,17 @@ const changeThemeColor = (color: string) => {
 
   .auth-top-bar__site-title {
     font-size: 14px;
+  }
+
+  .auth-top-bar :deep(.icon) {
+    width: 34px;
+    height: 34px;
+  }
+}
+
+@media (width >= 641px) and (width <= 1180px) {
+  .auth-top-bar {
+    padding: 28px 32px;
   }
 }
 

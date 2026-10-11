@@ -325,8 +325,13 @@
       "title": "A backend system of beauty and efficiency",
       "subTitle": "Provide secure, efficient, and scalable management solutions to help enterprises digitalize and grow their businesses."
     },
-    "title": "Welcome back 👋",
-    "subTitle": "Enter your account details to start managing your project",
+    "title": "Welcome back",
+    "subTitle": "Sign in to reconnect with your knowledge and your team.",
+    "label": {
+      "username": "Account",
+      "password": "Password",
+      "captcha": "Verification code"
+    },
     "versionLabel": "Version",
     "mobileLogin": "Mobile login",
     "mobileLoginSubTitle": "Enter your mobile number to start managing your projects",

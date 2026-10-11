@@ -7,12 +7,14 @@
       :rules="rules"
       :key="formKey"
       class="login-page-form"
+      label-position="top"
+      hide-required-asterisk
       :validate-on-rule-change="false"
       :disabled="loading"
       :aria-busy="loading"
       @submit.prevent="!loading && emit('submit')"
     >
-      <ElFormItem prop="username">
+      <ElFormItem prop="username" :label="$t('login.label.username')">
         <ElInput
           class="custom-height"
           v-model.trim="loginForm.username"
@@ -29,7 +31,7 @@
       </ElFormItem>
 
       <ElTooltip :visible="isCapsLock" :content="$t('login.capsLock')" placement="right">
-        <ElFormItem prop="password">
+        <ElFormItem prop="password" :label="$t('login.label.password')">
           <ElInput
             class="custom-height"
             v-model="loginForm.password"
@@ -49,7 +51,7 @@
         </ElFormItem>
       </ElTooltip>
 
-      <ElFormItem v-if="captchaEnabled" prop="captcha">
+      <ElFormItem v-if="captchaEnabled" prop="captcha" :label="$t('login.label.captcha')">
         <div class="captcha-row flex w-full items-center gap-3">
           <ElInput
             v-model.trim="loginForm.captcha"

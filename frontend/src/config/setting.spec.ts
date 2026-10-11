@@ -47,11 +47,13 @@ describe("brand and setting defaults", () => {
     return { AppConfig, SETTING_DEFAULT_CONFIG, themeColorPresets };
   }
 
-  it("uses generic admin brand and premium console defaults", async () => {
+  it("uses FastCore brand and console defaults", async () => {
     const { AppConfig, SETTING_DEFAULT_CONFIG, themeColorPresets } = await loadConfig();
 
     expect(AppConfig.systemInfo.name).toBe("FastCore");
     expect(SETTING_DEFAULT_CONFIG.title).toBe("FastCore");
+    expect(SETTING_DEFAULT_CONFIG.name).toBe("FastCore");
+    expect(SETTING_DEFAULT_CONFIG.watermarkContent).toBe("FastCore");
     expect(SETTING_DEFAULT_CONFIG.layout).toBe(LayoutMode.LEFT);
     expect(SETTING_DEFAULT_CONFIG.theme).toBe(ThemeMode.LIGHT);
     expect(SETTING_DEFAULT_CONFIG.themeColor).toBe("#3b73e8");

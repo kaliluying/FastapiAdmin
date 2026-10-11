@@ -65,7 +65,7 @@ describe("首页工作入口", () => {
     const page = createPage();
     await flushPromises();
     expect(page.find(".knowledge-launch__action").attributes("href")).toBe("/ai/chat");
-    expect(page.findAll(".knowledge-launch__resources a")).toHaveLength(2);
+    expect(page.findAll(".knowledge-launch__resources a")).toHaveLength(3);
     expect(page.findAll(".quick-links a")).toHaveLength(8);
     expect(page.findAll('a[href="/ai/knowledge"]')).toHaveLength(1);
     expect(page.find(".home-health--healthy").text()).toContain("基础服务正常");
