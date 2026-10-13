@@ -35,6 +35,19 @@ export class Auth {
       : sessionStorage.getItem(AUTH_KEYS.REFRESH_TOKEN) || "";
   }
 
+  /** 请求共享按登录会话隔离，同一会话的令牌续期不改变标识。 */
+  static getSessionKey(): string {
+    const token = this.getAccessToken();
+    try {
+      const payload = token.split(".")[1];
+      if (!payload) return token;
+      const { sub } = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+      return typeof sub === "string" && sub ? sub : token;
+    } catch {
+      return token;
+    }
+  }
+
   static setTokens(accessToken: string, refreshToken: string, rememberMe: boolean): void {
     localStorage.setItem(AUTH_KEYS.REMEMBER_ME, String(rememberMe));
 
@@ -63,8 +76,6 @@ export class Auth {
 
 export { AUTH_KEYS };
 
-import { router } from "@/router";
-import { useUserStore } from "@stores";
 import { ElMessage, ElNotification } from "element-plus";
 
 /** 登录页跳转进行中，合并并发调用，避免重复通知与重复路由 */
@@ -86,6 +97,10 @@ export async function redirectToLogin(message: string = "请重新登录"): Prom
         duration: 3000,
       });
 
+      const [{ router }, { useUserStore }] = await Promise.all([
+        import("@/router"),
+        import("@/store/modules/user.store"),
+      ]);
       await useUserStore().resetAllState();
 
       const currentPath = router.currentRoute.value.fullPath;

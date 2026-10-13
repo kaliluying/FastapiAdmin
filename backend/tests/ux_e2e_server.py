@@ -32,6 +32,8 @@ path_conf.DOWNLOAD_DIR = ARTIFACTS / "downloads"
 fixture_spec = importlib.util.spec_from_file_location("ux_test_fixtures", ROOT / "tests" / "conftest.py")
 fixtures = importlib.util.module_from_spec(fixture_spec)
 fixture_spec.loader.exec_module(fixtures)
+# 此夹具没有 Lua 实现，显式触发 RedisCURD 的测试替身兼容路径。
+fixtures._mock_redis.eval.side_effect = NotImplementedError
 
 from fastapi import FastAPI
 from sqlalchemy import select

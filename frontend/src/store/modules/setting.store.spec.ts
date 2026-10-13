@@ -6,14 +6,6 @@ import { SystemThemeEnum } from "@/enums/appEnum";
 import { SETTING_DEFAULT_CONFIG } from "@/config/setting";
 import { useSettingsStore } from "./setting.store";
 
-vi.mock("@/hooks/core/useTheme", () => ({ useTheme: vi.fn() }));
-vi.mock("@stores", () => ({ useSettingsStore: () => useSettingsStore() }));
-vi.mock("@utils", async () => ({
-  ...(await import("@/utils/ui")),
-  formatToDate: () => "2026-10-04",
-  StorageConfig: { THEME_KEY: "sys-theme" },
-}));
-
 function initializeStore() {
   const pinia = createPinia().use(persistedState);
   createApp({}).use(pinia);

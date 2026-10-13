@@ -1,4 +1,4 @@
-import { request } from "@utils";
+import { request } from "@/utils/http";
 import { MenuTable, MenuForm } from "@/api/module_platform/menu";
 
 const API_PATH = "/system/user";

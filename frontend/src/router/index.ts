@@ -1,6 +1,6 @@
 import type { App } from "vue";
-import { createRouter, createWebHashHistory } from "vue-router";
-import { HOME_ROUTE_NAME, ROOT_LAYOUT_ROUTE_NAME, staticRoutes } from "./staticRoutes";
+import { HOME_ROUTE_NAME, ROOT_LAYOUT_ROUTE_NAME } from "./staticRoutes";
+import { router } from "./instance";
 import { setupAfterEachGuard } from "./afterEach";
 import "@utils/ui";
 
@@ -13,11 +13,7 @@ import "@utils/ui";
  * - 兼容 Electron 等非 HTTP 协议环境
  * - 开发环境 HMR 不受影响
  */
-export const router = createRouter({
-  history: createWebHashHistory(),
-  routes: staticRoutes,
-  scrollBehavior: () => ({ left: 0, top: 0 }),
-});
+export { router };
 
 export async function initRouter(app: App<Element>): Promise<void> {
   const { setupBeforeEachGuard } = await import("./beforeEach");
@@ -26,7 +22,7 @@ export async function initRouter(app: App<Element>): Promise<void> {
   app.use(router);
 }
 
-export const HOME_PAGE_PATH = "/home";
+export { HOME_PAGE_PATH } from "./staticRoutes";
 
 export { HOME_ROUTE_NAME, ROOT_LAYOUT_ROUTE_NAME };
 

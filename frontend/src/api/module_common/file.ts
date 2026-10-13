@@ -1,4 +1,4 @@
-import { request } from "@utils";
+import { request } from "@/utils/http";
 
 const FileAPI = {
   uploadFile(body: FormData) {

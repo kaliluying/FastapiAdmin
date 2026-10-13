@@ -1,4 +1,4 @@
-import { NO_AUTH_FLAG, request } from "@utils";
+import { NO_AUTH_FLAG, request } from "@/utils/http";
 
 const API_PATH = "/common/health";
 

@@ -31,11 +31,11 @@
  * @author FastCore Team
  */
 
-import { useSettingsStore } from "@stores";
+import { useSettingsStore } from "@/store/modules/setting.store";
 import { SystemThemeEnum } from "@/enums/appEnum";
 import AppConfig from "@/config";
 import { SystemThemeTypes } from "@/types/store";
-import { setElementThemeColor } from "@utils";
+import { setElementThemeColor } from "@/utils/ui/colors";
 import { usePreferredDark } from "@vueuse/core";
 import { watch } from "vue";
 
@@ -76,7 +76,7 @@ export function useTheme() {
     }
 
     settingStore.setGlopTheme(theme, themeMode);
-    setElementThemeColor(settingStore.systemThemeColor!);
+    setElementThemeColor(settingStore.systemThemeColor!, settingStore.isDark);
 
     // 使用 requestAnimationFrame 确保在下一帧恢复过渡效果
     requestAnimationFrame(() => {
@@ -138,7 +138,7 @@ export function initializeTheme() {
     }
 
     // 设置主题颜色
-    setElementThemeColor(settingStore.systemThemeColor!);
+    setElementThemeColor(settingStore.systemThemeColor!, settingStore.isDark);
 
     // 设置圆角
     const radius = Number(settingStore.customRadius);

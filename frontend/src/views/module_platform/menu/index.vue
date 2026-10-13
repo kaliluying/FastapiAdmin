@@ -1140,32 +1140,30 @@ function handleMenuTypeChange() {
 }
 
 async function handleSubmit() {
+  if (submitLoading.value || !dataFormRef.value) return;
   const allowed = allowedMenuTypeValues.value;
   if (!allowed.length) return;
-  const t = formData.value.type as MenuTypeEnum;
-  if (!allowed.includes(t)) {
-    formData.value.type = allowed[0] as MenuForm["type"];
-  }
-  dataFormRef.value?.validate(async (valid: boolean) => {
+  submitLoading.value = true;
+  try {
+    const t = formData.value.type as MenuTypeEnum;
+    if (!allowed.includes(t)) formData.value.type = allowed[0] as MenuForm["type"];
+    const valid = await dataFormRef.value.validate()?.catch(() => false);
     if (!valid) return;
-    submitLoading.value = true;
     const id = formData.value.id;
-    try {
-      if (id) {
-        await MenuAPI.updateMenu(id, { id, ...formData.value });
-      } else {
-        await MenuAPI.createMenu(formData.value);
-      }
-      dialogVisible.visible = false;
-      await resetForm();
-      await loadMenuData();
-      await refreshAuthorizationUi();
-    } catch (error: unknown) {
-      console.error(error);
-    } finally {
-      submitLoading.value = false;
+    if (id) {
+      await MenuAPI.updateMenu(id, { id, ...formData.value });
+    } else {
+      await MenuAPI.createMenu(formData.value);
     }
-  });
+    dialogVisible.visible = false;
+    await resetForm();
+    await loadMenuData();
+    await refreshAuthorizationUi();
+  } catch (error: unknown) {
+    console.error(error);
+  } finally {
+    submitLoading.value = false;
+  }
 }
 
 async function handleBatchDelete() {

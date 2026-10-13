@@ -3,7 +3,7 @@ import RoleAPI from "@/api/module_system/role";
 
 const { request } = vi.hoisted(() => ({ request: vi.fn() }));
 
-vi.mock("@utils", () => ({ request }));
+vi.mock("@/utils/http", () => ({ request }));
 
 describe("Role export API contract", () => {
   beforeEach(() => vi.clearAllMocks());

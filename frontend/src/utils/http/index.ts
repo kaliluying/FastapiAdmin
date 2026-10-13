@@ -15,7 +15,6 @@ import { ResultEnum } from "@/enums/api/result.enum";
 import { Auth } from "@/utils/auth";
 import { redirectToLogin } from "@/utils/auth";
 import { $t } from "@/locales";
-import AuthAPI from "@/api/module_system/auth";
 
 declare module "axios" {
   interface AxiosRequestConfig {
@@ -362,11 +361,12 @@ request.interceptors.response.use(
       if (!isRefreshing) {
         isRefreshing = true;
         try {
-          // Call refresh directly here to avoid dynamically importing user.store and creating cycles.
+          // 仅在刷新时加载 API，避免 HTTP 与 AuthAPI 的静态循环。
           const refreshToken = Auth.getRefreshToken();
           if (!refreshToken) {
             throw new HttpError("没有有效的刷新令牌", ApiStatus.unauthorized);
           }
+          const { default: AuthAPI } = await import("@/api/module_system/auth");
           const refreshResp = await AuthAPI.refreshToken({
             refresh_token: refreshToken,
           });

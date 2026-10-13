@@ -26,8 +26,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { AppRouteRecord } from "@/types/router";
-import { HOME_PAGE_PATH } from "@/router";
-import { mergeShellRoutesIntoMenu } from "@/router/staticRoutes";
+import { HOME_PAGE_PATH, mergeShellRoutesIntoMenu } from "@/router/staticRoutes";
 
 /**
  * 菜单状态管理

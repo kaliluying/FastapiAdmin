@@ -1,10 +1,11 @@
 import type { RouteLocationNormalized, RouteRecordRaw } from "vue-router";
-import { router } from "@/router";
+import { router } from "@/router/instance";
 import type { AppRouteRecord, AppRouteRecord as AppRouteRecordFromTypes } from "@/types";
 import i18n, { $t } from "@/locales";
 import AppConfig from "@/config";
-import { useSettingsStore, useWorktabStore } from "@stores";
-import { IframeRouteManager } from "@/router";
+import { useSettingsStore } from "@/store/modules/setting.store";
+import { useWorktabStore } from "@/store/modules/worktab.store";
+import { IframeRouteManager } from "@/router/staticRoutes";
 import { useCommon } from "@/hooks/core/useCommon";
 
 /**
@@ -73,7 +74,8 @@ export const getFirstMenuPath = (menuList: AppRouteRecordFromTypes[]): string =>
  * @param link HTTPS URL configured for the external menu.
  * @returns The newly opened window, or null when the browser blocks it.
  */
-export const openExternalLink = (link: string) => window.open(link, "_blank", "noopener,noreferrer");
+export const openExternalLink = (link: string) =>
+  window.open(link, "_blank", "noopener,noreferrer");
 
 export const handleMenuJump = (item: AppRouteRecord, jumpToFirst: boolean = false) => {
   const { link, isIframe: menuIsIframe } = item.meta;

@@ -1,12 +1,8 @@
 import type { App } from "vue";
-import { createPinia } from "pinia";
-import piniaPluginPersistedstate from "pinia-plugin-persistedstate";
 import { useUserStore } from "./modules/user.store";
 import { useWorktabStore } from "./modules/worktab.store";
 
-const store = createPinia();
-
-store.use(piniaPluginPersistedstate);
+import { store } from "./pinia";
 
 export function initStore(app: App<Element>) {
   app.use(store);
@@ -28,11 +24,7 @@ export interface RefreshCacheOptions {
 }
 
 export async function refreshAppCaches(opts: RefreshCacheOptions = {}) {
-  const {
-    refreshUser = true,
-    refreshRoutes = true,
-    clearTags = false,
-  } = opts;
+  const { refreshUser = true, refreshRoutes = true, clearTags = false } = opts;
 
   const userStore = useUserStore(store);
 

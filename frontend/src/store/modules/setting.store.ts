@@ -10,13 +10,13 @@ import { SystemThemeEnum, MenuThemeEnum, MenuTypeEnum, ContainerWidthEnum } from
 import { SETTING_DEFAULT_CONFIG } from "@/config/setting";
 import {
   setElementThemeColor,
-  formatToDate,
-  StorageConfig,
   applyTheme,
   generateThemeColors,
   toggleDarkMode,
   toggleSidebarColor,
-} from "@utils";
+} from "@/utils/ui/colors";
+import { formatToDate } from "@/utils/common";
+import { StorageConfig } from "@/utils/storage";
 import { SETTINGS_KEYS } from "@/constants";
 import { useStorage } from "@vueuse/core";
 import { defaultSettings } from "@/config/setting";
@@ -216,7 +216,7 @@ export const useSettingsStore = defineStore(
 
     const setElementTheme = (theme: string) => {
       systemThemeColor.value = theme;
-      setElementThemeColor(theme);
+      setElementThemeColor(theme, isDark.value);
     };
 
     const setBorderMode = () => {

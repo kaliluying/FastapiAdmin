@@ -6,9 +6,9 @@
  *
  * 去重：
  * - 同实例：`inFlightDedupePromise` + `inFlightDedupeKey`
- * - 跨实例（同参）：模块级 `globalListNetworkInflight`（布局短时多挂载时合并为一条 HTTP）
+ * - 跨实例（同接口、同参）：模块级 `globalListNetworkInflight`（布局短时多挂载时合并为一条 HTTP）
  *
- * KeepAlive：`onDeactivated` 会取消请求并置 `tableViewActive`，失活期间 `fetchData` 直接返回当前快照不发 HTTP。
+ * KeepAlive：`onDeactivated` 会停止接收响应并置 `tableViewActive`，失活期间 `fetchData` 直接返回当前快照不发 HTTP。
  */
 
 import {
@@ -25,6 +25,7 @@ import {
 } from "vue";
 import { useWindowSize } from "@vueuse/core";
 import type { AxiosResponse } from "axios";
+import { Auth } from "@/utils/auth";
 import { useTableColumns } from "./useTableColumns";
 import type { ColumnOption } from "@/types/component";
 import {
@@ -36,10 +37,13 @@ import {
   tableConfig,
   type ApiResponse,
   type TableError,
-} from "@utils";
+} from "@/utils/table/request";
 
 /** 跨组件实例：同一 dedupeKey 仅一条进行中的网络请求 */
-const globalListNetworkInflight = new Map<string, Promise<ApiResponse<unknown>>>();
+const globalListNetworkInflight = new WeakMap<
+  (params: any) => Promise<any>,
+  Map<string, { sessionKey: string; promise: Promise<unknown> }>
+>();
 
 // --- 类型推导（由 apiFn / 响应类型反推记录类型） ---
 type InferApiParams<T> = T extends (params: infer P) => any ? P : never;
@@ -188,14 +192,15 @@ function useTableImpl<TApiFn extends (params: any) => Promise<any>>(
   // 表格数据
   const data = ref<TRecord[]>([]);
 
-  // 请求取消控制器
-  let abortController: AbortController | null = null;
+  // 请求序号只控制本实例是否接收结果，不取消其他实例共享的网络请求。
+  let requestGeneration = 0;
 
   /** 同参且尚未结束的请求共用一个 Promise，避免并发重复打接口 */
   let inFlightDedupeKey: string | null = null;
+  let inFlightSessionKey: string | null = null;
   let inFlightDedupePromise: Promise<ApiResponse<TRecord>> | null = null;
 
-  /** KeepAlive 失活时不再发请求（组件侧 cancelRequest 会 abort） */
+  /** KeepAlive 失活时不再发请求 */
   let tableViewActive = true;
 
   /** 稳定序列化请求参，供 in-flight 去重用 */
@@ -282,10 +287,7 @@ function useTableImpl<TApiFn extends (params: any) => Promise<any>>(
     }
   }
 
-  /**
-   * 列表请求唯一入口：合并参数 → 发起 `apiFn`。
-   * 先进单实例去重，再进全局 Map；若已有同键进行中的 Promise，则等待并复用结果。
-   */
+  /** 同接口同参共享原始响应；转换和状态写入由每个实例独立处理。 */
   const fetchData = async (params?: Partial<TParams>): Promise<ApiResponse<TRecord>> => {
     let requestParams = Object.assign(
       {},
@@ -306,103 +308,79 @@ function useTableImpl<TApiFn extends (params: any) => Promise<any>>(
     }
 
     const dedupeKey = stableDedupeKeyFromParams(requestParams);
+    const sessionKey = Auth.getSessionKey();
 
-    if (inFlightDedupePromise !== null && inFlightDedupeKey === dedupeKey) {
+    if (
+      inFlightDedupePromise !== null &&
+      inFlightDedupeKey === dedupeKey &&
+      inFlightSessionKey === sessionKey
+    ) {
       logger.log("合并同参进行中的列表请求");
       return inFlightDedupePromise;
     }
 
-    const sharedGlobal = globalListNetworkInflight.get(dedupeKey);
-    if (sharedGlobal) {
-      loadingState.value = "loading";
-      error.value = null;
-      try {
-        const standardResponse = (await sharedGlobal) as ApiResponse<TRecord>;
-        commitNetworkSuccess(standardResponse);
-        return standardResponse;
-      } catch (err) {
-        if (err instanceof Error && err.message === "请求已取消") {
-          loadingState.value = "idle";
-          return { records: [], total: 0, current: 1, size: 10 };
-        }
-        loadingState.value = "error";
-        data.value = [];
-        const tableError = handleError(err, "获取表格数据失败");
-        throw tableError;
-      }
-    }
-
     if (!tableViewActive) {
       return {
-        records: [...data.value],
+        records: [...data.value] as TRecord[],
         total: pagination.total,
         current: pagination.current,
         size: pagination.size,
-      } as ApiResponse<TRecord>;
+      };
     }
 
-    if (abortController) {
-      abortController.abort();
-    }
-
-    const currentController = new AbortController();
-    abortController = currentController;
-
+    const generation = ++requestGeneration;
     loadingState.value = "loading";
     error.value = null;
+    let apiRequests = globalListNetworkInflight.get(apiFn);
+    if (!apiRequests) {
+      apiRequests = new Map();
+      globalListNetworkInflight.set(apiFn, apiRequests);
+    }
+    const shared = apiRequests.get(dedupeKey);
+    let networkPromise = shared?.sessionKey === sessionKey ? shared.promise : undefined;
+    if (!networkPromise) {
+      logger.log("HTTP 请求", dedupeKey);
+      networkPromise = (async () => apiFn(requestParams))();
+      apiRequests.set(dedupeKey, { sessionKey, promise: networkPromise });
+      const cleanup = () => {
+        if (apiRequests.get(dedupeKey)?.promise === networkPromise) apiRequests.delete(dedupeKey);
+      };
+      void networkPromise.then(cleanup, cleanup);
+    }
 
-    try {
-      inFlightDedupeKey = dedupeKey;
-
-      const networkPromise = (async (): Promise<ApiResponse<TRecord>> => {
-        try {
-          logger.log("HTTP 请求", dedupeKey);
-          const response = await apiFn(requestParams);
-
-          if (currentController.signal.aborted) {
-            throw new Error("请求已取消");
-          }
-
-          return responseAdapter(response);
-        } finally {
-          if (inFlightDedupeKey === dedupeKey) {
-            inFlightDedupeKey = null;
-            inFlightDedupePromise = null;
-          }
-          if (abortController === currentController) {
-            abortController = null;
-          }
-        }
-      })();
-
-      globalListNetworkInflight.set(dedupeKey, networkPromise as Promise<ApiResponse<unknown>>);
-      networkPromise
-        .finally(() => {
-          globalListNetworkInflight.delete(dedupeKey);
-        })
-        .catch(() => {}); // 忽略取消/reject，仅用于清理全局 Map
-
-      inFlightDedupePromise = networkPromise;
-
+    inFlightDedupeKey = dedupeKey;
+    inFlightSessionKey = sessionKey;
+    const instancePromise = (async (): Promise<ApiResponse<TRecord>> => {
       try {
-        const standardResponse = await networkPromise;
-        commitNetworkSuccess(standardResponse);
+        const response = await networkPromise;
+        const standardResponse = responseAdapter(response as InferApiResponse<TApiFn>);
+        if (generation === requestGeneration && sessionKey === Auth.getSessionKey()) {
+          commitNetworkSuccess(standardResponse);
+        }
         return standardResponse;
       } catch (err) {
-        if (err instanceof Error && err.message === "请求已取消") {
-          loadingState.value = "idle";
-          return { records: [], total: 0, current: 1, size: 10 };
+        if (generation !== requestGeneration || sessionKey !== Auth.getSessionKey()) {
+          return {
+            records: [...data.value] as TRecord[],
+            total: pagination.total,
+            current: pagination.current,
+            size: pagination.size,
+          };
         }
         loadingState.value = "error";
         data.value = [];
-        const tableError = handleError(err, "获取表格数据失败");
-        throw tableError;
+        throw handleError(err, "获取表格数据失败");
+      } finally {
+        if (generation === requestGeneration) {
+          inFlightDedupeKey = null;
+          inFlightSessionKey = null;
+          inFlightDedupePromise = null;
+          if (loadingState.value === "loading") loadingState.value = "idle";
+        }
       }
-    } finally {
-      if (abortController === currentController) {
-        abortController = null;
-      }
-    }
+    })();
+    inFlightDedupePromise = instancePromise;
+    return instancePromise;
   };
 
   /**
@@ -572,9 +550,11 @@ function useTableImpl<TApiFn extends (params: any) => Promise<any>>(
 
   // 取消当前请求
   const cancelRequest = (): void => {
-    if (abortController) {
-      abortController.abort();
-    }
+    requestGeneration += 1;
+    inFlightDedupeKey = null;
+    inFlightSessionKey = null;
+    inFlightDedupePromise = null;
+    if (loadingState.value === "loading") loadingState.value = "idle";
     debouncedGetDataByPage.cancel();
   };
 
@@ -687,4 +667,4 @@ function useTableImpl<TApiFn extends (params: any) => Promise<any>>(
   };
 }
 
-export type { ApiResponse, BaseRequestParams, TableError } from "@utils";
+export type { ApiResponse, BaseRequestParams, TableError } from "@/utils/table/request";

@@ -29,7 +29,7 @@
  * @author FastCore Team
  */
 
-import { useUserStore } from "@stores";
+import { useUserStore } from "@/store/modules/user.store";
 import { hasPermissionCode } from "@/utils/auth/permission";
 
 export const useAuth = () => {

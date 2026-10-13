@@ -6,10 +6,12 @@
  *
  * 动态路由由 `beforeEach.ts` → `RouteRegistry` 在登录后根据不同角色的菜单列表动态 `addRoute`。
  */
-import type { AppRouteRecordRaw } from "@utils";
+import type { AppRouteRecordRaw } from "@/utils/navigation";
 import type { AppRouteRecord } from "@/types/router";
 import { defineComponent, h, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
+
+export const HOME_PAGE_PATH = "/home";
 
 /** 首页 meta（侧栏、静态子路由共用） */
 export const HOME_MENU_META = {

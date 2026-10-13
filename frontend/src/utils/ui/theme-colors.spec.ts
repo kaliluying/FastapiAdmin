@@ -1,8 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { ThemeMode } from "@/enums";
-vi.mock("@stores", () => ({ useSettingsStore: vi.fn() }));
-vi.mock("@/hooks/core/useTheme", () => ({ useTheme: vi.fn() }));
-import { colorContrast, generateThemeColors } from "./index";
+import { colorContrast, generateThemeColors } from "./colors";
 
 describe("theme contrast", () => {
   for (const mode of [ThemeMode.LIGHT, ThemeMode.DARK]) {

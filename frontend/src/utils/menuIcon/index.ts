@@ -276,4 +276,4 @@ export function resolveIconForFaSvgIcon(stored?: string | null): string {
  * 本地 SVG URL（与 `@utils/icons` 同源）。
  * @deprecated 新代码请使用 {@link resolveLocalIconUrl} from `@utils/icons`
  */
-export { resolveLocalIconUrl as resolveMenuLocalSvgUrl } from "@utils";
+export { resolveLocalIconUrl as resolveMenuLocalSvgUrl } from "../icons";

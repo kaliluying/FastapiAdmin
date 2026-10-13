@@ -2,18 +2,20 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { LanguageEnum } from "@/enums/appEnum";
-import { router } from "@/router";
+import { router } from "@/router/instance";
 import { useSettingsStore } from "./setting.store";
 import { useWorktabStore } from "./worktab.store";
 import { useMenuStore } from "./menu.store";
 import { AppRouteRecord } from "@/types/router";
-import { Auth, setPageTitle, StorageConfig } from "@utils";
+import { Auth } from "@/utils/auth";
+import { setPageTitle } from "@/utils/navigation";
+import { StorageConfig } from "@/utils/storage";
 import AuthAPI from "@/api/module_system/auth";
 import UserAPI from "@/api/module_system/user";
 import type { MenuTable } from "@/api/module_platform/menu";
 import { ResultEnum } from "@/enums/api/result.enum";
 import { ElNotification } from "element-plus";
-import { store } from "@stores";
+import { store } from "../pinia";
 import type { UserInfo } from "@/api/module_system/user";
 import {
   clearLegacyUserRouteCache,

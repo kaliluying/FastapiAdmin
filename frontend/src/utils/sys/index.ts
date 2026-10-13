@@ -2,7 +2,7 @@
 
 import type { App } from "vue";
 import mitt, { type Emitter } from "mitt";
-import { StorageConfig } from "@utils";
+import { StorageConfig } from "../storage";
 
 /** 输出当前实例的简要启动信息。 */
 export function printConsoleBanner(): void {

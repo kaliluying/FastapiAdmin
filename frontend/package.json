@@ -27,6 +27,7 @@
     "type-check": "vue-tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "node tests/site-e2e.cjs",
+    "test:e2e:table-menu": "node tests/table-menu-e2e.cjs",
     "test:e2e:retry": "SITE_E2E_INTERACTIONS_ONLY=1 node tests/site-e2e.cjs",
     "test:e2e:preflight": "node tests/ux-e2e.cjs --preflight",
     "test:hooks": "node --test tests/git-hooks.test.cjs",
@@ -42,7 +43,7 @@
     "lint:lint-staged": "lint-staged --config ./package.json",
     "commit": "git-cz",
     "check": "node scripts/check.cjs",
-    "test:tooling": "node --test tests/git-hooks.test.cjs tests/acceptance-artifacts.test.cjs"
+    "test:tooling": "node --test tests/git-hooks.test.cjs tests/acceptance-artifacts.test.cjs tests/menu-submit.test.cjs tests/module-boundaries.test.cjs"
   },
   "config": {
     "commitizen": {

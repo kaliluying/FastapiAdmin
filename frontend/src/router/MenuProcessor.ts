@@ -1,5 +1,5 @@
 import type { AppRouteRecord } from "@/types/router";
-import { useUserStore } from "@stores";
+import { useUserStore } from "@/store/modules/user.store";
 
 import { backendMenusToAppRoutes } from "./menuRoutes";
 import { ROUTE_COMPONENT_LAYOUT } from "./staticRoutes";

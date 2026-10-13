@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import ElementPlus from "element-plus";
 import FaTable from "./index.vue";
 import { useTable } from "@/hooks/core/useTable";
+import { Auth } from "@/utils/auth";
 
-vi.mock("@utils", async () => import("@/utils/table"));
 vi.mock("@stores", () => ({
   useTableStore: () => ({
     isBorder: ref(false),
@@ -178,4 +178,118 @@ describe("table request lifecycle", () => {
     expect(table.error.value).toBeNull();
     wrapper.unmount();
   });
+});
+
+describe("table shared request isolation", () => {
+  it("does not merge different APIs with identical parameters", async () => {
+    const pending = Promise.withResolvers<unknown>();
+    const firstApi = vi.fn().mockReturnValue(pending.promise);
+    const secondApi = vi
+      .fn()
+      .mockResolvedValue({ records: [{ id: 2 }], total: 1, current: 1, size: 10 });
+    const first = createTable(firstApi);
+    const second = createTable(secondApi);
+    const calls = [first.table.fetchData(), second.table.fetchData()];
+    pending.resolve({ records: [{ id: 1 }], total: 1, current: 1, size: 10 });
+    await Promise.all(calls);
+    expect(secondApi).toHaveBeenCalledOnce();
+    expect(first.table.data.value).toEqual([{ id: 1 }]);
+    expect(second.table.data.value).toEqual([{ id: 2 }]);
+    first.wrapper.unmount();
+    second.wrapper.unmount();
+  });
+
+  it("does not let a shared older response replace a newer query", async () => {
+    const pending = Promise.withResolvers<unknown>();
+    const api = vi
+      .fn()
+      .mockReturnValueOnce(pending.promise)
+      .mockResolvedValueOnce({ records: [{ id: 2 }], total: 1, current: 1, size: 10 });
+    const first = createTable(api);
+    const second = createTable(api);
+    const calls = [first.table.fetchData(), second.table.fetchData()];
+    await second.table.getData({ username: "新查询" });
+    pending.resolve({ records: [{ id: 1 }], total: 1, current: 1, size: 10 });
+    await Promise.all(calls);
+    expect(second.table.data.value).toEqual([{ id: 2 }]);
+    expect(second.table.error.value).toBeNull();
+    first.wrapper.unmount();
+    second.wrapper.unmount();
+  });
+
+  it("does not let a shared older failure clear newer results", async () => {
+    const pending = Promise.withResolvers<unknown>();
+    const api = vi
+      .fn()
+      .mockReturnValueOnce(pending.promise)
+      .mockResolvedValueOnce({ records: [{ id: 2 }], total: 1, current: 1, size: 10 });
+    const first = createTable(api);
+    const second = createTable(api);
+    const calls = [first.table.fetchData(), second.table.fetchData()];
+    await second.table.getData({ username: "新查询" });
+    pending.reject(new Error("旧请求失败"));
+    await Promise.all(calls);
+    expect(second.table.data.value).toEqual([{ id: 2 }]);
+    expect(second.table.error.value).toBeNull();
+    first.wrapper.unmount();
+    second.wrapper.unmount();
+  });
+
+  it("keeps shared requests usable when the first consumer unmounts", async () => {
+    const pending = Promise.withResolvers<unknown>();
+    const api = vi.fn().mockReturnValue(pending.promise);
+    const first = createTable(api);
+    const second = createTable(api);
+    const calls = [first.table.fetchData(), second.table.fetchData()];
+    first.wrapper.unmount();
+    pending.resolve({ records: [{ id: 1 }], total: 1, current: 1, size: 10 });
+    await Promise.all(calls);
+    expect(api).toHaveBeenCalledOnce();
+    expect(second.table.data.value).toEqual([{ id: 1 }]);
+    expect(second.table.loading.value).toBe(false);
+    second.wrapper.unmount();
+  });
+});
+
+it("does not share pending responses across authentication sessions", async () => {
+  const pending = Promise.withResolvers<unknown>();
+  const api = vi
+    .fn()
+    .mockReturnValueOnce(pending.promise)
+    .mockResolvedValueOnce({ records: [{ id: 2 }], total: 1, current: 1, size: 10 });
+  const first = createTable(api);
+  Auth.setTokens("test-session-a", "", false);
+  const firstRequest = first.table.fetchData();
+  Auth.setTokens("test-session-b", "", false);
+  const second = createTable(api);
+  await second.table.fetchData();
+  pending.resolve({ records: [{ id: 1 }], total: 1, current: 1, size: 10 });
+  await firstRequest;
+  expect(api).toHaveBeenCalledTimes(2);
+  expect(second.table.data.value).toEqual([{ id: 2 }]);
+  expect(first.table.data.value).toEqual([]);
+  first.wrapper.unmount();
+  second.wrapper.unmount();
+  Auth.clearAuth();
+});
+
+it("accepts a pending response after token renewal within the same session", async () => {
+  const pending = Promise.withResolvers<unknown>();
+  const api = vi.fn().mockReturnValue(pending.promise);
+  const token = (expiry: number) =>
+    `header.${btoa(JSON.stringify({ sub: "test-same-session", exp: expiry }))}.signature`;
+  Auth.setTokens(token(1), "", false);
+  const first = createTable(api);
+  const firstRequest = first.table.fetchData();
+  Auth.setTokens(token(2), "", false);
+  const second = createTable(api);
+  const secondRequest = second.table.fetchData();
+  pending.resolve({ records: [{ id: 1 }], total: 1, current: 1, size: 10 });
+  await Promise.all([firstRequest, secondRequest]);
+  expect(api).toHaveBeenCalledOnce();
+  expect(first.table.data.value).toEqual([{ id: 1 }]);
+  expect(second.table.data.value).toEqual([{ id: 1 }]);
+  first.wrapper.unmount();
+  second.wrapper.unmount();
+  Auth.clearAuth();
 });
