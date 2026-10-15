@@ -4,14 +4,14 @@
 
 ## 本地运行
 
-要求 Node.js 20.19+，通过 Corepack 使用 `package.json` 的 `packageManager` 指定版本。所有命令从 `frontend/` 执行。
+要求 Node.js 22.22.2+（22.x）、24.15+（24.x）或 26+，通过 Corepack 使用 `package.json` 的 `packageManager` 指定版本。所有命令从 `frontend/` 执行。
 
 ```bash
 corepack pnpm install --frozen-lockfile
 corepack pnpm dev
 ```
 
-Vite 加载 `.env` 和 `.env.development`，后者覆盖同名值。启动前核对 `VITE_APP_BASE_API`（浏览器 API 前缀）、`VITE_API_BASE_URL`（开发代理目标）、`VITE_APP_WS_ENDPOINT`（AI WebSocket 地址）与实际后端配置。修改环境文件后重启开发服务器。
+Vite 加载 `.env` 和 `.env.development`，后者覆盖同名值。启动前核对 `VITE_APP_BASE_API`（浏览器 API 前缀）、`VITE_API_BASE_URL`（开发代理目标）与实际后端配置。修改环境文件后重启开发服务器。 AI 对话通过同一 HTTP 代理发送 `POST /ai/chat/stream` 并读取 SSE，沿用登录令牌和刷新流程；详见[对话流协议](../docs/AI_CHAT_STREAMING.md)。
 
 ## 运行结构
 

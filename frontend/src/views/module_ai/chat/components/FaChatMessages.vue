@@ -8,6 +8,7 @@
         :message="message"
         @toggle-thinking="handleToggleThinking(message)"
         @retry="emit('retry', message.id)"
+        @show-retry="scrollToMessage"
         @show-citations="emit('show-citations', message.id)"
       />
     </div>
@@ -46,6 +47,14 @@ const scrollToBottom = () => {
     const wrap = messagesContainer.value?.wrapRef;
     if (wrap) wrap.scrollTop = wrap.scrollHeight;
   });
+};
+
+const scrollToMessage = (messageId: string) => {
+  const message = messagesContainer.value?.wrapRef?.querySelector<HTMLElement>(
+    `[data-message-id="${messageId}"]`
+  );
+  message?.scrollIntoView({ block: "center", behavior: "smooth" });
+  message?.focus({ preventScroll: true });
 };
 
 watch(

@@ -186,7 +186,8 @@ async def _load_authenticated_user(username: str):
 
 async def get_current_user(
     request: Request,
-    db: AsyncSession = Depends(db_getter),
+    # 在响应和后台审计之前提交或回滚请求事务。
+    db: AsyncSession = Depends(db_getter, scope="function"),
     redis: Redis = Depends(redis_getter),
     token: str = Depends(OAuth2Schema),
 ) -> AuthSchema:

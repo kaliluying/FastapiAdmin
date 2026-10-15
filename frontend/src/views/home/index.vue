@@ -89,11 +89,13 @@ type HealthState = "loading" | "healthy" | "degraded" | "unavailable";
 const HEALTH_REFRESH_INTERVAL = 30_000;
 const menuStore = useMenuStore();
 const userStore = useUserStore();
-const canViewLoginTrend = computed(() =>
-  hasPermissionCode("module_system:login_log:query", {
-    is_superuser: userStore.basicInfo.is_superuser,
-    permissions: userStore.getPerms,
-  })
+const canViewLoginTrend = computed(
+  () =>
+    (userStore.basicInfo.modules?.includes("dashboard") ?? true) &&
+    hasPermissionCode("module_system:login_log:query", {
+      is_superuser: userStore.basicInfo.is_superuser,
+      permissions: userStore.getPerms,
+    })
 );
 const quickLinks = computed(() => {
   const links: { path: string; title: string; icon: string }[] = [];

@@ -8,7 +8,6 @@ mechanism until the product has a second plugin.
 
 import importlib
 import importlib.util
-import inspect
 import tomllib
 from dataclasses import dataclass
 from functools import lru_cache
@@ -16,9 +15,6 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter
-
-from app.core.base_model import MappedBase
-from app.core.logger import logger
 
 AI_MANIFEST_PATH = Path(__file__).resolve().parents[1] / "plugin" / "module_ai" / "plugin.toml"
 
@@ -150,64 +146,5 @@ def get_ai_routers() -> tuple[APIRouter, ...]:
     return (container_router,)
 
 
-def get_ai_websocket_routers() -> tuple[APIRouter, ...]:
-    """Load WebSocket routers declared by the core AI manifest."""
-    ensure_ai_dependencies()
-    manifest = get_ai_plugin_manifest()
-    routers: list[APIRouter] = []
-    for entrypoint in manifest.websocket_routers:
-        router = _resolve_entrypoint(manifest, entrypoint)
-        if not isinstance(router, APIRouter):
-            raise TypeError(f"AI WebSocket 路由入口不是 APIRouter: {entrypoint}")
-        routers.append(router)
-    return tuple(routers)
 
-
-def load_ai_models() -> list[type[MappedBase]]:
-    """Load all ORM models declared by the core AI manifest.
-
-    Returns:
-        AI ORM models without duplicates.
-    """
-    ensure_ai_dependencies()
-    manifest = get_ai_plugin_manifest()
-    models: list[type[MappedBase]] = []
-    for module_path in manifest.model_modules:
-        module = importlib.import_module(f"app.plugin.{manifest.package}.{module_path}")
-        for candidate in vars(module).values():
-            is_model = isinstance(candidate, type) and issubclass(candidate, MappedBase) and candidate is not MappedBase and bool(getattr(candidate, "__tablename__", None))
-            if is_model and candidate not in models:
-                models.append(candidate)
-    return models
-
-
-async def initialize_ai_plugin() -> None:
-    """Run startup hooks declared by the core AI manifest.
-
-    Raises:
-        Exception: Propagates AI initialization errors and stops application startup.
-    """
-    ensure_ai_dependencies()
-    manifest = get_ai_plugin_manifest()
-    for entrypoint in manifest.startup_hooks:
-        hook = _resolve_entrypoint(manifest, entrypoint)
-        result = hook()
-        if inspect.isawaitable(result):
-            await result
-        logger.info("✅ {} 初始化完成", manifest.title)
-
-
-def get_ai_permission_codes() -> frozenset[str]:
-    """Return the permission codes declared by the AI manifest."""
-    return frozenset(get_ai_plugin_manifest().permissions)
-
-
-__all__ = [
-    "ensure_ai_dependencies",
-    "get_ai_permission_codes",
-    "get_ai_plugin_manifest",
-    "get_ai_routers",
-    "get_ai_websocket_routers",
-    "initialize_ai_plugin",
-    "load_ai_models",
-]
+__all__ = ["ensure_ai_dependencies", "get_ai_plugin_manifest", "get_ai_routers"]

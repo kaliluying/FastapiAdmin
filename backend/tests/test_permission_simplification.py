@@ -19,6 +19,7 @@ from app.core.base_schema import AuthSchema
 from app.core.dependencies import _load_user_from_db
 from app.core.exceptions import CustomException
 from app.core.permission_catalog import PERMISSION_CODES
+from app.scripts.initialize import get_seed_data
 
 SEED_DIR = Path(__file__).resolve().parents[1] / "app" / "scripts" / "data"
 APP_DIR = Path(__file__).resolve().parents[1] / "app"
@@ -330,7 +331,7 @@ def test_initialized_user_list_only_contains_baseline_accounts(test_client, auth
 
 
 def test_seed_role_menu_mapping_grants_user_ai_session_access():
-    role_menus = json.loads((SEED_DIR / "sys_role_menus.json").read_text(encoding="utf-8"))
+    role_menus = get_seed_data("sys_role_menus")
 
     assert role_menus
     assert {item["role_code"] for item in role_menus} == {"USER"}
@@ -382,7 +383,7 @@ def test_seed_data_has_no_historical_org_noise():
 
 
 def test_seed_buttons_are_permission_resources_not_routes():
-    menus = json.loads((SEED_DIR / "platform_menu.json").read_text(encoding="utf-8"))
+    menus = get_seed_data("platform_menu")
     buttons = []
 
     def walk(nodes):
@@ -401,7 +402,7 @@ def test_seed_buttons_are_permission_resources_not_routes():
 
 
 def test_permission_codes_are_scoped_and_only_reused_within_same_page():
-    menus = json.loads((SEED_DIR / "platform_menu.json").read_text(encoding="utf-8"))
+    menus = get_seed_data("platform_menu")
     permissions_by_code = defaultdict(list)
 
     def walk(nodes, page_key: str | None = None):
@@ -437,7 +438,7 @@ def test_permission_catalog_has_no_removed_department_permissions():
 
 
 def test_menu_permissions_are_declared_in_permission_catalog():
-    menus = json.loads((SEED_DIR / "platform_menu.json").read_text(encoding="utf-8"))
+    menus = get_seed_data("platform_menu")
     menu_permissions = set()
 
     def walk(nodes):

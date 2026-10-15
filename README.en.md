@@ -16,7 +16,7 @@ FastCore is a secondary development of the predecessor [FastapiAdmin](https://gi
 | [Module template](docs/STANDARD_MODULE_TEMPLATE.md) | A development-only category example covering data constraints, permissions, navigation and acceptance |
 | [Backup and restore](docs/BACKUP_AND_RESTORE.md)    | Offline backup and recovery of the database, private files, Chroma and BM25 indexes                   |
 
-AI is a core module assembled through an explicit manifest. The scaffold uses a single-organization permission model.
+AI is included by default and assembled explicitly; copied projects can remove the complete module and its dependencies. See the [module development guide](docs/MODULE_DEVELOPMENT.md). The scaffold uses a single-organization permission model.
 
 ## Local development
 
@@ -28,7 +28,7 @@ cd fastcore
 cp backend/env/.env.dev.example backend/env/.env.dev
 ```
 
-Fill in database, Redis and secret settings before starting. Check the frontend API proxy and WebSocket targets in `.env` and `.env.development` against the actual backend configuration.
+Fill in database, Redis and secret settings before starting. Check the frontend API proxy target (AI chat also uses HTTP/SSE) in `.env` and `.env.development` against the actual backend configuration.
 
 ```bash
 # Terminal 1, from the repository root
@@ -44,7 +44,7 @@ corepack pnpm install --frozen-lockfile
 corepack pnpm dev
 ```
 
-Development startup migrates and initializes the selected database. Production startup only validates its structure: use `bootstrap --env=prod` for initial provisioning and `migrate --env=prod` for later schema upgrades. See the [backend guide](backend/README.md). AI dependencies are included in `uv sync`; external model services and OCR tools require separate configuration.
+Development and production startup both migrate, initialize and validate the selected database under a Redis lock. `bootstrap --env=prod` and `migrate --env=prod` remain available for explicit deployment preparation. See the [backend guide](backend/README.md). AI dependencies are included in `uv sync`; external model services and OCR tools require separate configuration.
 
 ## Development and maintenance
 

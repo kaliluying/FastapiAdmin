@@ -19,6 +19,15 @@ from .schema import LoginTrendItem, LoginTrendOut
 DashboardRouter = APIRouter(prefix="/monitoring", tags=["公共模块", "运营概览"])
 
 
+def get_module():
+    from app.core.modules import ModuleSpec
+
+    return ModuleSpec(name="dashboard", routers=("app.api.v1.module_common.monitoring.dashboard:dashboard_router",))
+
+
+dashboard_router = APIRouter(prefix="/common")
+
+
 def _normalise_group_day(value: object) -> str | None:
     """将不同数据库返回的日期分组值统一为 ISO 日期字符串。"""
     if isinstance(value, datetime):
@@ -102,3 +111,6 @@ async def get_login_trend_controller(
         )
 
     return SuccessResponse(data=LoginTrendOut(items=items), msg="获取登录趋势成功")
+
+
+dashboard_router.include_router(DashboardRouter)

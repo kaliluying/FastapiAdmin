@@ -266,7 +266,7 @@ request.interceptors.request.use(
  */
 request.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
-    if (response.config.responseType === "blob") {
+    if (["blob", "stream"].includes(response.config.responseType || "")) {
       return response;
     }
 
@@ -289,6 +289,16 @@ request.interceptors.response.use(
     return response;
   },
   async (error: AxiosError<ApiResponse>) => {
+    if (error.config?.signal?.aborted) return Promise.reject(error);
+    if (error.response?.config.responseType === "stream") {
+      try {
+        error.response.data = await new Response(
+          error.response.data as unknown as ReadableStream
+        ).json();
+      } catch {
+        return Promise.reject(new Error("服务器未返回有效的错误信息"));
+      }
+    }
     const showErrorMessage = shouldShowErrorMessage(error.config);
 
     // Network errors without a response body.

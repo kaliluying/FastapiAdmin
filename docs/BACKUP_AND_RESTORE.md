@@ -107,3 +107,5 @@ PYTHONPATH=backend backend/.venv/bin/python -m unittest discover \
 上面测试命令从仓库根目录执行。临时目录中创建 SQLite 数据与外键约束、原件、真实 Chroma/Whoosh 索引；索引创建子进程退出后备份，恢复后在新的子进程查询两种索引并校验 SQL/文件。另覆盖停写确认、禁止覆盖、符号链接/路径穿越、损坏归档、失败清理和缺少客户端；MySQL/PostgreSQL 只验证原生命令边界与离线产物流程，**未取得真实服务导入证据**。
 
 适配 CodeVault `Staged Immutable Installation` 的暂存、完整性门禁、不可变产物和失败清理约束；备份文件通过不覆盖的原子 hard-link 发布，恢复到同文件系统的私有暂存目录后提交。没有引入安装注册表或通用云存储 Adapter，因为当前是单一离线文件系统工作流。
+
+AI 已整套裁剪的项目仅备份关系数据库和共享 upload 存储；AI 仍注册时保留原有完整存储集合。归档校验与恢复仍支持之前的完整备份，不能用裁剪后的基础备份代替被保留的 AI 历史数据备份。

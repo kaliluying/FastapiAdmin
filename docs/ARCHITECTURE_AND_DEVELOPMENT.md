@@ -11,7 +11,7 @@ FastCore 是面向单组织企业应用的后端骨架，配套管理端并内�
 ```mermaid
 flowchart LR
     U[浏览器：Vue 3] -->|HTTP /api/v1| A[FastAPI]
-    U -->|WebSocket ticket| A
+    U -->|POST + SSE| A
     A --> S[系统与平台模块]
     A --> K[AI 模块：对话、知识库、记忆与质量]
     S --> DB[(关系数据库)]
@@ -29,7 +29,8 @@ flowchart LR
 | 前端鉴权与导航 | `src/store/modules/user.store.ts`、`src/router/` | 登录状态、授权菜单转换、动态路由注册和导航守卫 |
 | 后端组装 | `backend/main.py`、`app/init_app.py` | 装配中间件、路由、生命周期和静态文件 |
 | 通用后台 API | `app/api/v1/module_common/`、`module_platform/`、`module_system/` | 文件与健康检查、菜单、认证及系统管理 |
-| AI 核心模块 | `app/plugin/module_ai/`、`app/core/plugins.py` | 对话、知识库、记忆、模型配置、用量与质量；通过显式清单组装 |
+| 默认 AI 模块 | `app/plugin/module_ai/`、`module.py`、`plugin.toml` | 对话、知识库、记忆、模型配置、用量与质量；默认提供并可整套裁剪 |
+| 业务模块组装 | `app/config/modules.py`、`app/core/modules.py` | 统一接入业务路由、模型、权限、种子、生命周期、索引和备份 |
 | 数据初始化 | `app/scripts/initialize.py`、`app/scripts/migrate.py` | ORM 建表与种子数据、已有 Alembic 迁移 |
 
 表中 `app/` 和 `src/` 分别相对于 `backend/`、`frontend/`。模块按功能组织；新增功能先沿现有调用链打通完整用例，再决定是否需要拆分更多文件。
@@ -37,11 +38,11 @@ flowchart LR
 ## 启动、路由与权限
 
 1. 从 `backend/` 运行 `uv run main.py run --env=dev`。CLI 先设置 `ENVIRONMENT`，再导入配置；`app/config/setting.py` 和 `app/plugin/module_ai/config.py` 读取对应 `backend/env/.env.dev`。
-2. `create_app()` 注册异常处理、中间件、通用路由、AI 路由和静态资源。通用路由在 `app/init_app.py:register_routers()` 显式挂载；AI 的 HTTP/WebSocket 路由、模型和启动钩子由 `app/plugin/module_ai/plugin.toml` 声明，交给 `app/core/plugins.py` 装配。当前没有目录扫描式插件发现。
-3. 应用生命周期先连接必需的 Redis。开发环境仍在 Redis 锁下初始化数据库；生产环境只读检查迁移版本、必需表、列和索引，不自动迁移、建表或补种子，结构不匹配即拒绝启动。随后初始化 AI 核心模块、通用缓存及限流器；HTTP 与 WebSocket 使用 `RATE_LIMITER_TIMES` / `RATE_LIMITER_SECONDS`。开发初始化运行在可终止子进程中，锁续约失败会中止该进程。
+2. `create_app()` 注册异常处理、中间件、通用路由、AI 路由和静态资源。基础路由在 `app/init_app.py:register_routers()` 显式挂载；业务模块由 `app/config/modules.py` 登记，通过 `app/core/modules.py` 统一装配。AI 的 HTTP/WebSocket 路由、模型和启动钩子仍由 `app/plugin/module_ai/plugin.toml` 声明，`module.py` 接入统一组装。当前没有目录扫描式插件发现。
+3. 应用生命周期先连接必需的 Redis。所有环境都在 Redis 锁下自动应用数据库迁移、创建缺失表并补齐稳定种子数据，结构校验失败即拒绝启动。随后执行已注册模块的启动钩子，初始化通用缓存及限流器；HTTP 与 WebSocket 使用 `RATE_LIMITER_TIMES` / `RATE_LIMITER_SECONDS`。启动初始化运行在可终止子进程中，锁续约失败会中止该进程。
 4. 前端使用 Hash 路由。登录后用户信息中的菜单进入 `MenuProcessor`，由 `menuRoutes.ts` 转换，再经 `RouteRegistry` 校验并注册；`beforeEach.ts` 负责权限与导航。个人中心是静态隐藏路由，资料与密码操作仍由后端登录态校验。
 
-前端 API 请求通过 `frontend/src/utils/http/` 发送。开发代理由 `frontend/vite.config.ts` 配置：`VITE_APP_BASE_API` 是浏览器使用的 API 前缀，`VITE_API_BASE_URL` 是代理目标；WebSocket 另用 `VITE_APP_WS_ENDPOINT`。Vite 会加载 `.env` 和对应模式的 `.env.development`，后者可覆盖同名值。仓库模板与当前开发文件可能不同，联调前以实际加载值和后端监听地址核对。
+前端 API 请求通过 `frontend/src/utils/http/` 发送。开发代理由 `frontend/vite.config.ts` 配置：`VITE_APP_BASE_API` 是浏览器使用的 API 前缀，`VITE_API_BASE_URL` 是代理目标；AI 对话也通过同一 HTTP 代理读取 SSE，旧 WebSocket 兼容入口仍保留。Vite 会加载 `.env` 和对应模式的 `.env.development`，后者可覆盖同名值。仓库模板与当前开发文件可能不同，联调前以实际加载值和后端监听地址核对。
 
 ## 数据归属与知识库链路
 
@@ -56,7 +57,7 @@ flowchart LR
 
 模型配置页可填写模型名，也可使用当前接口地址和 API Key 获取服务商模型列表后选择。获取列表不会保存配置；改用其他接口地址或在 OpenAI 与 Anthropic 之间切换时，保存前需填写对应接口的 API Key。
 
-**真实纵向链路示例：上传知识库文档。**前端 `src/api/module_ai/knowledge.ts` 调用 `POST /ai/knowledge/document/upload`；后端 `knowledge/controller.py` 校验文档创建权限，`knowledge/service.py` 保存原件和持久化 `pending` 记录。进程内后台任务只是加速器；manifest 声明的恢复任务每 15 秒扫描可领取的文档，通过 SQL 条件更新领取，抽取文本、切块并按 `RETRIEVAL_MODE` 更新 Chroma、BM25 或两者，最后更新索引状态。上传成功只代表文件与记录已接收；应继续检查文档索引状态和检索结果。AI 对话在 `chat/` 中使用知识库检索结果，WebSocket 入口在 `chat/ws.py`，通过 ticket 鉴权。
+**真实纵向链路示例：上传知识库文档。**前端 `src/api/module_ai/knowledge.ts` 调用 `POST /ai/knowledge/document/upload`；后端 `knowledge/controller.py` 校验文档创建权限，`knowledge/service.py` 保存原件和持久化 `pending` 记录。进程内后台任务只是加速器；manifest 声明的恢复任务每 15 秒扫描可领取的文档，通过 SQL 条件更新领取，抽取文本、切块并按 `RETRIEVAL_MODE` 更新 Chroma、BM25 或两者，最后更新索引状态。上传成功只代表文件与记录已接收；应继续检查文档索引状态和检索结果。AI 对话在 `chat/` 中使用知识库检索结果，当前界面使用 `POST /ai/chat/stream`，通过 Bearer 令牌鉴权并返回 SSE；`chat/ws.py` 的 ticket 入口保留兼容。停止生成会取消本次 HTTP 请求并关闭模型流，只有提交完成后才发送 `done`，详见[对话流协议](AI_CHAT_STREAMING.md)。
 
 - 索引租约默认 300 秒，每 30 秒续约；失败后等待 60 秒自动重试，最多 3 次。硬终止后过期的任务可被重启进程接管，耗尽次数会明确失败而不是永久 `indexing`；手动重建可重新开始。
 - 每次索引生成使用独立分块标识，保存待清理列表；旧索引在新 SQL 分块提交后清理。删除先通过 SQL 阻止重新领取，外部索引和源文件清理由持久化删除状态恢复。检索须以未删除文档和当前 SQL 分块为准，不能仅信任外部索引命中。
@@ -74,9 +75,9 @@ flowchart LR
 
 ## 开发与验收入口
 
-新增业务从[标准模块模板：分类管理](STANDARD_MODULE_TEMPLATE.md)开始，沿用数据库约束、请求事务、功能权限、数据范围、菜单接入和端到端验收方式。范例接口和导航仅在开发环境启用；生产保留模型及迁移历史，正式业务使用独立命名并正常注册。
+新增、修改和裁剪业务先读[模块增删改指南](MODULE_DEVELOPMENT.md)，新增业务从[标准模块模板：分类管理](STANDARD_MODULE_TEMPLATE.md)开始，沿用数据库约束、请求事务、功能权限、数据范围、菜单接入和端到端验收方式。范例接口和导航仅在开发环境启用；生产保留模型及迁移历史，正式业务使用独立命名并正常注册。
 
-配置与运行命令分别维护在[后端说明](../backend/README.md)和[管理端说明](../frontend/README.md)。开发启动会迁移与初始化目标库；生产首次部署显式 bootstrap，后续显式 migrate，正常启动只检查结构。前端通过 Corepack 使用仓库声明的 pnpm；新 checkout 先通过 Vite 生成自动导入声明。
+配置与运行命令分别维护在[后端说明](../backend/README.md)和[管理端说明](../frontend/README.md)。所有环境启动都会自动迁移与初始化目标库；`bootstrap` 和 `migrate` 仍可用于部署前显式执行。前端通过 Corepack 使用仓库声明的 pnpm；新 checkout 先通过 Vite 生成自动导入声明。
 
 单测、组合检查、隔离浏览器、真实依赖与供应商的边界统一见[测试与验收](TESTING.md)。跨层验收需验证登录与权限、页面操作、API 响应、持久化及错误态。知识库上传要等待索引终态并检查实际召回，不能只看上传成功。
 
@@ -87,6 +88,6 @@ flowchart LR
 - **系统 API**：从 `app/api/v1/module_*/<feature>/` 的 controller 进入，核对 service、数据访问、权限码与功能组 router；前端对应 `src/api/`、`src/views/` 和后端菜单。
 - **AI 能力**：先核对 `module_ai/plugin.toml` 的声明和现有 `chat/`、`knowledge/`、`memory/` 边界。跨功能调用依赖拥有方的公开用例，避免直接耦合对方内部 CRUD、索引或 Provider Client。
 - **前端页面**：核对用户菜单的 `route_path`、`route_name`、组件路径、`MenuProcessor`、`RouteRegistry` 与守卫；同时验证后端授权。
-- **数据库模型**：Alembic `script_location` 是 `backend/app/alembic`，版本目录为 `backend/app/alembic/versions/`。生成迁移后审查脚本和数据影响；生产部署显式应用迁移，正常启动只检查结构，不会生成或应用迁移。需要交付的版本文件应与代码一起纳入版本管理。
+- **数据库模型**：Alembic `script_location` 是 `backend/app/alembic`，版本目录为 `backend/app/alembic/versions/`。生成迁移后审查脚本和数据影响；所有环境启动都会自动应用已提交迁移并校验结构。需要交付的版本文件应与代码一起纳入版本管理。
 
 变更文档时，以代码入口、包脚本和环境模板为事实来源。入口总览放在根 `README.md`；子项目 README 只保留本子项目的操作说明；本文维护跨端调用链和验收边界。历史实现报告与设计稿保留其原始时间语境，不作为当前开发命令的依据。

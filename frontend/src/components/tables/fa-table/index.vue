@@ -103,7 +103,7 @@ import {
   defineComponent,
   type PropType,
 } from "vue";
-import type { ElTable, TableProps } from "element-plus";
+import type { TableInstance, TableProps } from "element-plus";
 import { storeToRefs } from "pinia";
 import { ColumnOption } from "@/types";
 import { useTableStore } from "@stores";
@@ -116,7 +116,7 @@ import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 defineOptions({ name: "FaTable" });
 
 const { width } = useWindowSize();
-const elTableRef = ref<InstanceType<typeof ElTable> | null>(null);
+const elTableRef = ref<TableInstance | null>(null);
 const paginationRef = ref<HTMLElement>();
 const tableHeaderRef = ref<HTMLElement>();
 const tableStore = useTableStore();

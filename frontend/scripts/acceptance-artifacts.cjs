@@ -50,7 +50,12 @@ function retainArtifacts(source, root, passed) {
     } else continue;
     files.push(entry.name);
   }
-  const git = (args) => execFileSync("git", args, { cwd: root, stdio: ["ignore", "pipe", "pipe"] });
+  const git = (args) =>
+    execFileSync("git", args, {
+      cwd: root,
+      stdio: ["ignore", "pipe", "pipe"],
+      maxBuffer: 16 * 1024 * 1024,
+    });
   const changedFiles = git(["ls-files", "-m", "-o", "--exclude-standard", "-z"])
     .toString()
     .split("\0")

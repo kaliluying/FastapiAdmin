@@ -70,6 +70,7 @@
             </template>
           </ElTableColumn>
           <ElTableColumn prop="created_time" label="创建时间" width="165" show-overflow-tooltip />
+          <!-- @vue-generic {KnowledgeBase} -->
           <ElTableColumn label="操作" width="270" :fixed="isNarrowViewport ? false : 'right'">
             <template #default="{ row }">
               <div class="action-buttons">

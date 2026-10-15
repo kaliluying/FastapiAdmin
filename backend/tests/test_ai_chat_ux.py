@@ -462,7 +462,8 @@ def test_authenticated_attachment_websocket_and_history_flow(ai_client, configur
 
 
 @pytest.mark.parametrize("scenario", ["cross_user_denied", "own_allowed", "superuser_allowed"])
-def test_real_websocket_ticket_auth_enforces_knowledge_creator_scope(ai_client, websocket_scope_data, configured_chat, monkeypatch, scenario):
+@pytest.mark.parametrize("transport", ["websocket", "sse"])
+def test_real_chat_auth_enforces_knowledge_creator_scope(ai_client, websocket_scope_data, configured_chat, monkeypatch, scenario, transport):
     searched_ids = []
     prompts = []
     derived_auth = []
@@ -502,16 +503,21 @@ def test_real_websocket_ticket_auth_enforces_knowledge_creator_scope(ai_client, 
     login = ai_client.post("/system/auth/login", data={"username": username, "password": password})
     assert login.status_code == 200
     headers = {"Authorization": f"Bearer {login.json()['data']['access_token']}"}
-    ticket = ai_client.post("/system/auth/ws-ticket", headers=headers)
-    assert ticket.status_code == 200
-    with ai_client.websocket_connect(f"/ai/chat/ws?ticket={ticket.json()['data']['ticket']}") as websocket:
-        websocket.send_json({"message": "请总结知识库资料", "knowledge_base_ids": [base["id"]], "request_id": scenario})
-        events = []
-        for _ in range(8):
-            event = websocket.receive_json()
-            events.append(event)
-            if event["type"] in {"done", "error"}:
-                break
+    if transport == "sse":
+        response = ai_client.post("/ai/chat/stream", headers=headers, json={"message": "请总结知识库资料", "knowledge_base_ids": [base["id"]], "request_id": scenario})
+        assert response.status_code == 200
+        events = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith("data: ")]
+    else:
+        ticket = ai_client.post("/system/auth/ws-ticket", headers=headers)
+        assert ticket.status_code == 200
+        with ai_client.websocket_connect(f"/ai/chat/ws?ticket={ticket.json()['data']['ticket']}") as websocket:
+            websocket.send_json({"message": "请总结知识库资料", "knowledge_base_ids": [base["id"]], "request_id": scenario})
+            events = []
+            for _ in range(8):
+                event = websocket.receive_json()
+                events.append(event)
+                if event["type"] in {"done", "error"}:
+                    break
     assert all(event["request_id"] == scenario for event in events)
     if scenario == "cross_user_denied":
         assert [event["type"] for event in events] == ["error"]

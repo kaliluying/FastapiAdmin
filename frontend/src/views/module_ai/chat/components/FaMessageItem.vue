@@ -1,5 +1,5 @@
 <template>
-  <div :class="['message-group', message.type]">
+  <div :class="['message-group', message.type]" :data-message-id="message.id" tabindex="-1">
     <div class="message-avatar">
       <div v-if="message.type === 'user'" class="user-avatar">
         <ElIcon><User /></ElIcon>
@@ -59,7 +59,10 @@
         </div>
       </div>
       <p v-if="message.warning" class="message-note" role="status">{{ message.warning }}</p>
-      <p v-if="message.error" class="message-note" role="alert">{{ message.error }}</p>
+      <p v-if="message.retriedMessageId" class="message-note" role="status">
+        已重试成功。原失败原因：{{ message.error }}
+      </p>
+      <p v-else-if="message.error" class="message-note" role="alert">{{ message.error }}</p>
       <p v-if="message.stopped" class="message-note">已停止生成；当前回答可能未保存</p>
       <div v-if="message.type === 'assistant'" class="message-actions">
         <FaAnswerFeedback
@@ -76,7 +79,16 @@
           :initial-comment="message.feedbackComment"
         />
         <ElButton
-          v-if="message.error && message.request && message.errorCode !== 'log_context_expired'"
+          v-if="message.retriedMessageId"
+          link
+          type="primary"
+          @click="emit('show-retry', message.retriedMessageId)"
+          >已重试，查看新回答</ElButton
+        >
+        <ElButton
+          v-else-if="
+            message.error && message.request && message.errorCode !== 'log_context_expired'
+          "
           link
           type="primary"
           :disabled="retrySeconds > 0"
@@ -97,7 +109,7 @@
 
 <script setup lang="ts">
 import { computed, watch } from "vue";
-import { useNow } from "@vueuse/core";
+import { useIntervalFn, useNow } from "@vueuse/core";
 import { ElMessage } from "element-plus";
 import {
   User,
@@ -118,12 +130,16 @@ interface Props {
 interface Emits {
   (e: "toggle-thinking"): void;
   (e: "retry"): void;
+  (e: "show-retry", messageId: string): void;
   (e: "show-citations"): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
-const { now, pause, resume } = useNow({ controls: true, interval: 1000, immediate: false });
+const { now, pause, resume } = useNow({
+  controls: true,
+  scheduler: (callback) => useIntervalFn(callback, 1000, { immediate: false }),
+});
 const retrySeconds = computed(() =>
   Math.max(0, Math.ceil(((props.message.retryUntil || 0) - now.value.getTime()) / 1000))
 );

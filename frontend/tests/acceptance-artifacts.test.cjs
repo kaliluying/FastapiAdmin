@@ -8,12 +8,15 @@ const { test } = require("node:test");
 const { retainArtifacts } = require("../scripts/acceptance-artifacts.cjs");
 const { runAcceptance } = require("./ux-e2e.cjs");
 
-test("retain only regular evidence files, redact JSON secrets, and preserve failed runs", () => {
+test("retain evidence with a large dirty diff, redact secrets, and preserve failed runs", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "acceptance-retention-"));
   const source = path.join(root, "raw");
   fs.mkdirSync(source);
   try {
     execFileSync("git", ["init", "-q"], { cwd: root });
+    const tracked = path.join(root, "tracked.txt");
+    fs.writeFileSync(tracked, "baseline\n");
+    execFileSync("git", ["add", "tracked.txt"], { cwd: root });
     execFileSync(
       "git",
       [
@@ -30,6 +33,7 @@ test("retain only regular evidence files, redact JSON secrets, and preserve fail
       ],
       { cwd: root }
     );
+    fs.writeFileSync(tracked, "changed\n".repeat(200_000));
     fs.writeFileSync(
       path.join(source, "site-results.json"),
       JSON.stringify({

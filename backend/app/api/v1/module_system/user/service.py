@@ -8,8 +8,6 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.v1.module_platform.menu.crud import MenuCRUD
 from app.api.v1.module_platform.menu.schema import MenuOutSchema
-from app.common.enums import EnvironmentEnum
-from app.config.setting import settings
 from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.exceptions import CustomException
 from app.core.logger import logger
@@ -173,18 +171,17 @@ class UserService:
                 if menu_ids
                 else []
             )
-        if settings.ENVIRONMENT != EnvironmentEnum.DEV:
-            # 保留历史菜单记录，但不向生产客户端注册开发范例路由。
-            menus = [
-                menu for menu in menus
-                if menu.route_name not in {"Demo", "DemoCategory"}
-                and not (menu.permission or "").startswith("module_demo:")
-            ]
+        from app.core.modules import get_modules, menu_is_active
+
+        menus = [menu for menu in menus if menu_is_active(permission=menu.permission, route_name=menu.route_name)]
+        user_dict.modules = [module.name for module in get_modules() if module.active]
         user_dict.permissions = self._collect_permissions()
         user_dict.menus = traversal_to_tree([menu.model_dump() for menu in menus])
         return user_dict
 
     def _collect_permissions(self) -> list[str]:
+        from app.core.modules import menu_is_active
+
         if self.auth.user and self.auth.user.is_superuser:
             return ["*:*:*"]
 
@@ -197,7 +194,7 @@ class UserService:
                     menu.status == 0
                     and not getattr(menu, "is_deleted", False)
                     and menu.permission
-                    and (settings.ENVIRONMENT == EnvironmentEnum.DEV or not menu.permission.startswith("module_demo:"))
+                    and menu_is_active(permission=menu.permission, route_name=menu.route_name)
                 ):
                     permissions.add(menu.permission)
         return sorted(permissions)

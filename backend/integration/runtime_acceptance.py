@@ -212,7 +212,7 @@ async def verify_runtime() -> dict:
                     assert (await client.get("/common/health/ready")).status_code == 429
                     await asyncio.sleep(settings.RATE_LIMITER_SECONDS + 0.1)
                     assert (await client.get("/common/health/ready")).status_code == 200
-            assert await snapshot() == initial, "生产启动不得隐式迁移、建表或补种子数据"
+            assert await snapshot() == initial, "重复生产启动不得破坏现有结构或基础数据"
             await asyncio.sleep(settings.RATE_LIMITER_SECONDS + 0.1)
 
         async with async_engine.begin() as connection:
@@ -235,7 +235,7 @@ async def verify_runtime() -> dict:
             "passed": True,
             "database": "disposable MySQL",
             "redis": "real Redis database 15",
-            "checks": ["explicit bootstrap/migration", "production restart without schema/seed writes", "Redis expiry and owner fencing", "startup lock serialization", "configured HTTP limit and expiry", "stale schema rejection without repair"],
+            "checks": ["automatic startup migration and initialization", "production restart preserves schema/seed data", "Redis expiry and owner fencing", "startup lock serialization", "configured HTTP limit and expiry", "explicit stale schema rejection"],
         }
     finally:
         await redis.aclose()
@@ -249,20 +249,14 @@ def run_child(phase: str) -> None:
 
         fastcore_cli(args=[phase, "--env=prod"])
     elif phase == "empty-schema":
-        from app.core.database import async_engine
-        from app.scripts.startup_policy import validate_database_schema
+        from main import create_app
 
-        async def reject_empty() -> None:
-            try:
-                try:
-                    await validate_database_schema()
-                except RuntimeError:
-                    return
-                raise AssertionError("空数据库必须拒绝生产启动")
-            finally:
-                await async_engine.dispose()
+        async def auto_initialize() -> None:
+            application = create_app()
+            async with application.router.lifespan_context(application):
+                pass
 
-        asyncio.run(reject_empty())
+        asyncio.run(auto_initialize())
     elif phase == "prepare-recovery":
         asyncio.run(prepare_recovery())
     elif phase in {"crash-index", "recover-index"}:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
+from contextlib import aclosing
 from dataclasses import dataclass, field
 from functools import lru_cache
 from typing import Any, Protocol
@@ -337,12 +338,13 @@ class LangChainChatModel:
 
     async def stream(self, prompt: str) -> AsyncGenerator[str, None]:
         async with provider_call(self.config, "chat_stream") as outcome:
-            async for chunk in self.llm.astream([HumanMessage(content=prompt)]):
-                previous = outcome["response"]
-                outcome["response"] = previous + chunk if previous is not None and hasattr(previous, "__add__") else chunk
-                text = content_to_text(chunk.content)
-                if text:
-                    yield text
+            async with aclosing(self.llm.astream([HumanMessage(content=prompt)])) as chunks:
+                async for chunk in chunks:
+                    previous = outcome["response"]
+                    outcome["response"] = previous + chunk if previous is not None and hasattr(previous, "__add__") else chunk
+                    text = content_to_text(chunk.content)
+                    if text:
+                        yield text
 
     async def request_tools(self, messages: list[BaseMessage], tools: list[dict[str, Any]]) -> AIMessage:
         async with provider_call(self.config, "tools") as outcome:
@@ -427,8 +429,9 @@ class RagChatChain:
         if include_events:
             yield {"type": "citations", "citations": self.citations}
             yield {"type": "stage", "stage": "generating"}
-        async for chunk in self.chat_model.stream(prompt):
-            yield chunk
+        async with aclosing(self.chat_model.stream(prompt)) as chunks:
+            async for chunk in chunks:
+                yield chunk
 
     async def _release_db_transaction(self) -> None:
         """End prompt-read transactions before waiting on the model provider."""

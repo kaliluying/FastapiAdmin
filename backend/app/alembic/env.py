@@ -1,13 +1,15 @@
 import asyncio
 
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from alembic import context
 from app.config.path_conf import ALEMBIC_VERSION_DIR
 from app.config.setting import get_settings
 from app.core.base_model import MappedBase
+from app.core.database import _get_schema_indexes
+from app.core.modules import include_owned_schema_object
 from app.scripts.initialize import InitializeData
 
 # 确保 alembic 版本目录存在
@@ -15,6 +17,7 @@ ALEMBIC_VERSION_DIR.mkdir(parents=True, exist_ok=True)
 
 # 导入核心模型及清单声明的已启用插件模型，供 autogenerate 使用。
 loaded_models = InitializeData.get_prepare_init_models()
+_get_schema_indexes()
 print(f"📊 已加载 {len(loaded_models)} 个核心或已启用插件模型")
 
 # this is the Alembic Config object, which provides
@@ -26,6 +29,7 @@ alembic_config = context.config
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = MappedBase.metadata
+
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -57,6 +61,7 @@ def run_migrations_offline() -> None:
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
+        include_object=include_owned_schema_object,
         dialect_opts={"paramstyle": "named"},
     )
 
@@ -104,6 +109,7 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             compare_type=True,
             compare_server_default=True,
+            include_object=include_owned_schema_object,
             transaction_per_migration=True,
             process_revision_directives=process_revision_directives,
         )

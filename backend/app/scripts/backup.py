@@ -101,7 +101,7 @@ def create_backup(output: Path, database: dict, stores: dict[str, Path], *, stop
     """Publish a private ZIP only after all stopped-service stores were captured."""
     if not stopped:
         raise BackupError("必须停止所有后端/索引写入，并显式确认 stopped")
-    if database.get("type") not in DATABASE_FILES or set(stores) != STORE_NAMES:
+    if database.get("type") not in DATABASE_FILES or set(stores) not in ({"upload"}, STORE_NAMES):
         raise BackupError("数据库类型或存储集合不支持")
     output = _safe_path(output)
     if output.exists():
@@ -232,9 +232,8 @@ def restore_backup(archive: Path, target: Path) -> dict:
 
 def _project_sources(env: str) -> tuple[dict, dict[str, Path]]:
     os.environ["ENVIRONMENT"] = env
-    from app.config.path_conf import BASE_DIR
     from app.config.setting import settings
-    from app.plugin.module_ai.config import settings as ai_settings
+    from app.core.modules import get_modules, resolve_entrypoint
 
     database = {
         "type": settings.DATABASE_TYPE,
@@ -246,12 +245,14 @@ def _project_sources(env: str) -> tuple[dict, dict[str, Path]]:
     }
     if settings.DATABASE_TYPE == "sqlite":
         database["path"] = Path(f"{settings.DATABASE_NAME}.db")
-    return database, {
-        "knowledge": BASE_DIR / "storage" / "knowledge",
-        "upload": settings.UPLOAD_FILE_PATH,
-        "chroma": Path(ai_settings.CHROMA_PERSIST_DIR),
-        "bm25": Path(ai_settings.BM25_INDEX_DIR or BASE_DIR / "data" / "bm25_index"),
-    }
+    stores = {"upload": settings.UPLOAD_FILE_PATH}
+    for module in get_modules():
+        if module.backup_sources:
+            sources = resolve_entrypoint(module.backup_sources)()
+            if stores.keys() & sources.keys():
+                raise BackupError("模块备份存储名称冲突")
+            stores.update(sources)
+    return database, stores
 
 
 def main() -> None:

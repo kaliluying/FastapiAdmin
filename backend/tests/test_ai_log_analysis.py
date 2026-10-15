@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import httpx
+import httpx2
 import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from pydantic import ValidationError
@@ -325,6 +326,7 @@ async def test_real_provider_adapter_serializes_tool_schema_and_tool_result(monk
     from app.plugin.module_ai.chat import model_config_service
 
     requests = []
+    http = httpx2 if protocol == "anthropic" else httpx
 
     def transport(request):
         payload = json.loads(request.content)
@@ -394,9 +396,9 @@ async def test_real_provider_adapter_serializes_tool_schema_and_tool_result(monk
                     }
                 ],
             }
-        return httpx.Response(200, json=result)
+        return http.Response(200, json=result)
 
-    async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
+    async with http.AsyncClient(transport=http.MockTransport(transport)) as client:
         monkeypatch.setattr(
             model_config_service, "_active_config", model_config_service.ChatModelRuntimeConfig(protocol=protocol, api_key="synthetic-fixture", base_url="https://fixture.invalid", model="fixture")
         )

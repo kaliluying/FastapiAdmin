@@ -21,10 +21,9 @@ from .config.setting import settings
 from .core.exceptions import handle_exception
 from .core.http_limit import http_limit_callback, ws_limit_callback
 from .core.logger import logger
-from .core.plugins import get_ai_routers, get_ai_websocket_routers, initialize_ai_plugin
+from .core.modules import get_module_routers, run_module_hooks
 from .core.redis_crud import RedisCURD
 from .scripts.migrate import upgrade_database
-from .scripts.startup_policy import validate_database_schema
 from .utils.common_util import import_module, import_modules_async
 from .utils.console import console_end, console_start
 
@@ -123,19 +122,14 @@ async def bootstrap_database(redis, environment: EnvironmentEnum | None = None) 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
-    from app.plugin.module_ai.knowledge.recovery import stop_knowledge_recovery
-
     try:
         if not settings.REDIS_ENABLE:
             raise RuntimeError("Redis 是会话、请求限流和任务协调的必需依赖，REDIS_ENABLE 必须为 true")
         await import_modules_async(modules=settings.EVENT_LIST, desc="全局事件", app=app, status=True)
         logger.info("✅ 全局事件模块加载完成")
-        if settings.ENVIRONMENT == EnvironmentEnum.DEV:
-            await bootstrap_database(app.state.redis)
-        else:
-            await validate_database_schema()
+        await bootstrap_database(app.state.redis, environment=settings.ENVIRONMENT)
         logger.info("✅ {}数据库结构就绪", settings.DATABASE_TYPE)
-        await initialize_ai_plugin()
+        await run_module_hooks()
         await cache_util.init(redis=app.state.redis)
         logger.info("✅ fastcore-cache 初始化完成")
         await FastAPILimiter.init(
@@ -146,7 +140,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
         )
         logger.info("✅ 请求限流器初始化完成")
     except BaseException as e:
-        await stop_knowledge_recovery()
+        await run_module_hooks(shutdown=True)
         if not isinstance(e, Exception):
             raise
         logger.error("❌ 应用初始化失败: {}", e)
@@ -168,7 +162,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
         yield
     finally:
         try:
-            await stop_knowledge_recovery()
+            await run_module_hooks(shutdown=True)
             await cache_util.clear()
             logger.info("✅ fastcore-cache 已关闭")
             await FastAPILimiter.close()
@@ -212,15 +206,10 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(common_router, dependencies=[Depends(RateLimiter(times=times, seconds=seconds))])
     app.include_router(platform_router, dependencies=[Depends(RateLimiter(times=times, seconds=seconds))])
     app.include_router(system_router, dependencies=[Depends(RateLimiter(times=times, seconds=seconds))])
-    if settings.ENVIRONMENT == EnvironmentEnum.DEV:
-        from app.api.v1.module_demo import demo_router
-
-        app.include_router(demo_router, dependencies=[Depends(RateLimiter(times=times, seconds=seconds))])
-
-    for router in get_ai_websocket_routers():
+    for router in get_module_routers(websocket=True):
         app.include_router(router=router, dependencies=[Depends(WebSocketRateLimiter(times=times, seconds=seconds))])
 
-    for router in get_ai_routers():
+    for router in get_module_routers():
         app.include_router(router=router, dependencies=[Depends(RateLimiter(times=times, seconds=seconds))])
 
 

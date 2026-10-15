@@ -267,7 +267,7 @@ async def evidence():
         "ai_audits": len(ai_audits),
         "ai_audit_payloads_omitted": bool(ai_audits) and all(json.loads(row.request_payload) == {"omitted": True} and json.loads(row.response_json) == {"omitted": True} for row in ai_audits),
         "citation_titles": [citation.get("title") for citation in citations],
-        "boundary": "real HTTP/WebSocket/auth/SQLite/RagChatChain; in-memory Redis; deterministic local model; attachment retrieval; no provider or embedding requests",
+        "boundary": "real HTTP/SSE/auth/SQLite/RagChatChain; in-memory Redis; deterministic local model; attachment retrieval; no provider or embedding requests",
     }
 
 

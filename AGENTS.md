@@ -5,7 +5,7 @@
 ## 工作范围
 
 - 活跃应用代码位于 `backend/` 和 `frontend/`。先确认调用链，再确定修改范围。
-- 后端是单组织后台，AI 知识库和对话属于核心能力。不要依据旧文档恢复多租户、SaaS 或可选 AI 插件行为。
+- 后端是单组织后台。AI 默认提供，允许复制后的新项目整套裁剪；按 `docs/MODULE_DEVELOPMENT.md` 处理注册、依赖、菜单与数据保留。业务模块采用显式注册，不引入目录扫描或运行时插件开关。
 
 ## 业务模块开发
 
@@ -15,13 +15,13 @@
 ## 后端边界
 
 - 后端命令从 `backend/` 执行。`backend/main.py` 在导入配置前设置 `ENVIRONMENT`；独立脚本复用配置时保持这个顺序。
-- 通用 API 路由由 `app/init_app.py:register_routers()` 注册；AI 路由、模型和启动钩子由 `app/plugin/module_ai/plugin.toml` 声明，并通过 `app/core/plugins.py` 装配。新增或排查 AI 接口时核对清单、导出的路由对象和实际注册结果。
+- 基础 API 由 `app/init_app.py:register_routers()` 注册；业务模块在 `app/config/modules.py` 登记，通过 `app/core/modules.py` 统一接入路由、模型、权限、种子和生命周期。新增或裁剪功能先读 `docs/MODULE_DEVELOPMENT.md`，将业务接入信息保留在模块内部。AI 同时核对 `app/plugin/module_ai/plugin.toml` 和 `module.py`。
 - 知识库文档跨文件、关系库、Chroma 和检索索引。修改上传、索引或删除链路时核对各处状态与失败恢复，避免只检查单层结果。
 
 ## 数据库迁移
 
 - Alembic 的实际版本目录是 `backend/app/alembic/versions/`。生成迁移后审查脚本及其数据影响；需要随代码交付的迁移应纳入版本管理，实际提交仍按用户授权执行。
-- 开发环境启动会执行已有迁移并初始化数据库；生产环境启动只检查结构，首次部署用 `main.py bootstrap --env=prod`，后续迁移用 `main.py migrate --env=prod`。启动服务或运行迁移前，确认所用环境文件及数据库目标，避免改动非目标数据。
+- 开发和生产启动都会在 Redis 锁下自动迁移、初始化并校验数据库；`main.py bootstrap --env=prod` 与 `main.py migrate --env=prod` 可用于部署前预执行。启动服务或运行迁移前，确认环境文件、数据库目标和迁移的数据影响。裁剪功能保留历史迁移及已有业务数据，菜单清理需显式执行。
 
 ## 前端路由与验证
 

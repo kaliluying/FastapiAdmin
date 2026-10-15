@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import AsyncGenerator
+from contextlib import aclosing
 from copy import deepcopy
 from datetime import datetime
 from typing import Any
@@ -153,17 +154,18 @@ class ChatService:
             if structured:
                 yield {"type": "stage", "stage": "routing"}
             handled = False
-            async for event in self._stream_log_analysis(query):
-                if event["type"] == "warning":
-                    degraded = True
-                else:
-                    handled = True
-                if structured:
-                    yield event
-                elif event["type"] == "chunk":
-                    yield event["content"]
-                elif event["type"] in {"error", "warning"}:
-                    yield event["message"]
+            async with aclosing(self._stream_log_analysis(query)) as events:
+                async for event in events:
+                    if event["type"] == "warning":
+                        degraded = True
+                    else:
+                        handled = True
+                    if structured:
+                        yield event
+                    elif event["type"] == "chunk":
+                        yield event["content"]
+                    elif event["type"] in {"error", "warning"}:
+                        yield event["message"]
             if handled:
                 return
         try:
@@ -187,7 +189,7 @@ class ChatService:
             response_chunks: list[str] = []
             citations: list[dict[str, Any]] = []
             event_options = {"include_events": True} if structured else {}
-            async for chunk in chain.astream(
+            async with aclosing(chain.astream(
                 message=query.message,
                 user_id=self._get_user_id(),
                 scope_id=self._get_scope_id(),
@@ -195,16 +197,17 @@ class ChatService:
                 files=query.files,
                 knowledge_base_ids=knowledge_base_ids,
                 **event_options,
-            ):
-                if isinstance(chunk, dict):
-                    if chunk.get("type") == "citations":
-                        citations = chunk.get("citations", [])
-                    yield chunk
-                    continue
-                if chunk:
-                    has_content = True
-                    response_chunks.append(chunk)
-                    yield {"type": "chunk", "content": chunk} if structured else chunk
+            )) as chunks:
+                async for chunk in chunks:
+                    if isinstance(chunk, dict):
+                        if chunk.get("type") == "citations":
+                            citations = chunk.get("citations", [])
+                        yield chunk
+                        continue
+                    if chunk:
+                        has_content = True
+                        response_chunks.append(chunk)
+                        yield {"type": "chunk", "content": chunk} if structured else chunk
 
             if not has_content:
                 message = "AI 服务没有返回内容，请检查模型配置后重试。"

@@ -70,6 +70,7 @@
         </ElTableColumn>
         <ElTableColumn prop="description" label="说明" min-width="200" show-overflow-tooltip />
         <ElTableColumn prop="created_time" label="创建时间" min-width="180" />
+        <!-- @vue-generic {Category} -->
         <ElTableColumn label="操作" width="150">
           <template #default="{ row }">
             <ElButton
@@ -103,6 +104,7 @@
     </ElCard>
     <ElDialog
       v-model="dialogVisible"
+      append-to-body
       :title="editingId === null ? '新增分类' : '编辑分类'"
       width="min(92vw, 520px)"
       :close-on-click-modal="false"
@@ -210,9 +212,9 @@ function resetQuery(): void {
   query.status = undefined;
   search();
 }
-function changeSort({ prop, order }: { prop: string; order: string | null }): void {
+function changeSort({ prop, order }: { prop: string | null; order: string | null }): void {
   query.order_by = JSON.stringify(
-    order ? [{ [prop]: order === "ascending" ? "asc" : "desc" }] : [{ id: "desc" }]
+    prop && order ? [{ [prop]: order === "ascending" ? "asc" : "desc" }] : [{ id: "desc" }]
   );
   search();
 }
@@ -247,7 +249,7 @@ async function save(): Promise<void> {
     dialogVisible.value = false;
     await loadData();
   } catch {
-    saveError.value = "保存失败，输入已保留。请检查名称是否重复后重试。";
+    saveError.value = "保存失败，输入已保留。请检查填写内容或是否重复后重试。";
   } finally {
     saving.value = false;
   }

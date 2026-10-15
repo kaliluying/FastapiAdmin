@@ -23,14 +23,11 @@
         <ElContainer aria-label="对话内容" class="chat-container">
           <ElHeader class="chat-header">
             <FaChatNavbar
-              :connection-status="connectionStatus"
-              :is-connected="isConnected"
               :message-count="messages.length"
               :is-sidebar-collapsed="isSidebarCollapsed"
               :knowledge-bases="knowledgeBases"
               v-model:knowledge-base-ids="selectedKnowledgeBaseIds"
               @clear-chat="handleClearChat"
-              @toggle-connection="toggleConnection"
               @toggle-sidebar="toggleSidebar"
               @show-evidence="isEvidenceDrawerOpen = true"
               @show-usage="usageOpen = true"
@@ -77,9 +74,8 @@
             </p>
             <FaChatInput
               ref="chatInputRef"
-              :disabled="!isConnected || switchingSession"
+              :disabled="switchingSession"
               :sending="sending"
-              :is-connected="isConnected"
               @send="handleSendMessage"
               @stop="stopGeneration"
             />
@@ -119,6 +115,7 @@
       size="260px"
     >
       <FaSidebar
+        ref="mobileSidebarRef"
         :current-session-id="currentSessionId"
         :is-collapsed="false"
         @select-session="handleSelectSession"
@@ -163,7 +160,6 @@ import { useElementBounding, useIntervalFn, useMediaQuery, useWindowSize } from 
 import { ElMessage, ElMessageBox } from "element-plus";
 import AiChatAPI, { ChatSession } from "@/api/module_ai/chat";
 import KnowledgeAPI, { type KnowledgeBase } from "@/api/module_ai/knowledge";
-import AuthAPI from "@/api/module_system/auth";
 import QualityAPI from "@/api/module_ai/quality";
 import UsagePanel from "@/views/module_ai/model-config/UsagePanel.vue";
 import type { ChatMessage, ChatCitation, ChatProcessStage, UploadedFile } from "./types";
@@ -179,8 +175,6 @@ import FaCitationList from "@/views/module_ai/components/FaCitationList.vue";
 const messages = ref<ChatMessage[]>([]);
 const usageOpen = ref(false);
 const sending = ref(false);
-const isConnected = ref(false);
-const connectionStatus = ref<"connected" | "connecting" | "disconnected">("disconnected");
 const error = ref("");
 const currentSessionId = ref<string | null>(null);
 const currentLogContextId = ref<string | null>(null);
@@ -197,7 +191,8 @@ let runtimeLogStatusRequest = 0;
 // Refs
 const chatMessagesRef = ref<{ scrollToBottom: () => void }>();
 const sidebarRef = ref<{ loadSessions: () => void }>();
-const chatInputRef = ref<{ clearDraft: () => void }>();
+const mobileSidebarRef = ref<{ loadSessions: () => void }>();
+const chatInputRef = ref<{ clearDraft: (sentMessage: string) => void }>();
 
 // 回答依据面板
 const evidenceMessageId = ref<string | null>(null);
@@ -247,116 +242,10 @@ let selectionGeneration = 0;
 const isMobileDrawerOpen = ref(false);
 const isMobileViewport = useMediaQuery("(max-width: 768px)");
 
-// WebSocket
-let ws: WebSocket | null = null;
-const WS_URL = import.meta.env.VITE_APP_WS_ENDPOINT;
-let connectionGeneration = 0;
-let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
-let reconnectAttempts = 0;
-let allowReconnect = true;
-
-const scheduleReconnect = () => {
-  if (!allowReconnect || reconnectTimer || reconnectAttempts >= 3) return;
-  reconnectTimer = setTimeout(
-    () => {
-      reconnectTimer = undefined;
-      void connectWebSocket();
-    },
-    1000 * 2 ** reconnectAttempts++
-  );
-};
-
-// ============ WebSocket 操作 ============
-const connectWebSocket = async () => {
-  // CONNECTING / OPEN / CLOSING 期间一律拒绝重入，避免握手期间覆盖旧连接引用。
-  if (connectionStatus.value === "connecting" || (ws && ws.readyState !== WebSocket.CLOSED)) return;
-
-  const generation = ++connectionGeneration;
-
-  connectionStatus.value = "connecting";
-  error.value = "";
-
-  try {
-    const ticketResponse = await AuthAPI.createWsTicket();
-    const ticket = ticketResponse.data.data?.ticket;
-    if (!ticket) throw new Error("WebSocket 认证凭证缺失");
-    const url = new URL("/api/v1/ai/chat/ws", WS_URL);
-    url.searchParams.append("ticket", ticket);
-
-    if (generation !== connectionGeneration) return;
-
-    const socket = new WebSocket(url.toString());
-    ws = socket;
-
-    socket.onopen = () => {
-      if (ws !== socket) return;
-      isConnected.value = true;
-      connectionStatus.value = "connected";
-      reconnectAttempts = 0;
-      error.value = "";
-    };
-
-    socket.onmessage = (event) => {
-      if (ws === socket) handleWebSocketMessage(event.data);
-    };
-
-    socket.onclose = () => {
-      if (ws !== socket) return;
-      ws = null;
-      isConnected.value = false;
-      connectionStatus.value = "disconnected";
-      failCurrentRequest("连接中断，回答未确认保存，请重试这条问题");
-      scheduleReconnect();
-    };
-
-    socket.onerror = () => {
-      if (ws !== socket) return;
-      isConnected.value = false;
-      connectionStatus.value = "disconnected";
-      error.value = "连接失败，请检查服务器状态或重新连接";
-      failCurrentRequest(error.value);
-    };
-  } catch {
-    if (generation !== connectionGeneration) return;
-    connectionStatus.value = "disconnected";
-    error.value = "无法创建连接";
-    scheduleReconnect();
-  }
-};
-
-const disconnectWebSocket = () => {
-  allowReconnect = false;
-  clearTimeout(reconnectTimer);
-  reconnectTimer = undefined;
-  stopGeneration();
-  connectionGeneration += 1;
-  if (ws) {
-    const socket = ws;
-    ws = null;
-    // 先摘除回调，避免关闭竞态再次修改状态或弹出提示。
-    socket.onopen = null;
-    socket.onmessage = null;
-    socket.onerror = null;
-    socket.onclose = null;
-    socket.close(1000, "用户主动断开");
-  }
-  isConnected.value = false;
-  connectionStatus.value = "disconnected";
-};
-
-const toggleConnection = () => {
-  if (isConnected.value) {
-    disconnectWebSocket();
-    ElMessage.info("已断开连接");
-  } else {
-    allowReconnect = true;
-    reconnectAttempts = 0;
-    connectWebSocket();
-  }
-};
+let streamController: AbortController | null = null;
 
 // ============ 消息处理 ============
-const handleWebSocketMessage = (data: string) => {
+const handleStreamMessage = (data: string) => {
   let event;
   try {
     event = JSON.parse(data);
@@ -402,13 +291,21 @@ const handleWebSocketMessage = (data: string) => {
       if (event.session_id) currentSessionId.value = event.session_id;
       message.runId = event.run_id || undefined;
       message.sessionId = event.session_id || undefined;
+      let original = messages.value.find((item) => item.id === message.retryOf);
+      while (original) {
+        original.retriedMessageId = message.id;
+        original = messages.value.find((item) => item.id === original?.retryOf);
+      }
     }
     message.loading = false;
     message.stopped = event.type === "cancelled";
     sending.value = false;
     activeRequest = null;
     processStage.value = event.type === "done" ? "complete" : "idle";
-    if (event.type === "done") sidebarRef.value?.loadSessions();
+    if (event.type === "done") {
+      sidebarRef.value?.loadSessions();
+      mobileSidebarRef.value?.loadSessions();
+    }
   }
   chatMessagesRef.value?.scrollToBottom();
 };
@@ -428,9 +325,9 @@ const failCurrentRequest = (reason: string) => {
 
 const stopGeneration = () => {
   sendGeneration += 1;
+  streamController?.abort();
+  streamController = null;
   if (activeRequest) {
-    if (ws?.readyState === WebSocket.OPEN)
-      ws.send(JSON.stringify({ type: "cancel", request_id: activeRequest.id }));
     const message = messages.value.find((item) => item.id === activeRequest?.messageId);
     if (message) {
       message.loading = false;
@@ -449,7 +346,11 @@ const showCitations = (messageId: string) => {
 
 const retryMessage = (messageId: string) => {
   const message = messages.value.find((item) => item.id === messageId);
-  if (message?.errorCode === "log_context_expired" || (message?.retryUntil || 0) > Date.now())
+  if (
+    message?.retriedMessageId ||
+    message?.errorCode === "log_context_expired" ||
+    (message?.retryUntil || 0) > Date.now()
+  )
     return;
   const request = message?.request;
   if (request)
@@ -458,7 +359,8 @@ const retryMessage = (messageId: string) => {
       request.files,
       request.knowledgeBaseIds,
       false,
-      request.logContextId || null
+      request.logContextId || null,
+      messageId
     );
 };
 
@@ -483,11 +385,11 @@ const handleSendMessage = async (
   files?: UploadedFile[],
   baseIds = selectedKnowledgeBaseIds.value,
   clearInput = true,
-  logContextId = currentLogContextId.value
+  logContextId = currentLogContextId.value,
+  retryOf?: string
 ) => {
   if (
     (!message.trim() && !files?.length) ||
-    !isConnected.value ||
     switchingSession.value ||
     sending.value ||
     files?.some((file) => file.status !== "ready")
@@ -505,7 +407,6 @@ const handleSendMessage = async (
   const question = message.trim() || "请根据附件内容回答。";
   try {
     if (generation !== sendGeneration) return;
-    if (ws?.readyState !== WebSocket.OPEN) throw new Error("连接已断开");
     const requestId = generateId();
     const assistantId = generateId();
     addMessage("user", question, files);
@@ -518,29 +419,37 @@ const handleSendMessage = async (
       thinkingCollapsed: true,
       citations: [],
       request: { message: question, files, knowledgeBaseIds, logContextId },
+      retryOf,
     });
     activeRequest = { id: requestId, messageId: assistantId };
     evidenceMessageId.value = assistantId;
     processStage.value = "preparing";
-    ws.send(
-      JSON.stringify({
-        request_id: requestId,
-        message: question,
-        session_id: currentSessionId.value,
-        log_context_id: logContextId,
-        knowledge_base_ids: knowledgeBaseIds,
-        files: files?.map((file) => ({
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          content: file.content,
-        })),
-      })
-    );
-    if (clearInput) chatInputRef.value?.clearDraft();
+    const controller = new AbortController();
+    streamController = controller;
+    const body = {
+      request_id: requestId,
+      message: question,
+      session_id: currentSessionId.value,
+      log_context_id: logContextId,
+      knowledge_base_ids: knowledgeBaseIds,
+      files: files?.map((file) => ({
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        content: file.content,
+      })),
+    };
+    await AiChatAPI.stream(body, controller.signal, handleStreamMessage, () => {
+      if (clearInput && generation === sendGeneration) chatInputRef.value?.clearDraft(message);
+    });
+    if (activeRequest?.id === requestId) failCurrentRequest("回答连接中断，回答未确认保存，请重试");
     chatMessagesRef.value?.scrollToBottom();
-  } catch {
-    if (generation === sendGeneration) failCurrentRequest("发送失败，草稿已保留，请检查连接后重试");
+  } catch (cause) {
+    if (generation === sendGeneration && activeRequest) {
+      failCurrentRequest(cause instanceof Error ? cause.message : "发送失败，请重试");
+    }
+  } finally {
+    if (generation === sendGeneration) streamController = null;
   }
 };
 
@@ -598,6 +507,7 @@ const handleSelectSession = async (session: ChatSession) => {
       });
     });
 
+    isMobileDrawerOpen.value = false;
     ElMessage.success(`已切换到会话：${session.title}`);
   } catch {
     if (generation === selectionGeneration) ElMessage.error("获取会话详情失败");
@@ -610,6 +520,7 @@ const handleNewSession = () => {
   stopGeneration();
   selectionGeneration += 1;
   switchingSession.value = false;
+  isMobileDrawerOpen.value = false;
   error.value = "";
   selectedCitation.value = null;
   currentSessionId.value = null;
@@ -679,18 +590,15 @@ const loadRuntimeLogStatus = async () => {
 onMounted(() => {
   loadKnowledgeBases();
   loadRuntimeLogStatus();
-  connectWebSocket();
 });
-onUnmounted(disconnectWebSocket);
-// KeepAlive 缓存切换：离开视图即断开，回到视图按需重连。
+onUnmounted(stopGeneration);
+// 离开缓存视图时取消当前生成，返回后只刷新权限状态。
 onActivated(() => {
   loadRuntimeLogStatus();
-  allowReconnect = true;
-  if (!isConnected.value) connectWebSocket();
 });
 onDeactivated(() => {
   currentLogContextId.value = null;
-  disconnectWebSocket();
+  stopGeneration();
 });
 </script>
 

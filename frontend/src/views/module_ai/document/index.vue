@@ -79,6 +79,7 @@
             }}</span>
           </template>
         </ElTableColumn>
+        <!-- @vue-generic {KnowledgeDocument} -->
         <ElTableColumn label="状态" width="120">
           <template #default="{ row }">
             <ElTooltip v-if="row.error_message" :content="row.error_message" placement="top">
@@ -93,6 +94,7 @@
         </ElTableColumn>
         <ElTableColumn prop="chunk_count" label="分块数" width="90" />
         <ElTableColumn prop="created_time" label="创建时间" width="180" show-overflow-tooltip />
+        <!-- @vue-generic {KnowledgeDocument} -->
         <ElTableColumn label="操作" width="230" :fixed="isNarrowViewport ? false : 'right'">
           <template #default="{ row }">
             <ElButton link type="primary" @click="selectedDocument = row">查看内容</ElButton>

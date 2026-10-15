@@ -122,12 +122,11 @@ async def create_tables() -> None:
 
 
 _CORE_SCHEMA_INDEXES: list[Index] | None = None
-_AI_SCHEMA_INDEXES: list[Index] | None = None
 
 
 def _get_schema_indexes() -> list[Index]:
     """Return one stable set of core composite index definitions."""
-    global _AI_SCHEMA_INDEXES, _CORE_SCHEMA_INDEXES
+    global _CORE_SCHEMA_INDEXES
     if _CORE_SCHEMA_INDEXES is None:
         from app.api.v1.module_system.role.model import RoleMenusModel
         from app.api.v1.module_system.user.model import UserRolesModel
@@ -137,46 +136,11 @@ def _get_schema_indexes() -> list[Index]:
             Index("ix_opt_sys_role_menus_menu_role", RoleMenusModel.menu_id, RoleMenusModel.role_id),
         ]
 
-    if _AI_SCHEMA_INDEXES is None:
-        from app.plugin.module_ai.chat.model import ChatSessionModel
-        from app.plugin.module_ai.knowledge.model import KnowledgeChunkModel, KnowledgeDocumentModel
-        from app.plugin.module_ai.memory.model import AiMemoryModel
+    from app.core.modules import get_modules, resolve_entrypoint
 
-        _AI_SCHEMA_INDEXES = [
-            Index(
-                "ix_opt_ai_document_base_status_deleted",
-                KnowledgeDocumentModel.knowledge_base_id,
-                KnowledgeDocumentModel.index_status,
-                KnowledgeDocumentModel.is_deleted,
-            ),
-            Index(
-                "ix_opt_ai_chunk_document_deleted_index",
-                KnowledgeChunkModel.document_id,
-                KnowledgeChunkModel.is_deleted,
-                KnowledgeChunkModel.chunk_index,
-            ),
-            Index(
-                "ix_opt_ai_session_user_deleted_updated",
-                ChatSessionModel.user_id,
-                ChatSessionModel.is_deleted,
-                ChatSessionModel.updated_time,
-            ),
-            Index(
-                "ix_opt_ai_memory_user_active_deleted_priority",
-                AiMemoryModel.user_id,
-                AiMemoryModel.is_active,
-                AiMemoryModel.is_deleted,
-                AiMemoryModel.priority,
-            ),
-            Index(
-                "ix_opt_ai_memory_user_key_deleted",
-                AiMemoryModel.user_id,
-                AiMemoryModel.key,
-                AiMemoryModel.is_deleted,
-            ),
-        ]
+    module_indexes = [index for module in get_modules() if module.schema_indexes for index in resolve_entrypoint(module.schema_indexes)()]
 
-    return [*_CORE_SCHEMA_INDEXES, *(_AI_SCHEMA_INDEXES or [])]
+    return [*_CORE_SCHEMA_INDEXES, *module_indexes]
 
 
 async def ensure_schema_indexes() -> None:

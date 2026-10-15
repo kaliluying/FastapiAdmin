@@ -11,7 +11,7 @@ from .runtime_logs import RuntimeLogQuerySchema
 
 
 class ChatQuerySchema(BaseModel):
-    """WebSocket chat request."""
+    """Streaming chat request shared by SSE and legacy WebSocket."""
 
     message: str = Field(..., min_length=1, max_length=8_000, description="Message content")
     session_id: str | None = Field(None, description="Session ID")

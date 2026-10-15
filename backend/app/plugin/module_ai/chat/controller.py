@@ -1,7 +1,7 @@
 from datetime import date
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Path, UploadFile
+from fastapi import APIRouter, Depends, Path, Request, UploadFile
 from fastapi.responses import JSONResponse
 
 from app.common.response import ResponseSchema, SuccessResponse
@@ -9,6 +9,7 @@ from app.core.base_params import PaginationQueryParam
 from app.core.base_schema import AuthSchema
 from app.core.database import async_db_session
 from app.core.dependencies import AuthPermission, _load_user_from_db
+from app.core.exceptions import CustomException
 from app.core.router_class import OperationLogRoute
 from app.plugin.module_ai.knowledge.public import extract_chat_attachment
 
@@ -19,13 +20,26 @@ from .schema import (
     AiModelConfigUpdateSchema,
     AiModelListRequestSchema,
     AiUsageQuotaUpdateSchema,
+    ChatQuerySchema,
     ChatSessionCreateSchema,
     ChatSessionQueryParam,
     ChatSessionUpdateSchema,
 )
 from .service import ChatService
+from .stream import ChatStreamResponse, chat_events
 
 ChatRouter = APIRouter(route_class=OperationLogRoute, prefix="/chat", tags=["AI管理", "AI对话"])
+
+
+@ChatRouter.post("/stream", summary="AI 对话 SSE", response_class=ChatStreamResponse, openapi_extra={"x-audit-payload": False})
+async def stream_chat_controller(
+    request: Request,
+    query: ChatQuerySchema,
+    auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:chat:ws"]))],
+) -> ChatStreamResponse:
+    if len(await request.body()) > 120_000:
+        raise CustomException(msg="消息和附件内容过大", status_code=413)
+    return ChatStreamResponse(chat_events(auth, query), media_type="text/event-stream", headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"})
 
 
 @ChatRouter.get("/runtime-logs/status", summary="运行日志分析可用状态", response_model=ResponseSchema[dict[str, Any]])

@@ -303,7 +303,7 @@ interface Emits {
 
 const emit = defineEmits<Emits>();
 
-const modelValue = defineModel<Record<string, any>>({ default: {} });
+const modelValue = defineModel<Record<string, any>>({ default: () => ({}) });
 const initialModelValue = ref<Record<string, any>>({});
 
 // 审计字段配置

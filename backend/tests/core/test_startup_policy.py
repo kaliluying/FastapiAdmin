@@ -29,23 +29,16 @@ async def test_startup_uses_environment_policy(monkeypatch, environment):
     app.state.redis = object()
     monkeypatch.setattr(init_app.settings, "ENVIRONMENT", environment)
     bootstrap = AsyncMock()
-    check = AsyncMock()
     monkeypatch.setattr(init_app, "bootstrap_database", bootstrap)
-    monkeypatch.setattr(init_app, "validate_database_schema", check)
     monkeypatch.setattr(init_app, "import_modules_async", AsyncMock())
-    monkeypatch.setattr(init_app, "initialize_ai_plugin", AsyncMock())
+    monkeypatch.setattr(init_app, "run_module_hooks", AsyncMock())
     monkeypatch.setattr(init_app.cache_util, "init", AsyncMock())
     monkeypatch.setattr(init_app.cache_util, "clear", AsyncMock())
     monkeypatch.setattr(init_app.FastAPILimiter, "init", AsyncMock())
     monkeypatch.setattr(init_app.FastAPILimiter, "close", AsyncMock())
     monkeypatch.setattr(database, "async_engine", SimpleNamespace(dispose=AsyncMock()))
     async with init_app.lifespan(app):
-        if environment == EnvironmentEnum.PROD:
-            check.assert_awaited_once()
-            bootstrap.assert_not_awaited()
-        else:
-            bootstrap.assert_awaited_once_with(app.state.redis)
-            check.assert_not_awaited()
+        bootstrap.assert_awaited_once_with(app.state.redis, environment=environment)
 
 
 async def test_startup_rejects_disabled_redis_before_connecting(monkeypatch):
@@ -81,9 +74,15 @@ async def test_recovery_task_is_awaited_before_shutdown_or_failed_startup(monkey
         assert recovery._worker is None
 
     monkeypatch.setattr(init_app.settings, "ENVIRONMENT", EnvironmentEnum.PROD)
-    monkeypatch.setattr(init_app, "validate_database_schema", AsyncMock())
+    monkeypatch.setattr(init_app, "bootstrap_database", AsyncMock())
     monkeypatch.setattr(init_app, "import_modules_async", AsyncMock())
-    monkeypatch.setattr(init_app, "initialize_ai_plugin", initialize_ai)
+    async def module_hooks(*, shutdown=False):
+        if shutdown:
+            await recovery.stop_knowledge_recovery()
+        else:
+            await initialize_ai()
+
+    monkeypatch.setattr(init_app, "run_module_hooks", module_hooks)
     monkeypatch.setattr(init_app, "console_start", lambda **kwargs: None)
     monkeypatch.setattr(init_app, "console_end", lambda: None)
     monkeypatch.setattr(init_app.cache_util, "init", AsyncMock())

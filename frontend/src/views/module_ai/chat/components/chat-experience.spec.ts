@@ -46,6 +46,18 @@ describe("chat composer", () => {
     await wrapper.get('[aria-label="发送消息"]').trigger("click");
     expect(wrapper.emitted("send")).toEqual([["下一条问题", undefined]]);
   });
+
+  it("clears only the sent draft when delayed stream headers arrive", async () => {
+    const wrapper = create();
+    await wrapper.get("textarea").setValue("原问题");
+    wrapper.vm.clearDraft("原问题");
+    await wrapper.vm.$nextTick();
+    expect((wrapper.get("textarea").element as HTMLTextAreaElement).value).toBe("");
+    await wrapper.get("textarea").setValue("下一条新草稿");
+    wrapper.vm.clearDraft("原问题");
+    await wrapper.vm.$nextTick();
+    expect((wrapper.get("textarea").element as HTMLTextAreaElement).value).toBe("下一条新草稿");
+  });
 });
 
 describe("runtime log evidence", () => {

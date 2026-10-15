@@ -152,6 +152,7 @@ export interface UserInfo extends BaseType {
   password?: string;
   menus?: MenuTable[];
   permissions?: string[];
+  modules?: string[];
   roles?: roleSelectorType[];
   role_names?: roleSelectorType["name"][];
   role_ids?: roleSelectorType["id"][];

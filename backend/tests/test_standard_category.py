@@ -17,12 +17,36 @@ from app.api.v1.module_demo import demo_router
 from app.api.v1.module_demo.category.model import CategoryModel
 from app.api.v1.module_system.user.model import UserModel
 from app.config.setting import settings
+from app.core import router_class
 from app.core.base_model import MappedBase
 from app.core.base_schema import AuthSchema
+from app.core.database import async_db_session
 from app.core.dependencies import get_current_user
 from app.init_app import register_exceptions
 
 PERMISSIONS = {f"module_demo:category:{action}": index for index, action in enumerate(("query", "detail", "create", "update", "delete"), start=1)}
+
+
+def test_http_write_is_committed_before_background_audit(test_client, auth_headers, monkeypatch):
+    observed = []
+    monkeypatch.setattr(settings, "OPERATION_LOG_RECORD", True)
+    monkeypatch.setattr(settings, "OPERATION_RECORD_METHOD", ["POST"])
+
+    async def audit(record):
+        if record["request_path"] == "/demo/category/create":
+            async with async_db_session() as db:
+                category = await db.scalar(select(CategoryModel).where(CategoryModel.name == "提交时机回归"))
+                assert category is not None, "business transaction must commit before background audit"
+                observed.append(category.id)
+
+    monkeypatch.setattr(router_class, "_write_operation_log_async", audit)
+    response = test_client.post("/demo/category/create", headers=auth_headers, json={"name": "提交时机回归"})
+    assert response.status_code == 200
+    identifier = response.json()["data"]["id"]
+    try:
+        assert observed == [identifier]
+    finally:
+        assert test_client.request("DELETE", "/demo/category/delete", headers=auth_headers, json=[identifier]).status_code == 200
 
 
 @pytest.fixture

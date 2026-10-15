@@ -9,8 +9,8 @@
 
       <div class="welcome-heading">
         <span>知识助手</span>
-        <h2>从知识库开始提问</h2>
-        <p>输入问题并选择知识库；回答中的引用会标明所依据的内容。</p>
+        <h2>开始一次提问</h2>
+        <p>可以直接提问，也可以添加附件或选择知识库。使用资料回答时，可查看引用来源。</p>
       </div>
 
       <div class="example-prompts">

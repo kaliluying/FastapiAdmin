@@ -62,8 +62,8 @@
           </div>
           <div class="input-actions input-actions--trailing">
             <span class="input-hint">Enter 发送 · Shift + Enter 换行</span>
-            <span class="composer-status" :class="{ 'composer-status--offline': !isConnected }">
-              <i aria-hidden="true"></i>{{ isConnected ? "已连接" : "未连接" }}
+            <span class="composer-status" :class="{ 'composer-status--offline': disabled }">
+              <i aria-hidden="true"></i>{{ sending ? "生成中" : "就绪" }}
             </span>
             <ElButton
               v-if="!sending"
@@ -109,7 +109,6 @@ import { ElMessage } from "element-plus";
 interface Props {
   disabled?: boolean;
   sending?: boolean;
-  isConnected?: boolean;
 }
 
 interface Emits {
@@ -120,7 +119,6 @@ interface Emits {
 const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   sending: false,
-  isConnected: true,
 });
 
 const emit = defineEmits<Emits>();
@@ -136,7 +134,6 @@ const acceptTypes = computed(() => {
 });
 
 const placeholder = computed(() => {
-  if (!props.isConnected) return "请先重新连接，再发送问题";
   if (props.sending) return "正在回答，你可以先写下一个问题";
   return "输入问题，或添加文档后提问";
 });
@@ -228,7 +225,8 @@ const handleSend = () => {
 };
 
 defineExpose({
-  clearDraft: () => {
+  clearDraft: (sentMessage: string) => {
+    if (inputMessage.value.trim() !== sentMessage.trim()) return;
     inputMessage.value = "";
     uploadedFiles.value = [];
     uploadRef.value?.clearFiles();

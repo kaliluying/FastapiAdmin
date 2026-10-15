@@ -6,6 +6,7 @@ import pytest
 
 from app.core import plugins
 from app.core.plugins import get_ai_routers
+from app.scripts.initialize import get_seed_data
 
 
 def test_ai_routes_are_registered_even_when_legacy_switch_is_false(monkeypatch):
@@ -29,8 +30,8 @@ def test_core_application_always_registers_ai_routes(monkeypatch):
 
 def test_ai_seed_data_is_part_of_the_core_runtime():
     """AI menus and role grants remain in the seed data without a runtime filter."""
-    menu_data = json.loads(Path("app/scripts/data/platform_menu.json").read_text(encoding="utf-8"))
-    role_menu_data = json.loads(Path("app/scripts/data/sys_role_menus.json").read_text(encoding="utf-8"))
+    menu_data = get_seed_data("platform_menu")
+    role_menu_data = get_seed_data("sys_role_menus")
 
     serialized_menu = json.dumps(menu_data, ensure_ascii=False)
     serialized_roles = json.dumps(role_menu_data, ensure_ascii=False)
@@ -38,8 +39,8 @@ def test_ai_seed_data_is_part_of_the_core_runtime():
     assert '"route_name": "AI"' in serialized_roles
 
 
-def test_ai_dependencies_are_core_dependencies():
-    """AI packages and manifest metadata are no longer optional."""
+def test_ai_dependencies_are_installed_by_default_but_separable():
+    """默认包含完整 AI，同时允许新项目删除独立依赖组。"""
     pyproject_path = Path(__file__).parents[2] / "pyproject.toml"
     pyproject = tomllib.loads(pyproject_path.read_text(encoding="utf-8"))
     required_dependencies = {
@@ -54,10 +55,11 @@ def test_ai_dependencies_are_core_dependencies():
         "python-docx",
         "whoosh",
     }
-    base_dependencies = {dependency.split("=", maxsplit=1)[0].split(">", maxsplit=1)[0].split("<", maxsplit=1)[0] for dependency in pyproject["project"]["dependencies"]}
+    base_dependencies = {dependency.split("=", maxsplit=1)[0].split(">", maxsplit=1)[0].split("<", maxsplit=1)[0] for dependency in pyproject["dependency-groups"]["ai"]}
 
     assert required_dependencies <= base_dependencies
-    assert "optional-dependencies" not in pyproject["project"]
+    assert "ai" in pyproject["tool"]["uv"]["default-groups"]
+    assert not any(dependency.startswith("chromadb") for dependency in pyproject["project"]["dependencies"])
 
     manifest = tomllib.loads((Path(__file__).parents[2] / "app/plugin/module_ai/plugin.toml").read_text(encoding="utf-8"))
     assert "optional" not in manifest

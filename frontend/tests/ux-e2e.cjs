@@ -1,3 +1,4 @@
+const { observeSse } = require("./sse-events.cjs");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -20,14 +21,7 @@ async function run() {
   page.on("pageerror", (error) =>
     errors.push({ message: error.message, stack: error.stack, phase })
   );
-  page.on("websocket", (socket) => {
-    socket.on("framereceived", ({ payload }) => {
-      try {
-        const event = JSON.parse(payload.toString());
-        events.push({ type: event.type, stage: event.stage });
-      } catch {}
-    });
-  });
+  const drainSse = observeSse(page, events);
   await page.route("**/*", (route) => {
     const url = new URL(route.request().url());
     return ["127.0.0.1", "localhost"].includes(url.hostname) ||
@@ -64,7 +58,7 @@ async function run() {
     if (await page.getByRole("button", { name: "跳过", exact: true }).isVisible())
       await page.getByRole("button", { name: "跳过", exact: true }).click();
     await page.waitForFunction(() =>
-      document.querySelector(".composer-status")?.textContent.includes("已连接")
+      document.querySelector(".composer-status")?.textContent.includes("就绪")
     );
     await page.locator('input[type="file"]').setInputFiles({
       name: "e2e-evidence.txt",
@@ -107,6 +101,7 @@ async function run() {
     assert.equal(completed.attachment_in_prompt, true);
     assert.ok(completed.persisted_runs >= 1);
     assert.ok(completed.persisted_citations >= 1);
+    await drainSse();
     for (const type of ["stage", "citations", "chunk", "done"])
       assert.ok(
         events.some((event) => event.type === type),
@@ -154,6 +149,7 @@ async function run() {
     const recovered = await (await fetch(`${backend}/__ux_e2e/evidence`)).json();
     assert.equal(recovered.failed_calls, 1);
     assert.equal(recovered.persisted_runs, completed.persisted_runs + 1);
+    await drainSse();
     assert.ok(events.some((event) => event.type === "error"));
     fs.writeFileSync(
       path.join(artifacts, "chat-desktop-checkpoint.json"),

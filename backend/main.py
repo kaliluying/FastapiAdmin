@@ -3,10 +3,10 @@ from typing import Annotated
 
 import typer
 import uvicorn
+from alembic import command
 from alembic.config import Config
 from fastapi import FastAPI
 
-from alembic import command
 from app.common.enums import EnvironmentEnum
 
 fastcore_cli = typer.Typer()
@@ -113,7 +113,7 @@ def bootstrap(
             await redis.aclose()
 
     asyncio.run(initialize())
-    typer.echo("数据库结构与基础数据已初始化；正常生产启动只检查结构。")
+    typer.echo("数据库结构与基础数据已初始化；正常启动也会自动应用迁移并补齐基础数据。")
 
 
 @fastcore_cli.command(

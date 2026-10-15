@@ -48,8 +48,8 @@ async def test_demo_menu_seed_follows_environment(monkeypatch, environment):
 def test_legacy_demo_grants_are_not_returned_in_production(monkeypatch, environment):
     monkeypatch.setattr(settings, "ENVIRONMENT", environment)
     user = SimpleNamespace(is_superuser=False, roles=[SimpleNamespace(status=0, menus=[
-        SimpleNamespace(status=0, permission="module_demo:category:query"),
-        SimpleNamespace(status=0, permission="module_system:user:query"),
+        SimpleNamespace(status=0, route_name=None, permission="module_demo:category:query"),
+        SimpleNamespace(status=0, route_name=None, permission="module_system:user:query"),
     ])])
     permissions = UserService(AuthSchema(user=user))._collect_permissions()
     assert ("module_demo:category:query" in permissions) == (environment == EnvironmentEnum.DEV)

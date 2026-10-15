@@ -9,17 +9,14 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.module_demo.category.model import CategoryModel
 from app.api.v1.module_platform.menu.model import MenuModel
 from app.api.v1.module_system.log.model import LoginLogModel, OperationLogModel
 from app.api.v1.module_system.role.model import RoleMenusModel, RoleModel
 from app.api.v1.module_system.user.model import UserModel, UserRolesModel
-from app.common.enums import EnvironmentEnum
 from app.config.path_conf import SCRIPT_DIR
-from app.config.setting import settings
 from app.core.database import async_db_session, create_tables, ensure_schema_indexes
 from app.core.logger import logger
-from app.core.plugins import load_ai_models
+from app.core.modules import get_module_models, get_modules
 
 
 class InitializeData:
@@ -29,7 +26,7 @@ class InitializeData:
     _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
     _TIME_RE = re.compile(r"^\d{2}:\d{2}:\d{2}(\.\d+)?$")
 
-    # 按依赖关系排序：先基础表，再关联表。核心 AI 模型在运行时追加。
+    # 基础表先于关联表，业务模块模型由显式清单追加。
     prepare_init_models: list[type] = [
         # ── 平台管理：基础表 ──
         MenuModel,
@@ -39,8 +36,6 @@ class InitializeData:
         # ── 关联表 ──
         RoleMenusModel,
         UserRolesModel,
-        # ── 其他系统/业务表 ──
-        CategoryModel,
         # ── 日志表（追加写入） ──
         LoginLogModel,
         OperationLogModel,
@@ -48,12 +43,12 @@ class InitializeData:
 
     @classmethod
     def get_prepare_init_models(cls) -> list[type]:
-        """返回核心模型与 AI 模型组成的初始化列表。
+        """返回基础模型与已注册业务模型组成的初始化列表。
 
         返回:
         - list[type]: 按外键依赖顺序排列的初始化模型列表。
         """
-        return [*cls.prepare_init_models, *load_ai_models()]
+        return [*cls.prepare_init_models, *get_module_models()]
 
     # 树形模型：JSON 含嵌套 children，需递归创建对象
     _RECURSIVE_TABLES: set[str] = {"platform_menu"}
@@ -61,7 +56,7 @@ class InitializeData:
     async def init_db(self) -> None:
         """按当前 ORM 模型创建骨架表并导入种子数据。"""
         try:
-            load_ai_models()
+            self.get_prepare_init_models()
             await create_tables()
             await ensure_schema_indexes()
         except asyncio.exceptions.TimeoutError:
@@ -301,22 +296,13 @@ class InitializeData:
 
     async def __load_json(self, filename: str) -> list[dict]:
         """读取并解析种子数据 JSON 文件"""
-        json_path = SCRIPT_DIR / f"{filename}.json"
-        if not json_path.exists():
-            return []
-
         try:
-            with open(json_path, encoding="utf-8") as f:
-                raw = json.loads(f.read())
-            data = [self._parse_date_strings(item) for item in raw]
-            if filename == "platform_menu" and settings.ENVIRONMENT != EnvironmentEnum.DEV:
-                data = [item for item in data if item.get("route_name") != "Demo"]
-            return data
+            return [self._parse_date_strings(item) for item in get_seed_data(filename)]
         except json.JSONDecodeError as e:
-            logger.error(f"❌️ 解析 {json_path} 失败: {e!s}")
+            logger.error(f"❌️ 解析 {filename} 种子失败: {e!s}")
             raise
         except Exception as e:
-            logger.error(f"❌️ 读取 {json_path} 失败: {e!s}")
+            logger.error(f"❌️ 读取 {filename} 种子失败: {e!s}")
             raise
 
     @classmethod
@@ -338,3 +324,17 @@ class InitializeData:
             else:
                 result[key] = value
         return result
+
+
+def get_seed_data(filename: str) -> list[dict]:
+    """按核心、已注册且当前环境启用的模块顺序合并种子，不覆盖已有数据。"""
+    directories = [SCRIPT_DIR, *(module.seed_dir for module in get_modules() if module.active and module.seed_dir is not None)]
+    data = []
+    for directory in directories:
+        path = directory / f"{filename}.json"
+        if path.exists():
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(raw, list) or any(not isinstance(item, dict) for item in raw):
+                raise ValueError(f"{path.name} 必须是对象数组")
+            data.extend(raw)
+    return data

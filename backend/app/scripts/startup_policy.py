@@ -1,4 +1,4 @@
-"""Explicit database bootstrap and read-only production startup checks."""
+"""Apply committed migrations and initialize the database at startup."""
 
 import argparse
 import asyncio
@@ -11,7 +11,7 @@ from sqlalchemy import inspect
 
 
 async def validate_database_schema() -> None:
-    """Reject missing migrations, tables, columns and required indexes without repairing them."""
+    """Validate the schema after startup migrations have been applied."""
     from app.config.path_conf import BASE_DIR
     from app.core.base_model import MappedBase
     from app.core.database import _get_schema_indexes, async_engine
@@ -26,11 +26,11 @@ async def validate_database_schema() -> None:
     def check_schema(connection) -> None:
         inspector = inspect(connection)
         if set(MigrationContext.configure(connection).get_current_heads()) != expected_heads:
-            raise RuntimeError("数据库迁移版本不匹配，请在部署阶段运行 python main.py upgrade --env=prod")
+            raise RuntimeError("数据库迁移版本不匹配，启动迁移未完成")
         tables = set(inspector.get_table_names())
         missing_tables = set(MappedBase.metadata.tables) - tables
         if missing_tables:
-            raise RuntimeError(f"数据库缺少表 {', '.join(sorted(missing_tables))}；首次部署请运行 python main.py bootstrap --env=prod")
+            raise RuntimeError(f"数据库缺少表 {', '.join(sorted(missing_tables))}；启动迁移未完成")
         for table in MappedBase.metadata.sorted_tables:
             columns = {column["name"] for column in inspector.get_columns(table.name)}
             missing_columns = set(table.columns.keys()) - columns
@@ -60,7 +60,7 @@ async def _bootstrap() -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="内部数据库初始化 worker；部署请使用 main.py bootstrap")
+    parser = argparse.ArgumentParser(description="应用启动数据库初始化 worker")
     parser.add_argument("--env", choices=("dev", "prod"), required=True)
     arguments = parser.parse_args()
     os.environ["ENVIRONMENT"] = arguments.env

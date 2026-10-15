@@ -59,6 +59,16 @@ async function run() {
     await row().waitFor();
     checks.push("edit and status survive browser refresh");
 
+    for (const expected of [{ name: "asc" }, { name: "desc" }, { id: "desc" }]) {
+      const sorted = page.waitForResponse((response) =>
+        response.url().includes("/demo/category/list?")
+      );
+      await page.getByRole("columnheader", { name: "分类名称" }).click();
+      const url = new URL((await sorted).request().url());
+      assert.deepEqual(JSON.parse(url.searchParams.get("order_by")), [expected]);
+    }
+    checks.push("sort cycles through ascending, descending, and the default order");
+
     await page.getByRole("button", { name: "新增分类", exact: true }).click();
     await dialog.getByLabel("分类名称", { exact: true }).fill(updatedName);
     const conflict = page.waitForResponse(

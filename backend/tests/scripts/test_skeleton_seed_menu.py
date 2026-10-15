@@ -1,5 +1,4 @@
-import json
-from pathlib import Path
+from app.scripts.initialize import get_seed_data
 
 REMOVED_KEYWORDS = {
     "tenant",
@@ -20,8 +19,7 @@ def flatten(items):
 
 
 def test_seed_menu_contains_only_skeleton_and_ai_knowledge_routes():
-    path = Path("app/scripts/data/platform_menu.json")
-    data = json.loads(path.read_text(encoding="utf-8"))
+    data = get_seed_data("platform_menu")
     serialized_routes = "\n".join(
         str(item.get("route_path", ""))
         + "\n"
@@ -36,4 +34,4 @@ def test_seed_menu_contains_only_skeleton_and_ai_knowledge_routes():
     assert "module_ai" in serialized_routes
     assert "knowledge" in serialized_routes
     assert "retrieval" in serialized_routes
-    assert "????" not in path.read_text(encoding="utf-8")
+    assert "????" not in str(data)

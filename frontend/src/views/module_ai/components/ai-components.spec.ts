@@ -33,7 +33,7 @@ describe("AI workspace primitives", () => {
 
   it("labels the workspace and knowledge selection while preserving actions", async () => {
     const wrapper = mount(FaChatNavbar, {
-      props: { connectionStatus: "connected", isConnected: true, messageCount: 0 },
+      props: { messageCount: 0 },
       global: {
         stubs: {
           ElButton: {

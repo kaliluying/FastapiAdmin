@@ -1,3 +1,4 @@
+const { observeSse } = require("./sse-events.cjs");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -22,13 +23,7 @@ async function run() {
     if (request.url().startsWith(`${backend}/`) || request.url().startsWith(`${frontend}/`))
       authorization = request.headers().authorization || authorization;
   });
-  page.on("websocket", (socket) =>
-    socket.on("framereceived", ({ payload }) => {
-      try {
-        events.push(JSON.parse(payload.toString()));
-      } catch {}
-    })
-  );
+  const drainSse = observeSse(page, events);
   await page.route("**/*", (route) => {
     const url = new URL(route.request().url());
     return ["127.0.0.1", "localhost"].includes(url.hostname) ||
@@ -79,7 +74,7 @@ async function run() {
   const navigateChat = async () => {
     await page.goto(`${frontend}/#/ai/chat`);
     await page.waitForFunction(() =>
-      document.querySelector(".composer-status")?.textContent.includes("已连接")
+      document.querySelector(".composer-status")?.textContent.includes("就绪")
     );
     const skip = page.getByRole("button", { name: "跳过", exact: true });
     if (await skip.isVisible()) await skip.click();
@@ -92,6 +87,7 @@ async function run() {
       .getByRole("button", { name: "停止生成", exact: true })
       .waitFor({ state: "hidden", timeout: 20000 });
     await page.waitForTimeout(150);
+    await drainSse();
     const received = events.slice(offset);
     const terminal = received.find((event) => event.type === terminalType);
     assert.ok(
@@ -246,7 +242,7 @@ async function run() {
           ledger: final.feature_usage_ledger,
           page_errors: errors,
           boundary:
-            "real browser/auth/HTTP/WebSocket/temporary SQLite/RAG/provider adapter; deterministic llm stub and mock Redis; no production or paid provider acceptance",
+            "real browser/auth/HTTP/SSE/temporary SQLite/RAG/provider adapter; deterministic llm stub and mock Redis; no production or paid provider acceptance",
         },
         null,
         2

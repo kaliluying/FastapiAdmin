@@ -1,3 +1,4 @@
+const { observeSse } = require("./sse-events.cjs");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -15,13 +16,7 @@ async function run() {
   const events = [];
   let phase = "login";
   page.on("pageerror", (error) => errors.push({ phase, message: error.message }));
-  page.on("websocket", (socket) =>
-    socket.on("framereceived", ({ payload }) => {
-      try {
-        events.push(JSON.parse(payload.toString()));
-      } catch {}
-    })
-  );
+  const drainSse = observeSse(page, events);
   await page.route("**/*", (route) => {
     const url = new URL(route.request().url());
     return ["127.0.0.1", "localhost"].includes(url.hostname) ||
@@ -142,7 +137,7 @@ async function run() {
     phase = "chat-persisted-feedback";
     await page.goto(`${frontend}/#/ai/chat`);
     await page.waitForFunction(() =>
-      document.querySelector(".composer-status")?.textContent.includes("已连接")
+      document.querySelector(".composer-status")?.textContent.includes("就绪")
     );
     if (await skip.isVisible()) await skip.click();
     await page.locator('input[type="file"]').setInputFiles({
@@ -159,6 +154,7 @@ async function run() {
       .getByRole("button", { name: "反馈问题", exact: true })
       .first()
       .waitFor({ timeout: 20000 });
+    await drainSse();
     const done = events.find((event) => event.type === "done");
     assert.ok(done?.run_id && done?.session_id);
     await page.getByRole("button", { name: "反馈问题", exact: true }).first().click();
@@ -212,8 +208,14 @@ async function run() {
     const geometry = [];
     for (const width of [375, 768, 1024]) {
       await page.setViewportSize({ width, height: 900 });
+      // Responsive menu switching rebuilds the route; wait before inspecting its controls.
+      await page.waitForTimeout(350);
       const collapse = page.getByRole("button", { name: "收起侧边栏", exact: true });
       if (await collapse.isVisible()) await collapse.click();
+      if (!(await page.locator(".quality-panel").isVisible())) {
+        await page.getByRole("button", { name: "批量评测与反馈", exact: true }).click();
+        await page.getByRole("button", { name: "查看结果", exact: true }).first().click();
+      }
       await page.waitForTimeout(350);
       const layout = await page.locator(".quality-panel").evaluate((element) => ({
         viewport: innerWidth,

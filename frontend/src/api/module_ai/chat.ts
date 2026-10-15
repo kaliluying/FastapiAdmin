@@ -1,4 +1,5 @@
 import { request } from "@/utils/http";
+import { readSse } from "@/utils/http/sse";
 
 const API_PATH = "/ai/chat";
 
@@ -10,6 +11,34 @@ export interface ChatSessionListQuery extends PageQuery {
 }
 
 export const AiChatAPI = {
+  async stream(
+    body: Record<string, unknown>,
+    signal: AbortSignal,
+    onData: (data: string) => void,
+    onOpen: () => void
+  ) {
+    const response = await request<ReadableStream<Uint8Array>>({
+      url: `${API_PATH}/stream`,
+      method: "post",
+      data: body,
+      adapter: "fetch",
+      responseType: "stream",
+      timeout: 0,
+      signal,
+      showSuccessMessage: false,
+      showErrorMessage: false,
+    });
+    if (!String(response.headers["content-type"]).includes("text/event-stream")) {
+      await response.data.cancel();
+      throw new Error("服务器未返回对话事件流");
+    }
+    if (signal.aborted) {
+      await response.data.cancel();
+      throw new DOMException("请求已取消", "AbortError");
+    }
+    onOpen();
+    await readSse(response.data, onData);
+  },
   getRuntimeLogStatus() {
     return request<ApiResponse<{ can_query: boolean; enabled: boolean }>>({
       url: `${API_PATH}/runtime-logs/status`,

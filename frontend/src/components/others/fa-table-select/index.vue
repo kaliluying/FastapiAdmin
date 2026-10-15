@@ -301,10 +301,11 @@ function handleSelect(selection: any[]) {
     selectedItems.value = selection;
   } else {
     // 单选
-    selectedItems.value = [selection[selection.length - 1]];
+    const selected = selection[selection.length - 1];
+    selectedItems.value = [selected];
     tableRef.value?.clearSelection();
-    tableRef.value?.toggleRowSelection(selectedItems.value[0], true);
-    tableRef.value?.setCurrentRow(selectedItems.value[0]);
+    tableRef.value?.toggleRowSelection(selected, true);
+    tableRef.value?.setCurrentRow(selected);
   }
 }
 function handleSelectAll(selection: any[]) {

@@ -12,11 +12,11 @@
 | `app/api/v1/module_system/`                               | 认证、用户、角色和日志                       |
 | `app/api/v1/module_demo/category/`                        | 开发环境分类范例                             |
 | `app/plugin/module_ai/`                                   | 对话、知识库、记忆、模型配置、用量与质量评测 |
-| `app/plugin/module_ai/plugin.toml`、`app/core/plugins.py` | AI 路由、模型与启动钩子的显式装配            |
+| `app/config/modules.py`、`app/core/modules.py` | 业务模块的路由、模型、种子、权限与生命周期组装 |
 | `app/scripts/initialize.py`、`app/scripts/migrate.py`     | 初始化、迁移和生产结构检查                   |
 | `app/alembic/versions/`                                   | 已纳入版本管理的迁移脚本                     |
 
-`AuthPermission` 校验接口权限；前端菜单只控制导航与可见性。旧字典、参数模块已移除。AI 为核心模块，依赖随 `uv sync` 安装。
+`AuthPermission` 校验接口权限；前端菜单只控制导航与可见性。旧字典、参数模块已移除。AI 默认提供，依赖随 `uv sync` 安装；业务模块通过 `app/config/modules.py` 显式注册，增删改见[模块开发指南](../docs/MODULE_DEVELOPMENT.md)。
 
 ## 开发运行
 
@@ -44,11 +44,11 @@ uv run main.py bootstrap --env=prod
 # 后续部署：显式应用已审查的迁移
 uv run main.py migrate --env=prod
 
-# 启动：只检查结构，不自动迁移或补种子
+# 启动：自动迁移、校验结构并补齐基础数据
 uv run main.py run --env=prod
 ```
 
-`bootstrap` 使用 Redis 初始化锁；迁移由部署流程串行执行。DDL 回滚能力取决于数据库，停止进程不会撤销已提交的 DDL。结构检查失败应修复部署步骤；`reset` 会删除数据，不应作为启动修复手段。
+生产启动会在 Redis 启动锁下自动应用已提交的 Alembic 迁移、创建缺失结构并补齐稳定基础数据，然后校验数据库结构。`bootstrap` 和 `migrate` 仍可在部署阶段用于显式预执行；`reset` 会删除数据，不应作为启动修复手段。
 
 开发模型变更后运行 `uv run main.py revision --env=dev`，审查生成的 `app/alembic/versions/` 脚本及数据影响，再显式执行迁移。`upgrade` 是 `migrate` 的兼容命令。
 

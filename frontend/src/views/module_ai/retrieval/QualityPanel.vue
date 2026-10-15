@@ -84,6 +84,7 @@
           <ElTableColumn prop="name" label="名称" min-width="150" />
           <ElTableColumn prop="retrieval_mode" label="检索方式" width="110" />
           <ElTableColumn prop="created_time" label="时间" min-width="165" />
+          <!-- @vue-generic {Evaluation} -->
           <ElTableColumn label="操作" width="150"
             ><template #default="{ row }"
               ><ElButton link @click="result = row">查看结果</ElButton
@@ -127,6 +128,7 @@
             }}</template></ElTableColumn
           >
           <ElTableColumn prop="comment" label="反馈内容" min-width="200" show-overflow-tooltip />
+          <!-- @vue-generic {AnswerFeedback} -->
           <ElTableColumn label="操作" width="90"
             ><template #default="{ row }"
               ><ElButton

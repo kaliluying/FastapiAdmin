@@ -212,6 +212,7 @@ class UserOutSchema(UserUpdateSchema, BaseSchema, UserBySchema):
     roles: list[RoleOutSchema] | None = Field(default=[], description="角色")
     menus: list[MenuOutSchema] | None = Field(default=[], description="菜单")
     permissions: list[str] = Field(default_factory=list, description="权限标识列表")
+    modules: list[str] = Field(default_factory=list, description="当前环境已注册的业务模块")
 
 
 @dataclass

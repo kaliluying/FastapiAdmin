@@ -4,7 +4,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import MarkdownIt from "markdown-it";
+import MarkdownIt, { type MarkdownIt as MarkdownItInstance } from "markdown-it";
 import markdownItHighlightjs from "markdown-it-highlightjs";
 import hljs from "highlight.js";
 import DOMPurify from "dompurify";
@@ -26,7 +26,7 @@ const props = withDefaults(defineProps<Props>(), {
   sanitize: true,
 });
 
-const md: MarkdownIt = new MarkdownIt({
+const md: MarkdownItInstance = new MarkdownIt({
   html: true,
   linkify: true,
   typographer: true,

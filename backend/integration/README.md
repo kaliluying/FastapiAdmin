@@ -31,9 +31,9 @@ INTEGRATION_MYSQL_USER=root INTEGRATION_MYSQL_PASSWORD="$TEMP_MYSQL_PASSWORD" \
 
 ## 验收路径
 
-1. 空库只读结构检查失败；显式生产 `bootstrap` 与 `upgrade` 子进程创建结构并应用 Alembic 迁移。
+1. 空库通过真实生产启动自动创建结构、应用 Alembic 迁移并初始化基础数据；显式生产 `bootstrap` 与 `upgrade` 子进程仍用于验证幂等部署命令。
 2. 真实生产 startup/shutdown、MySQL/Redis readiness、Redis 锁过期/错误所有者拒绝续约或释放、启动锁并发串行化。
-3. 使用 2 次 / 2 秒的配置检查 HTTP 第三次请求返回 429，真实时间窗口过后恢复；生产启动不能改变表和种子数据数量。
+3. 使用 2 次 / 2 秒的配置检查 HTTP 第三次请求返回 429，真实时间窗口过后恢复；生产启动会自动迁移但不会破坏已有表和种子数据。
 4. 删除临时库的版本记录后，结构检查必须失败且不得自行修复，随后恢复记录。
 5. 真实上传服务保存文档和 pending 任务，独立生产进程经 manifest hook 认领任务。仅在被杀的验收进程把租约缩短为 2 秒，并在真实解析后的屏障暂停；主脚本 SIGKILL 此进程，检查 MySQL 保留 indexing/attempts/token。
 6. 等待真实租约过期，以两个新的生产进程执行 startup/shutdown，自动恢复文档至 success，检查 SQL 分块、源文件、真实 BM25 检索及重复重启无重复分块。正常 shutdown 必须停止恢复任务。
@@ -67,3 +67,7 @@ node tests/site-e2e.cjs
 这条路径复用应用的模型适配、权限和持久化链路。CodeVault `ai-provider-compatibility` 的兼容性检查意图适用于验收边界，无需新增适配层；环境预检只借鉴尽早检查前提的原则，不复制 `auth-state-gate` 的账号状态模型。
 
 当前仅完成本地执行入口和产物回归。真实供应商验收需目标应用实例、对应模型配置及调用授权；截至 2026-10-08 尚未完成应用供应商链路验收。10 月 3 日临时 MySQL/Redis 恢复验收曾通过，但不代表当前工作区重跑通过。
+
+## 骨架增删改验收
+
+运行 `uv run --no-sync python integration/skeleton_acceptance.py`。在副本中新增供应商业务、修改字段及校验，以真实浏览器验证保存、权限和重启持久化；然后物理删除 AI、范例和监控展示，创建不含 AI 专用依赖的独立 Python 环境，验证菜单清理、启动与前端构建。使用隔离 SQLite 和独立真实 Redis，不读取已有数据库或环境文件，不调用外部模型服务。依赖与证据边界见[模块开发指南](../../docs/MODULE_DEVELOPMENT.md)。

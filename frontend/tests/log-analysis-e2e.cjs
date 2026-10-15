@@ -1,3 +1,4 @@
+const { observeSse } = require("./sse-events.cjs");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -16,18 +17,7 @@ async function run() {
   const events = [];
   const sentMessages = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  page.on("websocket", (socket) => {
-    socket.on("framesent", ({ payload }) => {
-      try {
-        sentMessages.push(JSON.parse(payload.toString()));
-      } catch {}
-    });
-    socket.on("framereceived", ({ payload }) => {
-      try {
-        events.push(JSON.parse(payload.toString()));
-      } catch {}
-    });
-  });
+  const drainSse = observeSse(page, events, sentMessages);
   await page.route("**/*", (route) => {
     const url = new URL(route.request().url());
     return ["127.0.0.1", "localhost"].includes(url.hostname) ||
@@ -44,6 +34,7 @@ async function run() {
     await page.waitForFunction(
       () => document.querySelector(".message-group.assistant .message-text")?.textContent.length > 0
     );
+    await drainSse();
     const responseEvents = events.slice(eventOffset);
     assert.ok(responseEvents.some((event) => event.type === "done"));
     return responseEvents;
@@ -56,7 +47,7 @@ async function run() {
     await page.locator(".el-menu-item").filter({ hasText: "AI 对话" }).waitFor({ timeout: 30000 });
     await page.goto(`${frontend}/#/ai/chat`);
     await page.waitForFunction(() =>
-      document.querySelector(".composer-status")?.textContent.includes("已连接")
+      document.querySelector(".composer-status")?.textContent.includes("就绪")
     );
     const skip = page.getByRole("button", { name: "跳过", exact: true });
     if (await skip.isVisible()) await skip.click();
@@ -326,7 +317,7 @@ async function run() {
           batch_and_continued_queries_verified: true,
           screenshots,
           boundary:
-            "real browser/auth/HTTP/WebSocket/log reader; isolated SQLite and in-memory Redis; deterministic local model, no production/provider acceptance",
+            "real browser/auth/HTTP/SSE/log reader; isolated SQLite and in-memory Redis; deterministic local model, no production/provider acceptance",
         },
         null,
         2

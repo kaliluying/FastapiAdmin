@@ -25,7 +25,8 @@
         filterable
         class="knowledge-select"
         aria-label="用于回答的知识库"
-        placeholder="选择知识库"
+        placeholder="选择知识库（可选）"
+        no-data-text="暂无可用知识库。你仍可直接提问或添加附件。"
         @update:model-value="handleKnowledgeChange"
       >
         <ElOption
@@ -35,27 +36,6 @@
           :value="item.id || 0"
         />
       </ElSelect>
-      <ElButton text :icon="Setting" @click="handleToggleConnection">
-        {{ isConnected ? "断开连接" : "重新连接" }}
-      </ElButton>
-      <ElTag
-        class="connection-status"
-        effect="plain"
-        :type="
-          connectionStatus === 'connected'
-            ? 'success'
-            : connectionStatus === 'connecting'
-              ? 'warning'
-              : 'info'
-        "
-      >
-        <ElIcon :class="['status-icon', connectionStatus]">
-          <Connection v-if="connectionStatus === 'connected'" />
-          <Loading v-else-if="connectionStatus === 'connecting'" />
-          <Warning v-else />
-        </ElIcon>
-        <span class="status-text">{{ connectionStatusText }}</span>
-      </ElTag>
       <ElButton v-if="hasMessages" text :icon="Delete" @click="handleClearChat">清空对话</ElButton>
       <ElButton text @click="emit('show-evidence')">回答依据</ElButton>
       <ElButton text @click="emit('show-usage')">今日用量</ElButton>
@@ -66,12 +46,10 @@
 <script setup lang="ts">
 import { resolveIconForFaSvgIcon } from "@utils";
 import { computed } from "vue";
-import { Connection, Loading, Warning, Delete, Setting } from "@element-plus/icons-vue";
+import { Delete } from "@element-plus/icons-vue";
 import type { KnowledgeBase } from "@/api/module_ai/knowledge";
 
 interface Props {
-  connectionStatus: "connected" | "connecting" | "disconnected";
-  isConnected: boolean;
   messageCount: number;
   isSidebarCollapsed?: boolean;
   knowledgeBases?: KnowledgeBase[];
@@ -80,7 +58,6 @@ interface Props {
 
 interface Emits {
   (e: "clear-chat"): void;
-  (e: "toggle-connection"): void;
   (e: "toggle-sidebar"): void;
   (e: "show-evidence"): void;
   (e: "show-usage"): void;
@@ -94,27 +71,10 @@ const props = withDefaults(defineProps<Props>(), {
 });
 const emit = defineEmits<Emits>();
 
-const connectionStatusText = computed(() => {
-  switch (props.connectionStatus) {
-    case "connected":
-      return "已连接";
-    case "connecting":
-      return "连接中...";
-    case "disconnected":
-      return "未连接";
-    default:
-      return "未知状态";
-  }
-});
-
 const hasMessages = computed(() => props.messageCount > 0);
 
 const handleClearChat = () => {
   emit("clear-chat");
-};
-
-const handleToggleConnection = () => {
-  emit("toggle-connection");
 };
 
 const toggleSidebar = () => {
@@ -200,12 +160,6 @@ const handleKnowledgeChange = (value: number[]) => {
   background: var(--fa-hover-color);
 }
 
-.connection-status :deep(.el-tag__content) {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
 @media (width <= 1024px) {
   .chat-navbar {
     gap: 8px;
@@ -214,10 +168,6 @@ const handleKnowledgeChange = (value: number[]) => {
 
   .navbar-right {
     gap: 4px;
-  }
-
-  .connection-status {
-    display: none;
   }
 }
 

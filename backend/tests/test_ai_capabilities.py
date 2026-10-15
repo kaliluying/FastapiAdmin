@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import httpx
+import httpx2
 import pytest
 from anthropic import AsyncAnthropic
 from langchain_anthropic import ChatAnthropic
@@ -57,6 +58,7 @@ async def test_capability_check_real_sdk_http_sse_and_three_records(monkeypatch,
     config = model_config_service.ChatModelRuntimeConfig(protocol, "https://fixture.invalid/v1", "fixture", "synthetic-key")
     monkeypatch.setattr(capabilities, "load_runtime_chat_model_config", AsyncMock(return_value=config))
     monkeypatch.setattr(capabilities, "validate_model_base_url", lambda value, **kwargs: value)
+    http = httpx2 if protocol == "anthropic" else httpx
     def transport(request):
         body = json.loads(request.content)
         requests.append(body)
@@ -64,9 +66,9 @@ async def test_capability_check_real_sdk_http_sse_and_three_records(monkeypatch,
             content = "".join((f"event: {event['type']}\n" if protocol == "anthropic" else "") + f"data: {json.dumps(event)}\n\n" for event in stream_events(protocol))
             if protocol == "openai":
                 content += "data: [DONE]\n\n"
-            return httpx.Response(200, headers={"content-type": "text/event-stream"}, content=content)
-        return httpx.Response(200, json=response_payload(protocol, tool=bool(body.get("tools"))))
-    async with httpx.AsyncClient(transport=httpx.MockTransport(transport)) as client:
+            return http.Response(200, headers={"content-type": "text/event-stream"}, content=content)
+        return http.Response(200, json=response_payload(protocol, tool=bool(body.get("tools"))))
+    async with http.AsyncClient(transport=http.MockTransport(transport)) as client:
         monkeypatch.setattr(rag, "ChatOpenAI", lambda **kwargs: ChatOpenAI(http_async_client=client, **kwargs))
         def anthropic_model(**kwargs):
             model = ChatAnthropic(**kwargs)

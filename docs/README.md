@@ -10,8 +10,11 @@ FastCore 是单组织企业后端项目骨架，配套管理端并内置 AI 能�
 | [后端说明](../backend/README.md)                                | 配置、开发启动、生产初始化和迁移             |
 | [管理端说明](../frontend/README.md)                             | 环境配置、路由与构建                         |
 | [架构与开发指南](ARCHITECTURE_AND_DEVELOPMENT.md)               | 模块边界、权限链路、数据归属与知识任务恢复   |
+| [模块增删改指南](MODULE_DEVELOPMENT.md) | 显式注册、字段修改、功能裁剪与依赖分离 |
+| [骨架增删改验收](SKELETON_ACCEPTANCE.md) | 隔离增改、物理裁剪、独立走查与验证边界 |
 | [标准模块模板：分类管理](STANDARD_MODULE_TEMPLATE.md)           | 新业务模块从数据库到页面的开发与验收路径     |
 | [测试与验收](TESTING.md)                                        | 单测、静态检查、隔离浏览器和真实依赖验收边界 |
+| [开发阶段 Loop](DEVELOPMENT_LOOP.md)                            | 新功能、测试修复、独立验证和持续开发的停止条件 |
 
 ## AI 与运维
 
@@ -19,6 +22,7 @@ FastCore 是单组织企业后端项目骨架，配套管理端并内置 AI 能�
 | ----------------------------------------------------- | ------------------------------------ |
 | [知识库文档检查与维护](DOCUMENT_MANAGEMENT.md)        | 文档状态、版本编辑、重建、解析与 OCR |
 | [AI 用量与模型能力验证](AI_USAGE_AND_MODEL_CHECKS.md) | 用量账本、调用额度与手动能力检查     |
+| [AI 对话流协议](AI_CHAT_STREAMING.md) | SSE 请求、取消、持久化与验收边界 |
 | [回答反馈与检索质量评测](AI_QUALITY.md)               | 反馈闭环、数据集、指标与历史比较     |
 | [AI 运行日志分析](AI_RUNTIME_LOG_ANALYSIS.md)         | 日志权限、工具调用、追问与证据安全   |
 | [数据备份与恢复](BACKUP_AND_RESTORE.md)               | 离线备份、完整性检查和数据库恢复演练 |

@@ -8,7 +8,7 @@
 -->
 <template>
   <div class="app-layout">
-    <a class="skip-main-link" href="#app-content">跳到主要内容</a>
+    <a class="skip-main-link" href="#app-content" @click.prevent="focusContent">跳到主要内容</a>
     <!-- 左侧菜单导航 -->
     <aside id="app-sidebar">
       <FaSidebarMenu />
@@ -19,7 +19,7 @@
       <div id="app-header">
         <FaHeaderBar />
       </div>
-      <div id="app-content">
+      <div id="app-content" tabindex="-1">
         <FaPageContent />
       </div>
     </main>
@@ -51,6 +51,10 @@ defineOptions({ name: "AppLayout" });
 
 const appStore = useAppStore();
 const settingStore = useSettingsStore();
+
+function focusContent(): void {
+  document.getElementById("app-content")?.focus();
+}
 
 /** 新手指引显隐 —— session 级状态，首次登录/注册后自动弹出 */
 const guideVisible = computed({

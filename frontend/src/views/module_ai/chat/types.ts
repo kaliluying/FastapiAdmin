@@ -15,6 +15,8 @@ export interface ChatMessage {
   error?: string;
   errorCode?: string;
   retryUntil?: number;
+  retryOf?: string;
+  retriedMessageId?: string;
   warning?: string;
   stopped?: boolean;
   logResults?: RuntimeLogResult[];

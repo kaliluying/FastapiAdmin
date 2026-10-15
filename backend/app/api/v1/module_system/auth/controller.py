@@ -58,7 +58,7 @@ async def login_for_access_token_controller(
     request: Request,
     redis: Annotated[Redis, Depends(redis_getter)],
     login_form: Annotated[CustomOAuth2PasswordRequestForm, Depends()],
-    db: Annotated[AsyncSession, Depends(db_getter)],
+    db: Annotated[AsyncSession, Depends(db_getter, scope="function")],
 ) -> JSONResponse | dict:
     login_result = await LoginService.authenticate_user(request=request, redis=redis, login_form=login_form, db=db)
 
@@ -76,7 +76,7 @@ async def login_for_access_token_controller(
 )
 async def get_new_token_controller(
     payload: RefreshTokenPayloadSchema,
-    db: Annotated[AsyncSession, Depends(db_getter)],
+    db: Annotated[AsyncSession, Depends(db_getter, scope="function")],
     redis: Annotated[Redis, Depends(redis_getter)],
 ) -> JSONResponse:
     new_token = await LoginService.refresh_token(db=db, redis=redis, refresh_token=payload)
@@ -135,7 +135,7 @@ async def create_ws_ticket_controller(
 )
 async def get_auto_login_users_controller(
     auth: Annotated[AuthSchema, Depends(get_current_user)],
-    db: Annotated[AsyncSession, Depends(db_getter)],
+    db: Annotated[AsyncSession, Depends(db_getter, scope="function")],
 ) -> JSONResponse:
     if not auth.user.is_superuser:
         raise CustomException(msg="仅超级管理员可查看免登录用户")
@@ -151,7 +151,7 @@ async def get_auto_login_users_controller(
 async def get_auto_login_token_controller(
     auth: Annotated[AuthSchema, Depends(get_current_user)],
     redis: Annotated[Redis, Depends(redis_getter)],
-    db: Annotated[AsyncSession, Depends(db_getter)],
+    db: Annotated[AsyncSession, Depends(db_getter, scope="function")],
     user_id: int,
 ) -> JSONResponse:
     if not auth.user.is_superuser:
@@ -168,7 +168,7 @@ async def get_auto_login_token_controller(
 async def auto_login_controller(
     request: Request,
     redis: Annotated[Redis, Depends(redis_getter)],
-    db: Annotated[AsyncSession, Depends(db_getter)],
+    db: Annotated[AsyncSession, Depends(db_getter, scope="function")],
     token: str,
 ) -> JSONResponse:
     login_token = await AutoLoginService.auto_login(request=request, redis=redis, db=db, token=token)
@@ -234,7 +234,7 @@ async def oauth_login_redirect_controller(
 async def oauth_callback_controller(
     request: Request,
     redis: Annotated[Redis, Depends(redis_getter)],
-    db: Annotated[AsyncSession, Depends(db_getter)],
+    db: Annotated[AsyncSession, Depends(db_getter, scope="function")],
     provider: Annotated[str, Path()],
     code: Annotated[str | None, Query()] = None,
     state: Annotated[str | None, Query()] = None,
