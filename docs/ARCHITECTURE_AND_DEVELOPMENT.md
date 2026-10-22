@@ -44,11 +44,15 @@ flowchart LR
 
 前端 API 请求通过 `frontend/src/utils/http/` 发送。开发代理由 `frontend/vite.config.ts` 配置：`VITE_APP_BASE_API` 是浏览器使用的 API 前缀，`VITE_API_BASE_URL` 是代理目标；AI 对话也通过同一 HTTP 代理读取 SSE，旧 WebSocket 兼容入口仍保留。Vite 会加载 `.env` 和对应模式的 `.env.development`，后者可覆盖同名值。仓库模板与当前开发文件可能不同，联调前以实际加载值和后端监听地址核对。
 
+## 数据库支持范围
+
+FastCore 正式支持的运行和生产数据库为 **MySQL**。**SQLite 仅用于自动化测试和隔离验收**，不作为开发部署或生产数据库。
+
 ## 数据归属与知识库链路
 
 | 数据 | 存放位置 | 开发时要确认的事 |
 | --- | --- | --- |
-| 用户、权限、菜单、知识库元数据、chunk 与状态 | 配置的 MySQL、PostgreSQL 或 SQLite | 数据库目标、迁移与事务；后端测试默认用临时 SQLite |
+| 用户、权限、菜单、知识库元数据、chunk 与状态 | MySQL（正式支持）；SQLite 仅用于测试与隔离验收 | 数据库目标、迁移与事务；自动化测试默认使用临时 SQLite |
 | 启动锁、缓存、限流与会话相关状态 | Redis | 正常启动需要可访问的 Redis |
 | 通用上传与知识库原件 | `backend/storage/upload/`、`backend/storage/knowledge/` | 私有文件与数据库记录的一致性；不要在 API 中暴露服务器绝对路径 |
 | 向量与文本块 | `CHROMA_PERSIST_DIR` 指定的 Chroma 目录 | Embedding 模型变化时检查向量维度与集合 |

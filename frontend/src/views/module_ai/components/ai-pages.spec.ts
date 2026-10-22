@@ -25,9 +25,6 @@ vi.mock("@/api/module_ai/chat", () => ({
 vi.mock("@/api/module_ai/knowledge", () => ({
   default: { optionselect: api.bases, testRetrieval: api.retrieval },
 }));
-vi.mock("@/api/module_system/auth", () => ({
-  default: { createWsTicket: vi.fn().mockResolvedValue({ data: { data: { ticket: "fixture" } } }) },
-}));
 vi.mock("@/hooks/core/useAuth", () => ({ useAuth: () => ({ hasAuth: () => true }) }));
 vi.mock("vue-router", async (importOriginal) => ({
   ...(await importOriginal<typeof import("vue-router")>()),
@@ -98,18 +95,10 @@ beforeEach(() => {
   });
   api.bases.mockResolvedValue({ data: { data: [{ id: 1, name: "测试资料" }] } });
   api.retrieval.mockResolvedValue({ data: { data: { results: [] } } });
-  vi.stubGlobal(
-    "WebSocket",
-    class {
-      static OPEN = 1;
-      close() {}
-    }
-  );
 });
 
 afterEach(() => {
   wrappers.splice(0).forEach((wrapper) => wrapper.unmount());
-  vi.unstubAllGlobals();
 });
 
 describe("AI page responsive and recovery feedback", () => {

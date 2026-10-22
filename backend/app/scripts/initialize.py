@@ -318,7 +318,7 @@ class InitializeData:
 
     @classmethod
     def _parse_date_strings(cls, data: dict) -> dict:
-        """递归转换 JSON 中的日期时间字符串为 datetime 对象（兼容 PostgreSQL）"""
+        """递归转换 JSON 中的日期时间字符串为 datetime 对象"""
         result = {}
         for key, value in data.items():
             if isinstance(value, str):

@@ -14,10 +14,6 @@ def get_log_text_column_type():
         from sqlalchemy.dialects.mysql import LONGTEXT
 
         return LONGTEXT
-    elif db_type == "postgres":
-        from sqlalchemy.dialects.postgresql import TEXT
-
-        return TEXT
     else:
         return Text
 

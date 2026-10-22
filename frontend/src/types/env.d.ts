@@ -26,9 +26,6 @@ interface ImportMetaEnv {
   /** 网络请求超时时间（毫秒） */
   VITE_API_TIMEOUT: number;
 
-  /** WebSocket 端点 */
-  VITE_APP_WS_ENDPOINT: string;
-
   /** 应用部署基础路径 */
   VITE_BASE_URL: string;
 

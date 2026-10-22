@@ -69,7 +69,7 @@ class OperationLogService:
     async def cleanup_operation_log() -> None:
         from datetime import datetime, timedelta
 
-        from sqlalchemy import delete, select
+        from sqlalchemy import delete
 
         from app.core.database import async_db_session
 

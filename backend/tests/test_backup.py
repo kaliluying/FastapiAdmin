@@ -183,28 +183,26 @@ with idx.searcher() as searcher:
             verify_backup(self.archive)
 
     def test_native_dump_missing_client_is_clear(self):
-        for kind in ("mysql", "postgres"):
-            with patch("app.scripts.backup.shutil.which", return_value=None):
-                with self.assertRaisesRegex(ValueError, "缺少"):
-                    create_backup(self.archive, {"type": kind}, self.stores, stopped=True)
-            self.assertFalse(self.archive.exists())
+        with patch("app.scripts.backup.shutil.which", return_value=None):
+            with self.assertRaisesRegex(ValueError, "缺少"):
+                create_backup(self.archive, {"type": "mysql"}, self.stores, stopped=True)
+        self.assertFalse(self.archive.exists())
 
     def test_native_dump_never_stores_connection_secrets(self):
         password = "private-token-do-not-log"
-        for kind in ("mysql", "postgres"):
-            archive = self.root / f"{kind}.zip"
-            database = {"type": kind, "host": "localhost", "port": 3306 if kind == "mysql" else 5432, "user": "test", "password": password, "name": "isolated"}
+        archive = self.root / "mysql.zip"
+        database = {"type": "mysql", "host": "localhost", "port": 3306, "user": "test", "password": password, "name": "isolated"}
 
-            def run(args, *, env, stdout, stderr, check):
-                self.assertNotIn(password, " ".join(args))
-                stdout.write(b"native-dump-fixture")
-                return subprocess.CompletedProcess(args, 0)
+        def run(args, *, stdout, stderr, check):
+            self.assertNotIn(password, " ".join(args))
+            stdout.write(b"native-dump-fixture")
+            return subprocess.CompletedProcess(args, 0)
 
-            with patch("app.scripts.backup.shutil.which", return_value="fake-client"), patch("app.scripts.backup.subprocess.run", side_effect=run):
-                create_backup(archive, database, self.stores, stopped=True)
-            with zipfile.ZipFile(archive) as bundle:
-                self.assertNotIn(password, bundle.read("manifest.json").decode())
-            restore_backup(archive, self.root / f"restored-{kind}")
+        with patch("app.scripts.backup.shutil.which", return_value="fake-client"), patch("app.scripts.backup.subprocess.run", side_effect=run):
+            create_backup(archive, database, self.stores, stopped=True)
+        with zipfile.ZipFile(archive) as bundle:
+            self.assertNotIn(password, bundle.read("manifest.json").decode())
+        restore_backup(archive, self.root / "restored-mysql")
 
 
 if __name__ == "__main__":

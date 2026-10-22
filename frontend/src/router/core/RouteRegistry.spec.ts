@@ -52,6 +52,24 @@ describe("RouteRegistry 批量注册", () => {
     expect(manager.getAll()).toEqual([]);
   });
 
+  it("一级多段路径保持完整，可导航与注销，不占用父级路径", async () => {
+    const router = createTestRouter();
+    const registry = new RouteRegistry(router);
+    registry.register([menuRoute("Reports", "/tools/reports")]);
+
+    expect(router.resolve({ name: "Reports" }).path).toBe("/tools/reports");
+    expect(router.resolve("/tools").matched).toEqual([]);
+    await router.push("/tools/reports");
+    expect(router.currentRoute.value.name).toBe("Reports");
+    expect(router.currentRoute.value.matched[0]?.name).toBe(ROOT_LAYOUT_ROUTE_NAME);
+    expect(router.currentRoute.value.matched.at(-1)?.components?.default).toBe(page);
+
+    registry.unregister();
+    expect(router.hasRoute("Reports")).toBe(false);
+    expect(router.resolve("/tools/reports").matched).toEqual([]);
+    expect(router.hasRoute("Home")).toBe(true);
+  });
+
   it("转换器不为无名子路由生成名称，多个无名子页面仍可按路径导航", () => {
     const router = createTestRouter();
     const registry = new RouteRegistry(router);

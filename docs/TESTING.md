@@ -13,7 +13,7 @@
 .venv/bin/ruff check app tests --no-fix --output-format concise
 ```
 
-日常改动可选择对应测试文件。`tests/conftest.py` 使用临时 SQLite、模拟 Redis 和测试生命周期；不能证明 MySQL/PostgreSQL、真实 Redis、OCR 工具或外部模型服务已可用。
+日常改动可选择对应测试文件。`tests/conftest.py` 使用临时 SQLite、模拟 Redis 和测试生命周期；这些测试不能证明 MySQL、真实 Redis、OCR 工具或外部模型服务已可用。MySQL 是正式支持的运行数据库，SQLite 只用于测试；需要 MySQL 运行证据时，使用[真实运行态隔离验收](../backend/integration/README.md)中的专用临时实例流程。
 
 ## 前端检查
 
@@ -55,7 +55,7 @@ node frontend/tests/quality-e2e.cjs
 
 ## 真实依赖与供应商
 
-真实数据库/Redis 验收须使用可丢弃的独立实例与测试库，先确认数据库目标、端口和销毁范围。若工作区存在 `backend/integration/README.md`，按其说明检查前提后再执行；该目录若尚未提交，新克隆不会包含此入口。
+MySQL/Redis 真实验收须使用可丢弃的独立实例与测试库，先确认数据库目标、端口和销毁范围。若工作区存在 `backend/integration/README.md`，按其说明检查前提后再执行；该目录若尚未提交，新克隆不会包含此入口。SQLite 测试结果不能替代 MySQL 验收。
 
 真实模型验收至少覆盖：保存配置、手动能力验证、AI 对话、知识库召回与引用、用量记录、失败或取消后的状态。模型列表可读取、权限状态正常或模拟模型通过，都不能单独证明供应商调用成功。远程 embedding 和模型请求可能产生费用，验收前确认目标与额度。
 

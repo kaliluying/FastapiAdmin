@@ -20,8 +20,6 @@ anyio==4.15.1
     #   watchfiles
 asyncmy==0.2.16
     # via backend
-asyncpg==0.32.0
-    # via backend
 certifi==2026.7.22
     # via
     #   httpcore
@@ -83,10 +81,6 @@ pandas==3.0.6
     # via backend
 pillow==12.3.0
     # via backend
-psycopg==3.3.6
-    # via backend
-psycopg-binary==3.3.6 ; implementation_name != 'pypy'
-    # via psycopg
 pycparser==3.11 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
     # via cffi
 pydantic==2.14.1
@@ -142,7 +136,6 @@ typing-extensions==4.16.0
     #   alembic
     #   anyio
     #   fastapi
-    #   psycopg
     #   pydantic
     #   pydantic-core
     #   sqlalchemy
@@ -154,9 +147,7 @@ typing-inspection==0.4.4
     #   pydantic
     #   pydantic-settings
 tzdata==2026.5 ; sys_platform == 'emscripten' or sys_platform == 'win32'
-    # via
-    #   pandas
-    #   psycopg
+    # via pandas
 ua-parser==1.0.2
     # via backend
 ua-parser-builtins==202610

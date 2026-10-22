@@ -20,7 +20,7 @@ AI is included by default and assembled explicitly; copied projects can remove t
 
 ## Local development
 
-Use Python 3.12+, `uv`, Node.js 20.19+, and the pnpm version declared in `frontend/package.json` through Corepack. Prepare the configured relational database and Redis.
+Use Python 3.12+, `uv`, Node.js 20.19+, and the pnpm version declared in `frontend/package.json` through Corepack. Prepare MySQL and Redis. MySQL is the officially supported runtime database; SQLite is reserved for automated tests and isolated acceptance runs. See the [architecture guide](docs/ARCHITECTURE_AND_DEVELOPMENT.md).
 
 ```bash
 git clone git@github.com:kaliluying/fastcore.git

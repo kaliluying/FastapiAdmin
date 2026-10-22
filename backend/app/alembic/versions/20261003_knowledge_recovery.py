@@ -1,7 +1,6 @@
 """Persist document indexing claims and interrupted-generation cleanup."""
 
 import sqlalchemy as sa
-
 from alembic import op
 
 revision = "20261003_knowledge_recovery"

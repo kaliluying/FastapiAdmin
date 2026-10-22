@@ -1,3 +1,4 @@
+const { observeSse } = require("./sse-events.cjs");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -20,13 +21,7 @@ async function run() {
       authorization = request.headers().authorization || authorization;
   });
   page.on("pageerror", (error) => errors.push(error.message));
-  page.on("websocket", (socket) =>
-    socket.on("framereceived", ({ payload }) => {
-      try {
-        events.push(JSON.parse(payload.toString()));
-      } catch {}
-    })
-  );
+  const drainSse = observeSse(page, events);
   await page.route("**/*", (route) => {
     const url = new URL(route.request().url());
     return ["127.0.0.1", "localhost"].includes(url.hostname) ||
@@ -41,6 +36,7 @@ async function run() {
     await page
       .getByRole("button", { name: "停止生成", exact: true })
       .waitFor({ state: "hidden", timeout: 20000 });
+    await drainSse();
     const received = events.slice(offset);
     const terminal = received.find((event) => event.type === expected);
     assert.ok(terminal?.request_id, `missing ${expected} response for this request`);
@@ -60,7 +56,7 @@ async function run() {
     await page.locator(".el-menu-item").filter({ hasText: "AI 对话" }).waitFor({ timeout: 30000 });
     await page.goto(`${frontend}/#/ai/chat`);
     await page.waitForFunction(() =>
-      document.querySelector(".composer-status")?.textContent.includes("已连接")
+      document.querySelector(".composer-status")?.textContent.includes("就绪")
     );
     const skip = page.getByRole("button", { name: "跳过", exact: true });
     if (await skip.isVisible()) await skip.click();
@@ -175,7 +171,7 @@ async function run() {
           http_followup_verified: true,
           http_audit_metadata_only: true,
           boundary:
-            "real browser/auth/HTTP/WebSocket/log reader; disposable SQLite/mock Redis/deterministic local model; no production acceptance",
+            "real browser/auth/HTTP/SSE/log reader; disposable SQLite/mock Redis/deterministic local model; no production acceptance",
         },
         null,
         2

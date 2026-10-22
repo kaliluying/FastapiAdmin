@@ -194,25 +194,24 @@ class FeatureMigrationTests(unittest.TestCase):
         self.migrate()
         self.assertIn("ai_answer_feedback", sa.inspect(self.engine).get_table_names())
 
-    def test_mysql_and_postgres_migration_ddl_compiles_offline(self):
-        for dialect in ("mysql", "postgresql"):
-            buffer = io.StringIO()
-            context = MigrationContext.configure(dialect_name=dialect, opts={"as_sql": True, "output_buffer": buffer})
-            inspector = unittest.mock.Mock()
-            inspector.get_table_names.return_value = ["sys_user", "ai_knowledge_document"]
-            inspector.get_columns.return_value = [{"name": "id"}, {"name": "file_name"}]
-            for migration in self.migrations:
-                with patch.object(migration, "op", Operations(context)), patch.object(migration.sa, "inspect", return_value=inspector):
-                    migration.upgrade()
-            ddl = buffer.getvalue()
-            self.assertIn("ALTER TABLE ai_knowledge_document ADD COLUMN pending_file JSON", ddl)
-            self.assertIn("CREATE TABLE ai_usage_record", ddl)
-            self.assertIn("CREATE TABLE ai_answer_feedback", ddl)
-            self.assertIn("CREATE TABLE ai_retrieval_evaluation", ddl)
-            self.assertIn("uq_ai_answer_feedback", ddl)
-            self.assertIn("revision INTEGER NOT NULL", ddl)
-            self.assertIn("CREATE INDEX ix_ai_usage_record_day", ddl)
-            self.assertNotIn("DROP TABLE", ddl)
+    def test_mysql_migration_ddl_compiles_offline(self):
+        buffer = io.StringIO()
+        context = MigrationContext.configure(dialect_name="mysql", opts={"as_sql": True, "output_buffer": buffer})
+        inspector = unittest.mock.Mock()
+        inspector.get_table_names.return_value = ["sys_user", "ai_knowledge_document"]
+        inspector.get_columns.return_value = [{"name": "id"}, {"name": "file_name"}]
+        for migration in self.migrations:
+            with patch.object(migration, "op", Operations(context)), patch.object(migration.sa, "inspect", return_value=inspector):
+                migration.upgrade()
+        ddl = buffer.getvalue()
+        self.assertIn("ALTER TABLE ai_knowledge_document ADD COLUMN pending_file JSON", ddl)
+        self.assertIn("CREATE TABLE ai_usage_record", ddl)
+        self.assertIn("CREATE TABLE ai_answer_feedback", ddl)
+        self.assertIn("CREATE TABLE ai_retrieval_evaluation", ddl)
+        self.assertIn("uq_ai_answer_feedback", ddl)
+        self.assertIn("revision INTEGER NOT NULL", ddl)
+        self.assertIn("CREATE INDEX ix_ai_usage_record_day", ddl)
+        self.assertNotIn("DROP TABLE", ddl)
 
 
 if __name__ == "__main__":

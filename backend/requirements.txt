@@ -36,8 +36,6 @@ anyio==4.15.1
     #   watchfiles
 asyncmy==0.2.16
     # via backend
-asyncpg==0.32.0
-    # via backend
 attrs==26.1.0
     # via
     #   aiohttp
@@ -262,10 +260,6 @@ protobuf==7.36.2
     #   googleapis-common-protos
     #   onnxruntime
     #   opentelemetry-proto
-psycopg==3.3.6
-    # via backend
-psycopg-binary==3.3.6 ; implementation_name != 'pypy'
-    # via psycopg
 py-rust-stemmers==0.1.8
     # via fastembed
 pybase64==1.5.1
@@ -412,7 +406,6 @@ typing-extensions==4.16.0
     #   opentelemetry-exporter-otlp-proto-grpc
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
-    #   psycopg
     #   pydantic
     #   pydantic-core
     #   python-docx
@@ -426,9 +419,7 @@ typing-inspection==0.4.4
     #   pydantic
     #   pydantic-settings
 tzdata==2026.5 ; sys_platform == 'emscripten' or sys_platform == 'win32'
-    # via
-    #   pandas
-    #   psycopg
+    # via pandas
 ua-parser==1.0.2
     # via backend
 ua-parser-builtins==202610

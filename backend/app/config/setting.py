@@ -93,8 +93,8 @@ class Settings(BaseSettings):
     AUTOFETCH: bool | None = None  # 兼容旧环境变量名（保留别名，避免 .env 中已有 AUTOFETCH 的部署报错）
     EXPIRE_ON_COMMIT: bool = False  # 是否在提交时过期
 
-    # MySQL/PostgreSQL数据库连接
-    DATABASE_TYPE: Literal["mysql", "postgres", "sqlite"] = "mysql"
+    # MySQL 数据库连接；SQLite 仅供自动化测试使用
+    DATABASE_TYPE: Literal["mysql", "sqlite"] = "mysql"
     DATABASE_HOST: str = "localhost"
     DATABASE_PORT: int = 3306
     DATABASE_USER: str = "root"
@@ -241,29 +241,19 @@ class Settings(BaseSettings):
 
     @property
     def ASYNC_DB_URI(self) -> str:
-        if self.DATABASE_TYPE not in ("mysql", "postgres", "sqlite"):
-            raise ValueError(f"数据库驱动不支持: {self.DATABASE_TYPE}, 异步数据库请选择 mysql、postgres、sqlite")
-        db_connect: str = ""
+        if self.DATABASE_TYPE not in ("mysql", "sqlite"):
+            raise ValueError(f"数据库驱动不支持: {self.DATABASE_TYPE}, 异步数据库请选择 mysql 或 sqlite")
         if self.DATABASE_TYPE == "mysql":
-            db_connect = f"mysql+asyncmy://{self.DATABASE_USER}:{quote_plus(self.DATABASE_PASSWORD)}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}?charset=utf8mb4"
-        elif self.DATABASE_TYPE == "postgres":
-            db_connect = f"postgresql+asyncpg://{self.DATABASE_USER}:{quote_plus(self.DATABASE_PASSWORD)}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
-        else:
-            db_connect = f"sqlite+aiosqlite:///{self.DATABASE_NAME}.db"
-        return db_connect
+            return f"mysql+asyncmy://{self.DATABASE_USER}:{quote_plus(self.DATABASE_PASSWORD)}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}?charset=utf8mb4"
+        return f"sqlite+aiosqlite:///{self.DATABASE_NAME}.db"
 
     @property
     def DB_URI(self) -> str:
-        if self.DATABASE_TYPE not in ("mysql", "postgres", "sqlite"):
-            raise ValueError(f"数据库驱动不支持: {self.DATABASE_TYPE}, 同步数据库请选择 mysql、postgres、sqlite")
-        db_connect: str = ""
+        if self.DATABASE_TYPE not in ("mysql", "sqlite"):
+            raise ValueError(f"数据库驱动不支持: {self.DATABASE_TYPE}, 同步数据库请选择 mysql 或 sqlite")
         if self.DATABASE_TYPE == "mysql":
-            db_connect = f"mysql+pymysql://{self.DATABASE_USER}:{quote_plus(self.DATABASE_PASSWORD)}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}?charset=utf8mb4"
-        elif self.DATABASE_TYPE == "postgres":
-            db_connect = f"postgresql+psycopg://{self.DATABASE_USER}:{quote_plus(self.DATABASE_PASSWORD)}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}"
-        else:
-            db_connect = f"sqlite:///{self.DATABASE_NAME}.db"
-        return db_connect
+            return f"mysql+pymysql://{self.DATABASE_USER}:{quote_plus(self.DATABASE_PASSWORD)}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}?charset=utf8mb4"
+        return f"sqlite:///{self.DATABASE_NAME}.db"
 
     @property
     def REDIS_URI(self) -> str:

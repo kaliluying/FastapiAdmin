@@ -4,7 +4,7 @@ import { backendMenusToAppRoutes } from "./menuRoutes";
 
 describe("backendMenusToAppRoutes", () => {
   it("keeps button permissions out of dynamic routes", () => {
-    const routes = backendMenusToAppRoutes([
+    const menus = [
       {
         id: 1,
         name: "系统管理",
@@ -37,10 +37,17 @@ describe("backendMenusToAppRoutes", () => {
           },
         ],
       },
-    ] as any);
+    ] as any;
+    const original = structuredClone(menus);
+    const routes = backendMenusToAppRoutes(menus);
 
     expect(JSON.stringify(routes)).toContain("用户管理");
     expect(JSON.stringify(routes)).not.toContain("UserCreateButton");
     expect(JSON.stringify(routes)).not.toContain("module_system/user/create");
+    expect(routes[0]?.path).toBe("/system");
+    expect(routes[0]?.children?.[0]?.path).toBe("user");
+    expect(routes[0]?.children?.[0]?.component).toBe("/module_system/user/index");
+    expect(menus).toEqual(original);
+    expect(routes[0]?.children).not.toBe(menus[0].children);
   });
 });

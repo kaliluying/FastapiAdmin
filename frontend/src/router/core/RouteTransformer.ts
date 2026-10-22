@@ -51,15 +51,11 @@ export class RouteTransformer {
   }
 
   private routerPath(depth: number, parentAbsPath: string, absPath: string): string {
-    const firstSeg = absPath.split("/").filter(Boolean)[0] ?? "";
     if (!this.shellChild) {
-      if (depth === 0) {
-        return firstSeg ? `/${firstSeg}` : "/";
-      }
       return absPath;
     }
     if (depth === 0) {
-      return firstSeg;
+      return absPath.replace(/^\/+/, "");
     }
     if (!parentAbsPath || !absPath) return absPath;
     const p = parentAbsPath.replace(/\/$/, "");

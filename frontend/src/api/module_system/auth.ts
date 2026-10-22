@@ -50,13 +50,6 @@ const AuthAPI = {
     });
   },
 
-  createWsTicket() {
-    return request<ApiResponse<{ ticket: string; expires_in: number }>>({
-      url: `${API_PATH}/ws-ticket`,
-      method: "post",
-    });
-  },
-
   exchangeOAuthTicket(body: OAuthTicketBody) {
     return request<ApiResponse<JWTOut>>({
       url: `${API_PATH}/oauth/exchange`,

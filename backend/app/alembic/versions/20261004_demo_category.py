@@ -1,7 +1,6 @@
 """Add the copyable category module without changing existing business data."""
 
 import sqlalchemy as sa
-
 from alembic import op
 
 revision = "20261004_demo_category"

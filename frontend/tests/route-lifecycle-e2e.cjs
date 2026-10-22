@@ -50,6 +50,41 @@ async function run() {
     });
     await waitForUserPage();
     checks.push("menu refresh replaces routes without losing the current page");
+    const multiSegmentMenu = await page.evaluate(async () => {
+      const { default: MenuAPI } = await import("/src/api/module_platform/menu.ts");
+      const { useUserStore } = await import("/src/store/modules/user.store.ts");
+      const { refreshMenuAndRoutes } = await import("/src/router/beforeEach.ts");
+      const response = await MenuAPI.createMenu({
+        name: "多段路径验收",
+        title: "多段路径验收",
+        type: 2,
+        order: 900,
+        route_name: "AuditMultiSegment",
+        route_path: "/audit-tools/reports",
+        component_path: "module_system/user/index",
+        permission: "module_system:user:query",
+      });
+      const saved = await MenuAPI.detailMenu(response.data.data.id);
+      await useUserStore().getUserInfo();
+      await refreshMenuAndRoutes();
+      return saved.data.data.route_path;
+    });
+    assert.equal(multiSegmentMenu, "/audit-tools/reports");
+    await page.locator(".el-menu-item").filter({ hasText: "多段路径验收" }).click();
+    await page.waitForURL(/#\/audit-tools\/reports$/);
+    await waitForUserPage();
+    assert.match(page.url(), /#\/audit-tools\/reports$/);
+    await page.reload();
+    await waitForUserPage();
+    assert.match(page.url(), /#\/audit-tools\/reports$/);
+    await page.screenshot({
+      path: path.join(artifacts, "multi-segment-route.png"),
+      fullPage: true,
+    });
+    checks.push("persisted multi-segment root menu opens by sidebar click and survives refresh");
+    await page.locator(".el-menu-item").filter({ hasText: "用户管理" }).click();
+    await page.waitForURL(/#\/system\/user$/);
+    await waitForUserPage();
     await page.getByRole("button", { name: "打开账户菜单" }).click();
     await page.locator(".user-menu-action--logout").click();
     await page
@@ -64,10 +99,16 @@ async function run() {
           .resolve("/system/user")
           .matched.some((route) => route.path === "/system/user"),
         home: router.hasRoute("Home"),
+        multiSegment: router.hasRoute("AuditMultiSegment"),
         iframeCache: sessionStorage.getItem("iframeRoutes"),
       };
     });
-    assert.deepEqual(state, { businessMatched: false, home: true, iframeCache: null });
+    assert.deepEqual(state, {
+      businessMatched: false,
+      home: true,
+      multiSegment: false,
+      iframeCache: null,
+    });
     checks.push("logout removes dynamic routes immediately and keeps the static shell");
     await login();
     await page.waitForTimeout(700);

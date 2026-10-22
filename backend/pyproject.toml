@@ -10,7 +10,6 @@ dependencies = [
     "alembic==1.20.0",
     "anyio==4.15.1",
     "asyncmy==0.2.16",
-    "asyncpg==0.32.0",
     "cryptography>=50.0.2",
     "email-validator==2.3.0",
     # fastapi-limiter 的 Redis 实现依赖 0.137 之前的扁平路由列表。
@@ -22,7 +21,6 @@ dependencies = [
     "openpyxl==3.1.5",
     "pandas==3.0.6",
     "pillow==12.3.0",
-    "psycopg[binary]==3.3.6",
     "pydantic==2.14.1",
     "pydantic-settings==2.15.0",
     "pyjwt==2.15.1",

@@ -20,7 +20,7 @@ AI 默认内置，通过显式清单装配；复制后的新项目可整套裁�
 
 ## 本地启动
 
-需要 Python 3.12+、`uv`、Node.js 22.22.2+（22.x）、24.15+（24.x）或 26+，以及 `frontend/package.json` 声明的 pnpm（通过 Corepack 使用）。准备后端配置指定的关系数据库和 Redis；MySQL、PostgreSQL、SQLite 的选择以环境文件为准。
+需要 Python 3.12+、`uv`、Node.js 22.22.2+（22.x）、24.15+（24.x）或 26+，以及 `frontend/package.json` 声明的 pnpm（通过 Corepack 使用）。准备 MySQL 和 Redis；MySQL 是正式支持的运行数据库，SQLite 仅用于自动化测试与隔离验收。详见[架构与开发](docs/ARCHITECTURE_AND_DEVELOPMENT.md)。
 
 ```bash
 git clone git@github.com:kaliluying/fastcore.git

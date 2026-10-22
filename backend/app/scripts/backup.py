@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 
 STORE_NAMES = {"knowledge", "upload", "chroma", "bm25"}
-DATABASE_FILES = {"sqlite": "database.db", "mysql": "database.sql", "postgres": "database.dump"}
+DATABASE_FILES = {"sqlite": "database.db", "mysql": "database.sql"}
 
 
 class BackupError(ValueError):
@@ -71,30 +71,24 @@ def _run_dump(database: dict, target: Path) -> None:
                 raise BackupError("SQLite 完整性检查失败")
         os.chmod(target, 0o600)
         return
-    program = {"mysql": "mysqldump", "postgres": "pg_dump"}[kind]
-    binary = shutil.which(program)
+    binary = shutil.which("mysqldump")
     if not binary:
-        raise BackupError(f"缺少 {program}，请先安装与数据库服务版本兼容的客户端")
-    env = os.environ.copy()
-    # Credentials exist only in a private temporary file/environment, never the manifest or argv.
+        raise BackupError("缺少 mysqldump，请先安装与数据库服务版本兼容的客户端")
+    # Credentials exist only in a private temporary file, never the manifest or argv.
     with tempfile.TemporaryDirectory(prefix="fastcore-db-auth-") as auth_dir:
-        if kind == "mysql":
-            config = Path(auth_dir) / "client.cnf"
+        config = Path(auth_dir) / "client.cnf"
 
-            def quote(value: object) -> str:
-                return '"' + str(value).replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r") + '"'
+        def quote(value: object) -> str:
+            return '"' + str(value).replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r") + '"'
 
-            config.write_text("[client]\n" + "\n".join(f"{key}={quote(database[key])}" for key in ("host", "port", "user", "password")), encoding="utf-8")
-            os.chmod(config, 0o600)
-            args = [binary, f"--defaults-extra-file={config}", "--single-transaction", "--routines", "--events", "--triggers", "--hex-blob", "--no-tablespaces", "--", database["name"]]
-        else:
-            env.update(PGHOST=str(database["host"]), PGPORT=str(database["port"]), PGUSER=database["user"], PGPASSWORD=database["password"], PGDATABASE=database["name"])
-            args = [binary, "--format=custom"]
+        config.write_text("[client]\n" + "\n".join(f"{key}={quote(database[key])}" for key in ("host", "port", "user", "password")), encoding="utf-8")
+        os.chmod(config, 0o600)
+        args = [binary, f"--defaults-extra-file={config}", "--single-transaction", "--routines", "--events", "--triggers", "--hex-blob", "--no-tablespaces", "--", database["name"]]
         with target.open("xb") as stream:
             os.chmod(target, 0o600)
-            result = subprocess.run(args, env=env, stdout=stream, stderr=subprocess.PIPE, check=False)
+            result = subprocess.run(args, stdout=stream, stderr=subprocess.PIPE, check=False)
         if result.returncode or target.stat().st_size == 0:
-            raise BackupError(f"{program} 备份失败；请检查连接、权限及客户端版本（错误内容已隐藏）")
+            raise BackupError("mysqldump 备份失败；请检查连接、权限及客户端版本（错误内容已隐藏）")
 
 
 def create_backup(output: Path, database: dict, stores: dict[str, Path], *, stopped: bool) -> None:

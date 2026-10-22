@@ -78,4 +78,4 @@ uv run --no-sync python integration/skeleton_acceptance.py
 
 裁剪 AI 组后，完整依赖导出命令去掉 `--group ai`。隔离验收需要本地 `redis-server`、已安装的前后端依赖和 Chrome，并在独立 Python 环境安装固定版本的基础包（缓存未命中时从包仓库下载）；不会复用已有 Redis、数据库或环境文件。验收结束关闭本轮服务，证据保留在输出的临时目录。添加 `--interactive` 可在自动验收后进行界面走查，Ctrl-C 关闭隔离服务。
 
-验收证明供应商副本的新增、字段校验、权限拒绝、刷新与重启持久化，以及物理删除 demo/dashboard/AI 后的启动、菜单和前端构建；不调用真实模型服务，不代表 MySQL/PostgreSQL 或生产部署验收。
+验收证明供应商副本的新增、字段校验、权限拒绝、刷新与重启持久化，以及物理删除 demo/dashboard/AI 后的启动、菜单和前端构建；该流程使用隔离 SQLite，不调用真实模型服务，也不代表 MySQL 或生产部署验收。

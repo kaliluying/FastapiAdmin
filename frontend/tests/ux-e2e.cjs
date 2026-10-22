@@ -497,7 +497,6 @@ async function main(runCheck = run) {
         {
           BROWSER: "none",
           VITE_API_BASE_URL: "http://127.0.0.1:8009",
-          VITE_APP_WS_ENDPOINT: "ws://127.0.0.1:8009",
           VITE_PORT: "5179",
         },
         "frontend",

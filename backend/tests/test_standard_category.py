@@ -9,7 +9,7 @@ from alembic.operations import Operations
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import create_engine, inspect, select
-from sqlalchemy.dialects import mysql, postgresql
+from sqlalchemy.dialects import mysql
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.schema import CreateTable
 
@@ -179,8 +179,8 @@ def test_migration_upgrades_existing_schema_idempotently_and_downgrades(tmp_path
     engine.dispose()
 
 
-@pytest.mark.parametrize("dialect", [mysql.dialect(), postgresql.dialect()])
-def test_category_constraints_compile_for_supported_server_databases(dialect):
+def test_category_constraints_compile_for_mysql():
+    dialect = mysql.dialect()
     sql = str(CreateTable(CategoryModel.__table__).compile(dialect=dialect))
     assert "uq_demo_category_owner_name" in sql and "FOREIGN KEY" in sql
     quoted_order = dialect.identifier_preparer.quote("order")
