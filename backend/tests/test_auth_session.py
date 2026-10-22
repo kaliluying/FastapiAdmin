@@ -17,7 +17,7 @@ from app.core.security import decode_access_token
 async def test_http_auth_preserves_verified_login_session(monkeypatch, cached):
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    user_info = {"user_name": "admin", "session_id": "verified-http-session"}
+    user_info = {"user_id": 7, "user_name": "admin", "session_id": "verified-http-session"}
     state = SimpleNamespace()
     if cached:
         state.ctx = dependencies.RequestContext(jwt_user_info=user_info)
@@ -38,6 +38,7 @@ async def test_http_auth_preserves_verified_login_session(monkeypatch, cached):
         assert "session_id" not in auth.model_dump()
         online.assert_awaited_once_with(redis, auth.session_id)
         assert decode.await_count == (0 if cached else 1)
+        assert load_user.await_args.kwargs == {"user_id": 7}
 
 
 class FakeRedis:
@@ -245,11 +246,12 @@ async def test_websocket_ticket_is_single_use(monkeypatch) -> None:
     redis = FakeRedis()
     redis.values[f"{RedisInitKeyConfig.ACCESS_TOKEN.key}:{session_id}"] = b"online"
     redis.values[f"{RedisInitKeyConfig.USER_SESSION.key}:{session_id}"] = json.dumps(
-        {"user_name": "admin", "session_id": session_id}
+        {"user_id": 7, "user_name": "admin", "session_id": session_id}
     ).encode("utf-8")
     ticket = await LoginService.create_ws_ticket(redis=redis, session_id=session_id)
 
-    async def load_user(_db, _username):
+    async def load_user(_db, *, user_id):
+        assert user_id == 7
         return SimpleNamespace(id=7, username="admin", status=0)
 
     monkeypatch.setattr(dependencies, "_load_user_from_db", load_user)

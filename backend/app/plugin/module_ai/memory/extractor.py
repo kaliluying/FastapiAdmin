@@ -143,21 +143,14 @@ def _parse_extract_result(raw: str) -> MemoryExtractResult:
         if start != -1 and end > start:
             try:
                 data = json.loads(text[start:end + 1])
-            except json.JSONDecodeError:
-                logger.warning(f"无法解析记忆提取结果: {raw[:200]}")
-                return MemoryExtractResult(actions=[])
+            except json.JSONDecodeError as exc:
+                raise ValueError("无法解析记忆提取结果") from exc
         else:
-            logger.warning(f"记忆提取结果中没有找到 JSON: {raw[:200]}")
-            return MemoryExtractResult(actions=[])
+            raise ValueError("记忆提取结果中没有找到 JSON") from None
 
-    raw_actions = data.get("actions", [])
-    actions: list[MemoryExtractAction] = []
-    for item in raw_actions:
-        try:
-            actions.append(MemoryExtractAction(**item))
-        except Exception as e:
-            logger.warning(f"跳过无效的记忆提取 action: {item}, error={e}")
-    return MemoryExtractResult(actions=actions)
+    if not isinstance(data, dict) or not isinstance(data.get("actions"), list):
+        raise ValueError("记忆提取结果缺少 actions 列表")
+    return MemoryExtractResult(actions=[MemoryExtractAction(**item) for item in data["actions"]])
 
 
 class MemoryExtractor:
@@ -182,85 +175,71 @@ class MemoryExtractor:
         user_message: str,
         assistant_response: str,
     ) -> int:
-        """提取记忆并写入数据库，返回实际保存的条数。
-
-        流程：
-        1. 拉取当前用户的已有记忆
-        2. 构建 Prompt 并调用 LLM
-        3. 过滤低置信度结果
-        4. 执行 create/update/delete 操作
-        """
+        """在调用方事务中提取并保存记忆。"""
         try:
-            # 1. 拉取已有记忆
             existing = await crud.get_active_memories()
-            existing_dicts = [m.to_dict() for m in existing]
-
-            # 2. 调用 LLM 提取
-            prompt = _build_extract_prompt(
+            actions = await self.extract_actions(
                 user_message=user_message,
                 assistant_response=assistant_response,
-                existing_memories=existing_dicts,
+                existing_memories=[m.to_dict() for m in existing],
             )
-            raw_text = await self.llm.complete(prompt)
-            if not isinstance(raw_text, str) or not raw_text.strip():
-                logger.info("记忆提取: LLM 返回空内容，跳过")
-                return 0
-
-            result = _parse_extract_result(raw_text)
-
-            # 3. 过滤低置信度
-            valid_actions = [
-                a for a in result.actions
-                if a.action != "skip" and a.confidence >= self.confidence_threshold
-            ]
-            if not valid_actions:
-                logger.info(
-                    f"记忆提取: {len(result.actions)} 条候选，"
-                    f"过滤后 0 条（阈值={self.confidence_threshold}），跳过"
-                )
-                return 0
-
-            # 4. 执行操作
-            saved = 0
-            for action in valid_actions:
-                saved += await self._execute_action(crud, action)
-
-            if saved > 0:
-                logger.info(f"记忆提取: 成功保存 {saved} 条记忆")
-            return saved
-
+            return await self.save_actions(crud=crud, actions=actions)
         except Exception as e:
             logger.warning(f"记忆提取失败（非致命）: {e}")
             return 0
 
+    async def extract_actions(
+        self, *, user_message: str, assistant_response: str, existing_memories: list[dict[str, Any]],
+    ) -> list[MemoryExtractAction]:
+        """调用模型，不持有数据库资源。"""
+        prompt = _build_extract_prompt(user_message, assistant_response, existing_memories)
+        raw_text = await self.llm.complete(prompt)
+        if not isinstance(raw_text, str) or not raw_text.strip():
+            raise ValueError("记忆提取返回空内容")
+        actions = _parse_extract_result(raw_text).actions
+        # Validate the entire result before applying any action or acknowledging its job.
+        for action in actions:
+            if action.action not in {"create", "update", "delete", "skip"}:
+                raise ValueError("记忆提取包含未知操作")
+            if action.action in {"create", "update"} and (not (action.key or "").strip() or not (action.value or "").strip()):
+                raise ValueError("记忆提取缺少 key/value")
+            if action.action == "delete" and (action.memory_id is None or action.memory_id <= 0):
+                raise ValueError("记忆删除缺少有效 ID")
+        return [
+            action for action in actions
+            if action.action != "skip" and action.confidence >= self.confidence_threshold
+        ]
+
+    async def save_actions(self, *, crud: MemoryCRUD, actions: list[MemoryExtractAction]) -> int:
+        saved = 0
+        for action in actions:
+            saved += await self._execute_action(crud, action)
+        return saved
+
     async def _execute_action(self, crud: MemoryCRUD, action: MemoryExtractAction) -> int:
         """执行单条记忆操作，返回 1 表示成功，0 表示失败。"""
-        try:
-            if action.action == "delete":
-                if action.memory_id is not None:
-                    ok = await crud.delete_crud([action.memory_id])
-                    if ok:
-                        logger.info(f"记忆提取: 删除记忆 id={action.memory_id}, reason={action.reason}")
-                        return 1
+        if action.action == "delete":
+            if action.memory_id is not None:
+                ok = await crud.delete_crud([action.memory_id])
+                if ok:
+                    logger.info(f"记忆提取: 删除记忆 id={action.memory_id}, reason={action.reason}")
+                    return 1
+            return 0
+
+        if action.action in ("create", "update"):
+            key = (action.key or "").strip()
+            value = (action.value or "").strip()
+            if not key or not value:
+                logger.warning(f"记忆提取: 跳过空 key/value, action={action}")
                 return 0
+            entry = await crud.upsert(
+                memory_type=action.memory_type or "fact",
+                key=key,
+                value=value,
+                category=action.category,
+                priority=action.priority,
+            )
+            return 1 if entry else 0
 
-            if action.action in ("create", "update"):
-                key = (action.key or "").strip()
-                value = (action.value or "").strip()
-                if not key or not value:
-                    logger.warning(f"记忆提取: 跳过空 key/value, action={action}")
-                    return 0
-                entry = await crud.upsert(
-                    memory_type=action.memory_type or "fact",
-                    key=key,
-                    value=value,
-                    category=action.category,
-                    priority=action.priority,
-                )
-                return 1 if entry else 0
-
-            logger.warning(f"记忆提取: 未知操作类型 action={action.action}")
-            return 0
-        except Exception as e:
-            logger.warning(f"记忆提取: 执行 action 失败, action={action}, error={e}")
-            return 0
+        logger.warning(f"记忆提取: 未知操作类型 action={action.action}")
+        return 0

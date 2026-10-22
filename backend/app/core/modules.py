@@ -80,14 +80,22 @@ def get_module_models() -> list[type[MappedBase]]:
 
 async def run_module_hooks(*, shutdown: bool = False) -> None:
     modules = get_modules()
+    errors: list[BaseException] = []
     for module in reversed(modules) if shutdown else modules:
         if not module.active:
             continue
         for entry in module.shutdown_hooks if shutdown else module.startup_hooks:
-            hook: Callable = resolve_entrypoint(entry)
-            result = hook()
-            if inspect.isawaitable(result):
-                await result
+            try:
+                hook: Callable = resolve_entrypoint(entry)
+                result = hook()
+                if inspect.isawaitable(result):
+                    await result
+            except BaseException as error:
+                if not shutdown:
+                    raise
+                errors.append(error)
+    if errors:
+        raise BaseExceptionGroup("业务模块关闭失败", errors)
 
 
 def menu_is_active(*, permission: str | None, route_name: str | None) -> bool:

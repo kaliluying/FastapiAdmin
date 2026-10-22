@@ -92,17 +92,19 @@ async def _startup_schema_lock(redis) -> AsyncGenerator[None, None]:
         await redis_crud.unlock(lock_key, lock_value)
 
 
-async def bootstrap_database(redis, environment: EnvironmentEnum | None = None) -> None:
-    """Run schema and seed initialization in a cancellable, lease-protected process."""
+async def bootstrap_database(redis, environment: EnvironmentEnum | None = None, *, migrate_only: bool = False) -> None:
+    """Run migrations, optionally followed by seeds, in a lease-protected child."""
     async with _startup_schema_lock(redis):
-        process = await asyncio.create_subprocess_exec(
+        command = [
             sys.executable,
             "-m",
             "app.scripts.startup_policy",
             "--env",
             (environment or settings.ENVIRONMENT).value,
-            cwd=BASE_DIR,
-        )
+        ]
+        if migrate_only:
+            command.append("--migrate-only")
+        process = await asyncio.create_subprocess_exec(*command, cwd=BASE_DIR)
         try:
             return_code = await process.wait()
         except BaseException:
@@ -122,65 +124,72 @@ async def bootstrap_database(redis, environment: EnvironmentEnum | None = None) 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[Any, Any]:
-    try:
-        if not settings.REDIS_ENABLE:
-            raise RuntimeError("Redis 是会话、请求限流和任务协调的必需依赖，REDIS_ENABLE 必须为 true")
-        await import_modules_async(modules=settings.EVENT_LIST, desc="全局事件", app=app, status=True)
-        logger.info("✅ 全局事件模块加载完成")
-        await bootstrap_database(app.state.redis, environment=settings.ENVIRONMENT)
-        logger.info("✅ {}数据库结构就绪", settings.DATABASE_TYPE)
-        await run_module_hooks()
-        await cache_util.init(redis=app.state.redis)
-        logger.info("✅ fastcore-cache 初始化完成")
-        await FastAPILimiter.init(
-            redis=app.state.redis,
-            prefix=settings.REQUEST_LIMITER_REDIS_PREFIX,
-            http_callback=http_limit_callback,
-            ws_callback=ws_limit_callback,
-        )
-        logger.info("✅ 请求限流器初始化完成")
-    except BaseException as e:
-        await run_module_hooks(shutdown=True)
-        if not isinstance(e, Exception):
-            raise
-        logger.error("❌ 应用初始化失败: {}", e)
-        raise SystemExit(1)
+    from app.core.database import async_engine
 
+    events_attempted = modules_attempted = cache_attempted = limiter_attempted = False
+    failed = False
     try:
-        console_start(
-            host=settings.SERVER_HOST,
-            port=settings.SERVER_PORT,
-            reload=settings.ENVIRONMENT,
-            database_ready=True,
-            redis_ready=True,
-            limiter_ready=True,
-        )
-    except Exception:
-        pass
+        try:
+            if not settings.REDIS_ENABLE:
+                raise RuntimeError("Redis 是会话、请求限流和任务协调的必需依赖，REDIS_ENABLE 必须为 true")
+            events_attempted = True
+            await import_modules_async(modules=settings.EVENT_LIST, desc="全局事件", app=app, status=True)
+            logger.info("✅ 全局事件模块加载完成")
+            await bootstrap_database(app.state.redis, environment=settings.ENVIRONMENT)
+            logger.info("✅ {}数据库结构就绪", settings.DATABASE_TYPE)
+            modules_attempted = True
+            await run_module_hooks()
+            cache_attempted = True
+            await cache_util.init(redis=app.state.redis)
+            logger.info("✅ fastcore-cache 初始化完成")
+            limiter_attempted = True
+            await FastAPILimiter.init(
+                redis=app.state.redis,
+                prefix=settings.REQUEST_LIMITER_REDIS_PREFIX,
+                http_callback=http_limit_callback,
+                ws_callback=ws_limit_callback,
+            )
+            logger.info("✅ 请求限流器初始化完成")
+        except Exception as error:
+            logger.error("❌ 应用初始化失败: {}", error)
+            raise SystemExit(1) from error
 
-    try:
+        with suppress(Exception):
+            console_start(
+                host=settings.SERVER_HOST,
+                port=settings.SERVER_PORT,
+                reload=settings.ENVIRONMENT,
+                database_ready=True,
+                redis_ready=True,
+                limiter_ready=True,
+            )
         yield
+    except BaseException:
+        failed = True
+        raise
     finally:
-        try:
-            await run_module_hooks(shutdown=True)
-            await cache_util.clear()
-            logger.info("✅ fastcore-cache 已关闭")
-            await FastAPILimiter.close()
-            logger.info("✅ 请求限制器已关闭")
-            await import_modules_async(modules=settings.EVENT_LIST, desc="全局事件", app=app, status=False)
-            logger.info("✅ 全局事件模块卸载完成")
-            from app.core.database import async_engine
-
-            await async_engine.dispose()
-            logger.info("✅ 数据库引擎连接池已释放")
-        except Exception as e:
-            logger.error("❌ 应用关闭过程中发生错误: {}", e)
-            raise SystemExit(1)
-
-        try:
+        # 部分初始化也需要清理；模块任务必须先于它们使用的 Redis/数据库关闭。
+        cleanups = []
+        if modules_attempted:
+            cleanups.append(("业务模块", lambda: run_module_hooks(shutdown=True)))
+        if cache_attempted:
+            cleanups.append(("fastcore-cache", cache_util.clear))
+        if limiter_attempted:
+            cleanups.append(("请求限流器", FastAPILimiter.close))
+        if events_attempted and getattr(app.state, "redis", None) is not None:
+            cleanups.append(("全局事件", lambda: import_modules_async(modules=settings.EVENT_LIST, desc="全局事件", app=app, status=False)))
+        cleanups.append(("数据库引擎", async_engine.dispose))
+        errors: list[BaseException] = []
+        for name, cleanup in cleanups:
+            try:
+                await cleanup()
+            except BaseException as error:
+                errors.append(error)
+                logger.error("❌ {}关闭失败: {}", name, error)
+        with suppress(Exception):
             console_end()
-        except Exception:
-            pass
+        if errors and not failed:
+            raise BaseExceptionGroup("应用资源关闭失败", errors)
 
 
 def register_middlewares(app: FastAPI) -> None:
@@ -196,13 +205,14 @@ def register_exceptions(app: FastAPI) -> None:
 
 
 def register_routers(app: FastAPI) -> None:
-    from app.api.v1.module_common import common_router
+    from app.api.v1.module_common import common_router, health_router
     from app.api.v1.module_platform import platform_router
     from app.api.v1.module_system import system_router
 
     times, seconds = settings.RATE_LIMITER_TIMES, settings.RATE_LIMITER_SECONDS
     if times <= 0 or seconds <= 0:
         raise ValueError("RATE_LIMITER_TIMES 和 RATE_LIMITER_SECONDS 必须为正整数")
+    app.include_router(health_router, dependencies=[])
     app.include_router(common_router, dependencies=[Depends(RateLimiter(times=times, seconds=seconds))])
     app.include_router(platform_router, dependencies=[Depends(RateLimiter(times=times, seconds=seconds))])
     app.include_router(system_router, dependencies=[Depends(RateLimiter(times=times, seconds=seconds))])

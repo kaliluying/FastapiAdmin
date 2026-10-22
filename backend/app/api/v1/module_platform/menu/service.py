@@ -159,6 +159,7 @@ class MenuService:
     @require_superadmin
     async def update(self, id: int, data: MenuUpdateSchema) -> MenuOutSchema:
         current = await MenuCRUD(self.auth).get_or_404(id=id, msg="更新失败，该菜单不存在")
+        previous_status = current.status
         merged = MenuOutSchema.model_validate(current).model_dump()
         merged.update(data.model_dump(exclude_unset=True, exclude={"parent_name"}))
         candidate = MenuCreateSchema(**merged)
@@ -171,7 +172,7 @@ class MenuService:
 
         new_menu = await MenuCRUD(self.auth).update(id=id, data=candidate)
 
-        if candidate.status != current.status:
+        if candidate.status != previous_status:
             await self.set_available(data=BatchSetAvailable(ids=[id], status=candidate.status))
 
         menu_out = MenuOutSchema.model_validate(new_menu)

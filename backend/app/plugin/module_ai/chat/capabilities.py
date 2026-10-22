@@ -9,7 +9,7 @@ from urllib.parse import urlsplit
 from langchain_core.messages import HumanMessage
 
 from app.core.exceptions import CustomException
-from app.plugin.module_ai.config import validate_model_base_url
+from app.plugin.module_ai.config import async_validate_model_base_url, validate_model_base_url
 
 from .model_config_service import ChatModelRuntimeConfig, load_runtime_chat_model_config
 from .rag import LangChainChatModel
@@ -29,10 +29,11 @@ async def check_model_capabilities(auth: Any, data: AiModelConfigUpdateSchema) -
     key = data.openai_api_key or (current.api_key if same_scope else "")
     if not key or key == "your_api_key":
         raise CustomException(msg="请填写当前接口的 API Key")
-    base_url = validate_model_base_url(data.openai_base_url, resolve_dns=not same_endpoint)
+    base_url = validate_model_base_url(data.openai_base_url, resolve_dns=False)
     parsed = urlsplit(base_url)
     if parsed.query or parsed.fragment:
         raise CustomException(msg="API 地址不能包含查询参数或片段")
+    base_url = await async_validate_model_base_url(base_url, resolve_dns=not same_endpoint)
     config = ChatModelRuntimeConfig(protocol=data.chat_protocol, base_url=base_url, model=data.openai_model, api_key=key)
     # Release configuration-read transactions before independently reserving calls.
     await auth.db.rollback()

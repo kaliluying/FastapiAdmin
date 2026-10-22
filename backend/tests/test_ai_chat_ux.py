@@ -33,6 +33,7 @@ from app.plugin.module_ai.chat.schema import ChatQuerySchema, ChatSessionCreateS
 from app.plugin.module_ai.knowledge import public
 from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeChunkModel, KnowledgeDocumentModel
 from app.plugin.module_ai.knowledge.public import KnowledgeSearchResult
+from app.plugin.module_ai.memory.model import MemoryExtractionJobModel
 from app.utils.hash_bcrpy_util import PwdUtil
 
 
@@ -42,6 +43,7 @@ async def chat_auth():
     try:
         async with engine.begin() as connection:
             await connection.run_sync(ChatSessionModel.__table__.create)
+            await connection.run_sync(MemoryExtractionJobModel.__table__.create)
         async with async_sessionmaker(engine, expire_on_commit=False)() as database:
             yield SimpleNamespace(db=database, user=SimpleNamespace(id=1, username="admin", is_superuser=True))
     finally:
@@ -51,7 +53,7 @@ async def chat_auth():
 @pytest.fixture
 def configured_chat(monkeypatch):
     monkeypatch.setattr(service, "load_runtime_chat_model_config", AsyncMock())
-    monkeypatch.setattr(service.ChatService, "_validate_ai_config", staticmethod(lambda: None))
+    monkeypatch.setattr(service.ChatService, "_validate_ai_config", staticmethod(AsyncMock(return_value=None)))
     monkeypatch.setattr(service.ChatService, "_trigger_memory_extraction", lambda *args, **kwargs: None)
     monkeypatch.setattr(service.ChatService, "_authorize_log_analysis", AsyncMock())
     monkeypatch.setattr(service.rag, "get_cached_chat_model", lambda: SimpleNamespace(request_tools=AsyncMock(return_value=AIMessage(content="ordinary question"))))
@@ -253,7 +255,7 @@ async def test_structured_query_failures_never_emit_done_or_expose_internal_erro
 
 
 async def test_structured_configuration_error_is_terminal(configured_chat, monkeypatch):
-    monkeypatch.setattr(service.ChatService, "_validate_ai_config", staticmethod(lambda: "AI 服务未配置有效 API Key"))
+    monkeypatch.setattr(service.ChatService, "_validate_ai_config", staticmethod(AsyncMock(return_value="AI 服务未配置有效 API Key")))
     events = [event async for event in service.ChatService(SimpleNamespace()).chat_query(ChatQuerySchema(message="hello", request_id="configuration"), structured=True)]
     assert events == [{"type": "error", "message": "AI 服务未配置有效 API Key"}]
 

@@ -1,9 +1,7 @@
-from pathlib import Path
 from typing import Annotated, Literal
 
 from fastapi import (
     APIRouter,
-    BackgroundTasks,
     Body,
     Depends,
     Form,
@@ -17,7 +15,6 @@ from app.common.response import ResponseSchema, SuccessResponse, UploadFileRespo
 from app.core.base_schema import UploadResponseSchema
 from app.core.dependencies import AuthPermission
 from app.core.router_class import OperationLogRoute
-from app.utils.upload_util import UploadUtil
 
 from .service import FileService
 
@@ -56,13 +53,9 @@ async def upload_controller(
     dependencies=[Depends(AuthPermission(["module_common:file:download"]))],
 )
 async def download_controller(
-    background_tasks: BackgroundTasks,
-    file_path: Annotated[str, Body(description="文件路径")],
-    delete: Annotated[bool, Body(description="是否删除文件")] = False,
+    file_path: Annotated[str, Body(embed=True, description="文件路径")],
 ) -> FileResponse:
     result = await FileService.download_service(file_path=file_path)
-    if delete:
-        background_tasks.add_task(UploadUtil.delete_file, Path(result.file_path))
     return UploadFileResponse(file_path=result.file_path, filename=result.file_name)
 
 

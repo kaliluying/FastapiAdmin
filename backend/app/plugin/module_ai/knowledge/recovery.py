@@ -8,8 +8,10 @@ from sqlalchemy import select
 from app.core.database import async_db_session
 from app.core.logger import logger
 
+from . import service as service_module
 from .model import KnowledgeDocumentModel
 from .service import KnowledgeService
+from .upload_recovery import recover_orphan_uploads
 
 _worker: asyncio.Task | None = None
 
@@ -20,11 +22,26 @@ async def recover_document_indexes() -> None:
 
 
 async def _run_recovery() -> None:
+    async with asyncio.TaskGroup() as tasks:
+        tasks.create_task(_run_index_recovery())
+        tasks.create_task(_run_upload_recovery())
+
+
+async def _run_index_recovery() -> None:
     while True:
         try:
             await recover_document_indexes()
         except Exception:
             logger.error("知识索引恢复检查失败")
+        await asyncio.sleep(15)
+
+
+async def _run_upload_recovery() -> None:
+    while True:
+        try:
+            await recover_orphan_uploads(service_module.UPLOAD_DIR)
+        except Exception:
+            logger.error("知识库上传文件恢复检查失败")
         await asyncio.sleep(15)
 
 

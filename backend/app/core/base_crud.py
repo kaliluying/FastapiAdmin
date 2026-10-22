@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 from pydantic import BaseModel
 from sqlalchemy import asc, delete, desc, false, func, literal_column, select, update
 from sqlalchemy import inspect as sa_inspect
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql.elements import ColumnElement
@@ -119,10 +120,10 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
         """
         try:
             return await self._get_one(preload=preload, **kwargs)
-        except CustomException:
+        except (CustomException, SQLAlchemyError):
             raise
         except Exception as e:
-            raise CustomException(msg=f"获取查询失败: {e!s}")
+            raise CustomException(msg="获取查询失败") from e
 
     async def get_by_id(self, model_id: int) -> ModelType | None:
         """按主键查询"""
@@ -187,10 +188,10 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             count_sql = await self.__filter_permissions(count_sql)
             result: Result = await self.db.execute(count_sql)
             return result.scalar() or 0
-        except CustomException:
+        except (CustomException, SQLAlchemyError):
             raise
         except Exception as e:
-            raise CustomException(msg=f"统计失败: {e!s}")
+            raise CustomException(msg="统计失败") from e
 
     async def get_list(
         self,
@@ -218,10 +219,10 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             sql = await self.__filter_permissions(sql)
             result: Result = await self.db.execute(sql)
             return result.scalars().all()
-        except CustomException:
+        except (CustomException, SQLAlchemyError):
             raise
         except Exception as e:
-            raise CustomException(msg=f"列表查询失败: {e!s}")
+            raise CustomException(msg="列表查询失败") from e
 
     async def tree_list(
         self,
@@ -261,10 +262,10 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             sql = await self.__filter_permissions(sql)
             result: Result = await self.db.execute(sql)
             return result.scalars().all()
-        except CustomException:
+        except (CustomException, SQLAlchemyError):
             raise
         except Exception as e:
-            raise CustomException(msg=f"树形列表查询失败: {e!s}")
+            raise CustomException(msg="树形列表查询失败") from e
 
     async def page(
         self,
@@ -328,10 +329,10 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
                 has_next=offset + limit < total,
                 items=items,
             )
-        except CustomException:
+        except (CustomException, SQLAlchemyError):
             raise
         except Exception as e:
-            raise CustomException(msg=f"分页查询失败: {e!s}")
+            raise CustomException(msg="分页查询失败") from e
 
     async def create(self, data: CreateSchemaType) -> ModelType:
         """创建新对象（有认证时自动填充审计字段）
@@ -358,10 +359,10 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             await self.db.flush()
             await self.db.refresh(obj)
             return obj
-        except CustomException:
+        except (CustomException, SQLAlchemyError):
             raise
         except Exception as e:
-            raise CustomException(msg=f"创建失败: {e!s}")
+            raise CustomException(msg="创建失败") from e
 
     async def update(self, id: int, data: UpdateSchemaType) -> ModelType:
         """更新对象（有认证时填充审计字段）
@@ -393,10 +394,10 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             await self.db.flush()
             await self.db.refresh(obj)
             return obj
-        except CustomException:
+        except (CustomException, SQLAlchemyError):
             raise
         except Exception as e:
-            raise CustomException(msg=f"更新失败: {e!s}")
+            raise CustomException(msg="更新失败") from e
 
     async def delete(self, ids: list[int]) -> None:
         """软删除对象（有认证时填充删除人）"""
@@ -410,10 +411,10 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             sql = await self.__filter_permissions(sql)
             await self.db.execute(sql)
             await self.db.flush()
-        except CustomException:
+        except (CustomException, SQLAlchemyError):
             raise
         except Exception as e:
-            raise CustomException(msg=f"删除失败: {e!s}")
+            raise CustomException(msg="删除失败") from e
 
     async def clear(self) -> None:
         """软清空对象表（有认证时填充删除人）"""
@@ -425,10 +426,10 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             sql = await self.__filter_permissions(sql)
             await self.db.execute(sql)
             await self.db.flush()
-        except CustomException:
+        except (CustomException, SQLAlchemyError):
             raise
         except Exception as e:
-            raise CustomException(msg=f"清空失败: {e!s}")
+            raise CustomException(msg="清空失败") from e
 
     async def set(self, ids: list[int], **kwargs) -> None:
         """批量更新字段"""
@@ -438,10 +439,10 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             sql = await self.__filter_permissions(sql)
             await self.db.execute(sql)
             await self.db.flush()
-        except CustomException:
+        except (CustomException, SQLAlchemyError):
             raise
         except Exception as e:
-            raise CustomException(msg=f"批量更新失败: {e!s}")
+            raise CustomException(msg="批量更新失败") from e
 
     async def restore(self, ids: list[int]) -> None:
         """恢复软删除对象"""
@@ -453,10 +454,10 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             sql = await self.__filter_permissions(sql)
             await self.db.execute(sql)
             await self.db.flush()
-        except CustomException:
+        except (CustomException, SQLAlchemyError):
             raise
         except Exception as e:
-            raise CustomException(msg=f"恢复失败: {e!s}")
+            raise CustomException(msg="恢复失败") from e
 
     async def __filter_permissions(self, sql: Any) -> Any:
         """为查询或数据修改语句追加数据权限条件。"""

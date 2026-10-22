@@ -27,11 +27,17 @@ async def extract_conversation_in_background(
     try:
         async with async_db_session() as db:
             async with db.begin():
-                saved = await MemoryService.for_user(db, user_id).extract_from_conversation(
-                    user_message=user_message, assistant_response=assistant_response, chat_model=chat_model,
-                )
-                if saved > 0:
-                    logger.info(f"记忆提取完成: 已保存 {saved} 条")
+                existing = await MemoryService.for_user(db, user_id).get_active_memories()
+        extractor = MemoryExtractor(chat_model=chat_model)
+        actions = await extractor.extract_actions(
+            user_message=user_message, assistant_response=assistant_response, existing_memories=existing,
+        )
+        if actions:
+            async with async_db_session() as db:
+                async with db.begin():
+                    saved = await extractor.save_actions(crud=MemoryCRUD(MemoryService.for_user(db, user_id).auth), actions=actions)
+            if saved > 0:
+                logger.info(f"记忆提取完成: 已保存 {saved} 条")
     except Exception as e:
         logger.warning(f"记忆提取后台任务失败: {e}")
 

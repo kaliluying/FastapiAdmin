@@ -122,7 +122,7 @@ async def test_disconnect_awaits_nested_model_cleanup_and_usage_ledger(monkeypat
     monkeypatch.setattr(chain, "_build_prompt", AsyncMock(return_value="prompt"))
     monkeypatch.setattr(service, "accessible_knowledge_base_ids", AsyncMock(return_value=[]))
     monkeypatch.setattr(service, "load_runtime_chat_model_config", AsyncMock())
-    monkeypatch.setattr(service.ChatService, "_validate_ai_config", staticmethod(lambda: None))
+    monkeypatch.setattr(service.ChatService, "_validate_ai_config", staticmethod(AsyncMock(return_value=None)))
     monkeypatch.setattr(service.ChatService, "_should_persist_session", lambda self: False)
     monkeypatch.setattr(service, "create_rag_chain", lambda **kwargs: chain)
     monkeypatch.setattr(stream, "async_db_session", database)

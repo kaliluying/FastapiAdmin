@@ -208,10 +208,15 @@ async def verify_runtime() -> dict:
                     health = response.json()["data"]["dependencies"]
                     assert health["database"]["status"] == 1
                     assert health["redis"]["status"] == 1
-                    assert (await client.get("/common/health/ready")).status_code == 200
-                    assert (await client.get("/common/health/ready")).status_code == 429
+                    for _ in range(3):
+                        assert (await client.get("/common/health/ready")).status_code == 200
+                        assert (await client.get("/common/health/live")).status_code == 200
+                    limiter_probe = "/system/auth/captcha/get"
+                    assert (await client.get(limiter_probe)).status_code == 200
+                    assert (await client.get(limiter_probe)).status_code == 200
+                    assert (await client.get(limiter_probe)).status_code == 429
                     await asyncio.sleep(settings.RATE_LIMITER_SECONDS + 0.1)
-                    assert (await client.get("/common/health/ready")).status_code == 200
+                    assert (await client.get(limiter_probe)).status_code == 200
             assert await snapshot() == initial, "重复生产启动不得破坏现有结构或基础数据"
             await asyncio.sleep(settings.RATE_LIMITER_SECONDS + 0.1)
 
@@ -263,6 +268,11 @@ def run_child(phase: str) -> None:
         evidence = asyncio.run(run_recovery_phase(phase == "crash-index"))
         print(json.dumps(evidence))
         (Path(os.environ["FASTCORE_INTEGRATION_ROOT"]) / f"recovered-{os.getpid()}.json").write_text(json.dumps(evidence), encoding="utf-8")
+    elif phase in {"prepare-memory", "crash-memory", "recover-memory", "verify-reliability"}:
+        from reliability_checks import memory_restart_phase, verify_reliability
+
+        evidence = asyncio.run(verify_reliability() if phase == "verify-reliability" else memory_restart_phase(phase))
+        (Path(os.environ["FASTCORE_INTEGRATION_ROOT"]) / f"{phase}-{os.getpid()}.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
     else:
         evidence = asyncio.run(verify_runtime())
         (Path(os.environ["FASTCORE_INTEGRATION_ROOT"]) / "runtime-results.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
@@ -326,12 +336,20 @@ def run(mysql_port: int, redis_port: int, acknowledged: bool) -> Path:
             "FASTCORE_INTEGRATION_ROOT": str(artifacts),
             "PYTHONPATH": os.pathsep.join([str(ROOT / "integration"), str(ROOT)]),
         }
-        for phase in ["empty-schema", "bootstrap", "upgrade", "verify", "prepare-recovery"]:
+        def run_phase(phase: str) -> None:
             with (artifacts / f"{phase}.log").open("w", encoding="utf-8") as log:
                 process = subprocess.run([sys.executable, str(Path(__file__).resolve()), "--phase", phase], cwd=ROOT, env=environment, stdout=log, stderr=log, timeout=180, check=False)
             if process.returncode != 0:
                 raise RuntimeError(f"隔离集成 {phase} 失败，诊断日志：{artifacts / f'{phase}.log'}")
 
+        for phase in ["empty-schema", "bootstrap", "upgrade", "verify", "verify-reliability"]:
+            run_phase(phase)
+
+        from reliability_checks import verify_memory_process_restart
+
+        memory_restart = verify_memory_process_restart(environment, artifacts, Path(__file__).resolve())
+        (artifacts / "memory-restart.json").write_text(json.dumps(memory_restart, indent=2), encoding="utf-8")
+        run_phase("prepare-recovery")
         with (artifacts / "crash-index.log").open("w", encoding="utf-8") as log:
             worker = subprocess.Popen([sys.executable, str(Path(__file__).resolve()), "--phase", "crash-index"], cwd=ROOT, env=environment, stdout=log, stderr=log)
             try:
@@ -385,7 +403,8 @@ if __name__ == "__main__":
     parser.add_argument("--mysql-port", type=int, default=33306)
     parser.add_argument("--redis-port", type=int, default=36379)
     parser.add_argument("--disposable-services", action="store_true")
-    parser.add_argument("--phase", choices=["empty-schema", "bootstrap", "upgrade", "verify", "prepare-recovery", "crash-index", "recover-index"], help=argparse.SUPPRESS)
+    parser.add_argument("--phase", choices=["empty-schema", "bootstrap", "upgrade", "verify", "prepare-recovery", "crash-index", "recover-index",
+                                          "verify-reliability", "prepare-memory", "crash-memory", "recover-memory"], help=argparse.SUPPRESS)
     arguments = parser.parse_args()
     if arguments.phase:
         run_child(arguments.phase)

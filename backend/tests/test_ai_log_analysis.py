@@ -21,7 +21,7 @@ pytest_plugins = ("ai_usage_fixtures",)
 def log_chat(monkeypatch, tmp_path):
     monkeypatch.setattr(runtime_logs, "LOG_DIR", tmp_path)
     monkeypatch.setattr(service, "load_runtime_chat_model_config", AsyncMock())
-    monkeypatch.setattr(service.ChatService, "_validate_ai_config", staticmethod(lambda: None))
+    monkeypatch.setattr(service.ChatService, "_validate_ai_config", staticmethod(AsyncMock(return_value=None)))
     auth = SimpleNamespace(
         user=SimpleNamespace(id=7, is_superuser=True),
         session_id="isolated-log-session",

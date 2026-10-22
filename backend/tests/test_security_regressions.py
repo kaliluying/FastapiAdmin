@@ -1,7 +1,9 @@
 """Regression tests for the P1/P2 security and data-isolation fixes."""
 
+import asyncio
 import io
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
@@ -168,6 +170,89 @@ async def test_upload_stream_enforces_size_limit_without_buffering_the_whole_fil
         await UploadUtil.upload_file(upload, "https://example.test")
 
     assert not (tmp_path / "upload").exists()
+
+
+@pytest.mark.parametrize("entrypoint", ["stream", "upload", "knowledge"])
+@pytest.mark.parametrize("symlink", [False, True])
+async def test_upload_collision_preserves_existing_destination(tmp_path, monkeypatch, entrypoint, symlink):
+    from app.plugin.module_ai.knowledge import service as knowledge_service
+
+    filename = "kb-1-existing.txt" if entrypoint == "knowledge" else "existing.txt"
+    destination = (tmp_path / "resource" if entrypoint == "upload" else tmp_path) / filename
+    destination.parent.mkdir(exist_ok=True)
+    original = tmp_path / "original.txt"
+    if symlink:
+        original.write_bytes(b"existing content")
+        destination.symlink_to(original)
+    else:
+        destination.write_bytes(b"existing content")
+    upload = UploadFile(file=io.BytesIO(b"new content"), filename="new.txt")
+    monkeypatch.setattr(settings, "UPLOAD_FILE_PATH", tmp_path)
+    monkeypatch.setattr(settings, "ALLOWED_EXTENSIONS", [*settings.ALLOWED_EXTENSIONS, ".txt"])
+    monkeypatch.setattr(UploadUtil, "generate_safe_filename", lambda *_args: destination.name)
+    monkeypatch.setattr(knowledge_service, "UPLOAD_DIR", tmp_path)
+    monkeypatch.setattr(knowledge_service.uuid, "uuid4", lambda: SimpleNamespace(hex="existing"))
+
+    with pytest.raises(CustomException, match="文件保存失败"):
+        if entrypoint == "stream":
+            await UploadUtil.save_upload_stream(upload, destination)
+        elif entrypoint == "upload":
+            await UploadUtil.upload_file(upload, "https://example.test", upload_type="resource")
+        else:
+            await knowledge_service.KnowledgeService(SimpleNamespace())._save_upload_file(upload, upload_owner="kb-1")
+
+    assert destination.is_symlink() == symlink
+    assert destination.read_bytes() == b"existing content"
+    if symlink:
+        assert original.read_bytes() == b"existing content"
+
+
+@pytest.mark.parametrize("failure", ["size", "read", "write"])
+async def test_upload_stream_removes_new_destination_on_failure(tmp_path, monkeypatch, failure):
+    from app.utils import upload_util
+
+    destination = tmp_path / "new.txt"
+    upload = UploadFile(file=io.BytesIO(b"new content"), filename="new.txt")
+    if failure == "size":
+        monkeypatch.setattr(settings, "MAX_FILE_SIZE", 1)
+    elif failure == "read":
+        monkeypatch.setattr(upload, "read", AsyncMock(side_effect=[b"partial", OSError("read failed")]))
+    else:
+        original_wrap = upload_util.aiofiles.threadpool.wrap
+
+        def failing_write(*args, **kwargs):
+            target = original_wrap(*args, **kwargs)
+            monkeypatch.setattr(target, "write", AsyncMock(side_effect=OSError("write failed")))
+            return target
+
+        monkeypatch.setattr(upload_util.aiofiles.threadpool, "wrap", failing_write)
+
+    with pytest.raises(CustomException):
+        await UploadUtil.save_upload_stream(upload, destination)
+
+    assert not destination.exists()
+
+
+async def test_cancelled_upload_removes_partial_destination_and_propagates(tmp_path, monkeypatch):
+    destination = tmp_path / "new.txt"
+    upload = UploadFile(file=io.BytesIO(b"partial"), filename="new.txt")
+    waiting = asyncio.Event()
+    original_read = upload.read
+
+    async def read(size):
+        if upload.file.tell() == 0:
+            return await original_read(size)
+        waiting.set()
+        await asyncio.Event().wait()
+
+    monkeypatch.setattr(upload, "read", read)
+    task = asyncio.create_task(UploadUtil.save_upload_stream(upload, destination))
+    await asyncio.wait_for(waiting.wait(), timeout=2)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert not destination.exists()
 
 
 @pytest.mark.asyncio

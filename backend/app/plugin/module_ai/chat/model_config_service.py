@@ -14,7 +14,7 @@ from app.core.base_schema import AuthSchema
 from app.core.database import async_db_session
 from app.core.exceptions import CustomException
 from app.core.logger import logger
-from app.plugin.module_ai.config import settings, validate_model_base_url
+from app.plugin.module_ai.config import async_validate_model_base_url, settings, validate_model_base_url
 
 from .model import AiModelConfigModel
 from .schema import AiModelConfigOutSchema, AiModelConfigUpdateSchema, AiModelListRequestSchema
@@ -128,7 +128,7 @@ async def list_provider_models(auth: AuthSchema, data: AiModelListRequestSchema)
     """List provider models using edited settings, without persisting credentials."""
     current = await load_runtime_chat_model_config(auth)
     same_endpoint = data.openai_base_url == current.base_url
-    base_url = validate_model_base_url(data.openai_base_url, resolve_dns=not same_endpoint)
+    base_url = await async_validate_model_base_url(data.openai_base_url, resolve_dns=not same_endpoint)
     parsed = urlsplit(base_url)
     if parsed.query or parsed.fragment:
         raise CustomException(msg="API 地址不能包含查询参数或片段")
@@ -181,7 +181,7 @@ async def update_model_config(
     record = await _find_record(auth)
     current = get_active_chat_model_config()
     same_endpoint = data.openai_base_url == current.base_url
-    base_url = validate_model_base_url(data.openai_base_url, resolve_dns=not same_endpoint)
+    base_url = await async_validate_model_base_url(data.openai_base_url, resolve_dns=not same_endpoint)
     parsed = urlsplit(base_url)
     if parsed.query or parsed.fragment:
         raise CustomException(msg="API 地址不能包含查询参数或片段")

@@ -3,7 +3,7 @@ from collections.abc import AsyncGenerator
 from dataclasses import replace
 from typing import Any
 
-from fastapi import Depends, Query, Request, WebSocket
+from fastapi import Depends, Request
 from redis.asyncio.client import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,30 +26,18 @@ def _write_request_transaction(method: str) -> bool:
     return method.upper() in {"POST", "PUT", "PATCH", "DELETE"}
 
 
-async def _db_getter(write: bool) -> AsyncGenerator[AsyncSession, None]:
+async def db_getter(request: Request) -> AsyncGenerator[AsyncSession, None]:
+    """在依赖退出前提交写请求、回滚读请求或失败请求，并关闭会话。"""
     async with async_db_session() as session:
         try:
             yield session
-        except Exception:
-            await session.rollback()
-            raise
-        else:
-            if write:
+            if _write_request_transaction(request.method):
                 await session.commit()
             else:
                 await session.rollback()
-
-
-async def db_getter(request: Request) -> AsyncGenerator[AsyncSession, None]:
-    """按 HTTP 方法提交写请求、回滚读请求，释放无用读事务。"""
-    async for session in _db_getter(_write_request_transaction(request.method)):
-        yield session
-
-
-async def ws_db_getter(websocket: WebSocket) -> AsyncGenerator[AsyncSession, None]:
-    """WebSocket 认证使用只读会话，避免依赖 HTTP Request 类型。"""
-    async for session in _db_getter(False):
-        yield session
+        except BaseException:
+            await session.rollback()
+            raise
 
 
 async def redis_getter(request: Request) -> Redis:
@@ -144,7 +132,7 @@ def _build_permission_map(user: Any) -> dict[str, int]:
     return permissions
 
 
-async def _load_user_from_db(db: AsyncSession, username: str):
+async def _load_user_from_db(db: AsyncSession, username: str | None = None, *, user_id: int | None = None):
     """从数据库加载用户（含角色、菜单等关联的全量预加载）
 
     使用原始查询以绕过 CRUDBase 的权限过滤，确保用户认证阶段不受数据权限影响。
@@ -152,7 +140,8 @@ async def _load_user_from_db(db: AsyncSession, username: str):
 
     参数:
         db: 数据库会话
-        username: 用户名
+        username: 兼容已有按用户名读取的调用方；会话认证必须传 user_id。
+        user_id: 会话绑定的用户主键
 
     返回:
         UserModel: 已全量加载的用户 ORM 对象
@@ -166,7 +155,10 @@ async def _load_user_from_db(db: AsyncSession, username: str):
             selectinload(UserModel.roles).selectinload(RoleModel.menus),
             selectinload(UserModel.created_by),
         )
-        .where(UserModel.username == username, UserModel.is_deleted == False)  # noqa: E712
+        .where(
+            UserModel.id == user_id if user_id is not None else UserModel.username == username,
+            UserModel.is_deleted == False,  # noqa: E712
+        )
     )
     result = await db.execute(stmt)
     user = result.scalars().first()
@@ -178,10 +170,12 @@ async def _load_user_from_db(db: AsyncSession, username: str):
     return user
 
 
-async def _load_authenticated_user(username: str):
+async def _load_authenticated_user(user_id: int):
     """Use a short-lived read session so request rollbacks cannot expire auth objects."""
+    if not isinstance(user_id, int) or isinstance(user_id, bool) or user_id <= 0:
+        raise CustomException(msg="认证已失效", code=10401, status_code=401)
     async with async_db_session() as auth_db:
-        return await _load_user_from_db(auth_db, username)
+        return await _load_user_from_db(auth_db, user_id=user_id)
 
 
 async def get_current_user(
@@ -230,11 +224,7 @@ async def get_current_user(
     await _check_token_online(redis, session_id)
     await _try_sliding_refresh(redis, session_id)
 
-    username = user_info.get("user_name")
-    if not username:
-        raise CustomException(msg="认证已失效", code=10401, status_code=401)
-
-    user = await _load_authenticated_user(username)
+    user = await _load_authenticated_user(user_info.get("user_id"))
     permission_map = _build_permission_map(user)
 
     # 设置请求上下文（仅在当前 request 对象上，业务方通过 request.state.ctx 读取）
@@ -250,24 +240,6 @@ async def get_current_user(
     auth = AuthSchema(db=db, redis=redis, permission_map=permission_map, check_data_scope=False, session_id=session_id)
     auth.user = user
     return auth
-
-
-async def get_current_user_ws(
-    ticket: str = Query(..., description="一次性 WebSocket ticket"),
-    db: AsyncSession = Depends(ws_db_getter),
-    redis: Redis = Depends(redis_getter),
-) -> AuthSchema:
-    """获取当前用户（WebSocket专用，从查询参数获取一次性 ticket）
-
-    参数:
-    - token (str): 认证token
-    - db (AsyncSession): 数据库会话
-    - redis (Redis): Redis连接
-
-    返回:
-    - AuthSchema: 认证信息模型
-    """
-    return await _verify_ws_ticket(ticket, db, redis)
 
 
 async def _verify_ws_ticket(ticket: str, db: AsyncSession, redis: Redis) -> AuthSchema:
@@ -313,50 +285,11 @@ async def _verify_session(session_id: str, db: AsyncSession, redis: Redis) -> Au
         user_info = json.loads(session_raw)
     except (TypeError, json.JSONDecodeError):
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
-    username = user_info.get("user_name")
-    if not username:
-        raise CustomException(msg="认证已失效", code=10401, status_code=401)
-    user = await _load_authenticated_user(username)
+    user = await _load_authenticated_user(user_info.get("user_id"))
     auth = AuthSchema(db=db, redis=redis, permission_map=_build_permission_map(user), check_data_scope=False, session_id=session_id)
     auth.user = user
     return auth
 
-
-async def _verify_token(
-    token: str,
-    db: AsyncSession,
-    redis: Redis,
-) -> AuthSchema:
-    """验证token并返回用户信息（共享核心逻辑）
-
-    参数:
-    - token (str): 认证token
-    - db (AsyncSession): 数据库会话
-    - redis (Redis): Redis连接
-
-    返回:
-    - AuthSchema: 认证信息模型
-    """
-    if not token:
-        raise CustomException(msg="认证已失效", code=10401, status_code=401)
-
-    # 处理Bearer token（如果通过查询参数传递时包含Bearer前缀）
-    if token.startswith("Bearer"):
-        token = token.split(" ")[1]
-
-    user_info, session_id = await _decode_token_info(token, redis)
-    await _check_token_online(redis, session_id)
-    await _try_sliding_refresh(redis, session_id)
-
-    username = user_info.get("user_name")
-    if not username:
-        raise CustomException(msg="认证已失效", code=10401, status_code=401)
-
-    user = await _load_authenticated_user(username)
-
-    auth = AuthSchema(db=db, redis=redis, permission_map=_build_permission_map(user), check_data_scope=False, session_id=session_id)
-    auth.user = user
-    return auth
 
 class AuthPermission:
     """权限验证类"""

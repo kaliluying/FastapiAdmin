@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 import anyio
@@ -17,6 +18,8 @@ from whoosh.query import Or, Term
 from app.config.path_conf import BASE_DIR
 from app.core.logger import logger
 from app.plugin.module_ai.config import settings
+
+_cache_lock = Lock()
 
 
 class BM25KnowledgeIndex:
@@ -49,6 +52,7 @@ class BM25KnowledgeIndex:
         )
 
         self._index = None
+        self._index_lock = Lock()
 
     def _create_analyzer(self):
         """创建中文分词器
@@ -76,12 +80,13 @@ class BM25KnowledgeIndex:
 
     def _get_index(self):
         """获取或创建索引实例（延迟加载）"""
-        if self._index is None:
-            if index.exists_in(str(self.index_dir)):
-                self._index = index.open_dir(str(self.index_dir))
-            else:
-                self._index = index.create_in(str(self.index_dir), self.schema)
-        return self._index
+        with self._index_lock:
+            if self._index is None:
+                if index.exists_in(str(self.index_dir)):
+                    self._index = index.open_dir(str(self.index_dir))
+                else:
+                    self._index = index.create_in(str(self.index_dir), self.schema)
+            return self._index
 
     async def add_chunks(
         self,
@@ -267,6 +272,11 @@ class BM25KnowledgeIndex:
 
 
 @lru_cache(maxsize=4)
-def get_cached_bm25_index(index_dir: str | None = None, tokenizer: str | None = None) -> BM25KnowledgeIndex:
+def _cached_bm25_index(index_dir: str | None = None, tokenizer: str | None = None) -> BM25KnowledgeIndex:
     """Reuse the process-local Whoosh index for the same configuration."""
     return BM25KnowledgeIndex(index_dir=index_dir, tokenizer=tokenizer)
+
+
+def get_cached_bm25_index(index_dir: str | None = None, tokenizer: str | None = None) -> BM25KnowledgeIndex:
+    with _cache_lock:
+        return _cached_bm25_index(index_dir, tokenizer)

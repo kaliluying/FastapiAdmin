@@ -147,7 +147,7 @@ async def ai_chat_controller(
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:chat:ws"]))],
 ) -> JSONResponse:
     async with async_db_session() as auth_db:
-        user = await _load_user_from_db(auth_db, auth.user.username)
+        user = await _load_user_from_db(auth_db, user_id=auth.user.id)
     service = ChatService(auth.model_copy(update={"user": user}))
     result = await service.chat_non_stream(
         message=data.message,

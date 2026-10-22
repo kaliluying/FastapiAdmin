@@ -16,12 +16,13 @@ from alembic.script import ScriptDirectory
 
 from app.plugin.module_ai.chat.usage_model import AiUsageDailyModel, AiUsageQuotaModel, AiUsageRecordModel
 from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeDocumentModel
+from app.plugin.module_ai.memory.model import MemoryExtractionJobModel
 from app.plugin.module_ai.quality.model import AnswerFeedbackModel, RetrievalEvaluationModel
 
 VERSIONS = Path(__file__).resolve().parents[1] / "app" / "alembic" / "versions"
-REVISIONS = ("20261011_document_management", "20261011_ai_usage", "20261011_ai_quality")
+REVISIONS = ("20261011_document_management", "20261011_ai_usage", "20261011_ai_quality", "20261022_memory_jobs")
 NEW_DOCUMENT_COLUMNS = {"pending_file", "file_cleanup_paths"}
-NEW_MODELS = (AiUsageQuotaModel, AiUsageDailyModel, AiUsageRecordModel, AnswerFeedbackModel, RetrievalEvaluationModel)
+NEW_MODELS = (AiUsageQuotaModel, AiUsageDailyModel, AiUsageRecordModel, AnswerFeedbackModel, RetrievalEvaluationModel, MemoryExtractionJobModel)
 
 
 def load_revision(name):

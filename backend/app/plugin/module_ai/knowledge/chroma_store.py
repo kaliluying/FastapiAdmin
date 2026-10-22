@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from threading import Lock
 from typing import Any
 
 import anyio
 
 from app.plugin.module_ai.config import settings
+
+_store_lock = Lock()
 
 
 class ChromaKnowledgeStore:
@@ -70,9 +73,17 @@ class ChromaKnowledgeStore:
 
 
 @lru_cache(maxsize=4)
-def get_cached_chroma_store(
+def _cached_chroma_store(
     persist_dir: str | None = None,
     collection_name: str | None = None,
 ) -> ChromaKnowledgeStore:
     """Reuse one Chroma client per local collection configuration."""
     return ChromaKnowledgeStore(persist_dir=persist_dir, collection_name=collection_name)
+
+
+def get_cached_chroma_store(
+    persist_dir: str | None = None,
+    collection_name: str | None = None,
+) -> ChromaKnowledgeStore:
+    with _store_lock:
+        return _cached_chroma_store(persist_dir, collection_name)

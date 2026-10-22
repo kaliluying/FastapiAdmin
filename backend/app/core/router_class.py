@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import Request, Response
 from fastapi.routing import APIRoute
-from starlette.background import BackgroundTasks
+from starlette.types import Message, Receive, Scope, Send
 
 from app.config.setting import settings
 from app.core.base_schema import AuthSchema
@@ -82,71 +82,99 @@ async def _write_operation_log_async(log_data: dict) -> None:
 
 
 class OperationLogRoute(APIRoute):
-    """操作日志路由 — 自动记录请求/响应并后台异步写入"""
+    """在完整请求、事务和响应生命周期结束后写入操作审计。"""
+
+    async def handle(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if (
+            not settings.OPERATION_LOG_RECORD
+            or scope["method"] not in settings.OPERATION_RECORD_METHOD
+            or self.name in settings.IGNORE_OPERATION_FUNCTION
+        ):
+            await super().handle(scope, receive, send)
+            return
+
+        start = time.perf_counter()
+        request = Request(scope, receive)
+        omitted = (self.openapi_extra or {}).get("x-audit-payload") is False
+        record = {
+            "request_path": request.url.path,
+            "request_method": request.method,
+            "request_payload": _serialize_log_value({"omitted": True} if omitted else {}),
+            "response_code": 500,
+            "response_json": _serialize_log_value({"omitted": True} if omitted else {}),
+            "description": self.summary or "",
+        }
+        request.state.operation_log_data = record
+
+        async def audit_send(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                record["response_code"] = message["status"]
+            await send(message)
+
+        failure_type = None
+        try:
+            await super().handle(scope, receive, audit_send)
+        except BaseException as error:
+            failure_type = type(error).__name__
+            raise
+        finally:
+            # A dependency commit may fail after the handler prepared a success response.
+            if failure_type is not None or record["response_code"] >= 400:
+                record["request_payload"] = _serialize_log_value({"omitted": True})
+                record["response_json"] = _serialize_log_value({
+                    "omitted": True, **({"error_type": failure_type} if failure_type else {}),
+                })
+            ctx = getattr(request.state, "ctx", None)
+            current_user_id = ctx.user_id if ctx else None
+            record.update(
+                process_time=f"{(time.perf_counter() - start):.2f}s",
+                created_id=current_user_id,
+                updated_id=current_user_id,
+            )
+            await _write_operation_log_async(record)
 
     def get_route_handler(self) -> Callable[[Request], Coroutine[Any, Any, Response]]:
         original_route_handler = super().get_route_handler()
 
         async def custom_route_handler(request: Request) -> Response:
-            start = time.time()
-            response: Response = await original_route_handler(request)
+            record = getattr(request.state, "operation_log_data", None)
+            if record is None:
+                return await original_route_handler(request)
 
-            if not settings.OPERATION_LOG_RECORD or request.method not in settings.OPERATION_RECORD_METHOD:
-                return response
-            route: APIRoute = request.scope.get("route", None)
-            if route and route.name in settings.IGNORE_OPERATION_FUNCTION:
-                return response
-
+            response = None
             try:
-                oper_param: dict[str, Any] = {}
-                response_payload: Any = {}
-                if route and (route.openapi_extra or {}).get("x-audit-payload") is False:
-                    oper_param = {"omitted": True}
-                    response_payload = {"omitted": True}
-                else:
-                    content_type = request.headers.get("Content-Type", "")
-                    if content_type.startswith(("multipart/form-data", "application/x-www-form-urlencoded")):
-                        form_data = await request.form()
-                        oper_param["form"] = dict(form_data.items())
-                    else:
-                        payload = await request.body()
-                        if payload:
+                response = await original_route_handler(request)
+                return response
+            finally:
+                try:
+                    if response is None:
+                        # A rejected/cancelled request must not drain an unread body just for auditing.
+                        record["request_payload"] = _serialize_log_value({"omitted": True})
+                    elif (self.openapi_extra or {}).get("x-audit-payload") is not False:
+                        oper_param: dict[str, Any] = {}
+                        response_payload: Any = {}
+                        content_type = request.headers.get("Content-Type", "")
+                        if content_type.startswith(("multipart/form-data", "application/x-www-form-urlencoded")):
+                            form_data = await request.form()
+                            oper_param["form"] = dict(form_data.items())
+                        else:
+                            payload = await request.body()
+                            if payload:
+                                try:
+                                    oper_param["body"] = json.loads(payload.decode())
+                                except (json.JSONDecodeError, UnicodeDecodeError):
+                                    oper_param["body"] = "非 JSON 请求体已省略"
+
+                        if request.path_params:
+                            oper_param["path_params"] = dict(request.path_params)
+
+                        if response is not None and "application/json" in response.headers.get("Content-Type", "") and getattr(response, "body", None):
                             try:
-                                oper_param["body"] = json.loads(payload.decode())
+                                response_payload = json.loads(response.body.decode())
                             except (json.JSONDecodeError, UnicodeDecodeError):
-                                oper_param["body"] = "非 JSON 请求体已省略"
-
-                    if request.path_params:
-                        oper_param["path_params"] = dict(request.path_params)
-
-                    is_json = "application/json" in response.headers.get("Content-Type", "")
-                    if is_json and getattr(response, "body", None):
-                        try:
-                            response_payload = json.loads(response.body.decode())
-                        except (json.JSONDecodeError, UnicodeDecodeError):
-                            response_payload = {"message": "响应不是可解析的 JSON，已省略"}
-
-                ctx = getattr(request.state, "ctx", None)
-                current_user_id = ctx.user_id if ctx else None
-
-                log_data: dict[str, Any] = {
-                    "request_path": request.url.path,
-                    "request_method": request.method,
-                    "request_payload": _serialize_log_value(oper_param),
-                    "response_code": response.status_code,
-                    "response_json": _serialize_log_value(response_payload),
-                    "process_time": f"{(time.time() - start):.2f}s",
-                    "description": route.summary if route else "",
-                    "created_id": current_user_id,
-                    "updated_id": current_user_id,
-                }
-                tasks = BackgroundTasks()
-                if response.background is not None:
-                    tasks.add_task(response.background)
-                tasks.add_task(_write_operation_log_async, log_data)
-                response.background = tasks
-            except Exception:
-                logger.warning("操作日志采集异常: {}", request.url.path, exc_info=True)
-            return response
+                                response_payload = {"message": "响应不是可解析的 JSON，已省略"}
+                        record.update(request_payload=_serialize_log_value(oper_param), response_json=_serialize_log_value(response_payload))
+                except Exception:
+                    logger.warning("操作日志采集异常: {}", request.url.path, exc_info=True)
 
         return custom_route_handler

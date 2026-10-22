@@ -1,5 +1,6 @@
 """Runtime settings owned by the core AI module."""
 
+import asyncio
 import ipaddress
 import os
 import socket
@@ -99,6 +100,13 @@ def validate_model_base_url(value: str, *, resolve_dns: bool = True) -> str:
     if not addresses or any(_is_blocked_address(item) for item in addresses):
         raise ValueError("API 地址不允许解析到本机或内网地址")
     return normalized
+
+
+async def async_validate_model_base_url(value: str, *, resolve_dns: bool = True) -> str:
+    """Apply the same SSRF policy without blocking the event loop on DNS."""
+    if not resolve_dns:
+        return validate_model_base_url(value, resolve_dns=False)
+    return await asyncio.to_thread(validate_model_base_url, value, resolve_dns=True)
 
 
 def _is_blocked_address(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:

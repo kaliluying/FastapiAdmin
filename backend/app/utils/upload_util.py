@@ -410,11 +410,14 @@ class UploadUtil:
             CustomException: If the stream exceeds the size limit or cannot be saved.
         """
         total = 0
+        created = False
+        complete = False
         filepath.parent.mkdir(parents=True, exist_ok=True)
         try:
-            # Exclusive creation prevents a pre-existing symlink or a rare
-            # generated-name collision from being overwritten.
-            async with aiofiles.open(filepath, "xb") as target:
+            # Claim ownership before yielding so cancellation cannot orphan an opened file.
+            with filepath.open("xb") as raw_target:
+                created = True
+                target = aiofiles.threadpool.wrap(raw_target)
                 while chunk := await file.read(1024 * 1024):
                     total += len(chunk)
                     if total > settings.MAX_FILE_SIZE:
@@ -422,16 +425,18 @@ class UploadUtil:
                             msg=f"文件大小超过限制，最大允许 {settings.MAX_FILE_SIZE // (1024 * 1024)}MB"
                         )
                     await target.write(chunk)
+            await file.seek(0)
+            complete = True
         except CustomException:
-            filepath.unlink(missing_ok=True)
             await file.seek(0)
             raise
         except Exception as exc:
-            filepath.unlink(missing_ok=True)
             await file.seek(0)
             logger.exception("文件保存失败: path=%s", filepath)
             raise CustomException(msg="文件保存失败，请稍后重试") from exc
-        await file.seek(0)
+        finally:
+            if created and not complete:
+                filepath.unlink(missing_ok=True)
         return total
 
     @staticmethod

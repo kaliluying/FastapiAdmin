@@ -6,6 +6,7 @@ import asyncio
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+import anyio
 from sqlalchemy import select
 
 from app.core.database import async_db_session
@@ -109,8 +110,10 @@ class KnowledgeRetriever:
         knowledge_base_ids: list[int],
         top_k: int,
     ) -> list[KnowledgeSearchResult]:
-        embeddings = await self._get_embedding_client().embed_texts([query])
-        raw = await self._get_chroma_store().query(
+        embedding_client = await anyio.to_thread.run_sync(self._get_embedding_client)
+        embeddings = await embedding_client.embed_texts([query])
+        store = await anyio.to_thread.run_sync(self._get_chroma_store)
+        raw = await store.query(
             query_embedding=embeddings[0],
             knowledge_base_ids=knowledge_base_ids,
             top_k=top_k,
@@ -123,7 +126,8 @@ class KnowledgeRetriever:
         knowledge_base_ids: list[int],
         top_k: int,
     ) -> list[KnowledgeSearchResult]:
-        raw = await self._get_bm25_index().search(
+        bm25_index = await anyio.to_thread.run_sync(self._get_bm25_index)
+        raw = await bm25_index.search(
             query=query,
             knowledge_base_ids=knowledge_base_ids,
             top_k=top_k,
@@ -186,8 +190,10 @@ class KnowledgeRetriever:
         top_k: int,
     ) -> dict[str, Any]:
         try:
-            embeddings = await self._get_embedding_client().embed_texts([query])
-            raw = await self._get_chroma_store().query(
+            embedding_client = await anyio.to_thread.run_sync(self._get_embedding_client)
+            embeddings = await embedding_client.embed_texts([query])
+            store = await anyio.to_thread.run_sync(self._get_chroma_store)
+            raw = await store.query(
                 query_embedding=embeddings[0],
                 knowledge_base_ids=knowledge_base_ids,
                 top_k=top_k,
@@ -205,7 +211,8 @@ class KnowledgeRetriever:
         top_k: int,
     ) -> list[dict[str, Any]]:
         try:
-            results = await self._get_bm25_index().search(
+            bm25_index = await anyio.to_thread.run_sync(self._get_bm25_index)
+            results = await bm25_index.search(
                 query=query,
                 knowledge_base_ids=knowledge_base_ids,
                 top_k=top_k,

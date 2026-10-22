@@ -170,82 +170,70 @@ class MemoryCRUD:
             return False
 
     async def delete_crud(self, memory_ids: list[int]) -> bool:
-        try:
-            result = await self.db.execute(
-                select(AiMemoryModel).where(
-                    AiMemoryModel.id.in_(memory_ids),
-                    AiMemoryModel.user_id == self.user_id,
-                    AiMemoryModel.is_deleted == False,  # noqa: E712
-                )
+        result = await self.db.execute(
+            select(AiMemoryModel).where(
+                AiMemoryModel.id.in_(memory_ids),
+                AiMemoryModel.user_id == self.user_id,
+                AiMemoryModel.is_deleted == False,  # noqa: E712
             )
-            for obj in result.scalars().all():
-                obj.is_deleted = True
-            await self.db.flush()
-            return True
-        except Exception as e:
-            logger.error(f"删除记忆失败: {e}")
-            return False
+        )
+        for obj in result.scalars().all():
+            obj.is_deleted = True
+        await self.db.flush()
+        return True
 
     async def get_active_memories(self, *, memory_type: str | None = None) -> list[MemoryEntry]:
         """Fetch active memories for prompt injection (used by rag.py)."""
-        try:
-            stmt = select(AiMemoryModel).where(
-                AiMemoryModel.user_id == self.user_id,
-                AiMemoryModel.is_active == True,  # noqa: E712
-                AiMemoryModel.is_deleted == False,  # noqa: E712
-            )
-            if memory_type:
-                stmt = stmt.where(AiMemoryModel.memory_type == memory_type)
-            stmt = stmt.order_by(AiMemoryModel.priority.desc()).limit(50)
-            result = await self.db.execute(stmt)
-            return [self._to_entry(obj) for obj in result.scalars().all()]
-        except Exception as e:
-            logger.error(f"获取活跃记忆失败: {e}")
-            return []
+        stmt = select(AiMemoryModel).where(
+            AiMemoryModel.user_id == self.user_id,
+            AiMemoryModel.is_active == True,  # noqa: E712
+            AiMemoryModel.is_deleted == False,  # noqa: E712
+        )
+        if memory_type:
+            stmt = stmt.where(AiMemoryModel.memory_type == memory_type)
+        stmt = stmt.order_by(AiMemoryModel.priority.desc()).limit(50)
+        result = await self.db.execute(stmt)
+        return [self._to_entry(obj) for obj in result.scalars().all()]
 
     async def upsert(self, memory_type: str, key: str, value: str, *, category: str | None = None, priority: int = 0) -> MemoryEntry | None:
         """Create or update a memory entry by user_id + key.
 
-        Returns the created/updated MemoryEntry, or None on failure.
+        Returns the created/updated MemoryEntry; database failures propagate.
         """
-        try:
-            stmt = select(AiMemoryModel).where(
-                AiMemoryModel.user_id == self.user_id,
-                AiMemoryModel.key == key,
-                AiMemoryModel.is_deleted == False,  # noqa: E712
-            )
-            result = await self.db.execute(stmt)
-            existing = result.scalars().first()
+        stmt = select(AiMemoryModel).where(
+            AiMemoryModel.user_id == self.user_id,
+            AiMemoryModel.key == key,
+            AiMemoryModel.is_deleted == False,  # noqa: E712
+        )
+        result = await self.db.execute(stmt)
+        existing = result.scalars().first()
 
-            if existing:
-                existing.memory_type = memory_type
-                existing.value = value
-                if category is not None:
-                    existing.category = category
-                existing.priority = priority
-                await self.db.flush()
-                await self.db.refresh(existing)
-                logger.info(f"更新已有记忆: key={key}, user={self.user_id}")
-                return self._to_entry(existing)
-            else:
-                obj = AiMemoryModel(
-                    user_id=self.user_id,
-                    team_id=self.team_id,
-                    memory_type=memory_type,
-                    category=category,
-                    key=key,
-                    value=value,
-                    priority=priority,
-                    is_active=True,
-                )
-                self.db.add(obj)
-                await self.db.flush()
-                await self.db.refresh(obj)
-                logger.info(f"创建新记忆: key={key}, user={self.user_id}")
-                return self._to_entry(obj)
-        except Exception as e:
-            logger.exception(f"upsert 记忆失败: key={key}, error={e}")
-            return None
+        if existing:
+            existing.memory_type = memory_type
+            existing.value = value
+            if category is not None:
+                existing.category = category
+            existing.priority = priority
+            await self.db.flush()
+            await self.db.refresh(existing)
+            logger.info(f"更新已有记忆: key={key}, user={self.user_id}")
+            return self._to_entry(existing)
+        else:
+            obj = AiMemoryModel(
+                user_id=self.user_id,
+                team_id=self.team_id,
+                memory_type=memory_type,
+                category=category,
+                key=key,
+                value=value,
+                priority=priority,
+                is_active=True,
+            )
+            self.db.add(obj)
+            await self.db.flush()
+            await self.db.refresh(obj)
+            logger.info(f"创建新记忆: key={key}, user={self.user_id}")
+            return self._to_entry(obj)
 
     async def _get_model(self, memory_id: int) -> AiMemoryModel | None:
         result = await self.db.execute(

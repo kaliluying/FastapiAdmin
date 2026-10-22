@@ -7,10 +7,11 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
-from sqlalchemy import select, update
+from sqlalchemy import delete, func, select, update
 
 from app.core.base_schema import AuthSchema
 from app.core.logger import logger
+from app.plugin.module_ai.memory.model import MemoryExtractionJobModel
 
 from .model import ChatSessionModel
 from .schema import ChatSessionCreateSchema, ChatSessionUpdateSchema
@@ -116,6 +117,23 @@ class ChatSessionCRUD:
             logger.exception(f"创建聊天会话失败: {e}")
             return None
 
+    async def page_crud(
+        self, *, offset: int, limit: int, search: dict[str, Any] | None = None,
+    ) -> tuple[list[ChatSession], int]:
+        filters = [
+            ChatSessionModel.user_id == self.user_id,
+            ChatSessionModel.is_deleted == False,  # noqa: E712
+        ]
+        if title := (search or {}).get("title"):
+            filters.append(ChatSessionModel.session_data["session_name"].as_string().like(f"%{title}%"))
+        total = await self.db.scalar(select(func.count(ChatSessionModel.id)).where(*filters))
+        result = await self.db.scalars(
+            select(ChatSessionModel).where(*filters)
+            .order_by(ChatSessionModel.updated_time.desc(), ChatSessionModel.id.desc())
+            .offset(offset).limit(limit)
+        )
+        return [self._to_session(obj) for obj in result.all()], int(total or 0)
+
     async def update_crud(self, session_id: str, data: ChatSessionUpdateSchema) -> bool:
         try:
             obj = await self._get_model(session_id)
@@ -165,6 +183,13 @@ class ChatSessionCRUD:
             )
             # ponytail: keep the JSON transcript bounded; add archival storage when full history is required.
             obj.runs = runs[-MAX_STORED_RUNS:]
+            self.db.add(MemoryExtractionJobModel(
+                run_id=self.last_run_id,
+                session_id=session_id,
+                user_id=self.user_id,
+                user_message=message[:MAX_STORED_MESSAGE_CHARS],
+                assistant_response=response[:MAX_STORED_RESPONSE_CHARS],
+            ))
             await self.db.flush()
             return True
         except Exception as e:
@@ -173,6 +198,11 @@ class ChatSessionCRUD:
 
     async def delete_crud(self, session_ids: list[str]) -> bool:
         try:
+            # Serialize deletion with a worker's final transaction before removing the source session.
+            await self.db.execute(delete(MemoryExtractionJobModel).where(
+                MemoryExtractionJobModel.session_id.in_(session_ids),
+                MemoryExtractionJobModel.user_id == self.user_id,
+            ))
             result = await self.db.execute(
                 select(ChatSessionModel).where(
                     ChatSessionModel.session_id.in_(session_ids),

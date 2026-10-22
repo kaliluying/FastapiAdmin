@@ -267,9 +267,11 @@ def upgrade(
     from app.config.setting import get_settings
 
     get_settings.cache_clear()
-    from app.scripts.migrate import upgrade_database
+    import asyncio
 
-    upgrade_database()
+    from app.scripts.migrate import migrate_database
+
+    asyncio.run(migrate_database(env))
     typer.echo("所有迁移已应用。")
 
 

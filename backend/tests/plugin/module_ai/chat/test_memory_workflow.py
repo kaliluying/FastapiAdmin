@@ -1,4 +1,3 @@
-import asyncio
 import json
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
@@ -88,14 +87,10 @@ async def test_background_database_failure_is_nonfatal(monkeypatch):
     await extract_conversation_in_background(user_id=1, user_message="问题", assistant_response="回答")
 
 
-async def test_chat_schedules_memory_use_case_without_waiting(monkeypatch):
-    finished = asyncio.Event()
+def test_chat_only_wakes_workers_without_calling_the_provider(monkeypatch):
+    from unittest.mock import Mock
 
-    async def extract(**kwargs):
-        assert kwargs == {"user_id": 7, "user_message": "问题", "assistant_response": "回答"}
-        finished.set()
-
-    monkeypatch.setattr(chat_service, "extract_conversation_in_background", extract)
-    chat_service.ChatService(SimpleNamespace(user=SimpleNamespace(id=7)))._trigger_memory_extraction("问题", "回答")
-    assert not finished.is_set()
-    await asyncio.wait_for(finished.wait(), timeout=1)
+    wake = Mock()
+    monkeypatch.setattr(chat_service, "wake_memory_worker", wake)
+    chat_service.ChatService(SimpleNamespace(user=SimpleNamespace(id=7)))._trigger_memory_extraction()
+    wake.assert_called_once_with()

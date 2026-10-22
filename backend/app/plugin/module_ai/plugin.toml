@@ -29,6 +29,7 @@ websocket_routers = ["chat.ws:WS_AI"]
 model_modules = ["chat.model", "chat.usage_model", "knowledge.model", "memory.model", "quality.model"]
 startup_hooks = [
   "chat.model_config_service:initialize_runtime_chat_model_config",
+  "memory.worker:initialize_memory_worker",
   "knowledge.recovery:initialize_knowledge_recovery",
 ]
 

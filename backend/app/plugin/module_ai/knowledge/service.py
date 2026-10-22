@@ -284,32 +284,46 @@ class KnowledgeService:
 
     async def replace_document(self, document_id: int, file: UploadFile, background_tasks: Any) -> KnowledgeDocumentOutSchema:
         document = await KnowledgeDocumentCRUD(self.auth).get_or_404(id=document_id)
-        saved = await self._save_upload_file(file)
-        pending = {
-            "file_path": self._safe_knowledge_path(saved),
-            "file_name": Path((file.filename or saved.name).replace("\\", "/")).name,
-            "file_type": saved.suffix.lstrip("."),
-            "file_size": saved.stat().st_size,
-        }
-        previous_pending = document.pending_file
-        cleanup_paths = list(document.file_cleanup_paths or [])
-        if previous_pending:
-            cleanup_paths.append(previous_pending["file_path"])
-        claimed = await self.auth.db.execute(
-            update(KnowledgeDocumentModel)
-            .where(
-                KnowledgeDocumentModel.id == document_id,
-                KnowledgeDocumentModel.is_deleted == False,
-                KnowledgeDocumentModel.index_status.not_in(("indexing", "deleting", "pending")),
-                KnowledgeDocumentModel.index_token.is_(None),
+        saved = None
+        commit_started = False
+        try:
+            # Fence recovery before creating a file, including while the stream is incomplete.
+            locked = await self.auth.db.execute(
+                update(KnowledgeDocumentModel)
+                .where(KnowledgeDocumentModel.id == document_id, KnowledgeDocumentModel.is_deleted == False)
+                .values(updated_time=KnowledgeDocumentModel.updated_time)
             )
-            .values(pending_file=pending, file_cleanup_paths=cleanup_paths or None, parse_status="pending", index_status="pending", index_attempts=0, index_lease_until=None, error_message=None)
-        )
-        if claimed.rowcount != 1:
-            await self.auth.db.rollback()
-            saved.unlink(missing_ok=True)
-            raise CustomException(msg="文档正在处理，请完成后再替换", status_code=409)
-        await self.auth.db.commit()
+            if locked.rowcount != 1:
+                raise CustomException(msg="文档正在处理，请完成后再替换", status_code=409)
+            saved = await self._save_upload_file(file, upload_owner=f"doc-{document_id}")
+            pending = {
+                "file_path": self._safe_knowledge_path(saved),
+                "file_name": Path((file.filename or saved.name).replace("\\", "/")).name,
+                "file_type": saved.suffix.lstrip("."),
+                "file_size": saved.stat().st_size,
+            }
+            previous_pending = document.pending_file
+            cleanup_paths = list(document.file_cleanup_paths or [])
+            if previous_pending:
+                cleanup_paths.append(previous_pending["file_path"])
+            claimed = await self.auth.db.execute(
+                update(KnowledgeDocumentModel)
+                .where(
+                    KnowledgeDocumentModel.id == document_id,
+                    KnowledgeDocumentModel.is_deleted == False,
+                    KnowledgeDocumentModel.index_status.not_in(("indexing", "deleting", "pending")),
+                    KnowledgeDocumentModel.index_token.is_(None),
+                )
+                .values(pending_file=pending, file_cleanup_paths=cleanup_paths or None, parse_status="pending", index_status="pending", index_attempts=0, index_lease_until=None, error_message=None)
+            )
+            if claimed.rowcount != 1:
+                raise CustomException(msg="文档正在处理，请完成后再替换", status_code=409)
+            commit_started = True
+            await self.auth.db.commit()
+        except (Exception, asyncio.CancelledError):
+            if not commit_started:
+                await asyncio.shield(self._discard_uncommitted_upload(saved))
+            raise
         await self.auth.db.refresh(document)
         background_tasks.add_task(index_document_in_background, document_id, getattr(getattr(self.auth, "user", None), "id", None))
         return self._document_output(document)
@@ -325,15 +339,23 @@ class KnowledgeService:
         available = await self.auth.db.execute(update(KnowledgeBaseModel).where(KnowledgeBaseModel.id == knowledge_base_id, KnowledgeBaseModel.is_deleted == False).values(updated_time=datetime.now()))
         if available.rowcount != 1:
             raise CustomException(msg="knowledge base not found", status_code=404)
-        saved_path = await self._save_upload_file(file)
-        document = await KnowledgeDocumentCRUD(self.auth).create_document(
-            knowledge_base_id=knowledge_base_id,
-            file_name=file.filename or saved_path.name,
-            file_path=self._safe_knowledge_path(saved_path),
-            file_type=saved_path.suffix.lower().lstrip("."),
-            file_size=saved_path.stat().st_size,
-        )
-        await self.auth.db.commit()
+        saved_path = await self._save_upload_file(file, upload_owner=f"kb-{knowledge_base_id}")
+        commit_started = False
+        try:
+            document = await KnowledgeDocumentCRUD(self.auth).create_document(
+                knowledge_base_id=knowledge_base_id,
+                file_name=file.filename or saved_path.name,
+                file_path=self._safe_knowledge_path(saved_path),
+                file_type=saved_path.suffix.lower().lstrip("."),
+                file_size=saved_path.stat().st_size,
+            )
+            commit_started = True
+            await self.auth.db.commit()
+        except (Exception, asyncio.CancelledError):
+            # A commit error can mean the server committed but its reply was lost.
+            if not commit_started:
+                await asyncio.shield(self._discard_uncommitted_upload(saved_path))
+            raise
         if background_tasks is None:
             await self.index_document(document.id)
             document = await KnowledgeDocumentCRUD(self.auth).get_or_404(id=document.id)
@@ -416,7 +438,8 @@ class KnowledgeService:
             metadatas: list[dict[str, int | str]] | None = None
             if retrieval_mode in ("vector", "hybrid"):
                 failure_message = "向量生成失败，请联系管理员检查模型服务配置、连接与额度后重建索引。"
-                embeddings = await self._get_embedding_client().embed_texts(chunks)
+                embedding_client = await anyio.to_thread.run_sync(self._get_embedding_client)
+                embeddings = await embedding_client.embed_texts(chunks)
                 metadatas = [
                     build_chroma_metadata(
                         knowledge_base_id=knowledge_base_id,
@@ -431,7 +454,8 @@ class KnowledgeService:
             if embeddings is not None and metadatas is not None:
                 await self._update_index_claim(document_id, token, updated_time=datetime.now())
                 vector_started = True
-                await self._get_store().upsert_chunks(ids=chroma_ids, embeddings=embeddings, documents=chunks, metadatas=metadatas)
+                store = await anyio.to_thread.run_sync(self._get_store)
+                await store.upsert_chunks(ids=chroma_ids, embeddings=embeddings, documents=chunks, metadatas=metadatas)
                 await self.auth.db.commit()
 
             if retrieval_mode in ("hybrid", "bm25"):
@@ -448,7 +472,8 @@ class KnowledgeService:
                 ]
                 await self._update_index_claim(document_id, token, updated_time=datetime.now())
                 bm25_started = True
-                await self._get_bm25_index().add_chunks(bm25_chunks)
+                bm25_index = await anyio.to_thread.run_sync(self._get_bm25_index)
+                await bm25_index.add_chunks(bm25_chunks)
                 await self.auth.db.commit()
 
             failure_message = "索引记录保存失败，请稍后重建索引；若仍失败，请联系管理员检查数据库连接。"
@@ -628,9 +653,11 @@ class KnowledgeService:
         if not ids:
             return
         if vector:
-            await self._get_store().delete_chunks(ids)
+            store = await anyio.to_thread.run_sync(self._get_store)
+            await store.delete_chunks(ids)
         if bm25:
-            await self._get_bm25_index().delete_chunks(ids)
+            bm25_index = await anyio.to_thread.run_sync(self._get_bm25_index)
+            await bm25_index.delete_chunks(ids)
 
     async def delete_document(self, ids: list[int], *, knowledge_base_ids: list[int] | None = None) -> None:
         if not ids:
@@ -699,9 +726,11 @@ class KnowledgeService:
         try:
             vector, bm25 = self._index_backends_to_clean()
             if vector:
-                await self._get_store().delete_document(document_id)
+                store = await anyio.to_thread.run_sync(self._get_store)
+                await store.delete_document(document_id)
             if bm25:
-                await self._get_bm25_index().delete_by_document(document_id)
+                bm25_index = await anyio.to_thread.run_sync(self._get_bm25_index)
+                await bm25_index.delete_by_document(document_id)
             for file_path in file_paths:
                 relative_path = self._safe_knowledge_path(file_path)
                 if relative_path is None:
@@ -784,12 +813,24 @@ class KnowledgeService:
             ],
         }
 
-    async def _save_upload_file(self, file: UploadFile) -> Path:
+    async def _discard_uncommitted_upload(self, path: Path | None) -> None:
+        try:
+            if path is not None:
+                await anyio.to_thread.run_sync(partial(path.unlink, missing_ok=True))
+        except Exception:
+            logger.error("清理未提交的知识库上传文件失败")
+        try:
+            await self.auth.db.rollback()
+        except Exception:
+            logger.error("回滚知识库上传事务失败")
+
+    async def _save_upload_file(self, file: UploadFile, *, upload_owner: str) -> Path:
         UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
         suffix = Path(file.filename or "").suffix.lower()
         if suffix not in {".txt", ".md", ".pdf", ".docx"}:
             raise CustomException(msg="only txt, md, pdf, and docx documents are supported")
-        file_path = UPLOAD_DIR / f"{uuid.uuid4().hex}{suffix}"
+        # The name is a durable upload intent; its owner row stays locked until commit/rollback.
+        file_path = UPLOAD_DIR / f"{upload_owner}-{uuid.uuid4().hex}{suffix}"
         from app.utils.upload_util import UploadUtil
 
         await UploadUtil.save_upload_stream(file=file, filepath=file_path)

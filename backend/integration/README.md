@@ -4,7 +4,7 @@
 
 > 此目录当前为本地未提交验收材料；新克隆使用前先确认目录和脚本存在。历史通过记录不代表当前工作区已重跑。
 
-本目录脚本独立运行，不导入 `tests/conftest.py`，不替换 Redis、SQLAlchemy、生产 lifespan、迁移或恢复方法。
+本目录脚本独立运行，不导入 `tests/conftest.py`，不替换 Redis、SQLAlchemy、生产 lifespan、迁移或恢复方法。记忆任务验收使用确定性本地模型，HTTP 聊天的回答生成与日志路由使用显式替身；认证、授权、事务和队列均走实际应用路径。
 
 ## 前提和安全边界
 
@@ -37,6 +37,9 @@ INTEGRATION_MYSQL_USER=root INTEGRATION_MYSQL_PASSWORD="$TEMP_MYSQL_PASSWORD" \
 4. 删除临时库的版本记录后，结构检查必须失败且不得自行修复，随后恢复记录。
 5. 真实上传服务保存文档和 pending 任务，独立生产进程经 manifest hook 认领任务。仅在被杀的验收进程把租约缩短为 2 秒，并在真实解析后的屏障暂停；主脚本 SIGKILL 此进程，检查 MySQL 保留 indexing/attempts/token。
 6. 等待真实租约过期，以两个新的生产进程执行 startup/shutdown，自动恢复文档至 success，检查 SQL 分块、源文件、真实 BM25 检索及重复重启无重复分块。正常 shutdown 必须停止恢复任务。
+7. 登录后通过实际 HTTP 聊天保存 7 个待提取任务；阻塞本地模型验证任务留在 SQL，释放后全部处理。另用 6 个用户验证实际工作并发不超过 4。
+8. 对上传、替换分别注入数据库回滚及已提交后的回执丢失，核对清理与保留。持有真实 MySQL 行锁时恢复必须跳过文件，回滚后才可删除；生产恢复循环也需实际执行清理。
+9. 在记忆任务已持久化认领、另一笔文件上传已写盘但未提交后 SIGKILL 独立进程，租约过期后由新进程恢复记忆并清理孤立文件；再次重启不得重复写入记忆。相关结果写入 `verify-reliability-*.json` 和 `memory-restart.json`。
 
 外部模型和 embedding 不参与本脚本（BM25 模式）；解析屏障和短租约是明确的故障注入，不属于真实模型提供商验收。
 

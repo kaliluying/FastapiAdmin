@@ -1,4 +1,5 @@
 from functools import lru_cache
+from threading import Lock
 from typing import Protocol
 
 import anyio
@@ -6,6 +7,8 @@ from fastembed import TextEmbedding
 from openai import AsyncOpenAI
 
 from app.plugin.module_ai.config import settings
+
+_client_lock = Lock()
 
 
 class EmbeddingClient(Protocol):
@@ -105,7 +108,8 @@ def get_cached_embedding_client(provider: str | None = None) -> EmbeddingClient:
         settings.OPENAI_BASE_URL,
         settings.OPENAI_EMBEDDING_MODEL,
     )
-    return _cached_embedding_client(config)
+    with _client_lock:
+        return _cached_embedding_client(config)
 
 
 def _validate_embeddings(

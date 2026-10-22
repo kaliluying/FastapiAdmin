@@ -171,6 +171,5 @@ class UploadFileResponse(FileResponse):
             background=background,
             filename=filename,
             stat_result=None,
-            method=None,
             content_disposition_type="attachment",
         )

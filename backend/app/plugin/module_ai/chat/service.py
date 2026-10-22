@@ -15,14 +15,13 @@ from sqlalchemy import select
 
 from app.api.v1.module_system.user.model import UserModel
 from app.common.enums import RedisInitKeyConfig
-from app.common.request import paginate
-from app.core.base_schema import AuthSchema
+from app.core.base_schema import AuthSchema, PageResultSchema
 from app.core.dependencies import _check_token_online
 from app.core.exceptions import CustomException
 from app.core.logger import logger
-from app.plugin.module_ai.config import validate_model_base_url
+from app.plugin.module_ai.config import async_validate_model_base_url
 from app.plugin.module_ai.knowledge.public import accessible_knowledge_base_ids
-from app.plugin.module_ai.memory.service import extract_conversation_in_background
+from app.plugin.module_ai.memory.worker import wake_memory_worker
 
 from . import rag
 from .crud import ChatSession, ChatSessionCRUD, run_identifier
@@ -49,7 +48,7 @@ from .schema import (
     ChatSessionQueryParam,
     ChatSessionUpdateSchema,
 )
-from .usage import track_chat_usage, track_stream_usage, usage_context
+from .usage import track_chat_usage, track_stream_usage
 
 
 async def _format_session_data(session: ChatSession, auth: AuthSchema | None = None) -> dict[str, Any]:
@@ -171,7 +170,7 @@ class ChatService:
         try:
             knowledge_base_ids = await accessible_knowledge_base_ids(self.auth, query.knowledge_base_ids)
             await load_runtime_chat_model_config(self.auth)
-            config_error = self._validate_ai_config()
+            config_error = await self._validate_ai_config()
             if config_error:
                 yield {"type": "error", "message": config_error} if structured else config_error
                 return
@@ -228,10 +227,7 @@ class ChatService:
                 if db:
                     await db.commit()
                 # 异步触发记忆提取，不阻塞用户看到回复
-                self._trigger_memory_extraction(
-                    user_message=query.message,
-                    assistant_response=full_response,
-                )
+                self._trigger_memory_extraction()
             if structured:
                 yield {"type": "done", **({"session_id": active_session_id, "run_id": crud.last_run_id if crud else None} if not degraded else {})}
         except CustomException as exc:
@@ -269,7 +265,7 @@ class ChatService:
             if previous_query is not None and (query.files or query.knowledge_base_ids):
                 raise CustomException(msg="日志追问不能混用附件或知识库，请结束日志追问后再发送", status_code=422)
             await load_runtime_chat_model_config(self.auth)
-            config_error = self._validate_ai_config()
+            config_error = await self._validate_ai_config()
             if config_error:
                 raise CustomException(msg=config_error, data={"error_code": "model_config_invalid"})
             await self.auth.db.rollback()
@@ -408,7 +404,7 @@ class ChatService:
         try:
             knowledge_base_ids = await accessible_knowledge_base_ids(self.auth, knowledge_base_ids or [])
             await load_runtime_chat_model_config(self.auth)
-            config_error = self._validate_ai_config()
+            config_error = await self._validate_ai_config()
             if config_error:
                 return {"response": config_error, "session_id": session_id or "", "function_calls": None, "action": None}
 
@@ -434,10 +430,7 @@ class ChatService:
                 if db:
                     await db.commit()
                 # 异步触发记忆提取
-                self._trigger_memory_extraction(
-                    user_message=message,
-                    assistant_response=response_text,
-                )
+                self._trigger_memory_extraction()
             return {"response": f"{warning}\n\n{response_text}" if warning else response_text, "session_id": "" if warning else active_session_id, "function_calls": None, "action": action}
         except CustomException as exc:
             db = self._get_db()
@@ -464,26 +457,9 @@ class ChatService:
     def _ensure_runtime_session_id(self, session_id: str | None) -> str:
         return session_id or self._generate_ephemeral_session_id()
 
-    def _trigger_memory_extraction(
-        self,
-        user_message: str,
-        assistant_response: str,
-    ) -> None:
-        """Fire-and-forget 触发记忆提取，不阻塞主流程。"""
-        auth = self.auth
-        user = getattr(auth, "user", None)
-        user_id = getattr(user, "id", None)
-        if not auth or user_id is None:
-            return
-        try:
-            async def extract():
-                with usage_context(user_id, "memory"):
-                    await extract_conversation_in_background(
-                        user_id=user_id, user_message=user_message, assistant_response=assistant_response,
-                    )
-            asyncio.create_task(extract())
-        except Exception as e:
-            logger.warning(f"启动记忆提取任务失败: {e}")
+    def _trigger_memory_extraction(self) -> None:
+        """Wake workers after the transcript and extraction job have committed."""
+        wake_memory_worker()
 
     def _should_persist_session(self) -> bool:
         return getattr(self.auth, "user", None) is not None and self._get_db() is not None
@@ -496,7 +472,7 @@ class ChatService:
         return f"guest-{uuid4().hex}"
 
     @staticmethod
-    def _validate_ai_config() -> str | None:
+    async def _validate_ai_config() -> str | None:
         config = get_active_chat_model_config()
         api_key = config.api_key.strip()
         model = config.model.strip()
@@ -508,7 +484,7 @@ class ChatService:
         if not base_url:
             return "AI 服务未配置接口地址，请先在模型配置中填写。"
         try:
-            validate_model_base_url(base_url)
+            await async_validate_model_base_url(base_url)
         except ValueError:
             return "AI 服务接口地址不符合安全策略，请检查主机白名单配置。"
         return None
@@ -583,10 +559,18 @@ class ChatService:
         page_size: int,
         search: ChatSessionQueryParam,
         order_by: list[dict[str, str]] | None = None,
-    ) -> dict[str, Any]:
-        sessions = await ChatSessionCRUD(self.auth).list_crud(search=search.__dict__ if search else None, order_by=order_by)
+    ) -> PageResultSchema[dict[str, Any]]:
+        if page_no < 1 or page_size < 1:
+            raise CustomException(msg="分页参数不合法")
+        sessions, total = await ChatSessionCRUD(self.auth).page_crud(
+            offset=(page_no - 1) * page_size, limit=page_size,
+            search=search.__dict__ if search else None,
+        )
         items = [await _format_session_data(session, self.auth) for session in sessions]
-        return paginate(data_list=items, page_no=page_no, page_size=page_size)
+        return PageResultSchema(
+            items=items, total=total, page_no=page_no, page_size=page_size,
+            has_next=page_no * page_size < total,
+        )
 
     async def update(self, session_id: str, data: ChatSessionUpdateSchema) -> bool:
         return await ChatSessionCRUD(self.auth).update_crud(session_id=session_id, data=data)

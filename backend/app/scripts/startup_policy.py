@@ -45,7 +45,7 @@ async def validate_database_schema() -> None:
         await connection.run_sync(check_schema)
 
 
-async def _bootstrap() -> None:
+async def _bootstrap(*, migrate_only: bool = False) -> None:
     """Reuse transactional stable-key seeds; Alembic owns schema checkpoints."""
     from app.core.database import async_engine
     from app.init_app import run_startup_migration
@@ -53,8 +53,9 @@ async def _bootstrap() -> None:
 
     try:
         await run_startup_migration()
-        await InitializeData().init_db()
-        await validate_database_schema()
+        if not migrate_only:
+            await InitializeData().init_db()
+            await validate_database_schema()
     finally:
         await async_engine.dispose()
 
@@ -62,6 +63,7 @@ async def _bootstrap() -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="应用启动数据库初始化 worker")
     parser.add_argument("--env", choices=("dev", "prod"), required=True)
+    parser.add_argument("--migrate-only", action="store_true", help="仅执行迁移；锁由父进程持有")
     arguments = parser.parse_args()
     os.environ["ENVIRONMENT"] = arguments.env
-    asyncio.run(_bootstrap())
+    asyncio.run(_bootstrap(migrate_only=arguments.migrate_only))

@@ -71,6 +71,8 @@ class InitializeData:
         """按依赖顺序初始化各表种子数据"""
         role_seed_mapping: dict[int, RoleModel] = {}
         user_seed_mapping: dict[int, UserModel] = {}
+        new_role_ids: set[int] = set()
+        new_user_ids: set[int] = set()
 
         for model in self.get_prepare_init_models():
             table_name = model.__tablename__
@@ -89,8 +91,10 @@ class InitializeData:
 
                 # 角色使用 code 作为稳定唯一键，并建立种子行号到数据库主键的映射。
                 if table_name == "sys_role":
+                    existing_ids = set(await db.scalars(select(RoleModel.id)))
                     added = await self.__seed_unique_rows(db, model, data, ("code",))
                     rows = (await db.execute(select(RoleModel))).scalars().all()
+                    new_role_ids = {role.id for role in rows} - existing_ids
                     roles_by_code = {row.code: row for row in rows}
                     role_seed_mapping = {index: roles_by_code[item["code"]] for index, item in enumerate(data, start=1) if item.get("code") in roles_by_code}
                     logger.info(f"✅️ 已向 {table_name} 补齐 {added} 条初始化数据")
@@ -98,7 +102,9 @@ class InitializeData:
 
                 # 用户使用 username 作为稳定唯一键；审计外键在全部用户创建后再按种子行号解析。
                 if table_name == "sys_user":
+                    existing_ids = set(await db.scalars(select(UserModel.id)))
                     added, user_seed_mapping = await self.__seed_users(db, data)
+                    new_user_ids = {user.id for user in user_seed_mapping.values()} - existing_ids
                     logger.info(f"✅️ 已向 {table_name} 补齐 {added} 条初始化数据")
                     continue
 
@@ -119,6 +125,9 @@ class InitializeData:
                         menus = (await db.execute(menu_stmt)).scalars().all()
                         if not menus:
                             raise ValueError(f"角色菜单种子未匹配菜单: {item}")
+                        # 已有角色的授权由管理员管理，重放种子不得恢复撤权。
+                        if role.id not in new_role_ids:
+                            continue
                         for menu in menus:
                             link_key = (role.id, menu.id)
                             if link_key not in existing_links:
@@ -139,6 +148,8 @@ class InitializeData:
                         role = role_seed_mapping.get(int(item["role_id"]))
                         if not user or not role:
                             raise ValueError(f"用户角色种子引用了不存在的用户或角色: {item}")
+                        if user.id not in new_user_ids:
+                            continue
                         link_key = (user.id, role.id)
                         if link_key not in existing_links:
                             links.append(UserRolesModel(user_id=user.id, role_id=role.id))
