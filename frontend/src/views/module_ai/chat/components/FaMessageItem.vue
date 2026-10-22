@@ -19,6 +19,7 @@
           size="small"
           :icon="CopyDocument"
           class="copy-button"
+          aria-label="复制消息"
           @click="handleCopy"
         ></ElButton>
       </div>
@@ -58,12 +59,22 @@
           </div>
         </div>
       </div>
-      <p v-if="message.warning" class="message-note" role="status">{{ message.warning }}</p>
-      <p v-if="message.retriedMessageId" class="message-note" role="status">
-        已重试成功。原失败原因：{{ message.error }}
+      <p v-if="message.warning" class="message-note message-note--warning" role="status">
+        <ElIcon class="note-icon"><Warning /></ElIcon>
+        <span>{{ message.warning }}</span>
       </p>
-      <p v-else-if="message.error" class="message-note" role="alert">{{ message.error }}</p>
-      <p v-if="message.stopped" class="message-note">已停止生成；当前回答可能未保存</p>
+      <p v-if="message.retriedMessageId" class="message-note message-note--success" role="status">
+        <ElIcon class="note-icon"><CircleCheck /></ElIcon>
+        <span>已重试成功。原失败原因：{{ message.error }}</span>
+      </p>
+      <p v-else-if="message.error" class="message-note message-note--error" role="alert">
+        <ElIcon class="note-icon"><CircleClose /></ElIcon>
+        <span>{{ message.error }}</span>
+      </p>
+      <p v-if="message.stopped" class="message-note message-note--info">
+        <ElIcon class="note-icon"><InfoFilled /></ElIcon>
+        <span>已停止生成；当前回答可能未保存</span>
+      </p>
       <div v-if="message.type === 'assistant'" class="message-actions">
         <FaAnswerFeedback
           v-if="
@@ -97,11 +108,12 @@
         >
         <ElButton
           v-if="message.citations?.length"
-          link
-          type="primary"
+          class="action-btn--citations"
           @click="emit('show-citations')"
-          >查看 {{ message.citations.length }} 条依据</ElButton
         >
+          <ElIcon class="citations-icon"><Document /></ElIcon>
+          <span>查看 {{ message.citations.length }} 条依据</span>
+        </ElButton>
       </div>
     </div>
   </div>
@@ -118,6 +130,10 @@ import {
   ArrowDown,
   ArrowUp,
   Document,
+  Warning,
+  CircleCheck,
+  CircleClose,
+  InfoFilled,
 } from "@element-plus/icons-vue";
 import { useUserStoreHook } from "@stores";
 import type { ChatMessage } from "../types";
@@ -213,17 +229,11 @@ const formatFileSize = (bytes: number): string => {
 </script>
 
 <style lang="scss" scoped>
-.message-note {
-  margin: 12px 0 0;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--fa-color-text);
-}
-
 .message-group {
   display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
+  gap: 14px;
+  margin-bottom: 24px;
+  outline: none;
 
   .message-avatar {
     flex-shrink: 0;
@@ -232,24 +242,30 @@ const formatFileSize = (bytes: number): string => {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 32px;
-      height: 32px;
-      font-size: 14px;
-      color: white;
-      background: var(--el-color-primary);
-      border-radius: 6px;
+      width: 34px;
+      height: 34px;
+      font-size: 15px;
+      color: #fff;
+      background: var(--theme-color);
+      border-radius: 10px;
+      box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-color) 25%, transparent);
     }
 
     .ai-avatar {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 32px;
-      height: 32px;
-      font-size: 14px;
-      color: white;
-      background: var(--el-color-success);
-      border-radius: 6px;
+      width: 34px;
+      height: 34px;
+      font-size: 16px;
+      color: #fff;
+      background: linear-gradient(
+        135deg,
+        var(--el-color-success),
+        color-mix(in srgb, var(--el-color-success) 70%, #06b6d4)
+      );
+      border-radius: 10px;
+      box-shadow: 0 2px 6px color-mix(in srgb, var(--el-color-success) 25%, transparent);
     }
   }
 
@@ -261,29 +277,69 @@ const formatFileSize = (bytes: number): string => {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
 
       .sender-name {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
-        color: var(--el-text-color-primary);
+        color: var(--fa-color-text-muted);
       }
 
       .copy-button {
         padding: 4px;
         font-size: 12px;
-        color: var(--el-text-color-secondary);
+        color: var(--fa-color-text-muted);
+        opacity: 0;
+        transition:
+          opacity var(--fa-motion-control),
+          color var(--fa-motion-control);
 
         &:hover {
-          color: var(--el-color-primary);
+          color: var(--theme-color);
         }
       }
     }
 
+    &:hover .copy-button {
+      opacity: 1;
+    }
+
     .message-actions {
       display: flex;
+      flex-wrap: wrap;
       gap: 8px;
-      margin-top: 8px;
+      align-items: center;
+      margin-top: 10px;
+
+      :deep(.action-btn--citations) {
+        display: inline-flex;
+        gap: 5px;
+        align-items: center;
+        height: 28px;
+        padding: 0 12px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--theme-color);
+        background: color-mix(in srgb, var(--theme-color) 10%, transparent);
+        border: 1px solid color-mix(in srgb, var(--theme-color) 22%, transparent);
+        border-radius: 14px;
+        transition: all var(--fa-motion-control);
+
+        .citations-icon {
+          font-size: 13px;
+        }
+
+        &:hover {
+          color: var(--theme-color);
+          background: color-mix(in srgb, var(--theme-color) 18%, transparent);
+          border-color: color-mix(in srgb, var(--theme-color) 35%, transparent);
+          transform: translateY(-1px);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
     }
 
     .message-body {
@@ -291,67 +347,74 @@ const formatFileSize = (bytes: number): string => {
         display: flex;
         flex-wrap: wrap;
         gap: 8px;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
 
         .attached-file {
           display: flex;
           gap: 6px;
           align-items: center;
-          padding: 8px 12px;
+          padding: 6px 12px;
           font-size: 12px;
-          background: var(--el-fill-color-light);
-          border-radius: 6px;
+          background: var(--fa-color-surface-raised);
+          border: 1px solid var(--fa-color-border);
+          border-radius: 8px;
+          box-shadow: var(--fa-soft-shadow);
 
           .file-icon {
-            font-size: 16px;
-            color: var(--el-color-primary);
+            font-size: 15px;
+            color: var(--theme-color);
           }
 
           .file-name {
-            max-width: 120px;
+            max-width: 140px;
             overflow: hidden;
             text-overflow: ellipsis;
+            font-weight: 500;
             white-space: nowrap;
           }
 
           .file-size {
-            color: var(--el-text-color-secondary);
+            color: var(--fa-color-text-muted);
           }
         }
       }
 
       .thinking-panel {
         width: 100%;
-        max-width: 720px;
-        margin-bottom: 10px;
-        background: var(--el-fill-color-light);
-        border: 1px solid var(--el-border-color-lighter);
-        border-radius: 6px;
+        max-width: 760px;
+        margin-bottom: 12px;
+        overflow: hidden;
+        background: var(--fa-color-surface-raised);
+        border: 1px solid var(--fa-color-border);
+        border-left: 3px solid var(--theme-color);
+        border-radius: var(--fa-radius-control);
       }
 
       .thinking-toggle {
         padding: 0;
-        margin: 8px 10px;
+        margin: 8px 12px;
         font-size: 12px;
-        color: var(--el-text-color-secondary);
+        font-weight: 500;
+        color: var(--fa-color-text-muted);
 
         &:hover {
-          color: var(--el-color-primary);
+          color: var(--theme-color);
         }
       }
 
       .thinking-content {
-        padding: 0 12px 10px;
+        padding: 4px 14px 12px;
         font-size: 13px;
         line-height: 1.6;
-        color: var(--el-text-color-secondary);
-        border-top: 1px dashed var(--el-border-color-lighter);
+        color: var(--fa-color-text-muted);
+        border-top: 1px dashed var(--fa-color-border);
       }
 
       .message-text {
         font-size: 15px;
-        line-height: 1.6;
-        color: var(--el-text-color-primary);
+        line-height: 1.72;
+        color: var(--fa-color-text);
+        overflow-wrap: anywhere;
       }
 
       .typing-indicator {
@@ -361,13 +424,14 @@ const formatFileSize = (bytes: number): string => {
 
         .typing-dots {
           display: flex;
-          gap: 4px;
+          gap: 5px;
 
           span {
-            width: 8px;
-            height: 8px;
-            background: var(--el-text-color-secondary);
+            width: 7px;
+            height: 7px;
+            background: var(--theme-color);
             border-radius: 50%;
+            opacity: 0.7;
             animation: typing 1.4s infinite ease-in-out;
 
             &:nth-child(1) {
@@ -383,6 +447,47 @@ const formatFileSize = (bytes: number): string => {
             }
           }
         }
+      }
+    }
+
+    .message-note {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      max-width: 100%;
+      padding: 6px 12px;
+      margin: 10px 0 0;
+      font-size: 12px;
+      line-height: 1.5;
+      border-radius: var(--fa-radius-control);
+
+      .note-icon {
+        flex-shrink: 0;
+        font-size: 14px;
+      }
+
+      &--warning {
+        color: var(--el-color-warning-dark-2);
+        background: color-mix(in srgb, var(--el-color-warning) 10%, var(--fa-color-surface));
+        border: 1px solid color-mix(in srgb, var(--el-color-warning) 25%, transparent);
+      }
+
+      &--success {
+        color: var(--el-color-success-dark-2);
+        background: color-mix(in srgb, var(--el-color-success) 10%, var(--fa-color-surface));
+        border: 1px solid color-mix(in srgb, var(--el-color-success) 25%, transparent);
+      }
+
+      &--error {
+        color: var(--el-color-danger-dark-2);
+        background: color-mix(in srgb, var(--el-color-danger) 10%, var(--fa-color-surface));
+        border: 1px solid color-mix(in srgb, var(--el-color-danger) 25%, transparent);
+      }
+
+      &--info {
+        color: var(--fa-color-text-muted);
+        background: var(--fa-color-surface-raised);
+        border: 1px solid var(--fa-color-border);
       }
     }
   }
@@ -405,12 +510,21 @@ const formatFileSize = (bytes: number): string => {
         justify-content: flex-end;
       }
 
-      .message-body .message-text {
-        padding: 10px 14px;
-        color: var(--fa-color-text);
-        background: color-mix(in srgb, var(--theme-color) 9%, var(--fa-color-surface));
-        border: 1px solid var(--fa-color-border);
-        border-radius: 12px;
+      .message-body {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+
+        .message-text {
+          max-width: 82%;
+          padding: 12px 18px;
+          color: var(--fa-color-text);
+          letter-spacing: -0.01em;
+          background: color-mix(in srgb, var(--theme-color) 9%, var(--fa-color-surface));
+          border: 1px solid color-mix(in srgb, var(--theme-color) 20%, var(--fa-color-border));
+          border-radius: 18px 6px 18px 18px;
+          box-shadow: var(--fa-soft-shadow);
+        }
       }
     }
   }
@@ -420,6 +534,17 @@ const formatFileSize = (bytes: number): string => {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .typing-dots span {
+      animation: none;
+    }
+
+    .copy-button,
+    :deep(.action-btn--citations) {
+      transition: none;
     }
   }
 }
@@ -433,6 +558,19 @@ const formatFileSize = (bytes: number): string => {
 
   30% {
     transform: translateY(-4px);
+  }
+}
+
+@media (width <= 640px) {
+  .message-group {
+    gap: 10px;
+    margin-bottom: 18px;
+
+    &.user .message-content .message-body .message-text {
+      max-width: 92%;
+      padding: 10px 14px;
+      border-radius: 16px 4px 16px 16px;
+    }
   }
 }
 </style>

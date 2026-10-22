@@ -366,11 +366,15 @@ defineExpose({
 
 .session-select {
   flex: 1;
+  padding: 0 4px;
+  border-radius: 8px;
+  transition: background-color 0.18s ease;
 }
 
 .session-more {
   justify-content: center;
   width: 32px;
+  border-radius: 8px;
 }
 
 .session-select:focus-visible,
@@ -384,29 +388,38 @@ defineExpose({
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--fa-color-canvas);
-  border-right: 1px solid var(--el-border-color-light);
+  background: color-mix(in srgb, var(--fa-color-canvas) 85%, var(--fa-color-surface));
+  border-right: 1px solid var(--fa-card-border);
   transition: width 0.3s ease;
 
   .sidebar-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px;
+    padding: 14px 16px 10px;
 
     .logo-section {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
 
       .logo-icon {
-        color: var(--el-color-primary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        color: var(--theme-color);
+        background: color-mix(in srgb, var(--theme-color) 12%, transparent);
+        border-radius: 10px;
+        box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-color) 15%, transparent);
       }
 
       .project-name {
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 600;
         color: var(--el-text-color-primary);
+        letter-spacing: -0.01em;
       }
     }
   }
@@ -416,42 +429,59 @@ defineExpose({
     min-height: 0;
 
     .new-session-section {
-      margin-bottom: 16px;
+      margin-bottom: 14px;
 
       .new-session-btn {
         display: flex;
-        gap: 8px;
+        gap: 6px;
         align-items: center;
         justify-content: center;
         width: 100%;
-        border-radius: 7px;
-        transition: all 0.2s ease;
+        height: 38px;
+        font-size: 13.5px;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        border-radius: 11px;
+        box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-color) 25%, transparent);
+        transition:
+          transform 0.18s ease,
+          box-shadow 0.18s ease;
 
         .btn-icon {
           font-size: 16px;
         }
 
         &:hover {
-          box-shadow: none;
+          box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-color) 32%, transparent);
+          transform: translateY(-1px);
+        }
+
+        &:active {
+          transform: scale(0.98);
         }
       }
     }
 
     .history-section {
       .search-section {
-        margin-bottom: 16px;
+        margin-bottom: 14px;
 
         :deep(.el-input__wrapper) {
-          border-radius: 7px;
-          box-shadow: 0 0 0 1px var(--el-border-color) inset;
-          transition: all 0.2s ease;
+          background: color-mix(in srgb, var(--fa-color-surface) 80%, var(--fa-color-canvas));
+          border: 1px solid var(--fa-card-border);
+          border-radius: 10px;
+          box-shadow: none;
+          transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
 
           &:hover {
-            box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+            border-color: color-mix(in srgb, var(--theme-color) 40%, transparent);
           }
 
           &.is-focus {
-            box-shadow: 0 0 0 1px var(--el-color-primary) inset;
+            border-color: var(--theme-color);
+            box-shadow: var(--fa-focus-ring);
           }
         }
 
@@ -462,7 +492,7 @@ defineExpose({
 
       .history-groups {
         .history-group {
-          margin-bottom: 24px;
+          margin-bottom: 18px;
 
           &:last-child {
             margin-bottom: 0;
@@ -470,30 +500,32 @@ defineExpose({
 
           .group-title {
             display: flex;
-            gap: 6px;
+            gap: 8px;
             align-items: center;
             justify-content: space-between;
             width: 100%;
-            min-height: 36px;
-            padding: 0 4px;
-            margin-bottom: 10px;
+            min-height: 28px;
+            padding: 0 6px;
+            margin-bottom: 6px;
             font: inherit;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--el-text-color-secondary);
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--fa-color-text-muted);
             text-align: left;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
             cursor: pointer;
             user-select: none;
             background: transparent;
             border: 0;
-            transition: color 0.2s;
+            transition: color 0.18s ease;
 
             &::before {
-              width: 3px;
-              height: 12px;
+              width: 4px;
+              height: 10px;
               content: "";
-              background: var(--el-color-primary);
-              border-radius: 2px;
+              background: color-mix(in srgb, var(--theme-color) 70%, transparent);
+              border-radius: 9999px;
             }
 
             &:hover {
@@ -501,8 +533,8 @@ defineExpose({
             }
 
             .collapse-icon {
-              font-size: 14px;
-              transition: transform 0.2s ease;
+              font-size: 12px;
+              transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 
               &.collapsed {
                 transform: rotate(-90deg);
@@ -514,68 +546,70 @@ defineExpose({
             .session-item {
               position: relative;
               display: flex;
-              gap: 10px;
+              gap: 6px;
               align-items: center;
-              padding: 4px;
-              margin-bottom: 6px;
+              padding: 4px 6px;
+              margin-bottom: 4px;
               cursor: pointer;
               border: 1px solid transparent;
-              border-radius: 7px;
-              transition: all 0.2s ease;
+              border-radius: 10px;
+              transition:
+                background-color 0.18s ease,
+                border-color 0.18s ease,
+                box-shadow 0.18s ease;
 
               &:hover {
-                background: var(--el-fill-color-light);
-                border-color: var(--el-border-color-light);
+                background: color-mix(in srgb, var(--fa-color-surface) 92%, transparent);
+                border-color: var(--fa-card-border);
               }
 
               &.active {
-                color: var(--el-color-primary);
-                background: var(--el-color-primary-light-9);
-                border-color: var(--el-border-color-light);
-                box-shadow: none;
+                color: var(--theme-color);
+                background: color-mix(in srgb, var(--theme-color) 9%, var(--fa-color-surface));
+                border-color: color-mix(in srgb, var(--theme-color) 24%, transparent);
+                box-shadow: 0 1px 4px color-mix(in srgb, var(--theme-color) 8%, transparent);
               }
 
               .session-icon {
                 flex-shrink: 0;
-                font-size: 18px;
+                font-size: 16px;
                 color: var(--el-text-color-secondary);
-                transition: color 0.2s;
+                transition: color 0.18s ease;
               }
 
               &.active .session-icon {
-                color: var(--el-color-primary);
+                color: var(--theme-color);
               }
 
               .session-title {
                 flex: 1;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                font-size: 14px;
+                font-size: 13.5px;
                 font-weight: 400;
                 white-space: nowrap;
-                transition: font-weight 0.2s;
+                transition: font-weight 0.18s ease;
               }
 
               &.active .session-title {
                 font-weight: 500;
+                color: var(--el-text-color-primary);
               }
 
               .more-icon {
                 flex-shrink: 0;
                 padding: 4px;
-                font-size: 16px;
-                border-radius: 4px;
-                opacity: 1;
-                transition: all 0.2s;
+                font-size: 14px;
+                color: var(--fa-color-text-muted);
+                border-radius: 6px;
+                transition:
+                  color 0.18s ease,
+                  background-color 0.18s ease;
 
                 &:hover {
-                  color: var(--el-color-primary);
-                  background: var(--el-fill-color);
+                  color: var(--theme-color);
+                  background: color-mix(in srgb, var(--theme-color) 12%, transparent);
                 }
-              }
-
-              &:hover .more-icon {
-                opacity: 1;
               }
             }
           }
@@ -595,12 +629,12 @@ defineExpose({
   }
 
   .sidebar-footer {
-    padding: 12px;
-    border-top: 1px solid var(--el-border-color-light);
+    padding: 12px 14px;
+    border-top: 1px solid var(--fa-card-border);
 
     .user-info {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       align-items: center;
 
       .user-details {
@@ -610,14 +644,14 @@ defineExpose({
         .user-name {
           overflow: hidden;
           text-overflow: ellipsis;
-          font-size: 14px;
+          font-size: 13.5px;
           font-weight: 500;
           color: var(--el-text-color-primary);
           white-space: nowrap;
         }
 
         .user-status {
-          font-size: 12px;
+          font-size: 11.5px;
           color: var(--fa-color-text-muted);
         }
       }
@@ -628,6 +662,16 @@ defineExpose({
       align-items: center;
       justify-content: center;
     }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar,
+  .sidebar .new-session-btn,
+  .sidebar .collapse-icon,
+  .sidebar .session-item {
+    transform: none !important;
+    transition: none !important;
   }
 }
 </style>

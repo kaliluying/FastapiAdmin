@@ -1,10 +1,10 @@
 ﻿<!-- 顶部栏 -->
 <template>
   <div
-    class="fa-header-shell w-full bg-(--default-bg-color)"
+    class="fa-header-shell w-full bg-transparent"
     :class="[
       tabStyle === 'tab-card' || tabStyle === 'tab-google' || tabStyle === 'tab-default'
-        ? 'max-sm:mb-3 bg-box!'
+        ? 'max-sm:mb-3'
         : '',
     ]"
   >
@@ -279,8 +279,8 @@ const openSearchDialog = (): void => {
   box-shadow: none;
 }
 
-html.dark .w-full {
-  background: var(--fa-color-surface);
+.fa-header-shell {
+  background: transparent;
 }
 
 .relative.box-border {

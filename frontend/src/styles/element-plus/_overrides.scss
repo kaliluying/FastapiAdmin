@@ -788,6 +788,16 @@ html.dark .el-card {
   border-color: var(--el-text-color-primary) !important;
 }
 
+.el-overlay {
+  background-color: rgb(15 23 42 / 36%) !important;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+html.dark .el-overlay {
+  background-color: rgb(0 0 0 / 55%) !important;
+}
+
 .el-dialog,
 .el-message-box,
 .login-out-dialog {
@@ -814,7 +824,7 @@ html.dark .el-card {
   --el-table-header-bg-color: var(--fa-color-surface-raised) !important;
   --el-table-row-hover-bg-color: color-mix(
     in srgb,
-    var(--theme-color) 6%,
+    var(--theme-color) 5%,
     var(--fa-color-surface)
   ) !important;
 
@@ -824,8 +834,10 @@ html.dark .el-card {
 }
 
 .el-table th.el-table__cell {
+  font-size: 12px;
   font-weight: 600;
-  color: var(--fa-color-text);
+  color: var(--fa-color-text-muted);
+  letter-spacing: 0.02em;
   background: var(--fa-color-surface-raised) !important;
 }
 
@@ -900,7 +912,8 @@ html.dark {
 .el-input__wrapper.is-focus,
 .el-select__wrapper.is-focused,
 .el-textarea__inner:focus {
-  border-color: var(--fa-color-focus) !important;
+  border-color: color-mix(in srgb, var(--theme-color) 72%, var(--fa-color-border)) !important;
+  box-shadow: var(--fa-focus-ring) !important;
 }
 
 .el-dropdown-selfdefine:focus-visible {

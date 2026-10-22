@@ -260,15 +260,16 @@ defineExpose({
 }
 
 .file-item {
-  display: flex;
+  display: inline-flex;
   gap: 6px;
   align-items: center;
   max-width: 100%;
-  padding: 4px 8px;
+  padding: 4px 10px;
   font-size: 12px;
   background: var(--fa-color-surface-raised);
   border: 1px solid var(--fa-color-border);
-  border-radius: var(--fa-radius-control);
+  border-radius: 14px;
+  box-shadow: var(--fa-soft-shadow);
 }
 
 .file-name {
@@ -280,18 +281,22 @@ defineExpose({
 
 .input-container {
   position: relative;
-  padding: 16px 18px 12px;
+  padding: 14px 18px 12px;
   overflow: hidden;
   color: var(--fa-color-text);
-  background: var(--fa-color-surface);
+  background: color-mix(in srgb, var(--fa-color-surface) 95%, transparent);
   border: 1px solid var(--fa-color-border);
-  border-radius: 24px;
+  border-radius: 20px;
   box-shadow: var(--fa-panel-shadow);
-}
+  backdrop-filter: blur(16px) saturate(180%);
+  transition:
+    border-color var(--fa-motion-control),
+    box-shadow var(--fa-motion-control);
 
-.input-container:focus-within {
-  border-color: var(--theme-color);
-  box-shadow: var(--fa-focus-ring), var(--fa-panel-shadow);
+  &:focus-within {
+    border-color: var(--theme-color);
+    box-shadow: var(--fa-focus-ring), var(--fa-panel-shadow);
+  }
 }
 
 .input-footer,
@@ -316,10 +321,8 @@ defineExpose({
     border-radius: 50%;
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--fa-color-success) 12%, transparent);
   }
-}
 
-.composer-status--offline {
-  i {
+  &--offline i {
     background: var(--fa-color-text-muted);
     box-shadow: none;
   }
@@ -362,19 +365,27 @@ defineExpose({
 
 .input-actions {
   flex-shrink: 0;
-}
 
-.input-actions--leading {
-  color: var(--fa-color-text);
-}
+  &--leading {
+    color: var(--fa-color-text);
+  }
 
-.input-actions--trailing {
-  gap: 12px;
+  &--trailing {
+    gap: 12px;
+  }
+
+  :deep(.el-button + .el-button) {
+    margin-left: 0;
+  }
 }
 
 .composer-mode {
+  padding: 2px 8px;
   font-size: 12px;
-  color: var(--fa-color-text-muted);
+  font-weight: 500;
+  color: var(--theme-color);
+  background: color-mix(in srgb, var(--theme-color) 8%, transparent);
+  border-radius: 6px;
 }
 
 .composer-divider {
@@ -395,26 +406,51 @@ defineExpose({
 .upload-btn {
   color: var(--fa-color-text);
   background: transparent;
+  border: 1px solid var(--fa-color-border);
+  transition:
+    color var(--fa-motion-control),
+    background-color var(--fa-motion-control),
+    border-color var(--fa-motion-control);
 
   &:hover,
   &:focus-visible {
     color: var(--theme-color);
     background: var(--fa-hover-color);
+    border-color: color-mix(in srgb, var(--theme-color) 35%, transparent);
   }
 }
 
 .send-button {
   color: var(--el-color-white);
   background: var(--theme-color);
+  transition:
+    transform var(--fa-motion-control),
+    background-color var(--fa-motion-control),
+    box-shadow var(--fa-motion-control);
 
   &:not(:disabled):hover,
   &:not(:disabled):focus-visible {
     background: var(--el-color-primary-dark-2);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-color) 35%, transparent);
+  }
+
+  &:not(:disabled):active {
+    transform: scale(0.92);
   }
 
   &:disabled {
     color: var(--fa-color-text-muted);
     background: var(--fa-color-surface-raised);
+  }
+
+  &.stop-button {
+    background: var(--el-color-danger);
+
+    &:hover,
+    &:focus-visible {
+      background: var(--el-color-danger-dark-2);
+      box-shadow: 0 2px 8px color-mix(in srgb, var(--el-color-danger) 35%, transparent);
+    }
   }
 }
 
@@ -424,8 +460,16 @@ defineExpose({
   outline-offset: 2px;
 }
 
-.input-actions :deep(.el-button + .el-button) {
-  margin-left: 0;
+@media (prefers-reduced-motion: reduce) {
+  .input-container,
+  .upload-btn,
+  .send-button {
+    transition: none;
+
+    &:active {
+      transform: none;
+    }
+  }
 }
 
 @media (width <= 768px) {
@@ -442,8 +486,8 @@ defineExpose({
   }
 
   .input-container {
-    padding: 14px 14px 10px;
-    border-radius: 20px;
+    padding: 12px 14px 10px;
+    border-radius: 18px;
   }
 
   .input-hint {

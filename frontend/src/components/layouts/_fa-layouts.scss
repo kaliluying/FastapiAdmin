@@ -62,6 +62,13 @@
       z-index: 50;
       flex-shrink: 0;
       width: 100%;
+      background: var(--fa-color-header-bg);
+      border-bottom: 1px solid var(--fa-color-header-border);
+      -webkit-backdrop-filter: saturate(180%) blur(16px);
+      backdrop-filter: saturate(180%) blur(16px);
+      transition:
+        background-color var(--fa-motion-page) ease,
+        border-color var(--fa-motion-page) ease;
     }
 
     #app-content {

@@ -66,40 +66,54 @@ function toggleExpand(id: string) {
 .fa-citation-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 
   &__empty {
     padding: 16px;
     font-size: var(--fa-text-body);
-    color: var(--el-text-color-secondary);
+    color: var(--fa-color-text-muted);
     text-align: center;
   }
 }
 
 .fa-citation-item {
-  padding-left: 8px;
-  border-left: 2px solid var(--fa-color-accent-soft);
+  position: relative;
+  overflow: hidden;
+  background: var(--fa-color-surface);
+  border: 1px solid var(--fa-color-border);
+  border-radius: var(--fa-radius-control);
+  box-shadow: var(--fa-soft-shadow);
+  transition:
+    transform var(--fa-motion-control),
+    border-color var(--fa-motion-control),
+    box-shadow var(--fa-motion-control);
 
-  &__meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    padding: 0 4px 8px;
-    color: var(--fa-color-text-muted);
+  &:hover {
+    border-color: color-mix(in srgb, var(--theme-color) 40%, var(--fa-color-border));
+    box-shadow: var(--fa-panel-shadow);
+    transform: translateY(-1px);
   }
 
   &__header {
     display: flex;
     gap: 8px;
     align-items: center;
-    padding: 4px;
-    background: var(--fa-color-surface, var(--el-bg-color));
+    padding: 8px 10px;
+    background: transparent;
   }
 
   &__number {
+    display: inline-flex;
     flex-shrink: 0;
-    min-width: 20px;
-    color: var(--fa-color-text-muted);
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--theme-color);
+    background: color-mix(in srgb, var(--theme-color) 12%, transparent);
+    border-radius: 6px;
   }
 
   &__title {
@@ -108,7 +122,8 @@ function toggleExpand(id: string) {
     padding: 0;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: var(--fa-text-body);
+    font-size: 13px;
+    font-weight: 550;
     line-height: var(--fa-leading-normal);
     color: var(--el-text-color-primary);
     text-align: left;
@@ -117,9 +132,10 @@ function toggleExpand(id: string) {
     cursor: pointer;
     background: none;
     border: none;
+    transition: color 0.15s ease;
 
     &:hover {
-      color: var(--fa-color-accent-text);
+      color: var(--theme-color);
     }
   }
 
@@ -128,31 +144,61 @@ function toggleExpand(id: string) {
     flex-shrink: 0;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    color: var(--el-text-color-secondary);
+    width: 28px;
+    height: 28px;
+    color: var(--fa-color-text-muted);
     cursor: pointer;
     background: none;
     border: none;
     border-radius: var(--fa-radius-control);
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
 
     &:hover {
-      background: var(--el-fill-color-light);
+      color: var(--fa-color-text);
+      background: var(--fa-hover-color);
     }
 
     &:focus-visible {
-      outline: 2px solid var(--fa-color-focus);
+      outline: 2px solid var(--theme-color);
       outline-offset: 2px;
     }
   }
 
+  &__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 0 10px 8px 38px;
+    font-size: 11px;
+    color: var(--fa-color-text-muted);
+
+    span {
+      padding: 1px 6px;
+      background: var(--fa-color-canvas);
+      border: 1px solid var(--fa-color-border);
+      border-radius: 4px;
+    }
+  }
+
   &__snippet {
-    padding: 4px;
+    padding: 8px 12px;
     font-size: var(--fa-text-caption);
-    line-height: 1.5;
-    color: var(--el-text-color-secondary);
-    background: var(--el-fill-color-lighter);
-    border-top: 1px solid var(--fa-color-border, var(--el-border-color));
+    line-height: 1.55;
+    color: var(--fa-color-text-muted);
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    background: var(--fa-color-surface-raised);
+    border-top: 1px dashed var(--fa-color-border);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+
+    &:hover {
+      transform: none;
+    }
   }
 }
 

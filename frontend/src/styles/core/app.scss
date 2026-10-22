@@ -155,13 +155,16 @@
   box-shadow: var(--fa-soft-shadow);
   transition:
     border-color var(--fa-motion-control) ease,
-    background-color var(--fa-motion-control) ease;
+    background-color var(--fa-motion-control) ease,
+    box-shadow var(--fa-motion-control) ease,
+    transform var(--fa-motion-control) ease;
 }
 
 .fa-card:hover,
 .fa-card-sm:hover,
 .fa-card-xs:hover {
   border-color: color-mix(in srgb, var(--theme-color) 28%, var(--fa-color-border));
+  box-shadow: var(--fa-panel-shadow);
 }
 
 // 盒子边框
@@ -249,6 +252,13 @@
   border: 1px solid var(--fa-color-border);
   border-radius: var(--fa-radius-panel) !important;
   box-shadow: var(--fa-soft-shadow);
+  transition:
+    border-color var(--fa-motion-control) ease,
+    box-shadow var(--fa-motion-control) ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--theme-color) 20%, var(--fa-color-border));
+  }
 
   .el-card__body {
     display: flex;

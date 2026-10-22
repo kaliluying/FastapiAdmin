@@ -52,8 +52,12 @@ $fa-info: #647387;
   --fa-radius-panel: 14px;
   --fa-radius-overlay: 14px;
   --fa-control-height: 36px;
+  --fa-ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --fa-motion-control: 120ms;
   --fa-motion-page: 200ms;
+  --fa-motion-spring: 220ms var(--fa-ease-spring);
+  --fa-color-header-bg: rgb(244 246 251 / 82%);
+  --fa-color-header-border: color-mix(in srgb, var(--fa-color-border) 70%, transparent);
   --fa-overlay-shadow: 0 18px 40px rgb(15 23 42 / 12%);
   --fa-color-brand-panel: #152548;
   --fa-color-brand-panel-border: #304057;
@@ -71,9 +75,11 @@ $fa-info: #647387;
   --default-border: var(--fa-color-border);
   --default-border-dashed: var(--fa-color-border);
   --fa-card-border: var(--fa-color-border);
-  --fa-soft-shadow: 0 1px 3px rgb(15 23 42 / 6%);
-  --fa-panel-shadow: 0 8px 18px rgb(15 23 42 / 6%);
-  --fa-focus-ring: 0 0 0 2px var(--fa-color-surface), 0 0 0 4px var(--fa-color-focus);
+  --fa-soft-shadow: 0 1px 2px rgb(15 23 42 / 4%), 0 2px 6px rgb(15 23 42 / 3%);
+  --fa-panel-shadow: 0 1px 3px rgb(15 23 42 / 4%), 0 8px 20px -2px rgb(15 23 42 / 6%);
+  --fa-focus-ring:
+    0 0 0 1px var(--fa-color-surface),
+    0 0 0 3.5px color-mix(in srgb, var(--theme-color) 22%, transparent);
   --fa-hover-color: color-mix(in srgb, var(--theme-color) 8%, var(--fa-color-surface));
   --fa-active-color: color-mix(in srgb, var(--theme-color) 14%, var(--fa-color-surface));
   --fa-el-active-color: color-mix(in srgb, var(--theme-color) 12%, var(--fa-color-surface));
@@ -104,7 +110,9 @@ html.dark {
   --fa-color-danger-text: #f0736e;
   --fa-color-info-text: #b2bece;
   --fa-color-on-info: #0f172a;
-  --fa-soft-shadow: 0 1px 3px rgb(0 0 0 / 18%);
-  --fa-panel-shadow: 0 8px 18px rgb(0 0 0 / 20%);
-  --fa-overlay-shadow: 0 12px 28px rgb(0 0 0 / 36%);
+  --fa-color-header-bg: rgb(12 15 21 / 82%);
+  --fa-color-header-border: rgb(255 255 255 / 8%);
+  --fa-soft-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 2px 6px rgb(0 0 0 / 18%);
+  --fa-panel-shadow: 0 2px 4px rgb(0 0 0 / 28%), 0 10px 24px -4px rgb(0 0 0 / 32%);
+  --fa-overlay-shadow: 0 8px 20px -4px rgb(0 0 0 / 42%), 0 24px 48px -8px rgb(0 0 0 / 52%);
 }

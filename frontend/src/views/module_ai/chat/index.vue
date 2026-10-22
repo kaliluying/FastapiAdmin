@@ -48,13 +48,19 @@
             <div v-if="sending || processStage === 'error'" class="request-progress">
               <FaAiProcessStatus :stage="processStage" :elapsed-seconds="elapsedSeconds" />
             </div>
-            <p v-if="logAvailability === 'enabled'" class="builtin-tool-notice">
+            <p
+              v-if="
+                logAvailability === 'enabled' &&
+                (currentLogContextId || (sending && toolQueryIndex))
+              "
+              class="builtin-tool-notice"
+            >
               <FaSvgIcon icon="ri:terminal-box-line" />
               <span v-if="currentLogContextId && !sending">
                 日志追问中 · 沿用条件重新查询（10 分钟内）
               </span>
               <span v-else-if="sending && toolQueryIndex">
-                内置日志工具已调用 {{ toolQueryIndex }} 次，只读分析，不保存到会话。
+                正在检索运行日志（第 {{ toolQueryIndex }} 次）
               </span>
               <ElButton
                 v-if="currentLogContextId"
@@ -64,12 +70,9 @@
               >
                 结束日志追问
               </ElButton>
-              <span v-else>
-                可直接提问查询运行日志，AI 按需调用只读工具。日志分析不保存到会话。
-              </span>
             </p>
             <p v-else-if="logAvailability === 'error'" class="builtin-tool-notice">
-              内置日志工具状态暂时无法确认。
+              日志服务连接异常
               <ElButton link @click="loadRuntimeLogStatus">重试</ElButton>
             </p>
             <FaChatInput
@@ -631,7 +634,16 @@ onDeactivated(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-bottom: 10px;
   margin-bottom: 12px;
+  border-bottom: 1px solid var(--fa-card-border);
+
+  strong {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--el-text-color-primary);
+    letter-spacing: -0.01em;
+  }
 }
 
 .request-progress {
@@ -640,13 +652,17 @@ onDeactivated(() => {
 
 .builtin-tool-notice {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
-  padding: 12px 20px 0;
-  margin: 0;
+  max-width: fit-content;
+  padding: 6px 12px;
+  margin: 10px 20px 0;
   font-size: 12px;
-  line-height: 1.6;
-  color: var(--fa-color-text-muted);
+  line-height: 1.5;
+  color: var(--fa-color-text-secondary, #606266);
+  background: color-mix(in srgb, var(--theme-color) 6%, var(--fa-color-canvas));
+  border: 1px solid color-mix(in srgb, var(--theme-color) 16%, transparent);
+  border-radius: 8px;
 
   span {
     flex: 1;
@@ -655,7 +671,9 @@ onDeactivated(() => {
 
   :deep(.el-button) {
     flex-shrink: 0;
-    font-size: inherit;
+    padding: 0 4px;
+    font-size: 12px;
+    font-weight: 500;
   }
 }
 
@@ -665,7 +683,7 @@ onDeactivated(() => {
   background: var(--fa-color-surface);
   border: 1px solid var(--fa-card-border);
   border-radius: var(--fa-radius-panel);
-  box-shadow: none;
+  box-shadow: var(--fa-panel-shadow, 0 8px 24px -4px rgb(15 23 42 / 6%));
 
   :deep(.chat-split-panel) {
     min-width: 0;
@@ -730,9 +748,10 @@ onDeactivated(() => {
   }
 
   :deep(.evidence-panel) {
-    padding: 12px;
+    padding: 14px;
     overflow-y: auto;
-    background: var(--fa-color-canvas);
+    background: color-mix(in srgb, var(--fa-color-canvas) 85%, var(--fa-color-surface));
+    border-left: 1px solid var(--fa-card-border);
   }
 
   :deep(.el-splitter-bar__dragger) {

@@ -93,9 +93,11 @@ const handleKnowledgeChange = (value: number[]) => {
   gap: 12px;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: 10px 16px;
   color: var(--fa-color-text);
-  background: var(--fa-color-surface);
+  background: color-mix(in srgb, var(--fa-color-surface) 92%, transparent);
+  border-bottom: 1px solid var(--fa-card-border);
+  backdrop-filter: blur(14px) saturate(180%);
 }
 
 .navbar-left,
@@ -119,8 +121,9 @@ const handleKnowledgeChange = (value: number[]) => {
 .workspace-title {
   flex-shrink: 0;
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 650;
+  letter-spacing: -0.01em;
   white-space: nowrap;
 }
 
@@ -128,42 +131,65 @@ const handleKnowledgeChange = (value: number[]) => {
   display: grid;
   flex-shrink: 0;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   padding: 0;
   color: inherit;
   cursor: pointer;
   background: transparent;
   border: 1px solid var(--fa-color-border);
   border-radius: var(--fa-radius-control);
-}
+  transition:
+    background-color var(--fa-motion-control),
+    border-color var(--fa-motion-control),
+    color var(--fa-motion-control);
 
-.collapse-btn:hover {
-  background: var(--fa-hover-color);
-}
+  &:hover {
+    color: var(--theme-color);
+    background: var(--fa-hover-color);
+    border-color: color-mix(in srgb, var(--theme-color) 35%, var(--fa-color-border));
+  }
 
-.collapse-btn:focus-visible {
-  outline: 2px solid var(--theme-color);
-  outline-offset: 2px;
+  &:focus-visible {
+    outline: 2px solid var(--theme-color);
+    outline-offset: 2px;
+  }
 }
 
 .knowledge-select {
   width: 220px;
+
+  :deep(.el-select__wrapper) {
+    border-radius: var(--fa-radius-control);
+  }
 }
 
 .navbar-right :deep(.el-button) {
   margin: 0;
+  font-size: 13px;
   color: var(--fa-color-text);
+  border-radius: var(--fa-radius-control);
+  transition:
+    background-color var(--fa-motion-control),
+    color var(--fa-motion-control);
+
+  &:hover {
+    color: var(--theme-color);
+    background: var(--fa-hover-color);
+  }
 }
 
-.navbar-right :deep(.el-button:hover) {
-  background: var(--fa-hover-color);
+@media (prefers-reduced-motion: reduce) {
+  .collapse-btn,
+  .navbar-right :deep(.el-button) {
+    transition: none;
+  }
 }
 
 @media (width <= 1024px) {
   .chat-navbar {
     gap: 8px;
-    padding: 10px 12px;
+    padding: 8px 12px;
   }
 
   .navbar-right {

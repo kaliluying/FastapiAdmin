@@ -1098,22 +1098,30 @@ html:not(.dark) .worktab-tags-shell--google {
 }
 
 .worktab-tab.worktab-tab--card {
-  background: var(--default-box-color) !important;
-  border: 1px solid var(--fa-card-border) !important;
+  background: var(--fa-color-surface) !important;
+  border: 1px solid var(--fa-color-border) !important;
   border-radius: 8px !important;
   box-shadow: var(--fa-soft-shadow) !important;
+  transition:
+    background-color var(--fa-motion-control) ease,
+    border-color var(--fa-motion-control) ease,
+    color var(--fa-motion-control) ease,
+    box-shadow var(--fa-motion-control) ease,
+    transform var(--fa-motion-control) ease;
 }
 
 .worktab-tab.worktab-tab--card:hover {
-  border-color: color-mix(in srgb, var(--theme-color) 24%, var(--fa-card-border)) !important;
+  border-color: color-mix(in srgb, var(--theme-color) 32%, var(--fa-color-border)) !important;
+  box-shadow: var(--fa-panel-shadow) !important;
   transform: translateY(-1px);
 }
 
 .worktab-tab.worktab-tab--card.activ-tab,
 html:not(.dark) .worktab-tab.worktab-tab--card.activ-tab {
-  background: color-mix(in srgb, var(--theme-color) 9%, var(--default-box-color)) !important;
-  border-color: color-mix(in srgb, var(--theme-color) 28%, transparent) !important;
-  box-shadow: var(--fa-soft-shadow) !important;
+  color: var(--theme-color) !important;
+  background: color-mix(in srgb, var(--theme-color) 10%, var(--fa-color-surface)) !important;
+  border-color: color-mix(in srgb, var(--theme-color) 36%, transparent) !important;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 6%) !important;
 }
 
 .worktab-tags-shell--google .google-tab.activ-tab {

@@ -52,7 +52,7 @@ async function run() {
     const skip = page.getByRole("button", { name: "跳过", exact: true });
     if (await skip.isVisible()) await skip.click();
     assert.equal(await page.getByRole("checkbox", { name: "运行日志分析" }).count(), 0);
-    assert.ok(await page.locator(".builtin-tool-notice").isVisible());
+    assert.equal(await page.locator(".builtin-tool-notice").count(), 0);
     const input = page.locator(".message-input textarea");
     await input.fill("确认中文输入不会误发");
     const imeEventOffset = sentMessages.length;
