@@ -1,4 +1,4 @@
-"""Offline, integrity-checked database and knowledge-store backup CLI."""
+"""提供离线数据库及知识库存储备份命令，并校验备份完整性。"""
 
 import argparse
 import hashlib
@@ -18,7 +18,7 @@ DATABASE_FILES = {"sqlite": "database.db", "mysql": "database.sql"}
 
 
 class BackupError(ValueError):
-    """A safe operation message which contains no configuration or provider output."""
+    """表示不包含配置或外部服务原始输出的安全操作错误。"""
 
 
 def _safe_path(path: Path) -> Path:
@@ -74,7 +74,7 @@ def _run_dump(database: dict, target: Path) -> None:
     binary = shutil.which("mysqldump")
     if not binary:
         raise BackupError("缺少 mysqldump，请先安装与数据库服务版本兼容的客户端")
-    # Credentials exist only in a private temporary file, never the manifest or argv.
+    # 凭据仅写入私有临时文件，不进入清单或命令行参数。
     with tempfile.TemporaryDirectory(prefix="fastcore-db-auth-") as auth_dir:
         config = Path(auth_dir) / "client.cnf"
 
@@ -92,7 +92,7 @@ def _run_dump(database: dict, target: Path) -> None:
 
 
 def create_backup(output: Path, database: dict, stores: dict[str, Path], *, stopped: bool) -> None:
-    """Publish a private ZIP only after all stopped-service stores were captured."""
+    """仅在停服后的各项存储全部备份完成后发布私有 ZIP 文件。"""
     if not stopped:
         raise BackupError("必须停止所有后端/索引写入，并显式确认 stopped")
     if database.get("type") not in DATABASE_FILES or set(stores) not in ({"upload"}, STORE_NAMES):
@@ -134,7 +134,7 @@ def create_backup(output: Path, database: dict, stores: dict[str, Path], *, stop
                 bundle.write(payload / name, name)
         os.chmod(archive, 0o600)
         verify_backup(archive)
-        # Hard-link publication is atomic and fails if another writer reserved the same filename.
+        # 通过硬链接原子发布；同名目标被其他写入者占用时失败，避免覆盖。
         with archive.open("rb") as stream:
             os.fsync(stream.fileno())
         os.link(archive, output)
@@ -146,7 +146,7 @@ def _member_name(name: str) -> bool:
 
 
 def verify_backup(archive: Path) -> dict:
-    """Reject unsafe entries and changed/missing/extra payload before restoration."""
+    """在恢复前拒绝不安全条目，以及内容变更、缺失或多余的备份。"""
     _safe_path(archive)
     with zipfile.ZipFile(archive) as bundle:
         entries = bundle.infolist()
@@ -189,7 +189,7 @@ def verify_backup(archive: Path) -> dict:
 
 
 def restore_backup(archive: Path, target: Path) -> dict:
-    """Restore to a new offline directory, never overwrite live data or connect to a DB."""
+    """恢复到新的离线目录，避免覆盖在线数据或连接数据库。"""
     manifest = verify_backup(archive)
     target = _safe_path(target)
     if target.exists() or not target.parent.is_dir():
@@ -273,7 +273,7 @@ def main() -> None:
         else:
             restore_backup(args.archive, args.target)
     except (OSError, ValueError, sqlite3.Error, zipfile.BadZipFile, KeyError, TypeError) as exc:
-        # Do not print provider errors or configuration objects which may contain credentials.
+        # 不输出可能包含凭据的外部服务原始错误或配置对象。
         parser.exit(1, f"操作失败：{exc if isinstance(exc, BackupError) else type(exc).__name__}\n")
     print("操作完成；未连接恢复目标数据库。" if args.command == "restore" else "操作完成。")
 

@@ -42,7 +42,7 @@ export interface StatusItem {
   text: string;
   /** 可选：size（默认 "default"） */
   size?: "large" | "default" | "small";
-  /** 可选：theme effect（默认 "light"） */
+  /** 可选：主题效果（effect）（默认 "light"） */
   effect?: "light" | "dark" | "plain";
 }
 

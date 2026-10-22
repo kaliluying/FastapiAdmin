@@ -20,37 +20,29 @@ loaded_models = InitializeData.get_prepare_init_models()
 _get_schema_indexes()
 print(f"📊 已加载 {len(loaded_models)} 个核心或已启用插件模型")
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+# Alembic 配置对象用于读取当前 .ini 文件中的配置值。
+
 alembic_config = context.config
 
-# add your model's MetaData object here
-# for 'autogenerate' support
+# 注册模型的 MetaData，供 autogenerate 生成迁移。
+
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = MappedBase.metadata
 
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
+# env.py 所需的其他配置也可通过 config.get_main_option 读取。
+
 # my_important_option = config.get_main_option("my_important_option")
-# ... etc.
+
 alembic_config.set_main_option("sqlalchemy.url", get_settings().ASYNC_DB_URI.replace("%", "%%"))
 
 
 def run_migrations_offline() -> None:
-    """Run migrations in 'offline' mode.
+    """以离线模式生成迁移 SQL。
 
-    This configures the context with just a URL
-    and not an Engine, though an Engine is acceptable
-    here as well.  By skipping the Engine creation
-    we don't even need a DBAPI to be available.
-
-    Calls to context.execute() here emit the given string to the
-    script output.
-
-    返回:
-    - None
+    仅用 URL 配置迁移上下文，不创建数据库引擎，因此不要求 DBAPI 可用。
+    此处的 ``context.execute()`` 会将传入的 SQL 写入脚本输出。
     """
     url = alembic_config.get_main_option("sqlalchemy.url")
     # 确保URL不为None
@@ -70,13 +62,9 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
+    """以在线模式执行迁移。
 
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    返回:
-    - None
+    创建数据库引擎，并将连接绑定到迁移上下文。
     """
     url = alembic_config.get_main_option("sqlalchemy.url")
     # 确保URL不为None

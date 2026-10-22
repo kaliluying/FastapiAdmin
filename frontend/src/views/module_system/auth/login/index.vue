@@ -116,7 +116,7 @@ const captchaImage = ref("");
 const captchaLoading = ref(false);
 const captchaError = ref("");
 
-/** Load a fresh login challenge and optionally reveal adaptive CAPTCHA. */
+/** 加载新的登录验证挑战，并按需显示自适应 CAPTCHA。 */
 async function loadCaptcha(forceVisible = false) {
   captchaLoading.value = true;
   captchaError.value = "";

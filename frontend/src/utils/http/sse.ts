@@ -1,4 +1,4 @@
-/** Read SSE data frames across arbitrary UTF-8 and network chunk boundaries. */
+/** 跨任意 UTF-8 字节和网络分块边界读取 SSE 数据帧。 */
 export async function readSse(
   stream: ReadableStream<Uint8Array>,
   onData: (data: string) => void

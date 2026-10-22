@@ -11,7 +11,7 @@ from app.core.exceptions import CustomException
 
 
 class CustomOAuth2PasswordBearer(OAuth2PasswordBearer):
-    """自定义OAuth2认证类,继承自OAuth2PasswordBearer"""
+    """自定义OAuth2认证类,继承自OAuth2PasswordBearer。"""
 
     def __init__(
         self,
@@ -30,17 +30,16 @@ class CustomOAuth2PasswordBearer(OAuth2PasswordBearer):
         )
 
     async def __call__(self, request: Request) -> str | None:
-        """
-        重写认证方法,校验token
+        """重写认证方法,校验token。
 
-        参数:
-        - request (Request): FastAPI请求对象。
+        Args:
+            request (Request): FastAPI请求对象。
 
-        返回:
-        - str | None: 校验通过的token,如果校验失败则返回None。
+        Returns:
+            str | None: 校验通过的token,如果校验失败则返回None。
 
-        异常:
-        - CustomException: 认证失败时抛出,状态码为401。
+        Raises:
+            CustomException: 认证失败时抛出,状态码为401。
         """
         authorization = request.headers.get("Authorization")
         scheme, token = get_authorization_scheme_param(authorization)
@@ -53,19 +52,18 @@ class CustomOAuth2PasswordBearer(OAuth2PasswordBearer):
 
 
 class CustomOAuth2PasswordRequestForm(OAuth2PasswordRequestForm):
-    """
-    自定义登录表单,扩展验证码等字段
+    """自定义登录表单,扩展验证码等字段。
 
-    参数:
-    - grant_type (str | None): 授权类型,默认值为None,正则表达式为'password'。
-    - scope (str): 作用域,默认值为空字符串。
-    - client_id (str | None): 客户端ID,默认值为None。
-    - client_secret (str | None): 客户端密钥,默认值为None。
-    - username (str): 用户名。
-    - password (str): 密码。
-    - captcha_key (str | None): 验证码键,默认值为空字符串。
-    - captcha (str | None): 验证码值,默认值为空字符串。
-    - login_type (str | None): 登录类型,默认值为"PC端",描述为"PC端 | 移动端"。
+    Args:
+        grant_type (str | None): 授权类型,默认值为None,正则表达式为'password'。
+        scope (str): 作用域,默认值为空字符串。
+        client_id (str | None): 客户端ID,默认值为None。
+        client_secret (str | None): 客户端密钥,默认值为None。
+        username (str): 用户名。
+        password (str): 密码。
+        captcha_key (str | None): 验证码键,默认值为空字符串。
+        captcha (str | None): 验证码值,默认值为空字符串。
+        login_type (str | None): 登录类型,默认值为"PC端",描述为"PC端 | 移动端"。
     """
 
     def __init__(
@@ -98,14 +96,13 @@ OAuth2Schema = CustomOAuth2PasswordBearer(token_url="system/auth/login", descrip
 
 
 def create_access_token(payload: JWTPayloadSchema) -> str:
-    """
-    生成JWT访问令牌
+    """生成JWT访问令牌。
 
-    参数:
-    - payload (JWTPayloadSchema): JWT有效载荷,包含用户信息等。
+    Args:
+        payload (JWTPayloadSchema): JWT有效载荷,包含用户信息等。
 
-    返回:
-    - str: 生成的JWT访问令牌。
+    Returns:
+        str: 生成的JWT访问令牌。
     """
     payload_dict = payload.model_dump(exclude_none=False)
     # PyJWT 2.x 不支持 datetime 对象，需转为 Unix 时间戳
@@ -119,17 +116,16 @@ def create_access_token(payload: JWTPayloadSchema) -> str:
 
 
 def decode_access_token(token: str) -> JWTPayloadSchema:
-    """
-    解析JWT访问令牌
+    """解析JWT访问令牌。
 
-    参数:
-    - token (str): JWT访问令牌字符串。
+    Args:
+        token (str): JWT访问令牌字符串。
 
-    返回:
-    - JWTPayloadSchema: 解析后的JWT有效载荷,包含用户信息等。
+    Returns:
+        JWTPayloadSchema: 解析后的JWT有效载荷,包含用户信息等。
 
-    异常:
-    - CustomException: 解析失败时抛出,状态码为401。
+    Raises:
+        CustomException: 解析失败时抛出,状态码为401。
     """
     if not token:
         raise CustomException(msg="认证不存在,请重新登录", code=10401, status_code=401)

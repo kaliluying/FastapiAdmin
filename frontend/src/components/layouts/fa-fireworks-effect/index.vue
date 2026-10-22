@@ -285,7 +285,7 @@ class FireworkSystem {
 
   /**
    * 预加载所有需要的图片资源
-   * 在组件初始化时调用，确保图片ready
+   * 在组件初始化时调用，确保图片就绪
    */
   async preloadAllImages(): Promise<void> {
     const year = new Date().getFullYear();

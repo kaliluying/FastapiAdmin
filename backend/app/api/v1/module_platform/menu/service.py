@@ -24,21 +24,21 @@ _RESERVED_ROOT_ROUTE_SEGMENTS = frozenset({"auth", "changelog", "home", "login",
 
 
 class MenuService:
-    """菜单管理服务（查询操作登录用户可见，写操作仅超级管理员可操作）"""
+    """菜单管理服务（查询操作登录用户可见，写操作仅超级管理员可操作）。"""
 
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth
 
     @staticmethod
     def _is_child_type_allowed(parent_type: int | None, child_type: int) -> bool:
-        """Return whether a menu type may be placed under the given parent type.
+        """判断菜单类型是否允许放在指定父级下。
 
         Args:
-            parent_type: Parent menu type, or ``None`` for a root node.
-            child_type: Candidate child menu type.
+            parent_type: 父菜单类型；根节点使用 ``None``。
+            child_type: 待放置的子菜单类型。
 
         Returns:
-            ``True`` when the tree relation is valid.
+            层级关系有效时返回 ``True``。
         """
         if parent_type is None:
             return child_type in (1, 2, 4)
@@ -51,15 +51,14 @@ class MenuService:
         data: MenuCreateSchema,
         existing_id: int | None = None,
     ) -> None:
-        """Validate tree integrity and route identities before a menu write.
+        """在菜单写入前校验树结构完整性和路由标识。
 
         Args:
-            data: Fully materialized menu definition to persist.
-            existing_id: Current menu ID during an update, if any.
+            data: 待保存的完整菜单定义。
+            existing_id: 更新时的当前菜单 ID；新增时不提供。
 
         Raises:
-            CustomException: If the update creates a cycle, invalid hierarchy,
-                duplicate routing identity, or invalid child relation.
+            CustomException: 更新会产生环、非法层级、重复路由标识或不合法的子级关系。
         """
         menus = await MenuCRUD(self.auth).get_list()
         menu_by_id = {menu.id: menu for menu in menus}
@@ -80,8 +79,8 @@ class MenuService:
             if root_segment in _RESERVED_ROOT_ROUTE_SEGMENTS:
                 raise CustomException(msg="路由路径与系统保留页面冲突")
 
-        # Walk the candidate parent chain. This catches both an attempted move
-        # under a descendant and already-corrupt cycles encountered on the path.
+        # 沿候选父链检查，既拒绝移入自身后代，也检测路径中已有的环。
+
         visited: set[int] = set()
         parent_id = data.parent_id
         while parent_id is not None:
@@ -111,7 +110,7 @@ class MenuService:
             if duplicate_path:
                 raise CustomException(msg="同级路由路径已存在")
 
-        # Type changes must remain compatible with every existing direct child.
+        # 修改菜单类型时，必须继续兼容每个已有的直接子节点。
         if existing_id is not None:
             invalid_child = next(
                 (menu for menu in menus if menu.parent_id == existing_id and not self._is_child_type_allowed(data.type, menu.type)),

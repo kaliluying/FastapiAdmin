@@ -347,10 +347,9 @@ const { width } = useWindowSize();
 const isCompact = computed(() => width.value <= 640);
 
 /**
- * Reload the current administrator's permissions and registered menu routes.
+ * 重新加载当前管理员的权限和已注册的菜单路由。
  *
- * @returns A promise resolved after the sidebar and dynamic router use the
- * latest server-side menu definition.
+ * @returns 在侧栏与动态路由采用服务端最新菜单定义后完成的 Promise。
  */
 async function refreshAuthorizationUi(): Promise<void> {
   await userStore.getUserInfo();
@@ -720,11 +719,11 @@ function filterMenuTypes(nodes: MenuTable[]): MenuTable[] {
 }
 
 /**
- * Collect a menu and every descendant that cannot become its parent.
+ * 收集菜单自身及其全部后代，防止将它们选作父级。
  *
- * @param id Menu being edited.
- * @param nodes Complete menu tree used by the parent selector.
- * @returns IDs that must be disabled in the parent selector.
+ * @param id 正在编辑的菜单。
+ * @param nodes 父级选择器使用的完整菜单树。
+ * @returns 父级选择器中必须禁用的 ID 集合。
  */
 function collectInvalidParentIds(id: number | undefined, nodes: MenuTable[]): Set<number> {
   const invalidIds = new Set<number>();
@@ -751,9 +750,9 @@ function collectInvalidParentIds(id: number | undefined, nodes: MenuTable[]): Se
 }
 
 /**
- * Rebuild parent selector options and disable the edited menu's descendants.
+ * 重建父级选择器选项，并禁用正在编辑的菜单的后代。
  *
- * @returns Nothing; updates the selector options used by the active form.
+ * @returns 无返回值；更新当前表单使用的选择器选项。
  */
 function refreshMenuOptions(): void {
   const invalidParentIds = collectInvalidParentIds(formData.value.id, fullMenuTree.value);
@@ -1103,10 +1102,9 @@ async function handleOpenDialog(
 }
 
 /**
- * Clear fields that are not valid for the newly selected menu type.
+ * 清理对新选中菜单类型无效的字段。
  *
- * @returns Nothing; mutates the active form model so hidden stale values are
- * not submitted to the strict backend validator.
+ * @returns 无返回值；修改当前表单模型，避免将隐藏的旧值提交给严格校验的后端。
  */
 function handleMenuTypeChange() {
   const type = formData.value.type;

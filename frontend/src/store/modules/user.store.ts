@@ -1,4 +1,4 @@
-/** User store. */
+/** 用户状态管理。 */
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import { LanguageEnum } from "@/enums/appEnum";
@@ -23,25 +23,23 @@ import {
   USER_STORE_PERSIST_KEY,
 } from "./userPersistence";
 
-/** Lazily import router guard helpers to avoid a store/guard circular dependency. */
+/** 延迟导入路由守卫辅助函数，避免状态模块与守卫之间的循环依赖。 */
 let _routerUtilsPromise: Promise<typeof import("@/router/beforeEach")> | null = null;
 const getRouterUtils = () => {
   if (!_routerUtilsPromise) _routerUtilsPromise = import("@/router/beforeEach");
   return _routerUtilsPromise;
 };
 
-/** Options for {@link useUserStore}'s `logout`. */
+/** {@link useUserStore} 的 `logout` 选项。 */
 export interface LogoutOptions {
   /**
-   * When false, only clears local auth state and leaves navigation to the caller.
+   * 为 false 时仅清理本地认证状态，由调用方负责导航。
    * @default true
    */
   navigate?: boolean;
 }
 
-/**
- * User state: auth tokens, profile, permissions, and dynamic routes.
- */
+/** 用户状态：认证令牌、用户信息、权限和动态路由。 */
 export const useUserStore = defineStore(
   "userStore",
   () => {

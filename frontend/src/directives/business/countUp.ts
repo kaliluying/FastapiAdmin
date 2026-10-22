@@ -34,11 +34,9 @@ export type CountUpDirective = Directive<HTMLElement, number | CountUpOptions>;
 /**
  * 解析指令绑定值并补齐默认动画参数。
  *
- * Args:
- *   binding: Vue 指令绑定对象，值可以是目标数字或配置对象。
+ * @param binding Vue 指令绑定对象，值可以是目标数字或配置对象。
  *
- * Returns:
- *   标准化后的目标数字和动画时长。
+ * @returns 标准化后的目标数字和动画时长。
  */
 function resolve(binding: DirectiveBinding): { target: number; duration: number } {
   const v = binding.value;
@@ -75,14 +73,11 @@ export const vCountUp: CountUpDirective = {
 /**
  * 在 Vue 应用中注册数字滚动指令。
  *
- * Args:
- *   app: 待注册全局指令的 Vue 应用实例。
+ * @param app 待注册全局指令的 Vue 应用实例。
  *
- * Returns:
- *   无返回值。
+ * @returns 无返回值。
  *
- * Side Effects:
- *   以 `count-up` 名称修改应用的全局指令注册表。
+ * 副作用：以 `count-up` 名称修改应用的全局指令注册表。
  */
 export function setupCountUpDirective(app: App) {
   app.directive("count-up", vCountUp);

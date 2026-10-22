@@ -1,5 +1,4 @@
-"""
-第三方 OAuth2 登录（微信开放平台扫码、QQ、GitHub、Gitee）。
+"""第三方 OAuth2 登录（微信开放平台扫码、QQ、GitHub、Gitee）。
 
 各平台需在开放平台登记「授权回调域 / redirect_uri」为：
   {API}/system/auth/oauth/{provider}/callback
@@ -37,7 +36,7 @@ OAUTH_TICKET_TTL_SECONDS = 60
 
 
 def _extract_url_origin(url: str) -> str:
-    """提取 URL 的 origin（scheme://host[:port]）"""
+    """提取 URL 的 origin（scheme://host[:port]）。"""
     parsed = urlparse(url)
     if not parsed.scheme or not parsed.netloc:
         return ""
@@ -45,7 +44,7 @@ def _extract_url_origin(url: str) -> str:
 
 
 def _validate_redirect_uri(redirect_uri: str) -> None:
-    """校验 redirect_uri 是否在白名单内"""
+    """校验 redirect_uri 是否在白名单内。"""
     uri_origin = _extract_url_origin(redirect_uri)
     if not uri_origin:
         raise CustomException(msg="非法的回调地址")
@@ -64,13 +63,13 @@ def _validate_redirect_uri(redirect_uri: str) -> None:
 
 
 def safe_frontend_redirect(redirect_uri: str | None) -> str:
-    """Return a validated frontend redirect or the configured fallback.
+    """校验前端重定向地址，无效时使用配置中的回退地址。
 
     Args:
-        redirect_uri: User-supplied frontend URL.
+        redirect_uri: 用户提供的前端 URL。
 
     Returns:
-        A URL whose origin is present in the configured allowlist.
+        来源匹配已配置白名单的 URL。
     """
     fallback = settings.OAUTH_FRONTEND_FALLBACK
     if not redirect_uri:
@@ -355,8 +354,8 @@ async def complete_oauth_login(
     state: str,
 ) -> tuple[JWTOutSchema, str]:
     rc = RedisCURD(redis)
-    # Consume the CSRF state before exchanging the provider code. A callback
-    # retry must start a fresh OAuth flow instead of reusing the same state.
+    # 兑换供应商授权码前先消费 CSRF state；回调重试必须重新发起 OAuth，
+    # 不能复用同一 state。
     raw = await rc.getdel(f"{STATE_PREFIX}{state}")
     if not raw:
         raise CustomException(msg="登录状态已失效，请重试")
@@ -395,7 +394,7 @@ async def complete_oauth_login(
         raise CustomException(msg="用户已被停用")
 
     await UserCRUD(AuthSchema(db=db, user=None, check_data_scope=False)).update_last_login(id=user.id)
-    # The callback is GET, so persist the login timestamp before its read-only dependency rolls back.
+    # 回调使用 GET，需在只读依赖回滚前单独持久化登录时间。
     await db.commit()
 
     login_type = f"oauth_{provider}"
@@ -422,7 +421,7 @@ async def save_oauth_state(
 
 
 async def save_oauth_ticket(redis: Redis, token: JWTOutSchema) -> str:
-    """Store OAuth-issued JWTs behind a short-lived one-time ticket."""
+    """将 OAuth 签发的 JWT 保存到短期一次性票据后，避免直接暴露令牌。"""
     ticket = secrets.token_urlsafe(32)
     ok = await RedisCURD(redis).set(
         f"{OAUTH_TICKET_PREFIX}{ticket}",
@@ -435,7 +434,7 @@ async def save_oauth_ticket(redis: Redis, token: JWTOutSchema) -> str:
 
 
 async def exchange_oauth_ticket(redis: Redis, ticket: str) -> JWTOutSchema:
-    """Consume an OAuth ticket and return its JWT payload exactly once."""
+    """一次性消费 OAuth 票据并返回对应的 JWT 数据。"""
     if not ticket or len(ticket) > 256:
         raise CustomException(msg="OAuth 登录凭证已失效", status_code=401)
     raw = await RedisCURD(redis).getdel(f"{OAUTH_TICKET_PREFIX}{ticket}")
@@ -450,7 +449,7 @@ async def exchange_oauth_ticket(redis: Redis, ticket: str) -> JWTOutSchema:
 
 
 def oauth_service_frontend_redirect_from_ticket(frontend_base: str, ticket: str) -> str:
-    """Build a callback URL containing only the opaque OAuth ticket."""
+    """构造仅携带不透明 OAuth 票据的回调 URL。"""
     safe_frontend = safe_frontend_redirect(frontend_base)
     sep = "&" if "?" in safe_frontend else "?"
     return f"{safe_frontend}{sep}oauth_ticket={quote(ticket, safe='')}"

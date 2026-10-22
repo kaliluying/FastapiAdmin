@@ -17,7 +17,7 @@ _worker: asyncio.Task | None = None
 
 
 async def recover_document_indexes() -> None:
-    """Run the Knowledge module's recovery use case from the lifecycle worker."""
+    """由生命周期工作任务执行知识库模块的恢复流程。"""
     await KnowledgeService.recover_pending_documents()
 
 
@@ -46,7 +46,7 @@ async def _run_upload_recovery() -> None:
 
 
 async def initialize_knowledge_recovery() -> None:
-    """Start manifest-managed reconciliation after schema initialization."""
+    """数据库结构初始化后，启动由模块清单管理的状态核对任务。"""
     global _worker
     if _worker is None or _worker.done():
         async with async_db_session() as db:

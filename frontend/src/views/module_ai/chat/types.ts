@@ -1,4 +1,4 @@
-// 聊天消息类型
+/** 聊天消息类型 */
 export interface ChatMessage {
   id: string;
   type: "user" | "assistant";
@@ -56,7 +56,7 @@ export interface ChatCitation {
   chunk_index?: number;
 }
 
-// 上传文件类型
+/** 上传文件类型 */
 export interface UploadedFile {
   id: string;
   name: string;
@@ -70,7 +70,7 @@ export interface UploadedFile {
   truncated?: boolean;
 }
 
-// 会话消息类型（来自后端）
+/** 会话消息类型（来自后端） */
 export interface SessionMessage {
   id: string;
   role: "user" | "assistant";
@@ -78,7 +78,7 @@ export interface SessionMessage {
   created_time?: string;
 }
 
-// 会话详情类型
+/** 会话详情类型 */
 export interface SessionDetail {
   id: string;
   title: string;
@@ -88,7 +88,7 @@ export interface SessionDetail {
   messages: SessionMessage[];
 }
 
-// 工作区面板类型
+/** 工作区面板类型 */
 export type ChatWorkspacePanel = "sessions" | "conversation" | "evidence";
 
 export type ChatProcessStage =

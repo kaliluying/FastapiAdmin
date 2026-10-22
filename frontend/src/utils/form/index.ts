@@ -1,7 +1,7 @@
 /** 表单与搜索栏共用的响应式布局计算。 */
 
 // -----------------------------
-// Responsive layout
+// 响应式布局
 // -----------------------------
 
 export type ResponsiveBreakpoint = "xs" | "sm" | "md" | "lg" | "xl";

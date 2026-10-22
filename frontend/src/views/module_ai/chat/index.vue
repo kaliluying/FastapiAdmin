@@ -188,7 +188,7 @@ const logAvailability = ref<"hidden" | "enabled" | "error">("hidden");
 const toolQueryIndex = ref(0);
 let runtimeLogStatusRequest = 0;
 
-// Refs
+// 响应式引用
 const chatMessagesRef = ref<{ scrollToBottom: () => void }>();
 const sidebarRef = ref<{ loadSessions: () => void }>();
 const mobileSidebarRef = ref<{ loadSessions: () => void }>();

@@ -458,7 +458,7 @@ class ChatService:
         return session_id or self._generate_ephemeral_session_id()
 
     def _trigger_memory_extraction(self) -> None:
-        """Wake workers after the transcript and extraction job have committed."""
+        """对话记录和提取任务提交后，唤醒工作进程。"""
         wake_memory_worker()
 
     def _should_persist_session(self) -> bool:

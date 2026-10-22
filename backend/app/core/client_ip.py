@@ -1,4 +1,4 @@
-"""Resolve client addresses without trusting arbitrary forwarding headers."""
+"""解析客户端地址，仅信任已配置代理提供的转发头。"""
 
 from __future__ import annotations
 
@@ -10,13 +10,13 @@ from app.config.setting import settings
 
 
 def _is_trusted_proxy(address: str | None) -> bool:
-    """Return whether an address belongs to a configured proxy network.
+    """判断地址是否属于已配置的可信代理网段。
 
     Args:
-        address: IPv4 or IPv6 address of the direct peer or a forwarding hop.
+        address: 直接连接方或转发节点的 IPv4、IPv6 地址。
 
     Returns:
-        ``True`` only when the address matches ``TRUSTED_PROXY_IPS``.
+        仅当地址匹配 ``TRUSTED_PROXY_IPS`` 时返回 ``True``。
     """
     if not address:
         return False
@@ -34,13 +34,13 @@ def _is_trusted_proxy(address: str | None) -> bool:
 
 
 def get_client_ip(request: Request) -> str:
-    """Resolve the client IP using forwarding headers only via trusted proxies.
+    """仅在请求经过可信代理时使用转发头解析客户端 IP。
 
     Args:
-        request: Incoming HTTP request.
+        request: 当前 HTTP 请求。
 
     Returns:
-        The best-effort client IP, falling back to the direct peer address.
+        尽可能解析出的客户端 IP；无法解析时使用直接连接方的地址。
     """
     direct_peer = request.client.host if request.client else "127.0.0.1"
     if not _is_trusted_proxy(direct_peer):
@@ -48,9 +48,9 @@ def get_client_ip(request: Request) -> str:
 
     forwarded = request.headers.get("X-Forwarded-For", "")
     chain = [item.strip() for item in forwarded.split(",") if item.strip()]
-    # Walk from the direct peer toward the client. The first untrusted hop is
-    # the client address; this also avoids accepting a user-supplied prefix
-    # before the proxy's appended address.
+    # 从直接连接方向客户端回溯，将遇到的首个不可信节点视为客户端地址，
+    # 避免接受用户在代理追加地址之前伪造的转发头前缀。
+
     for candidate in reversed([*chain, direct_peer]):
         if not _is_trusted_proxy(candidate):
             try:

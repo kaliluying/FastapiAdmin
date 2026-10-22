@@ -1,4 +1,4 @@
-"""Persist memory extraction jobs with their chat turns."""
+"""将记忆提取任务与对应的聊天轮次一同持久化。"""
 
 import sqlalchemy as sa
 from alembic import op

@@ -1,4 +1,4 @@
-"""Knowledge-base retrieval strategies and their storage adapters."""
+"""知识库检索策略及其存储适配器。"""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ class KnowledgeSearchResult:
 
 
 class KnowledgeRetriever:
-    """Search authorized knowledge-base IDs without exposing store internals."""
+    """按已授权的知识库 ID 检索，不暴露存储实现细节。"""
 
     def __init__(
         self,

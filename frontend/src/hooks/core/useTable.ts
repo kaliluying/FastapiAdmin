@@ -75,7 +75,7 @@ export interface UseTableConfig<
   TParams = InferApiParams<TApiFn>,
   TResponse = InferApiResponse<TApiFn>,
 > {
-  // 核心配置
+  /** 核心配置 */
   core: {
     /** API 请求函数 */
     apiFn: TApiFn;
@@ -96,7 +96,7 @@ export interface UseTableConfig<
     };
   };
 
-  // 数据处理
+  /** 数据处理 */
   transform?: {
     /** 数据转换函数 */
     dataTransformer?: (data: TRecord[]) => TRecord[];
@@ -104,13 +104,13 @@ export interface UseTableConfig<
     responseAdapter?: (response: TResponse) => ApiResponse<TRecord>;
   };
 
-  // 性能优化
+  /** 性能优化 */
   performance?: {
     /** 防抖延迟时间（毫秒） */
     debounceTime?: number;
   };
 
-  // 生命周期钩子
+  /** 生命周期钩子 */
   hooks?: {
     /** 数据加载成功回调（仅网络请求成功时触发） */
     onSuccess?: (data: TRecord[], response: ApiResponse<TRecord>) => void;
@@ -122,7 +122,7 @@ export interface UseTableConfig<
     resetFormCallback?: () => void;
   };
 
-  // 调试配置
+  /** 调试配置 */
   debug?: {
     /** 是否启用日志输出 */
     enableLog?: boolean;

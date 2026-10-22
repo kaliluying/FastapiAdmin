@@ -1,4 +1,4 @@
-"""Memory service — CRUD facade over MemoryCRUD."""
+"""记忆服务，为 MemoryCRUD 提供增删改查入口。"""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 async def extract_conversation_in_background(
     *, user_id: int | str, user_message: str, assistant_response: str, chat_model: ChatModel | None = None,
 ) -> None:
-    """Extract memories with an independent transaction without failing Chat."""
+    """使用独立事务提取记忆，避免提取失败影响聊天。"""
     try:
         async with async_db_session() as db:
             async with db.begin():
@@ -43,14 +43,14 @@ async def extract_conversation_in_background(
 
 
 class MemoryService:
-    """Business logic for AI memory management."""
+    """AI 记忆管理的业务逻辑。"""
 
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth
 
     @classmethod
     def for_user(cls, db: AsyncSession, user_id: int | str) -> MemoryService:
-        """Use an already-authorized user identity for internal memory operations."""
+        """使用已获授权的用户身份执行内部记忆操作。"""
         normalized_id = int(user_id) if isinstance(user_id, str) and user_id.isdigit() else user_id
         return cls(AuthSchema(user=SimpleNamespace(id=normalized_id), db=db, check_data_scope=False))
 
@@ -97,7 +97,7 @@ class MemoryService:
         return True
 
     async def get_active_memories(self, *, memory_type: str | None = None) -> list[dict[str, Any]]:
-        """Called by rag.py to fetch memories for prompt injection."""
+        """由 rag.py 调用，获取用于注入提示词的记忆。"""
         crud = MemoryCRUD(self.auth)
         entries = await crud.get_active_memories(memory_type=memory_type)
         return [entry.to_dict() for entry in entries]
@@ -105,7 +105,7 @@ class MemoryService:
     async def extract_from_conversation(
         self, *, user_message: str, assistant_response: str, chat_model: ChatModel | None = None,
     ) -> int:
-        """Extract and save the current user's memories in the caller's transaction."""
+        """在调用方事务中提取并保存当前用户的记忆。"""
         return await MemoryExtractor(chat_model=chat_model).extract_and_save(
             crud=MemoryCRUD(self.auth), user_message=user_message, assistant_response=assistant_response,
         )

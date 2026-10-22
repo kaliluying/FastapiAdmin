@@ -24,7 +24,7 @@ def _scan_uploads(root: Path) -> dict[tuple[str, int], list[tuple[str, os.stat_r
     cutoff = time.time() - UPLOAD_RECOVERY_DELAY_SECONDS
     if root.is_symlink() or not root.is_dir():
         return candidates
-    # shortcut: legacy UUID names have no transaction owner; reclaim them only during offline maintenance.
+    # shortcut: 旧版 UUID 文件名没有所属事务，仅在离线维护时回收。
     with os.scandir(root) as entries:
         for entry in entries:
             match = _UPLOAD_NAME.fullmatch(entry.name)
@@ -59,7 +59,7 @@ def _referenced_paths(root: Path, rows) -> set[str]:
 
 
 def _unlink_upload(root: Path, name: str, expected: os.stat_result) -> None:
-    # Pin the directory and never follow a replaced directory/file symlink.
+    # 固定目录句柄，避免跟随被替换的目录或文件符号链接。
     fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
     try:
         try:
@@ -73,7 +73,7 @@ def _unlink_upload(root: Path, name: str, expected: os.stat_result) -> None:
 
 
 async def recover_orphan_uploads(root: Path) -> None:
-    """Delete only unreferenced uploads after synchronizing with their SQL transaction."""
+    """与上传文件所属的 SQL 事务同步后，仅删除未被引用的上传文件。"""
     candidates = await anyio.to_thread.run_sync(_scan_uploads, root)
     for (kind, owner_id), files in candidates.items():
         try:
@@ -81,7 +81,7 @@ async def recover_orphan_uploads(root: Path) -> None:
                 model = KnowledgeBaseModel if kind == "kb" else KnowledgeDocumentModel
                 dialect = db.get_bind().dialect.name
                 if dialect == "sqlite":
-                    # SQLite ignores FOR UPDATE; a write transaction is the upload barrier.
+                    # SQLite 忽略 FOR UPDATE；使用写事务作为上传隔离屏障。
                     locked = await db.execute(update(model).where(model.id == owner_id).values(updated_time=model.updated_time))
                     if locked.rowcount != 1:
                         continue
@@ -91,7 +91,7 @@ async def recover_orphan_uploads(root: Path) -> None:
                         continue
                 else:
                     continue
-                # First snapshot read AFTER the barrier, including soft-deleted documents.
+                # 获取隔离屏障后才首次读取快照，并包含已软删除的文档。
                 rows = (await db.execute(select(KnowledgeDocumentModel.file_path, KnowledgeDocumentModel.pending_file, KnowledgeDocumentModel.file_cleanup_paths))).all()
                 references = await anyio.to_thread.run_sync(_referenced_paths, root.resolve(), rows)
                 for name, info in files:
@@ -101,6 +101,6 @@ async def recover_orphan_uploads(root: Path) -> None:
                         await anyio.to_thread.run_sync(_unlink_upload, root, name, info)
                     except OSError:
                         logger.error("清理孤立知识库上传文件失败，等待重试")
-                # Closing rolls back the no-op write and releases the barrier after unlink.
+                # 删除文件后，关闭会话会回滚未改变数据的写入并释放隔离屏障。
         except Exception:
             logger.error("恢复知识库上传文件检查失败，等待重试")

@@ -1,4 +1,4 @@
-/** UI helpers (flattened). */
+/** UI 辅助工具（集中定义）。 */
 
 import NProgress from "nprogress";
 import { ElLoading } from "element-plus";
@@ -9,7 +9,7 @@ import { useTheme } from "@/hooks/core/useTheme";
 import { SystemThemeEnum } from "@/enums/appEnum";
 
 // -----------------------------
-// NProgress
+// NProgress 进度条
 // -----------------------------
 
 NProgress.configure({
@@ -30,7 +30,7 @@ export function setElementThemeColor(color: string): void {
 }
 
 // -----------------------------
-// Loading
+// 加载状态
 // -----------------------------
 
 const getLoadingBackground = (): string => {
@@ -71,11 +71,11 @@ export const loadingService = {
 };
 
 // -----------------------------
-// Tabs config
+// 标签页配置
 // -----------------------------
 
 // -----------------------------
-// EmojiText (default export-compatible)
+// EmojiText 表情文本（兼容默认导出）
 // const EmojiIcon = ['🟢', '🔴', '🟡 ', '🚀', '✨', '💡', '🛠️', '🔥', '🎉', '🌟', '🌈']
 // -----------------------------
 
@@ -87,7 +87,7 @@ export const EmojiText: { [key: string]: string } = {
 };
 
 // -----------------------------
-// Theme animation
+// 主题动画
 // -----------------------------
 
 const { LIGHT, DARK } = SystemThemeEnum;

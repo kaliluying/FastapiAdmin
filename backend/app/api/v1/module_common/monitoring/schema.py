@@ -2,7 +2,7 @@ from pydantic import BaseModel, Field
 
 
 class DependencyStatus(BaseModel):
-    """依赖状态"""
+    """依赖状态。"""
 
     status: int = Field(..., description="状态(0:异常 1:正常)")
     enabled: bool = Field(default=True, description="是否启用该依赖")
@@ -10,7 +10,7 @@ class DependencyStatus(BaseModel):
 
 
 class HealthOut(BaseModel):
-    """基础健康检查响应"""
+    """基础健康检查响应。"""
 
     status: int = Field(..., description="状态(0:异常 1:正常)")
     timestamp: str = Field(..., description="时间戳")
@@ -19,7 +19,7 @@ class HealthOut(BaseModel):
 
 
 class ReadinessOut(BaseModel):
-    """就绪探针响应"""
+    """就绪探针响应。"""
 
     status: int = Field(..., description="状态(0:异常 1:正常)")
     timestamp: str = Field(..., description="时间戳")

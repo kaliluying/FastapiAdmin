@@ -135,7 +135,7 @@ export function useTableColumns<T = any>(
       .filter(Boolean) as ColumnOption<T>[];
   });
 
-  // 支持 updater 返回新数组或直接在传入数组上 mutate
+  // 支持 updater 返回新数组或直接在传入数组上就地修改
   const setDynamicColumns = (updater: (cols: ColumnOption<T>[]) => void | ColumnOption<T>[]) => {
     const copy = [...dynamicColumns.value];
     const result = updater(copy);

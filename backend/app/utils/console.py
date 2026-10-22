@@ -19,19 +19,15 @@ def console_start(
     redis_ready: bool | None = None,
     limiter_ready: bool | None = None,
 ) -> None:
-    """
-    在终端输出 Rich 面板：服务信息、组件就绪状态与文档链接。
+    """在终端输出 Rich 面板：服务信息、组件就绪状态与文档链接。
 
-    参数:
-    - host (str): 监听主机。
-    - port (int): 监听端口。
-    - reload (bool): 是否开启热重载。
-    - database_ready (bool | None): 数据库是否就绪。
-    - redis_ready (bool | None): Redis 是否就绪。
-    - limiter_ready (bool | None): 限流器是否就绪。
-
-    返回:
-    - None
+    Args:
+        host (str): 监听主机。
+        port (int): 监听端口。
+        reload (bool): 是否开启热重载。
+        database_ready (bool | None): 数据库是否就绪。
+        redis_ready (bool | None): Redis 是否就绪。
+        limiter_ready (bool | None): 限流器是否就绪。
     """
 
     url = f"http://{host}:{port}"
@@ -91,12 +87,7 @@ def console_start(
 
 
 def console_end() -> None:
-    """
-    在终端输出服务关闭提示面板。
-
-    返回:
-    - None
-    """
+    """在终端输出服务关闭提示面板。"""
     shutdown_content = Text()
     shutdown_content.append("🛑 ", style="bold red")
     shutdown_content.append("服务已关闭")

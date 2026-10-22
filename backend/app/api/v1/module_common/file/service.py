@@ -11,24 +11,21 @@ from app.utils.upload_util import UploadUtil
 
 
 class FileService:
-    """
-    文件管理服务层
-    """
+    """文件管理服务层。"""
 
     @staticmethod
     def _resolve_upload_path(file_path: str, *, public_images_only: bool = False) -> tuple[Path, str]:
-        """Resolve a user-supplied upload reference within the storage root.
+        """将用户提供的上传文件引用解析到存储根目录内。
 
         Args:
-            file_path: Relative upload path or a legacy absolute path.
-            public_images_only: Restrict public references to avatar/param
-                image directories and raster image extensions.
+            file_path: 相对上传路径或旧版绝对路径。
+            public_images_only: 是否仅允许 avatar、param 图片目录及栅格图片扩展名。
 
         Returns:
-            The resolved file path and its private-root-relative POSIX path.
+            解析后的文件路径及相对于私有根目录的 POSIX 路径。
 
         Raises:
-            CustomException: If the path escapes storage or does not exist.
+            CustomException: 路径越出存储目录或文件不存在。
         """
         if not file_path:
             raise CustomException(msg="请选择要访问的文件", status_code=400)
@@ -62,7 +59,7 @@ class FileService:
         upload_type: str = "file",
         target_path: str | None = None,
     ) -> UploadResponseSchema:
-        """上传文件"""
+        """上传文件。"""
         
         filename, filepath, file_url = await UploadUtil.upload_file(
             file=file,
@@ -80,7 +77,7 @@ class FileService:
 
     @classmethod
     async def download_service(cls, file_path: str) -> DownloadFileSchema:
-        """下载文件"""
+        """下载文件。"""
 
         if not file_path:
             raise CustomException(msg="请选择要下载的文件", status_code=400)
@@ -96,14 +93,14 @@ class FileService:
 
     @classmethod
     async def preview_service(cls, file_path: str, *, public_images_only: bool = False) -> tuple[Path, str]:
-        """Resolve an inline-preview file without exposing server paths.
+        """解析内联预览文件，避免暴露服务器路径。
 
         Args:
-            file_path: Private-root-relative path returned by upload.
-            public_images_only: Apply the anonymous image-only policy.
+            file_path: 上传接口返回的私有根目录相对路径。
+            public_images_only: 是否采用匿名访问仅允许图片的策略。
 
         Returns:
-            A resolved file path and safe media type for ``FileResponse``.
+            解析后的文件路径及可安全用于 ``FileResponse`` 的媒体类型。
         """
         candidate, relative_path = cls._resolve_upload_path(
             file_path,

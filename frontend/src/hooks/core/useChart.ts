@@ -55,7 +55,7 @@ import { useSettingsStore } from "@stores";
 import { getCssVar } from "@utils";
 import type { BaseChartProps, ChartThemeConfig, UseChartOptions } from "@/types/component/chart";
 
-// 图表主题配置
+/** 图表主题配置 */
 export const useChartOps = (): ChartThemeConfig => ({
   /** */
   chartHeight: "16rem",

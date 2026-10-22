@@ -1,4 +1,4 @@
-"""Query policy used to balance semantic and exact-match retrieval."""
+"""用于平衡语义检索与精确匹配检索的查询策略。"""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ class QueryAnalysis:
 
 
 class QueryAnalyzer:
-    """Classify a query and suggest a vector/BM25 weight."""
+    """对查询分类，并给出向量检索与 BM25 检索的权重建议。"""
 
     EXACT_PATTERNS = [
         r"第\s*\d+\s*条",

@@ -10,15 +10,14 @@ from app.core.logger import logger
 
 
 def import_module(module: str, desc: str) -> Any:
-    """
-    动态导入模块
+    """动态导入模块。
 
-    参数:
-    - module (str): 模块名称。
-    - desc (str): 模块描述。
+    Args:
+        module (str): 模块名称。
+        desc (str): 模块描述。
 
-    返回:
-    - Any: 模块对象。
+    Returns:
+        Any: 模块对象。
     """
     try:
         module_path, module_class = module.rsplit(".", 1)
@@ -33,16 +32,12 @@ def import_module(module: str, desc: str) -> Any:
 
 
 async def import_modules_async(modules: list, desc: str, **kwargs) -> None:
-    """
-    异步导入模块列表
+    """异步导入模块列表。
 
-    参数:
-    - modules (list[str]): 模块列表。
-    - desc (str): 模块描述。
-    - kwargs: 额外参数。
-
-    返回:
-    - None
+    Args:
+        modules (list[str]): 模块列表。
+        desc (str): 模块描述。
+        kwargs: 额外参数。
     """
     for module in modules:
         if not module:
@@ -61,34 +56,31 @@ async def import_modules_async(modules: list, desc: str, **kwargs) -> None:
 
 
 def get_random_character() -> str:
-    """
-    生成随机字符串
+    """生成随机字符串。
 
-    返回:
-    - str: 随机字符串。
+    Returns:
+        str: 随机字符串。
     """
     return uuid.uuid4().hex
 
 
 def uuid4_str() -> str:
-    """
-    数据库引擎 UUID 类型兼容：返回无连字符的 UUID 字符串。
+    """数据库引擎 UUID 类型兼容：返回无连字符的 UUID 字符串。
 
-    返回:
-    - str: UUID 字符串。
+    Returns:
+        str: UUID 字符串。
     """
     return str(uuid.uuid4())
 
 
 def get_parent_id_map(model_list: Sequence[DeclarativeBase]) -> dict[int, int]:
-    """
-    获取父级 ID 映射字典
+    """获取父级 ID 映射字典。
 
-    参数:
-    - model_list (Sequence[DeclarativeBase]): 模型列表。
+    Args:
+        model_list (Sequence[DeclarativeBase]): 模型列表。
 
-    返回:
-    - Dict[int, int]: {id: parent_id} 映射字典。
+    Returns:
+        Dict[int, int]: {id: parent_id} 映射字典。
     """
     return {item.id: item.parent_id for item in model_list}  # pyright: ignore[reportAttributeAccessIssue]
 
@@ -96,16 +88,15 @@ def get_parent_id_map(model_list: Sequence[DeclarativeBase]) -> dict[int, int]:
 def get_parent_recursion(
     id: int, id_map: dict[int, int], ids: list[int] | None = None
 ) -> list[int]:
-    """
-    递归获取所有父级 ID
+    """递归获取所有父级 ID。
 
-    参数:
-    - id (int): 当前 ID。
-    - id_map (dict[int, int]): ID 映射字典。
-    - ids (list[int] | None): 已收集的 ID 列表。
+    Args:
+        id (int): 当前 ID。
+        id_map (dict[int, int]): ID 映射字典。
+        ids (list[int] | None): 已收集的 ID 列表。
 
-    返回:
-    - list[int]: 所有父级 ID 列表。
+    Returns:
+        list[int]: 所有父级 ID 列表。
     """
     ids = ids or []
     if id in ids:
@@ -120,14 +111,13 @@ def get_parent_recursion(
 def get_child_id_map(
     model_list: Sequence[DeclarativeBase],
 ) -> dict[int, list[int]]:
-    """
-    获取子级 ID 映射字典
+    """获取子级 ID 映射字典。
 
-    参数:
-    - model_list (Sequence[DeclarativeBase]): 模型列表。
+    Args:
+        model_list (Sequence[DeclarativeBase]): 模型列表。
 
-    返回:
-    - Dict[int, List[int]]: {id: [child_ids]} 映射字典。
+    Returns:
+        Dict[int, List[int]]: {id: [child_ids]} 映射字典。
     """
     data_map = {}
     for model in model_list:
@@ -140,16 +130,15 @@ def get_child_id_map(
 def get_child_recursion(
     id: int, id_map: dict[int, list[int]], ids: list[int] | None = None
 ) -> list[int]:
-    """
-    递归获取所有子级 ID
+    """递归获取所有子级 ID。
 
-    参数:
-    - id (int): 当前 ID。
-    - id_map (dict[int, list[int]]): ID 映射字典。
-    - ids (list[int] | None): 已收集的 ID 列表。
+    Args:
+        id (int): 当前 ID。
+        id_map (dict[int, list[int]]): ID 映射字典。
+        ids (list[int] | None): 已收集的 ID 列表。
 
-    返回:
-    - list[int]: 所有子级 ID 列表。
+    Returns:
+        list[int]: 所有子级 ID 列表。
     """
     ids = [] if ids is None else ids
     if id in ids:
@@ -161,14 +150,13 @@ def get_child_recursion(
 
 
 def traversal_to_tree(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """
-    通过遍历算法构造树形结构
+    """通过遍历算法构造树形结构。
 
-    参数:
-    - nodes (list[dict[str, Any]]): 树节点列表。
+    Args:
+        nodes (list[dict[str, Any]]): 树节点列表。
 
-    返回:
-    - list[dict[str, Any]]: 构造后的树形结构列表。
+    Returns:
+        list[dict[str, Any]]: 构造后的树形结构列表。
     """
     tree: list[dict[str, Any]] = []
     node_dict = {node["id"]: node for node in nodes}
@@ -202,9 +190,9 @@ def traversal_to_tree(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def bytes2human(n: int, format_str: str = "%(value).1f%(symbol)s") -> str:
-    """
-    字节数转人类可读格式
-    Used by various scripts. See:
+    """字节数转人类可读格式。
+
+    供多个脚本使用，参考：
     http://goo.gl/zeJZl
 
     >>> bytes2human(10000)
@@ -212,12 +200,12 @@ def bytes2human(n: int, format_str: str = "%(value).1f%(symbol)s") -> str:
     >>> bytes2human(100001221)
     '95.4M'
 
-    参数:
-    - n (int): 字节数。
-    - format_str (str): 格式化字符串，默认 '%(value).1f%(symbol)s'。
+    Args:
+        n (int): 字节数。
+        format_str (str): 格式化字符串，默认 '%(value).1f%(symbol)s'。
 
-    返回:
-    - str: 可读的字节字符串，如 '1.5MB'。
+    Returns:
+        str: 可读的字节字符串，如 '1.5MB'。
     """
     symbols = ("B", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB")
     prefix = {s: 1 << (i + 1) * 10 for i, s in enumerate(symbols[1:])}
@@ -229,13 +217,12 @@ def bytes2human(n: int, format_str: str = "%(value).1f%(symbol)s") -> str:
 
 
 def bytes2file_response(bytes_info: bytes) -> Generator[bytes, Any, None]:
-    """
-    将字节内容封装为单块流式生成器，供文件下载响应使用。
+    """将字节内容封装为单块流式生成器，供文件下载响应使用。
 
-    参数:
-    - bytes_info (bytes): 文件二进制内容。
+    Args:
+        bytes_info (bytes): 文件二进制内容。
 
-    返回:
-    - Generator[bytes, Any, None]: 仅 yield 一次的字节生成器。
+    Yields:
+        bytes: 传入的完整字节内容，仅产出一次。
     """
     yield bytes_info

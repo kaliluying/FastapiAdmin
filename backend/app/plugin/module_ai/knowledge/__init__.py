@@ -1,1 +1,1 @@
-"""AI knowledge-base module."""
+"""AI 知识库模块。"""

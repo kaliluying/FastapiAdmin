@@ -25,14 +25,14 @@ MAX_MEMORY_CHARS = 4_000
 
 
 def _clip(value: Any, limit: int) -> str:
-    """Limit untrusted text before it enters the prompt or persisted JSON."""
+    """在不可信文本进入提示词或持久化 JSON 前限制其长度。"""
     text = str(value or "")
     return text if len(text) <= limit else f"{text[:limit]}\n[内容已截断]"
 
 
 @dataclass(slots=True)
 class RagDocument:
-    """A retrieved knowledge fragment used to ground the model answer."""
+    """用于为模型回答提供依据的知识检索片段。"""
 
     content: str
     metadata: dict[str, Any] = field(default_factory=dict)
@@ -49,24 +49,24 @@ class Retriever(Protocol):
         knowledge_base_ids: list[int] | None = None,
         files: list[dict[str, Any]] | None = None,
     ) -> list[RagDocument]:
-        """Return context documents for a user query."""
+        """返回用户查询对应的上下文文档。"""
 
 
 class ChatModel(Protocol):
     async def complete(self, prompt: str) -> str:
-        """Return one complete answer."""
+        """返回一条完整回答。"""
 
     async def stream(self, prompt: str) -> AsyncGenerator[str, None]:
-        """Yield answer chunks."""
+        """逐块产出回答内容。"""
 
 
 class ToolChatModel(ChatModel, Protocol):
     async def request_tools(self, messages: list[BaseMessage], tools: list[dict[str, Any]]) -> AIMessage:
-        """Return text and structured tool calls while preserving provider messages."""
+        """返回文本和结构化工具调用，同时保留服务商消息。"""
 
 
 def content_to_text(content: Any) -> str:
-    """Normalize model text blocks without exposing provider implementation details."""
+    """规范化模型文本块，不暴露服务商实现细节。"""
     if isinstance(content, str):
         return content
     if not isinstance(content, list):
@@ -83,11 +83,11 @@ def content_to_text(content: Any) -> str:
 
 
 class KeywordKnowledgeRetriever:
-    """Small dependency-free retriever that mirrors a LangChain retriever seam.
+    """模拟 LangChain 检索器接口的小型无依赖检索器。
 
-    The built-in documents keep the existing admin navigation behavior useful.
-    File payloads from the frontend are treated as ad-hoc documents for the
-    current request, so the chain can already behave like a lightweight RAG flow.
+    内置文档为现有后台导航提供可用的检索内容。
+    前端传入的文件内容作为当前请求的临时文档，
+    使调用链能够执行轻量的 RAG 流程。
     """
 
     def __init__(self, documents: list[RagDocument] | None = None, top_k: int = 4) -> None:
@@ -273,7 +273,7 @@ class RagPromptBuilder:
             summary = meta.get("summary", "")
             keywords = meta.get("keywords", "")
 
-            # Build a structured legal citation when legal metadata is present.
+            # 存在法律元数据时，构建结构化法律引用。
             if chapter or articles:
                 citation_parts = []
                 if chapter:
@@ -288,7 +288,7 @@ class RagPromptBuilder:
                 if keywords:
                     header += f"\n    关键词: {keywords}"
             else:
-                # Fallback: show all metadata as flat key=value pairs.
+                # 回退时将全部元数据展示为扁平的 key=value 键值对。
                 flat = ", ".join(f"{key}={value}" for key, value in meta.items() if key not in ("distance", "chunk_index", "document_id", "knowledge_base_id"))
                 header = f"[{index}]" + (f" ({flat})" if flat else "")
 
@@ -355,12 +355,12 @@ class LangChainChatModel:
 
 @lru_cache(maxsize=4)
 def _cached_chat_model(config: Any, factory: Any) -> ToolChatModel:
-    """Cache model clients by runtime config and factory identity."""
+    """按运行配置和工厂对象标识缓存模型客户端。"""
     return factory()
 
 
 def get_cached_chat_model() -> ToolChatModel:
-    """Reuse the process-local chat client until runtime config changes."""
+    """复用进程内聊天客户端，直到运行配置发生变化。"""
     return _cached_chat_model(get_active_chat_model_config(), LangChainChatModel)
 
 
@@ -434,7 +434,7 @@ class RagChatChain:
                 yield chunk
 
     async def _release_db_transaction(self) -> None:
-        """End prompt-read transactions before waiting on the model provider."""
+        """等待模型服务商响应前，先结束读取提示词的事务。"""
         rollback = getattr(self.db, "rollback", None)
         if callable(rollback):
             await rollback()
@@ -503,7 +503,7 @@ class RagChatChain:
         )
 
     async def _fetch_session_history(self, session_id: str) -> list[dict[str, Any]]:
-        """Extract recent messages from the session's runs field."""
+        """从会话的 runs 字段提取最近消息。"""
         try:
             from sqlalchemy import select
 
@@ -521,7 +521,7 @@ class RagChatChain:
                 return []
             messages: list[dict[str, Any]] = []
             runs = list(obj.runs or [])
-            # Take only the last 3 runs (round-trips) for context
+            # 仅使用最近 5 轮对话作为上下文
             for run in runs[-5:]:
                 if not isinstance(run, dict):
                     continue
@@ -537,7 +537,7 @@ class RagChatChain:
             return []
 
     async def _fetch_memories(self) -> list[dict[str, Any]]:
-        """Fetch active memories for the current user."""
+        """获取当前用户的活跃记忆。"""
         try:
             return await MemoryService.for_user(self.db, self.user_id).get_active_memories()
         except Exception as e:
@@ -552,7 +552,7 @@ def _extract_user_profile(user: Any | None) -> dict[str, Any]:
 
 
 def create_rag_chain(db: Any | None = None, auth: Any | None = None) -> RagChatChain:
-    """创建RAG链，根据配置选择检索器
+    """创建RAG链，根据配置选择检索器。
 
     RETRIEVAL_MODE配置项：
     - vector: 纯向量检索（原有模式）

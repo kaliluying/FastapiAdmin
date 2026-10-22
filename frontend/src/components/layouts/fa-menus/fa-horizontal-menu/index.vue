@@ -90,18 +90,18 @@ const filterMenuItems = (items: AppRouteRecord[]): AppRouteRecord[] => {
 </script>
 
 <style scoped>
-/* Remove el-menu bottom border */
+/* 移除 el-menu 的底边框 */
 :deep(.el-menu) {
   border-bottom: none !important;
 }
 
-/* Remove default styles for first-level menu items */
+/* 移除一级菜单项的默认样式 */
 :deep(.el-menu-item[tabindex="0"]) {
   background-color: transparent !important;
   border: none !important;
 }
 
-/* Remove bottom border from submenu titles */
+/* 移除子菜单标题的底边框 */
 :deep(.el-menu--horizontal .el-sub-menu__title) {
   padding: 0 30px 0 10px !important;
   border: 0 !important;

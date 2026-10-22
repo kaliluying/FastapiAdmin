@@ -69,7 +69,7 @@ test("empty menus allow navigation and reinitialize only after an explicit reset
     })),
   });
   let passes = 0;
-  router.beforeEach(() => ++passes <= 10); // Bound a regression so it fails instead of hanging.
+  router.beforeEach(() => ++passes <= 10); // 限制导航次数，使回归问题直接失败，避免测试一直挂起。
   setupBeforeEachGuard(router);
   await router.push("/home");
   expect(router.currentRoute.value.path).toBe("/home");

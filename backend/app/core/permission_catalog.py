@@ -1,8 +1,7 @@
-"""Central permission-code catalog for RBAC audits.
+"""集中维护用于 RBAC 审计的权限编码。
 
-Menu seed data controls UI visibility and role grants, while backend
-``AuthPermission`` dependencies enforce the real security boundary. Keep every
-permission code used by either side in this catalog so drift is testable.
+菜单种子控制界面可见性和角色授权，后端 ``AuthPermission`` 依赖执行实际权限校验。
+将两端使用的权限编码统一收录，便于通过测试发现不一致。
 """
 
 from app.core.modules import get_modules

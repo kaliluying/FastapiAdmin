@@ -264,7 +264,7 @@ export function blobValidate(data: Blob): boolean {
   return data.type !== "application/json";
 }
 
-/** Date helpers (dayjs). */
+/** 日期辅助工具（dayjs）。 */
 
 const DATE_TIME_FORMAT = "YYYY-MM-DD HH:mm:ss";
 

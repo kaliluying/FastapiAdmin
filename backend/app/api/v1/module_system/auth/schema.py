@@ -4,7 +4,7 @@ from app.core.base_schema import JWTOutSchema
 
 
 class CaptchaOutSchema(BaseModel):
-    """验证码响应模型"""
+    """验证码响应模型。"""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -14,7 +14,7 @@ class CaptchaOutSchema(BaseModel):
 
 
 class AutoLoginUserSchema(BaseModel):
-    """免登录用户信息模型"""
+    """免登录用户信息模型。"""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -25,7 +25,7 @@ class AutoLoginUserSchema(BaseModel):
 
 
 class AutoLoginTokenSchema(BaseModel):
-    """免登录Token响应模型"""
+    """免登录Token响应模型。"""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -40,7 +40,7 @@ class LoginSchema(JWTOutSchema):
 
 
 class OAuthTicketSchema(BaseModel):
-    """One-time OAuth browser callback ticket."""
+    """描述 OAuth 浏览器回调使用的一次性票据。"""
 
     ticket: str = Field(..., min_length=20, max_length=256)
 

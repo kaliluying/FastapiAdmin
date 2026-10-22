@@ -20,7 +20,7 @@ from app.core.validator import email_validator, mobile_validator
 
 
 class CurrentUserUpdateSchema(BaseModel):
-    """基础用户信息"""
+    """基础用户信息。"""
 
     name: str | None = Field(default=None, max_length=32, description="名称")
     mobile: str | None = Field(default=None, max_length=11, description="手机号")
@@ -41,13 +41,13 @@ class CurrentUserUpdateSchema(BaseModel):
     @field_validator("mobile")
     @classmethod
     def validate_mobile(cls, value: str | None):
-        """校验手机号格式"""
+        """校验手机号格式。"""
         return mobile_validator(value)
 
     @field_validator("email")
     @classmethod
     def validate_email(cls, value: str | None):
-        """校验邮箱格式"""
+        """校验邮箱格式。"""
         if not value:
             return value
         return email_validator(value)
@@ -55,7 +55,7 @@ class CurrentUserUpdateSchema(BaseModel):
     @field_validator("gender")
     @classmethod
     def validate_gender(cls, value: str | None):
-        """校验性别：仅支持 0(男)、1(女)、2(未知)"""
+        """校验性别：仅支持 0(男)、1(女)、2(未知)。"""
         if value and value not in {"0", "1", "2"}:
             raise ValueError("性别仅支持 0(男)、1(女)、2(未知)")
         return value
@@ -63,7 +63,7 @@ class CurrentUserUpdateSchema(BaseModel):
     @field_validator("avatar")
     @classmethod
     def validate_avatar(cls, value: str | None):
-        """校验头像地址为合法的 HTTP/HTTPS URL 或根相对路径"""
+        """校验头像地址为合法的 HTTP/HTTPS URL 或根相对路径。"""
         if not value:
             return value
         parsed = urlparse(value)
@@ -82,14 +82,14 @@ class CurrentUserUpdateSchema(BaseModel):
 
     @model_validator(mode="after")
     def check_model(self):
-        """校验基础用户信息长度约束"""
+        """校验基础用户信息长度约束。"""
         if self.name and len(self.name) > 32:
             raise ValueError("名称长度不能超过 32 个字符")
         return self
 
 
 class UserChangePasswordSchema(BaseModel):
-    """修改密码"""
+    """修改密码。"""
 
     old_password: str = Field(..., min_length=6, max_length=128, description="旧密码")
     new_password: str = Field(..., min_length=6, max_length=128, description="新密码")
@@ -97,7 +97,7 @@ class UserChangePasswordSchema(BaseModel):
     @field_validator("new_password")
     @classmethod
     def validate_new_password(cls, value: str):
-        """校验新密码：6-128 位"""
+        """校验新密码：6-128 位。"""
         if len(value) < 6:
             raise ValueError("新密码长度不能少于 6 位")
         if len(value) > 128:
@@ -106,7 +106,7 @@ class UserChangePasswordSchema(BaseModel):
 
 
 class ResetPasswordSchema(BaseModel):
-    """重置密码"""
+    """重置密码。"""
 
     id: int = Field(default=0, description="主键ID（已弃用，由路径参数传入）")
     password: str = Field(..., min_length=6, max_length=128, description="新密码")
@@ -114,7 +114,7 @@ class ResetPasswordSchema(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password(cls, value: str):
-        """校验新密码：6-128 位"""
+        """校验新密码：6-128 位。"""
         if len(value) < 6:
             raise ValueError("新密码长度不能少于 6 位")
         if len(value) > 128:
@@ -123,9 +123,7 @@ class ResetPasswordSchema(BaseModel):
 
 
 class UserCreateSchema(CurrentUserUpdateSchema):
-    """
-    新增用户
-    """
+    """新增用户。"""
 
     username: str | None = Field(default=None, max_length=32, description="用户名")
     password: str | None = Field(default=None, min_length=6, max_length=128, description="密码")
@@ -137,7 +135,7 @@ class UserCreateSchema(CurrentUserUpdateSchema):
     @field_validator("status")
     @classmethod
     def validate_status(cls, value: int):
-        """校验状态：仅支持 0(正常)、1(禁用)"""
+        """校验状态：仅支持 0(正常)、1(禁用)。"""
         if value not in {0, 1}:
             raise ValueError("状态仅支持 0(正常) 或 1(禁用)")
         return value
@@ -145,7 +143,7 @@ class UserCreateSchema(CurrentUserUpdateSchema):
     @field_validator("username")
     @classmethod
     def validate_username(cls, value: str | None):
-        """校验账号：字母开头，2-32 位"""
+        """校验账号：字母开头，2-32 位。"""
         if not value:
             return value
         v = value.strip()
@@ -158,7 +156,7 @@ class UserCreateSchema(CurrentUserUpdateSchema):
     @field_validator("password")
     @classmethod
     def validate_password(cls, value: str | None):
-        """校验密码：6-128 位"""
+        """校验密码：6-128 位。"""
         if value and len(value) < 6:
             raise ValueError("密码长度不能少于 6 位")
         if value and len(value) > 128:
@@ -167,7 +165,7 @@ class UserCreateSchema(CurrentUserUpdateSchema):
 
 
 class UserUpdateSchema(CurrentUserUpdateSchema):
-    """更新"""
+    """更新。"""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -179,7 +177,7 @@ class UserUpdateSchema(CurrentUserUpdateSchema):
     @field_validator("status")
     @classmethod
     def validate_status(cls, value: int | None):
-        """校验状态：仅支持 0(正常)、1(禁用)"""
+        """校验状态：仅支持 0(正常)、1(禁用)。"""
         if value is not None and value not in {0, 1}:
             raise ValueError("状态仅支持 0(正常) 或 1(禁用)")
         return value
@@ -187,7 +185,7 @@ class UserUpdateSchema(CurrentUserUpdateSchema):
     @field_validator("username")
     @classmethod
     def validate_username(cls, value: str | None):
-        """校验账号：字母开头，2-32 位"""
+        """校验账号：字母开头，2-32 位。"""
         if not value:
             return value
         v = value.strip()
@@ -199,7 +197,7 @@ class UserUpdateSchema(CurrentUserUpdateSchema):
 
 
 class UserOutSchema(UserUpdateSchema, BaseSchema, UserBySchema):
-    """响应"""
+    """响应。"""
 
     model_config = ConfigDict(arbitrary_types_allowed=True, from_attributes=True)
 
@@ -217,8 +215,7 @@ class UserOutSchema(UserUpdateSchema, BaseSchema, UserBySchema):
 
 @dataclass
 class UserQueryParam(BaseQueryParam, UserByQueryParam):
-    """
-    用户管理查询参数（继承标准 Mixin）
+    """用户管理查询参数（继承标准 Mixin）。
 
     支持：
     - 时间范围（BaseQueryParam）

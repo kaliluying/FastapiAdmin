@@ -1,4 +1,4 @@
-"""Memory data model for AI assistant — stores user preferences, facts, and work rules."""
+"""AI 助手的记忆数据模型，存储用户偏好、事实和工作规则。"""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from app.core.base_model import MappedBase, ModelMixin
 
 
 class MemoryExtractionJobModel(MappedBase):
-    """Committed with a chat turn; removed atomically with its memory changes."""
+    """随一轮对话提交；与相应记忆变更一起原子化移除。"""
 
     __tablename__ = "ai_memory_extraction_job"
     __table_args__ = (
@@ -32,12 +32,12 @@ class MemoryExtractionJobModel(MappedBase):
 
 
 class AiMemoryModel(ModelMixin):
-    """Persistent memory entries that the AI can reference across sessions.
+    """AI 可跨会话引用的持久化记忆条目。
 
-    Three memory modes:
-    - user_preference: per-user settings (e.g. "回答要简洁")
-    - fact: key facts about the user or current work context
-    - work_rule: system-wide business rules (e.g. "所有建议必须引用来源")
+    三种记忆模式：
+    - user_preference: 用户个人设置（例如 "回答要简洁"）
+    - fact: 关于用户或当前工作上下文的关键事实
+    - work_rule: 系统级业务规则（例如 "所有建议必须引用来源"）
     """
 
     __tablename__ = "ai_memory"

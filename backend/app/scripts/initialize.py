@@ -20,7 +20,7 @@ from app.core.modules import get_module_models, get_modules
 
 
 class InitializeData:
-    """初始化数据库和基础数据"""
+    """初始化数据库和基础数据。"""
 
     _DATETIME_RE = re.compile(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$")
     _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -45,8 +45,8 @@ class InitializeData:
     def get_prepare_init_models(cls) -> list[type]:
         """返回基础模型与已注册业务模型组成的初始化列表。
 
-        返回:
-        - list[type]: 按外键依赖顺序排列的初始化模型列表。
+        Returns:
+            list[type]: 按外键依赖顺序排列的初始化模型列表。
         """
         return [*cls.prepare_init_models, *get_module_models()]
 
@@ -68,7 +68,7 @@ class InitializeData:
                 await self.__init_data(session)
 
     async def __init_data(self, db: AsyncSession) -> None:
-        """按依赖顺序初始化各表种子数据"""
+        """按依赖顺序初始化各表种子数据。"""
         role_seed_mapping: dict[int, RoleModel] = {}
         user_seed_mapping: dict[int, UserModel] = {}
         new_role_ids: set[int] = set()
@@ -196,14 +196,14 @@ class InitializeData:
     ) -> int:
         """按逻辑唯一键补齐普通种子记录。
 
-        参数:
-        - db: 当前初始化事务。
-        - model: 要写入的 ORM 模型。
-        - data: 已解析的种子数据。
-        - unique_fields: 能跨数据库稳定匹配记录的字段名。
+        Args:
+            db: 当前初始化事务。
+            model: 要写入的 ORM 模型。
+            data: 已解析的种子数据。
+            unique_fields: 能跨数据库稳定匹配记录的字段名。
 
-        返回:
-        - int: 实际新增的记录数。
+        Returns:
+            int: 实际新增的记录数。
         """
         added = 0
         for item in data:
@@ -224,15 +224,14 @@ class InitializeData:
     ) -> tuple[int, dict[int, UserModel]]:
         """按 username 补齐用户，并安全解析审计字段引用。
 
-        参数:
-        - db: 当前初始化事务。
-        - data: 用户种子数据，关联表使用其行号作为稳定引用。
+        仅为新用户写入种子密码；已有用户的密码和业务字段不会被覆盖。
 
-        返回:
-        - tuple[int, dict[int, UserModel]]: 新增数量及种子行号到用户对象的映射。
+        Args:
+            db: 当前初始化事务。
+            data: 用户种子数据，关联表使用其行号作为稳定引用。
 
-        副作用:
-        - 只为新用户写入种子密码；已有用户的密码和业务字段不会被覆盖。
+        Returns:
+            tuple[int, dict[int, UserModel]]: 新增数量及种子行号到用户对象的映射。
         """
         users_by_username = {user.username: user for user in (await db.execute(select(UserModel))).scalars().all()}
         new_users: list[tuple[UserModel, dict[str, Any]]] = []
@@ -265,12 +264,12 @@ class InitializeData:
     async def __seed_menus(self, db: AsyncSession, data: list[dict[str, Any]]) -> int:
         """递归按权限或路由键补齐菜单树，不覆盖已有菜单关系。
 
-        参数:
-        - db: 当前初始化事务。
-        - data: 含嵌套 ``children`` 的菜单种子数据。
+        Args:
+            db: 当前初始化事务。
+            data: 含嵌套 ``children`` 的菜单种子数据。
 
-        返回:
-        - int: 实际新增的菜单数。
+        Returns:
+            int: 实际新增的菜单数。
         """
         added = 0
 
@@ -306,7 +305,7 @@ class InitializeData:
         return added
 
     async def __load_json(self, filename: str) -> list[dict]:
-        """读取并解析种子数据 JSON 文件"""
+        """读取并解析种子数据 JSON 文件。"""
         try:
             return [self._parse_date_strings(item) for item in get_seed_data(filename)]
         except json.JSONDecodeError as e:
@@ -318,7 +317,7 @@ class InitializeData:
 
     @classmethod
     def _parse_date_strings(cls, data: dict) -> dict:
-        """递归转换 JSON 中的日期时间字符串为 datetime 对象"""
+        """递归转换 JSON 中的日期时间字符串为 datetime 对象。"""
         result = {}
         for key, value in data.items():
             if isinstance(value, str):

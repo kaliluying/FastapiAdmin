@@ -1,4 +1,4 @@
-"""Remove the parameter and dictionary management modules.
+"""移除参数管理和字典管理模块。
 
 Revision ID: 20260924_remove_params_and_dict
 Revises:
@@ -14,7 +14,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    """Drop module data and menu records from existing installations."""
+    """从已有部署中删除被移除模块的数据和菜单记录。"""
     bind = op.get_bind()
     tables = set(inspect(bind).get_table_names())
     if "platform_menu" in tables:
@@ -34,5 +34,5 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """The removed tables and seed records are intentionally not restored."""
+    """回退迁移时不恢复已删除的数据表和种子记录。"""
     pass

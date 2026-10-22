@@ -66,7 +66,7 @@ async def download_controller(
     response_class=FileResponse,
 )
 async def private_upload_preview_controller(relative_path: str) -> FileResponse:
-    """Serve a private upload only to a user with download permission."""
+    """仅向具有下载权限的用户返回私有上传文件。"""
     file_path, media_type = await FileService.preview_service(relative_path)
     return FileResponse(
         path=file_path,
@@ -81,7 +81,7 @@ async def private_upload_preview_controller(relative_path: str) -> FileResponse:
     response_class=FileResponse,
 )
 async def public_upload_preview_controller(relative_path: str) -> FileResponse:
-    """Serve only validated avatar and site-parameter images anonymously."""
+    """匿名访问仅返回经过校验的头像和站点参数图片。"""
     file_path, media_type = await FileService.preview_service(relative_path, public_images_only=True)
     return FileResponse(
         path=file_path,

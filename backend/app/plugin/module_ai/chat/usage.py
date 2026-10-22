@@ -1,4 +1,4 @@
-"""Count each provider attempt independently of chat/session transactions."""
+"""独立于聊天和会话事务，统计每次服务商调用尝试。"""
 from __future__ import annotations
 
 import asyncio
@@ -63,7 +63,7 @@ async def reserve_call(config: Any, purpose: str) -> int:
     user_id, scope = owner
     day = usage_day()
     async with async_db_session() as db, db.begin():
-        # Create once under a savepoint; the unique key serializes competing first calls.
+        # 在保存点内尝试创建；唯一键使并发的首次调用串行执行。
         try:
             async with db.begin_nested():
                 db.add(AiUsageDailyModel(user_id=user_id, day=day, calls=0))
@@ -85,7 +85,7 @@ async def reserve_call(config: Any, purpose: str) -> int:
 
 
 def provider_tokens(message: Any) -> dict[str, int | None]:
-    """Use SDK normalized metadata or provider totals; absent values stay unknown."""
+    """使用 SDK 规范化元数据或服务商汇总值；缺失值保持未知。"""
     usage = getattr(message, "usage_metadata", None)
     if not usage:
         metadata = getattr(message, "response_metadata", {}) or {}
@@ -106,7 +106,7 @@ async def finish_call(record_id: int, started: float, status: str, response: Any
             await db.execute(update(AiUsageRecordModel).where(AiUsageRecordModel.id == record_id).values(
                 status=status, latency_ms=max(0, round((monotonic() - started) * 1000)), **provider_tokens(response)))
     except Exception:
-        # Reservation survives; pending is visible instead of losing the billed attempt.
+        # 保留预留记录并显示为待完成，避免丢失已计费的调用尝试。
         logger.warning("AI 用量结果写入失败，已保留预留记录；不记录模型响应或认证信息")
 
 

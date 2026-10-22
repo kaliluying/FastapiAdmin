@@ -41,27 +41,27 @@ async def db_getter(request: Request) -> AsyncGenerator[AsyncSession, None]:
 
 
 async def redis_getter(request: Request) -> Redis:
-    """获取Redis连接
+    """获取Redis连接。
 
-    参数:
-    - request (Request): 请求对象
+    Args:
+        request (Request): 请求对象
 
-    返回:
-    - Redis: Redis连接
+    Returns:
+        Redis: Redis连接
     """
     return request.app.state.redis
 
 
 async def _decode_token_info(token: str, redis: Redis) -> tuple[dict, str]:
-    """解码 JWT token 返回 (user_info, session_id)
+    """解码 JWT token 返回 (user_info, session_id)。
 
     JWT sub 现为纯 session_id，完整会话信息从 Redis 读取。
 
-    参数:
+    Args:
         token: JWT token 字符串
         redis: Redis 连接
 
-    返回:
+    Returns:
         (user_info, session_id): 用户信息字典和会话 ID
     """
     payload = decode_access_token(token)
@@ -83,9 +83,9 @@ async def _decode_token_info(token: str, redis: Redis) -> tuple[dict, str]:
 
 
 async def _check_token_online(redis: Redis, session_id: str) -> None:
-    """检查 token 是否在线（Redis 中存在对应 session）
+    """检查 token 是否在线（Redis 中存在对应 session）。
 
-    参数:
+    Args:
         redis: Redis 连接
         session_id: 会话 ID
     """
@@ -97,9 +97,9 @@ async def _check_token_online(redis: Redis, session_id: str) -> None:
 
 
 async def _try_sliding_refresh(redis: Redis, session_id: str) -> None:
-    """滑动过期续期（仅在 token 剩余不足一半时触发）
+    """滑动过期续期（仅在 token 剩余不足一半时触发）。
 
-    参数:
+    Args:
         redis: Redis 连接
         session_id: 会话 ID
     """
@@ -133,17 +133,17 @@ def _build_permission_map(user: Any) -> dict[str, int]:
 
 
 async def _load_user_from_db(db: AsyncSession, username: str | None = None, *, user_id: int | None = None):
-    """从数据库加载用户（含角色、菜单等关联的全量预加载）
+    """从数据库加载用户（含角色、菜单等关联的全量预加载）。
 
     使用原始查询以绕过 CRUDBase 的权限过滤，确保用户认证阶段不受数据权限影响。
     所有关系链均 eager-loaded，调用方可在会话关闭后安全访问对象属性。
 
-    参数:
+    Args:
         db: 数据库会话
         username: 兼容已有按用户名读取的调用方；会话认证必须传 user_id。
         user_id: 会话绑定的用户主键
 
-    返回:
+    Returns:
         UserModel: 已全量加载的用户 ORM 对象
     """
     from app.api.v1.module_system.role.model import RoleModel
@@ -171,7 +171,7 @@ async def _load_user_from_db(db: AsyncSession, username: str | None = None, *, u
 
 
 async def _load_authenticated_user(user_id: int):
-    """Use a short-lived read session so request rollbacks cannot expire auth objects."""
+    """使用短只读会话，避免请求回滚导致认证对象属性过期。"""
     if not isinstance(user_id, int) or isinstance(user_id, bool) or user_id <= 0:
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
     async with async_db_session() as auth_db:
@@ -185,19 +185,19 @@ async def get_current_user(
     redis: Redis = Depends(redis_getter),
     token: str = Depends(OAuth2Schema),
 ) -> AuthSchema:
-    """获取当前用户
+    """获取当前用户。
 
     用户查询使用独立的只读数据库会话（不参与请求事务，查询完成后立即释放快照），
     返回的 auth.db 指向请求级事务会话供后续写操作使用。
 
-    参数:
-    - request (Request): 请求对象
-    - db (AsyncSession): 请求级事务会话
-    - redis (Redis): Redis连接
-    - token (str): 访问令牌
+    Args:
+        request (Request): 请求对象
+        db (AsyncSession): 请求级事务会话
+        redis (Redis): Redis连接
+        token (str): 访问令牌
 
-    返回:
-    - AuthSchema: 认证信息模型
+    Returns:
+        AuthSchema: 认证信息模型
     """
     if not token:
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
@@ -243,18 +243,18 @@ async def get_current_user(
 
 
 async def _verify_ws_ticket(ticket: str, db: AsyncSession, redis: Redis) -> AuthSchema:
-    """Consume a short-lived WebSocket ticket and load its user session.
+    """消费短期 WebSocket 票据并加载对应的用户会话。
 
     Args:
-        ticket: One-time ticket issued by the authenticated HTTP endpoint.
-        db: Database session used to load the user.
-        redis: Redis connection containing the ticket and session state.
+        ticket: 已认证 HTTP 接口签发的一次性票据。
+        db: 用于读取用户的数据库会话。
+        redis: 保存票据及会话状态的 Redis 连接。
 
     Returns:
-        Authenticated user context.
+        已认证的用户上下文。
 
     Raises:
-        CustomException: If the ticket is missing, replayed, or expired.
+        CustomException: 票据不存在、已被消费或已过期。
     """
     if not ticket or len(ticket) > 256:
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
@@ -274,7 +274,7 @@ async def _verify_ws_ticket(ticket: str, db: AsyncSession, redis: Redis) -> Auth
 
 
 async def _verify_session(session_id: str, db: AsyncSession, redis: Redis) -> AuthSchema:
-    """Revalidate the live session and current grants for each WebSocket request."""
+    """为每次 WebSocket 请求重新校验在线会话和当前授权。"""
     await _check_token_online(redis, session_id)
     session_raw = await RedisCURD(redis).get(f"{RedisInitKeyConfig.USER_SESSION.key}:{session_id}")
     if not session_raw:
@@ -292,32 +292,30 @@ async def _verify_session(session_id: str, db: AsyncSession, redis: Redis) -> Au
 
 
 class AuthPermission:
-    """权限验证类"""
+    """权限验证类。"""
 
     def __init__(
         self,
         permissions: list[str] | None = None,
         check_data_scope: bool = True,
     ) -> None:
-        """
-        初始化权限验证
+        """初始化权限验证。
 
-        参数:
-        - permissions (list[str] | None): 权限标识列表。
-        - check_data_scope (bool): 是否启用严格模式校验。
+        Args:
+            permissions (list[str] | None): 权限标识列表。
+            check_data_scope (bool): 是否启用严格模式校验。
         """
         self.permissions = permissions or []
         self.check_data_scope = check_data_scope
 
     async def __call__(self, auth: AuthSchema = Depends(get_current_user)) -> AuthSchema:
-        """
-        调用权限验证
+        """调用权限验证。
 
-        参数:
-        - auth (AuthSchema): 认证信息对象。
+        Args:
+            auth (AuthSchema): 认证信息对象。
 
-        返回:
-        - AuthSchema: 认证信息对象。
+        Returns:
+            AuthSchema: 认证信息对象。
         """
         # 用 model_copy 派生一份带正确 check_data_scope 的新实例（不修改原实例）
         auth = auth.model_copy(update={"check_data_scope": self.check_data_scope})
@@ -355,8 +353,7 @@ class AuthPermission:
 
 
 def require_superadmin(func):
-    """
-    装饰器：仅超级管理员可调用 Service 方法。
+    """装饰器：仅超级管理员可调用 Service 方法。
 
     自动校验 ``self.auth.user.is_superuser`` 属性，非超管直接抛出 403。
     适用于实例方法（``Service(auth).xxx(...)``），由 ``self.auth`` 取认证上下文。

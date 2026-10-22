@@ -1,4 +1,4 @@
-"""SQL-backed memory queue: bounded workers, ordered users and fenced retries."""
+"""基于 SQL 的记忆队列：限制工作任务数量、按用户顺序处理并隔离重试。"""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ def wake_memory_worker() -> None:
 
 
 async def _finish_sql(operation):
-    """Let a short SQL transaction close before propagating worker cancellation."""
+    """先等待短 SQL 事务结束，再向上传播工作任务取消。"""
     task = asyncio.create_task(operation)
     try:
         return await asyncio.shield(task)
@@ -50,7 +50,7 @@ async def _finish_sql(operation):
 async def claim_memory_job() -> Job | None:
     now = datetime.now()
     older = aliased(Job)
-    # Only the oldest unfinished turn for a user may run, including across processes.
+    # 每个用户仅允许执行最早的未完成轮次，跨进程也遵循此约束。
     no_older = ~select(older.id).where(older.user_id == Job.user_id, older.id < Job.id).exists()
     available = (Job.available_at <= now, or_(Job.lease_until.is_(None), Job.lease_until <= now))
     async with async_db_session() as db, db.begin():
@@ -58,8 +58,8 @@ async def claim_memory_job() -> Job | None:
         if job is None:
             return None
         user_id = job.user_id
-        # A late commit can reveal an older job after a newer one was claimed.
-        # Serialize claims on the user row and use current locking reads, not a stale snapshot.
+        # 较晚提交的旧任务可能在新任务已被认领后才可见。
+        # 通过用户行锁串行化认领，并使用当前加锁读取，避免读取过期快照。
         await db.execute(update(UserModel).where(UserModel.id == int(user_id)).values(
             id=UserModel.id, updated_time=UserModel.updated_time,
         ))
@@ -79,7 +79,7 @@ async def claim_memory_job() -> Job | None:
         if claimed.rowcount != 1:
             return None
         await db.refresh(job)
-        # This value object must remain readable when installations expire ORM state on commit.
+        # 即使部署环境在提交时使 ORM 状态过期，此数据对象仍须可读。
         db.expunge(job)
         return job
 
@@ -102,7 +102,7 @@ async def _apply_job(job: Job, extractor: MemoryExtractor, actions) -> None:
             return
         if await _source_exists(db, job):
             await extractor.save_actions(crud=MemoryCRUD(MemoryService.for_user(db, job.user_id).auth), actions=actions)
-        # Completion and all memory writes share one commit; a lost reply cannot replay actions.
+        # 任务完成与全部记忆写入共用一次提交，避免响应丢失后重复执行操作。
         await db.execute(delete(Job).where(Job.id == job.id, Job.token == job.token))
 
 
@@ -121,7 +121,7 @@ async def process_memory_job(job: Job) -> None:
                 )
             await _finish_sql(_apply_job(job, extractor, actions))
     except asyncio.CancelledError:
-        # The durable lease recovers even if shutdown itself cannot reach SQL.
+        # 即使关闭时无法连接 SQL 数据库，持久化租约仍支持后续恢复。
         await _finish_sql(_retry_job(job, immediate=True))
         raise
     except Exception:

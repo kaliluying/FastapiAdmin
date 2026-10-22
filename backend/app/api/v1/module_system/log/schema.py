@@ -11,7 +11,7 @@ ALLOWED_REQUEST_METHODS = ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "
 
 
 class LoginLogCreateSchema(BaseModel):
-    """新增登录日志"""
+    """新增登录日志。"""
 
     username: str = Field(..., min_length=1, max_length=64, description="用户名")
     status: int = Field(default=1, ge=1, le=2, description="登录状态(1成功 2失败)")
@@ -40,18 +40,18 @@ class LoginLogCreateSchema(BaseModel):
 
 
 class LoginLogOutSchema(LoginLogCreateSchema, BaseSchema, UserBySchema):
-    """登录日志响应"""
+    """登录日志响应。"""
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class LoginLogDetailOutSchema(LoginLogOutSchema):
-    """登录日志详情响应"""
+    """登录日志详情响应。"""
 
 
 @dataclass
 class LoginLogQueryParam(BaseQueryParam, UserByQueryParam):
-    """登录日志查询参数"""
+    """登录日志查询参数。"""
 
     username: str | None = Query(None, max_length=64, description="用户名")
     status: int | None = Query(None, description="登录状态(1:成功 2:失败)")
@@ -65,7 +65,7 @@ class LoginLogQueryParam(BaseQueryParam, UserByQueryParam):
 
 @dataclass
 class OperationLogQueryParam(BaseQueryParam, UserByQueryParam):
-    """操作日志查询参数"""
+    """操作日志查询参数。"""
 
     request_path: str | None = Query(None, description="请求路径")
     request_method: str | None = Query(None, description="请求方式")
@@ -84,7 +84,7 @@ class OperationLogQueryParam(BaseQueryParam, UserByQueryParam):
 
 
 class OperationLogOutSchema(BaseSchema, UserBySchema):
-    """操作日志响应模型"""
+    """操作日志响应模型。"""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -97,7 +97,7 @@ class OperationLogOutSchema(BaseSchema, UserBySchema):
 
 
 class OperationLogDetailOutSchema(OperationLogOutSchema):
-    """操作日志详情响应模型"""
+    """操作日志详情响应模型。"""
 
     request_payload: str | None = Field(default=None, description="请求体")
     response_json: str | None = Field(default=None, description="响应体")

@@ -10,7 +10,7 @@ from pypdf import PdfReader
 
 
 class DocumentExtractionError(ValueError):
-    """A safe, actionable document parsing failure for users."""
+    """可安全展示给用户、并支持其采取措施的文档解析错误。"""
 
 
 def _ocr_pdf_page(path: Path, page_number: int) -> str:
@@ -44,7 +44,7 @@ def _extract_text_sync(path: str | Path) -> str:
         ocr_pages = 0
         for number, page in enumerate(reader.pages, 1):
             text = page.extract_text() or ""
-            # Empty pages without images stay empty; scanned pages require actual OCR.
+            # 无图像的空页保持为空；扫描页必须执行实际 OCR。
             if not text.strip() and len(page.images):
                 ocr_pages += 1
                 if ocr_pages > 50:
@@ -60,7 +60,7 @@ def _extract_text_sync(path: str | Path) -> str:
         for block in document.iter_inner_content():
             if isinstance(block, Table):
                 for row in block.rows:
-                    # Merged cells may appear repeatedly in the row's cell sequence.
+                    # 合并单元格可能在行的单元格序列中重复出现。
                     seen = set()
                     cells = []
                     for cell in row.cells:

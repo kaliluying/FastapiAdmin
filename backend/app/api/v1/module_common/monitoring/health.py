@@ -1,4 +1,4 @@
-"""健康检查端点
+"""健康检查端点。
 
 提供三级健康检查：
 - /health: 基础健康检查（负载均衡器用）
@@ -26,7 +26,7 @@ HealthRouter = APIRouter(prefix="/health", tags=["公共模块", "健康检查"]
 
 
 async def _check_database() -> DependencyStatus:
-    """检查数据库连接"""
+    """检查数据库连接。"""
     try:
         if not settings.SQL_DB_ENABLE:
             return DependencyStatus(status=1, enabled=False)
@@ -42,7 +42,7 @@ async def _check_database() -> DependencyStatus:
 
 
 async def _check_redis(request: Request) -> DependencyStatus:
-    """检查 Redis 连接"""
+    """检查 Redis 连接。"""
     try:
         if not settings.REDIS_ENABLE:
             return DependencyStatus(status=1, enabled=False)
@@ -61,7 +61,7 @@ async def _check_redis(request: Request) -> DependencyStatus:
 
 
 def _get_disk_usage() -> float:
-    """获取磁盘使用率"""
+    """获取磁盘使用率。"""
     try:
         usage = shutil.disk_usage("/")
         return round(usage.used / usage.total * 100, 1)
@@ -80,14 +80,10 @@ _start_time = datetime.now()
     response_model=ResponseSchema[HealthOut],
 )
 async def health_check():
-    """
-    基础健康检查
+    """基础健康检查。
 
-    参数:
-    - 无
-
-    返回:
-    - SuccessResponse: 包含进程存活状态、启动时间、版本号的 JSON 响应。
+    Returns:
+        SuccessResponse: 包含进程存活状态、启动时间、版本号的 JSON 响应。
     """
     uptime = (datetime.now() - _start_time).total_seconds()
     return SuccessResponse(
@@ -108,14 +104,10 @@ async def health_check():
     response_model=ResponseSchema[HealthOut],
 )
 async def liveness_check():
-    """
-    存活探针
+    """存活探针。
 
-    参数:
-    - 无
-
-    返回:
-    - SuccessResponse: 包含进程存活状态、启动时间、版本号的 JSON 响应。
+    Returns:
+        SuccessResponse: 包含进程存活状态、启动时间、版本号的 JSON 响应。
     """
     uptime = (datetime.now() - _start_time).total_seconds()
     return SuccessResponse(
@@ -136,14 +128,13 @@ async def liveness_check():
     response_model=ResponseSchema[ReadinessOut],
 )
 async def readiness_check(request: Request):
-    """
-    就绪探针
+    """就绪探针。
 
-    参数:
-    - request (Request): FastAPI 请求对象，用于获取 Redis 客户端。
+    Args:
+        request (Request): FastAPI 请求对象，用于获取 Redis 客户端。
 
-    返回:
-    - SuccessResponse | ErrorResponse: 依赖就绪时返回 200，未就绪返回 503。
+    Returns:
+        SuccessResponse | ErrorResponse: 依赖就绪时返回 200，未就绪返回 503。
     """
     uptime = (datetime.now() - _start_time).total_seconds()
 

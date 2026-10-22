@@ -1,4 +1,4 @@
-"""Persist provider attempts and daily user allowance without touching chat data."""
+"""持久化供应商调用尝试和用户每日额度，不修改聊天数据。"""
 import sqlalchemy as sa
 from alembic import op
 

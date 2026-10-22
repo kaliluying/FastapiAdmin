@@ -1,4 +1,4 @@
-"""Request-scoped SSE with bounded buffering and disconnect cancellation."""
+"""请求作用域内的 SSE，提供有界缓冲并在连接断开时取消任务。"""
 
 import asyncio
 import json

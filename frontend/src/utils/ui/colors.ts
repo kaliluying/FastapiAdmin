@@ -2,7 +2,7 @@ import { ElMessage } from "element-plus";
 import { ThemeMode } from "@/enums";
 
 // -----------------------------
-// Colors
+// 颜色工具
 // -----------------------------
 
 interface RgbaResult {
@@ -136,10 +136,10 @@ export function setElementThemeColor(color: string, isDark: boolean): void {
 }
 
 // -----------------------------
-// Theme utils
+// 主题工具
 // -----------------------------
 
-/** WCAG contrast for solid sRGB colors; shared by theme text and its regression checks. */
+/** 纯色 sRGB 颜色的 WCAG 对比度，供主题文本与回归检查共用。 */
 export function colorContrast(foreground: string, background: string): number {
   const luminance = (color: string) => {
     const channels = hexToRgb(color).map((channel) => {
@@ -165,7 +165,7 @@ export function generateThemeColors(
 ): Record<string, string> {
   const isDark = theme === ThemeMode.DARK;
   const surface = isDark ? "#141922" : "#ffffff";
-  // Keep the saved brand swatch. Its default action fill has a separate readable pair.
+  // 保留已保存的品牌色样；默认操作按钮的填充色另有一组满足可读性要求的配色。
   let primary = selectedColor;
   if (selectedColor.toLowerCase() === "#3b73e8") {
     primary = isDark ? "#6f9bff" : "#3267d6";

@@ -29,14 +29,12 @@ from .utils.console import console_end, console_start
 
 
 async def run_startup_migration() -> bool:
-    """Apply all committed Alembic migrations before database initialization.
+    """在数据库初始化前应用所有已纳入版本管理的 Alembic 迁移。
+
+    在工作线程中执行 Alembic ``upgrade head``，可能修改配置指向的数据库结构。
 
     Returns:
-        bool: Whether a migration head was found and applied or checked.
-
-    Side effects:
-        Runs Alembic ``upgrade head`` in a worker thread and may modify the
-        configured database schema.
+        bool: 是否发现并应用或检查了迁移版本。
     """
     logger.info("⏳ 开始应用数据库迁移")
     applied = await asyncio.to_thread(upgrade_database)
@@ -49,7 +47,7 @@ async def run_startup_migration() -> bool:
 
 @asynccontextmanager
 async def _startup_schema_lock(redis) -> AsyncGenerator[None, None]:
-    """Serialize schema and seed work when several workers start together."""
+    """在多个 worker 同时启动时串行执行结构迁移和种子初始化。"""
     lock_key = "fastcore:startup:schema"
     lock_value = uuid4().hex
     redis_crud = RedisCURD(redis)
@@ -93,7 +91,7 @@ async def _startup_schema_lock(redis) -> AsyncGenerator[None, None]:
 
 
 async def bootstrap_database(redis, environment: EnvironmentEnum | None = None, *, migrate_only: bool = False) -> None:
-    """Run migrations, optionally followed by seeds, in a lease-protected child."""
+    """在租约保护的子进程中执行迁移，并按需初始化种子数据。"""
     async with _startup_schema_lock(redis):
         command = [
             sys.executable,

@@ -9,7 +9,7 @@ import { Icon } from "@iconify/vue";
 defineOptions({ name: "FaSvgIcon", inheritAttrs: false });
 
 interface Props {
-  /** Iconify icon name */
+  /** Iconify 图标名称 */
   icon?: string;
 }
 
@@ -66,7 +66,7 @@ const bindAttrs = computed<{ class: string; style: string }>(() => ({
       </div>
     </div> -->
 
-<!-- Svg Icons -->
+<!-- SVG 图标 -->
 <!-- <div class="fa-card-sm p-5">
       <div class="text-lg font-semibold mb-4">Svg Icons</div>
       <div class="flex items-center gap-6">
@@ -81,7 +81,7 @@ const bindAttrs = computed<{ class: string; style: string }>(() => ({
       </div>
     </div> -->
 
-<!-- Svg Icons -->
+<!-- SVG 图标 -->
 <!-- <div class="fa-card-sm p-5">
       <div class="text-lg font-semibold mb-4">Material Line Icons</div>
       <div class="flex items-center gap-6">

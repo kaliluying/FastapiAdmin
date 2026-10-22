@@ -72,5 +72,5 @@ echarts.use([
 export { echarts };
 export type { EChartsOption, BarSeriesOption } from "echarts";
 
-// 导出常用的图形工具
+/** 导出常用的图形工具 */
 export const graphic = echarts.graphic;

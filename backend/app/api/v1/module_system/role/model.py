@@ -12,8 +12,7 @@ if TYPE_CHECKING:
 
 
 class RoleMenusModel(MappedBase):
-    """
-    角色菜单关联表
+    """角色菜单关联表。
 
     定义角色与菜单的多对多关系，用于权限控制
     """
@@ -36,8 +35,7 @@ class RoleMenusModel(MappedBase):
 
 
 class RoleModel(ModelMixin, UserMixin):
-    """
-    角色模型
+    """角色模型。
 
     角色列表只显示当前用户绑定的角色
     """

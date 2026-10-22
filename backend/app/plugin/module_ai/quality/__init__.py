@@ -1,1 +1,1 @@
-"""Answer feedback and repeatable retrieval evaluation."""
+"""回答反馈与可重复的检索评估。"""

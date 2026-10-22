@@ -17,7 +17,7 @@ from .schema import (
 
 
 class LoginLogService:
-    """登录日志管理服务"""
+    """登录日志管理服务。"""
 
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth
@@ -60,7 +60,7 @@ class LoginLogService:
 
 
 class OperationLogService:
-    """操作日志管理服务"""
+    """操作日志管理服务。"""
 
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth

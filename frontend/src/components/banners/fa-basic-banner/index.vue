@@ -22,19 +22,19 @@
     </div>
 
     <div class="basic-banner__content">
-      <!-- title slot -->
+      <!-- 标题插槽 -->
       <slot name="title">
         <p v-if="title" class="basic-banner__title" :style="{ color: titleColor }">{{ title }}</p>
       </slot>
 
-      <!-- subtitle slot -->
+      <!-- 副标题插槽 -->
       <slot name="subtitle">
         <p v-if="subtitle" class="basic-banner__subtitle" :style="{ color: subtitleColor }">
           {{ subtitle }}
         </p>
       </slot>
 
-      <!-- button slot -->
+      <!-- 按钮插槽 -->
       <slot name="button">
         <div
           v-if="buttonConfig?.show"
@@ -50,10 +50,10 @@
         </div>
       </slot>
 
-      <!-- default slot -->
+      <!-- 默认插槽 -->
       <slot></slot>
 
-      <!-- background image：首屏横幅不使用懒加载，避免浏览器干预警告 -->
+      <!-- 背景图片：首屏横幅不使用懒加载，避免浏览器干预警告 -->
       <img
         v-if="imageConfig.src"
         class="basic-banner__background-image"

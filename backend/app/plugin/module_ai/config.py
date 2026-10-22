@@ -1,4 +1,4 @@
-"""Runtime settings owned by the core AI module."""
+"""核心 AI 模块维护的运行设置。"""
 
 import asyncio
 import ipaddress
@@ -14,7 +14,7 @@ from app.config.path_conf import BASE_DIR, ENV_DIR
 
 
 class AiPluginSettings(BaseSettings):
-    """Read AI and retrieval settings as part of the core backend."""
+    """作为后端核心的一部分读取 AI 与检索设置。"""
 
     model_config = SettingsConfigDict(env_file_encoding="utf-8", extra="ignore", case_sensitive=True)
 
@@ -39,10 +39,10 @@ class AiPluginSettings(BaseSettings):
 
 @lru_cache(maxsize=1)
 def get_ai_plugin_settings() -> AiPluginSettings:
-    """Build AI settings from the same environment file as the core service.
+    """从与核心服务相同的环境文件构建 AI 设置。
 
     Returns:
-        Parsed AI plugin settings.
+        解析后的 AI 插件设置。
     """
     environment = os.getenv("ENVIRONMENT")
     env_file = ENV_DIR / f".env.{environment}" if environment else ENV_DIR / ".env"
@@ -53,16 +53,16 @@ settings = get_ai_plugin_settings()
 
 
 def validate_model_base_url(value: str, *, resolve_dns: bool = True) -> str:
-    """Validate a model provider URL against the SSRF policy.
+    """按 SSRF 策略校验模型服务商 URL。
 
     Args:
-        value: Candidate HTTP(S) provider URL.
+        value: 待校验的 HTTP(S) 服务商 URL。
 
     Returns:
-        Normalized URL without a trailing slash.
+        移除末尾斜杠后的规范化 URL。
 
     Raises:
-        ValueError: If the URL contains credentials or targets a blocked host.
+        ValueError: URL 包含凭证或指向被禁止的主机时抛出。
     """
     normalized = value.strip().rstrip("/")
     parsed = urlparse(normalized)
@@ -103,12 +103,12 @@ def validate_model_base_url(value: str, *, resolve_dns: bool = True) -> str:
 
 
 async def async_validate_model_base_url(value: str, *, resolve_dns: bool = True) -> str:
-    """Apply the same SSRF policy without blocking the event loop on DNS."""
+    """应用相同的 SSRF 策略，避免 DNS 查询阻塞事件循环。"""
     if not resolve_dns:
         return validate_model_base_url(value, resolve_dns=False)
     return await asyncio.to_thread(validate_model_base_url, value, resolve_dns=True)
 
 
 def _is_blocked_address(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
-    """Return whether a resolved model endpoint address is non-public."""
+    """判断模型端点解析后的地址是否为非公网地址。"""
     return bool(address.is_private or address.is_loopback or address.is_link_local or address.is_reserved or address.is_multicast or address.is_unspecified or not address.is_global)

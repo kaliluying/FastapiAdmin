@@ -122,7 +122,7 @@ async def create_ws_ticket_controller(
     request: Request,
     redis: Annotated[Redis, Depends(redis_getter)],
 ) -> JSONResponse:
-    """Issue a one-time WebSocket ticket without exposing the JWT in a URL."""
+    """签发一次性 WebSocket 票据，避免在 URL 中暴露 JWT。"""
     session_id = getattr(getattr(request.state, "ctx", None), "session_id", None)
     ticket = await LoginService.create_ws_ticket(redis=redis, session_id=session_id or "")
     return SuccessResponse(data={"ticket": ticket, "expires_in": 60}, msg="创建成功")
@@ -287,6 +287,6 @@ async def oauth_ticket_exchange_controller(
     payload: OAuthTicketSchema,
     redis: Annotated[Redis, Depends(redis_getter)],
 ) -> JSONResponse:
-    """Exchange the browser-safe OAuth ticket for JWTs once."""
+    """将浏览器安全的 OAuth 票据一次性兑换为 JWT。"""
     token = await exchange_oauth_ticket(redis=redis, ticket=payload.ticket)
     return SuccessResponse(data=token, msg="OAuth 登录成功")

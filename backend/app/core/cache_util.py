@@ -1,4 +1,4 @@
-"""轻量 Redis 缓存工具（替代 fastapi-cache2，兼容 redis-py）"""
+"""轻量 Redis 缓存工具（替代 fastapi-cache2，兼容 redis-py）。"""
 import hashlib
 import json
 from collections.abc import Callable

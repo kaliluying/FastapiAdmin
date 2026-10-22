@@ -16,7 +16,7 @@ def reset_correlation_id(token: Token) -> None:
     _correlation_id.reset(token)
 
 
-# ── request.state.ctx ──
+# 请求上下文存储于 request.state.ctx。
 
 @dataclass
 class RequestContext:

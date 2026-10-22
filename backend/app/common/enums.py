@@ -11,7 +11,7 @@ class EnvironmentEnum(str, Enum):
 
 @unique
 class RedisInitKeyConfig(Enum):
-    """系统内置Redis键名枚举"""
+    """系统内置Redis键名枚举。"""
 
     ACCESS_TOKEN = {"key": "access_token", "remark": "登录令牌信息"}
     REFRESH_TOKEN = {"key": "refresh_token", "remark": "刷新令牌信息"}
@@ -19,28 +19,26 @@ class RedisInitKeyConfig(Enum):
     CAPTCHA_CODES = {"key": "captcha_codes", "remark": "图片验证码"}
     @property
     def key(self) -> str:
-        """
-        获取 Redis 键名。
+        """获取 Redis 键名。
 
-        返回:
-        - str: 键名字符串。
+        Returns:
+            str: 键名字符串。
         """
         return self.value.get("key", "")
 
     @property
     def remark(self) -> str:
-        """
-        获取 Redis 键说明。
+        """获取 Redis 键说明。
 
-        返回:
-        - str: 说明文案。
+        Returns:
+            str: 说明文案。
         """
         return self.value.get("remark", "")
 
 
 @unique
 class QueueEnum(str, Enum):
-    """队列枚举"""
+    """队列枚举。"""
 
     none = "None"
     not_none = "not None"
@@ -58,8 +56,7 @@ class QueueEnum(str, Enum):
 
 
 class PermissionFilterStrategy(str, Enum):
-    """
-    权限过滤策略枚举
+    """权限过滤策略枚举。
 
     每个策略对应一种过滤实现，模型通过 ``__permission_strategy__`` 选择。
     注意：``DATA_SCOPE`` 基于角色的 ``data_scope`` 字段决定仅本人或全部数据。

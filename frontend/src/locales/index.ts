@@ -15,7 +15,7 @@
  * ## 支持的语言
  *
  * - zh: 简体中文
- * - en: English
+ * - en: 英文
  *
  * @module locales
  * @author FastCore Team

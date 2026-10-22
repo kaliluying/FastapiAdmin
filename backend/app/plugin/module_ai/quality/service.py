@@ -87,7 +87,7 @@ class QualityService:
                 rating=data.rating,
                 comment=data.comment,
             )
-            # A concurrent vote on the same answer updates one row, never duplicates it.
+            # 同一回答的并发投票只更新一行，避免产生重复记录。
             try:
                 async with self.db.begin_nested():
                     self.db.add(row)
@@ -177,7 +177,7 @@ class QualityService:
             .scalars()
             .all()
         )
-        # Re-check current authorization before returning saved query/evidence data.
+        # 返回已保存的查询和证据数据前，重新检查当前授权。
         visible = []
         for row in rows:
             try:

@@ -108,7 +108,7 @@ interface Props {
   /** 是否预览模式 */
   previewMode?: boolean;
 
-  // 输入图片
+  /** 输入图片 */
   imgUrl?: string;
 }
 

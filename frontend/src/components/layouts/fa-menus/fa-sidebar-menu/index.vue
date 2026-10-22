@@ -206,7 +206,7 @@ const firstLevelMenus = computed(() => {
 
 /**
  * 临时：按一级路径为菜单注入 meta.group，用于前端展示分组标题。
- * 后续建议由后端菜单接口直接返回 meta.group，届时可移除此 helper。
+ * 后续建议由后端菜单接口直接返回 meta.group，届时可移除此辅助函数。
  */
 function injectMenuGroup(menus: AppRouteRecord[]): AppRouteRecord[] {
   const groupMap: Record<string, string> = {
@@ -907,7 +907,7 @@ $popup-menu-radius: 6px;
 }
 
 .layout-sidebar {
-  /* ---------------------- Modify default style ---------------------- */
+  /* ---------------------- 修改默认样式 ---------------------- */
 
   /* 菜单折叠样式 */
   .menu-left-close {
@@ -1028,7 +1028,7 @@ $popup-menu-radius: 6px;
     }
   }
 
-  /* ---------------------- Design theme menu ---------------------- */
+  /* ---------------------- 设计主题菜单 ---------------------- */
   .el-menu-design {
     @include theme-menu-base;
     @include menu-active(
@@ -1042,7 +1042,7 @@ $popup-menu-radius: 6px;
     }
   }
 
-  /* ---------------------- Dark theme menu ---------------------- */
+  /* ---------------------- 暗色主题菜单 ---------------------- */
   .el-menu-dark {
     @include theme-menu-base;
     @include menu-active(
@@ -1056,7 +1056,7 @@ $popup-menu-radius: 6px;
     }
   }
 
-  /* ---------------------- Light theme menu ---------------------- */
+  /* ---------------------- 亮色主题菜单 ---------------------- */
   .el-menu-light {
     .el-menu-item.is-active {
       color: var(--fa-color-accent-text) !important;
@@ -1240,7 +1240,7 @@ $popup-menu-radius: 6px;
   }
 }
 
-/* Light navigation follows the dashboard preview's quiet active rail. */
+/* 亮色导航沿用仪表盘预览中克制的激活项侧边标记。 */
 .layout-sidebar .el-menu-light:not(.el-menu--collapse) {
   .el-menu-item {
     width: calc(100% - 20px);

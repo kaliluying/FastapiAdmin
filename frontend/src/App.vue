@@ -51,7 +51,7 @@ onBeforeMount(() => {
   initializeTheme();
 });
 
-// 存储失效时跳转登录页（由 storage 模块 detect 到异常后派发）
+// 存储失效时跳转登录页（由 storage 模块检测到异常后派发）
 const handleStorageInvalidated = () => {
   router.push({ name: "Login" });
 };

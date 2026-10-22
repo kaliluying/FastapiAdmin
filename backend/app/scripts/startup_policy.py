@@ -1,4 +1,4 @@
-"""Apply committed migrations and initialize the database at startup."""
+"""在启动时应用已纳入版本管理的迁移并初始化数据库。"""
 
 import argparse
 import asyncio
@@ -11,7 +11,7 @@ from sqlalchemy import inspect
 
 
 async def validate_database_schema() -> None:
-    """Validate the schema after startup migrations have been applied."""
+    """在启动迁移完成后校验数据库结构。"""
     from app.config.path_conf import BASE_DIR
     from app.core.base_model import MappedBase
     from app.core.database import _get_schema_indexes, async_engine
@@ -46,7 +46,7 @@ async def validate_database_schema() -> None:
 
 
 async def _bootstrap(*, migrate_only: bool = False) -> None:
-    """Reuse transactional stable-key seeds; Alembic owns schema checkpoints."""
+    """复用按稳定键写入的事务种子，由 Alembic 管理结构版本检查点。"""
     from app.core.database import async_engine
     from app.init_app import run_startup_migration
     from app.scripts.initialize import InitializeData

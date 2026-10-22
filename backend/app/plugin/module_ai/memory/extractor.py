@@ -197,7 +197,7 @@ class MemoryExtractor:
         if not isinstance(raw_text, str) or not raw_text.strip():
             raise ValueError("记忆提取返回空内容")
         actions = _parse_extract_result(raw_text).actions
-        # Validate the entire result before applying any action or acknowledging its job.
+        # 执行任何操作或确认任务完成前，先校验全部结果。
         for action in actions:
             if action.action not in {"create", "update", "delete", "skip"}:
                 raise ValueError("记忆提取包含未知操作")

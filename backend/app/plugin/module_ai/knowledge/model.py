@@ -7,7 +7,7 @@ from app.core.base_model import ModelMixin, UserMixin
 
 
 class KnowledgeBaseModel(ModelMixin, UserMixin):
-    """Knowledge base metadata stored in MySQL."""
+    """存储在 MySQL 中的知识库元数据。"""
 
     __tablename__ = "ai_knowledge_base"
     __table_args__ = {"comment": "AI knowledge base"}
@@ -25,7 +25,7 @@ class KnowledgeBaseModel(ModelMixin, UserMixin):
 
 
 class KnowledgeDocumentModel(ModelMixin, UserMixin):
-    """Document metadata and indexing status stored in MySQL."""
+    """存储在 MySQL 中的文档元数据与索引状态。"""
 
     __tablename__ = "ai_knowledge_document"
     __table_args__ = {"comment": "AI knowledge document"}
@@ -63,7 +63,7 @@ class KnowledgeDocumentModel(ModelMixin, UserMixin):
 
 
 class KnowledgeChunkModel(ModelMixin, UserMixin):
-    """Chunk metadata stored in MySQL; vector content lives in ChromaDB."""
+    """分块元数据存储在 MySQL 中；向量内容存储在 ChromaDB 中。"""
 
     __tablename__ = "ai_knowledge_chunk"
     __table_args__ = {"comment": "AI knowledge chunk"}

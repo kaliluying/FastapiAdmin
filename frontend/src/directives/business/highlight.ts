@@ -205,7 +205,7 @@ async function retryProcessing(el: HTMLElement, maxRetries: number = 3, delay: n
 // 代码高亮、插入行号、复制按钮
 const highlightDirective: HighlightDirective = {
   mounted(el: HTMLElement) {
-    // 标记元素活跃，用于 unmounted 时阻止 pending 回调执行
+    // 标记元素活跃，用于 unmounted 时阻止待执行的回调
     el._highlightActive = true;
 
     // 立即尝试处理一次
@@ -263,7 +263,7 @@ const highlightDirective: HighlightDirective = {
   },
 
   unmounted(el: HTMLElement) {
-    // 标记失活，阻止所有 pending timeout/rAF 回调执行
+    // 标记失活，阻止所有待执行的 timeout/rAF 回调
     el._highlightActive = false;
     // 清理 MutationObserver
     const observer = el._highlightObserver;

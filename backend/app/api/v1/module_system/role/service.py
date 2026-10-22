@@ -16,8 +16,7 @@ from .schema import (
 
 
 class RoleService:
-    """
-    角色管理服务
+    """角色管理服务。
 
     提供角色 CRUD、权限配置、数据权限范围设置、批量启/禁用、Excel 导出等业务能力。
     """
@@ -27,26 +26,25 @@ class RoleService:
 
     @staticmethod
     def _ensure_system_role_protected(role_ids: list[int]) -> None:
-        """Reject mutations to the built-in super-administrator role.
+        """拒绝修改内置超级管理员角色。
 
         Args:
-            role_ids: Role IDs targeted by a mutating operation.
+            role_ids: 本次写操作涉及的角色 ID。
 
         Raises:
-            CustomException: If the built-in role is included.
+            CustomException: 目标包含内置角色。
         """
         if 1 in role_ids:
             raise CustomException(msg="系统默认角色不可修改、停用、删除或重新授权")
 
     async def detail(self, id: int) -> RoleOutSchema:
-        """
-        获取角色详情
+        """获取角色详情。
 
-        参数:
-        - id (int): 角色ID
+        Args:
+            id (int): 角色ID
 
-        返回:
-        - RoleOutSchema: 角色详情响应模型
+        Returns:
+            RoleOutSchema: 角色详情响应模型
         """
         return await RoleCRUD(self.auth).get_or_404(id=id, out_schema=RoleOutSchema)
 
@@ -55,15 +53,14 @@ class RoleService:
         search: RoleQueryParam | None = None,
         order_by: list[dict[str, str]] | None = None,
     ) -> list[RoleOutSchema]:
-        """
-        获取角色列表
+        """获取角色列表。
 
-        参数:
-        - search (RoleQueryParam | None): 查询参数模型
-        - order_by (list[dict[str, str]] | None): 排序参数列表
+        Args:
+            search (RoleQueryParam | None): 查询参数模型
+            order_by (list[dict[str, str]] | None): 排序参数列表
 
-        返回:
-        - list[RoleOutSchema]: 角色响应模型列表
+        Returns:
+            list[RoleOutSchema]: 角色响应模型列表
         """
         role_list = await RoleCRUD(self.auth).get_list(search=vars(search) if search else None, order_by=order_by)
         return [RoleOutSchema.model_validate(role) for role in role_list]
@@ -75,17 +72,16 @@ class RoleService:
         search: RoleQueryParam | None = None,
         order_by: list[dict[str, str]] | None = None,
     ) -> dict:
-        """
-        分页查询角色（数据库 OFFSET/LIMIT）。
+        """分页查询角色（数据库 OFFSET/LIMIT）。
 
-        参数:
-        - page_no (int): 页码（从 1 开始）
-        - page_size (int): 每页条数
-        - search (RoleQueryParam | None): 查询条件
-        - order_by (list[dict[str, str]] | None): 排序字段列表
+        Args:
+            page_no (int): 页码（从 1 开始）
+            page_size (int): 每页条数
+            search (RoleQueryParam | None): 查询条件
+            order_by (list[dict[str, str]] | None): 排序字段列表
 
-        返回:
-        - dict: 分页结果（结构由 ``CRUD.page`` 返回约定）
+        Returns:
+            dict: 分页结果（结构由 ``CRUD.page`` 返回约定）
         """
         offset = (page_no - 1) * page_size
         return await RoleCRUD(self.auth).page(
@@ -98,14 +94,13 @@ class RoleService:
 
     @require_superadmin
     async def create(self, data: RoleCreateSchema) -> RoleOutSchema:
-        """
-        创建角色
+        """创建角色。
 
-        参数:
-        - data (RoleCreateSchema): 创建角色模型
+        Args:
+            data (RoleCreateSchema): 创建角色模型
 
-        返回:
-        - RoleOutSchema: 新创建的角色响应模型
+        Returns:
+            RoleOutSchema: 新创建的角色响应模型
         """
         role = await RoleCRUD(self.auth).get(name=data.name)
         if role:
@@ -119,15 +114,14 @@ class RoleService:
 
     @require_superadmin
     async def update(self, id: int, data: RoleUpdateSchema) -> RoleOutSchema:
-        """
-        更新角色
+        """更新角色。
 
-        参数:
-        - id (int): 角色ID
-        - data (RoleUpdateSchema): 更新角色模型
+        Args:
+            id (int): 角色ID
+            data (RoleUpdateSchema): 更新角色模型
 
-        返回:
-        - RoleOutSchema: 更新后的角色响应模型
+        Returns:
+            RoleOutSchema: 更新后的角色响应模型
         """
         self._ensure_system_role_protected([id])
         _ = await RoleCRUD(self.auth).get_or_404(id=id, msg="更新失败，该数据不存在")
@@ -142,14 +136,10 @@ class RoleService:
 
     @require_superadmin
     async def delete(self, ids: list[int]) -> None:
-        """
-        删除角色
+        """删除角色。
 
-        参数:
-        - ids (list[int]): 角色ID列表
-
-        返回:
-        - None
+        Args:
+            ids (list[int]): 角色ID列表
         """
         if len(ids) < 1:
             raise CustomException(msg="删除失败，删除对象不能为空")
@@ -164,14 +154,10 @@ class RoleService:
 
     @require_superadmin
     async def set_permission(self, data: RolePermissionSettingSchema) -> None:
-        """
-        设置角色权限
+        """设置角色权限。
 
-        参数:
-        - data (RolePermissionSettingSchema): 角色权限设置模型
-
-        返回:
-        - None
+        Args:
+            data (RolePermissionSettingSchema): 角色权限设置模型
         """
         self._ensure_system_role_protected(data.role_ids)
         roles = await RoleCRUD(self.auth).get_list(search={"id": ("in", data.role_ids)})
@@ -184,14 +170,10 @@ class RoleService:
 
     @require_superadmin
     async def set_available(self, data: BatchSetAvailable) -> None:
-        """
-        设置角色可用状态
+        """设置角色可用状态。
 
-        参数:
-        - data (BatchSetAvailable): 批量设置可用状态模型
-
-        返回:
-        - None
+        Args:
+            data (BatchSetAvailable): 批量设置可用状态模型
         """
         self._ensure_system_role_protected(data.ids)
         roles = await RoleCRUD(self.auth).get_list(search={"id": ("in", data.ids)})
@@ -203,14 +185,13 @@ class RoleService:
 
     @staticmethod
     def export_list(role_list: list[RoleOutSchema | dict[str, Any]]) -> bytes:
-        """
-        导出角色列表
+        """导出角色列表。
 
-        参数:
-        - role_list (list[dict[str, Any]]): 角色详情字典列表
+        Args:
+            role_list (list[dict[str, Any]]): 角色详情字典列表
 
-        返回:
-        - bytes: Excel文件字节流
+        Returns:
+            bytes: Excel文件字节流
         """
         # 字段映射配置
         mapping_dict = {

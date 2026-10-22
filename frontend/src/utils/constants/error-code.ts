@@ -1,4 +1,4 @@
-/** Error code map (flattened). */
+/** 错误码映射表（集中定义）。 */
 
 const errorCode: Record<string, string> = {
   "401": "认证失败，无法访问系统资源",

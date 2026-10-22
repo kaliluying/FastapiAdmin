@@ -1,11 +1,11 @@
 <template>
   <div class="fa-async-state" :class="stateClasses" :role="isAlert ? 'alert' : undefined">
-    <!-- loading -->
+    <!-- 加载状态 -->
     <template v-if="state === 'loading'">
       <ElSkeleton :rows="3" animated />
     </template>
 
-    <!-- empty -->
+    <!-- 空状态 -->
     <template v-else-if="state === 'empty'">
       <div class="fa-empty">
         <svg
@@ -41,7 +41,7 @@
       </div>
     </template>
 
-    <!-- error / forbidden / partial -->
+    <!-- 错误 / 无权限 / 部分成功状态 -->
     <template v-else-if="isAlert">
       <div class="fa-async-state__alert-body">
         <span class="fa-async-state__alert-title">{{ title || defaultTitles[state] }}</span>
@@ -52,7 +52,7 @@
       </div>
     </template>
 
-    <!-- default content -->
+    <!-- 默认内容 -->
     <template v-else>
       <slot />
     </template>

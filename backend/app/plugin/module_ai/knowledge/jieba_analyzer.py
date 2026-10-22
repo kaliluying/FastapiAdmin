@@ -1,4 +1,4 @@
-"""jieba中文分词器包装
+"""jieba中文分词器包装。
 
 支持词组级分词，提升中文检索准确率。
 """
@@ -9,7 +9,7 @@ from whoosh.analysis import Analyzer, Token
 
 
 class JiebaAnalyzer(Analyzer):
-    """基于jieba的中文分词器
+    """基于jieba的中文分词器。
 
     相比单字分词，词组级分词能更好地保留语义：
     - 单字："劳动法" → ["劳", "动", "法"]
@@ -24,7 +24,7 @@ class JiebaAnalyzer(Analyzer):
     """
 
     def __init__(self, use_paddle: bool = False):
-        """初始化jieba分词器
+        """初始化jieba分词器。
 
         Args:
             use_paddle: 是否使用paddle模式（更准确但需要额外依赖）
@@ -32,23 +32,23 @@ class JiebaAnalyzer(Analyzer):
         self.use_paddle = use_paddle
 
     def __eq__(self, other):
-        """支持相等性比较"""
+        """支持相等性比较。"""
         return isinstance(other, JiebaAnalyzer) and self.use_paddle == other.use_paddle
 
     def __repr__(self):
-        """支持repr"""
+        """支持repr。"""
         return f"JiebaAnalyzer(use_paddle={self.use_paddle})"
 
     def __getstate__(self):
-        """支持pickle序列化"""
+        """支持pickle序列化。"""
         return {"use_paddle": self.use_paddle}
 
     def __setstate__(self, state):
-        """支持pickle反序列化"""
+        """支持pickle反序列化。"""
         self.use_paddle = state.get("use_paddle", False)
 
     def __call__(self, text: str, **kwargs):
-        """分词主入口
+        """分词主入口。
 
         Args:
             text: 待分词文本
@@ -96,7 +96,7 @@ class JiebaAnalyzer(Analyzer):
             yield token
 
     def add_word(self, word: str, freq: int | None = None, tag: str | None = None):
-        """添加自定义词
+        """添加自定义词。
 
         Args:
             word: 词语
@@ -116,7 +116,7 @@ class JiebaAnalyzer(Analyzer):
             jieba.add_word(word)
 
     def load_userdict(self, dict_path: str):
-        """加载自定义词典
+        """加载自定义词典。
 
         Args:
             dict_path: 词典文件路径
@@ -130,7 +130,7 @@ class JiebaAnalyzer(Analyzer):
 
 
 def create_jieba_analyzer(use_paddle: bool = False) -> JiebaAnalyzer:
-    """创建jieba分词器工厂函数
+    """创建jieba分词器工厂函数。
 
     Args:
         use_paddle: 是否使用paddle模式

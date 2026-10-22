@@ -1,6 +1,4 @@
-/**
- * HTTP utilities: Axios instance, shared constants, error types, and interceptors.
- */
+/** HTTP 工具：Axios 实例、共享常量、错误类型和拦截器。 */
 
 import axios, {
   type AxiosError,
@@ -23,16 +21,16 @@ declare module "axios" {
   }
 }
 
-// --- Configuration constants ---------------------------------------------------
+// --- 配置常量 ---------------------------------------------------
 
-/** Skip auth marker: set headers.Authorization to this value when a request should not carry a token. */
+/** 跳过认证的标记：无需携带令牌时，将 headers.Authorization 设为此值。 */
 export const NO_AUTH_FLAG = "no-auth";
 
 export interface ExtendedRequestConfig extends AxiosRequestConfig {
   skipAuth?: boolean;
 }
 
-// --- Semantic HTTP status codes and HttpError ----------------------------------
+// --- HTTP 状态码与 HttpError ----------------------------------
 
 export enum ApiStatus {
   success = 200,
@@ -157,23 +155,23 @@ export const isHttpError = (error: unknown): error is HttpError => {
 };
 
 /**
- * Determines whether an HTTP failure should be surfaced as a global message.
+ * 判断 HTTP 请求失败时是否应显示全局错误消息。
  *
- * @param config Request configuration associated with the failure.
- * @returns Whether the shared error notification should be displayed.
+ * @param config 失败请求对应的配置。
+ * @returns 是否显示统一的错误通知。
  */
 function shouldShowErrorMessage(config?: AxiosRequestConfig): boolean {
   return config?.showErrorMessage !== false;
 }
 
 /**
- * Creates an HTTP error while retaining the server payload for local recovery.
+ * 创建 HTTP 错误并保留服务端响应数据，供调用方在本地恢复。
  *
- * @param message Human-readable error message.
- * @param code HTTP or business error code.
- * @param data Response payload returned by the server.
- * @param config Request configuration that produced the error.
- * @returns Normalized error object for callers.
+ * @param message 可读的错误消息。
+ * @param code HTTP 状态码或业务错误码。
+ * @param data 服务端返回的响应数据。
+ * @param config 产生错误的请求配置。
+ * @returns 供调用方使用的标准化错误对象。
  */
 function createHttpError(
   message: string,
@@ -188,11 +186,11 @@ function createHttpError(
   });
 }
 
-// --- Token refresh de-duplication ---------------------------------------------
+// --- 令牌刷新去重 ---------------------------------------------
 
 /**
- * Token refresh in-flight flag, preventing concurrent 401 responses from firing multiple refresh requests.
- * Pending requests are replayed after refresh succeeds.
+ * 令牌刷新中的标记，防止并发的 401 响应触发多次刷新请求。
+ * 刷新成功后重放等待中的请求。
  */
 let isRefreshing = false;
 let pendingRequests: Array<{
@@ -216,7 +214,7 @@ function onRefreshFailed() {
   pendingRequests = [];
 }
 
-// --- Axios instance ------------------------------------------------------------
+// --- Axios 实例 ------------------------------------------------------------
 
 export const request: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_APP_BASE_API,
@@ -249,20 +247,20 @@ request.interceptors.request.use(
 );
 
 /**
- * Response interceptor.
+ * 响应拦截器。
  *
- * 1. Successful responses:
- *    - Blob responses pass through for file downloads.
- *    - Non-success business codes are rejected.
- *    - Non-GET, non-login/logout successful mutations show a success message.
+ * 1. 成功响应：
+ *    - Blob 响应直接透传，用于文件下载。
+ *    - 业务状态码非成功时拒绝请求。
+ *    - 非 GET 且非登录/登出的变更请求成功时，显示成功消息。
  *
- * 2. Network errors without a response:
- *    - Provide user-friendly messages for connection refusal, timeout, and generic network errors.
+ * 2. 未收到响应的网络错误：
+ *    - 为连接被拒绝、超时和其他网络错误提供易于理解的消息。
  *
- * 3. Business/auth errors with a response:
- *    - Blob errors are parsed as JSON when possible.
- *    - 401 / TOKEN_EXPIRED triggers silent token refresh and request replay.
- *    - Other business errors are mapped by code.
+ * 3. 收到响应的业务或认证错误：
+ *    - 尽可能将 Blob 错误解析为 JSON。
+ *    - 401 / TOKEN_EXPIRED 触发静默刷新令牌并重放请求。
+ *    - 其他业务错误按错误码映射。
  */
 request.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
@@ -301,7 +299,7 @@ request.interceptors.response.use(
     }
     const showErrorMessage = shouldShowErrorMessage(error.config);
 
-    // Network errors without a response body.
+    // 未收到响应体的网络错误。
     if (!error.response) {
       let errorMessage = "网络连接异常";
 
@@ -320,7 +318,7 @@ request.interceptors.response.use(
 
     const data = error.response?.data;
 
-    // Blob error responses, usually from file download APIs.
+    // Blob 错误响应，通常来自文件下载 API。
     if (error.response?.config.responseType === "blob" && error.response.data instanceof Blob) {
       try {
         const text = await new Response(error.response.data).text();
@@ -340,7 +338,7 @@ request.interceptors.response.use(
       }
     }
 
-    // Auth errors: silently refresh tokens when possible.
+    // 认证错误：条件允许时静默刷新令牌。
     const status = error.response.status;
 
     const hasApiCode =
@@ -353,21 +351,21 @@ request.interceptors.response.use(
     if ((status === 401 && !hasApiCode) || data?.code === ResultEnum.TOKEN_EXPIRED) {
       const config = error.config as InternalAxiosRequestConfig | undefined;
 
-      // If the refresh endpoint itself fails, let the catch block below redirect once.
-      // This avoids duplicate notifications.
+      // 刷新接口本身失败时，由下方的 catch 块统一处理一次跳转。
+      // 避免重复发送通知。
       if (config?.url?.includes("auth/token/refresh")) {
         return Promise.reject(
           new HttpError(data?.msg || "刷新令牌已过期，请重新登录", ApiStatus.unauthorized)
         );
       }
 
-      // Without request config, or when logout itself returns 401, redirect directly.
+      // 缺少请求配置或登出接口本身返回 401 时，直接跳转。
       if (!config || config.url?.includes("auth/logout")) {
         await redirectToLogin("登录状态异常，请重新登录");
         return Promise.reject(new HttpError("Unauthorized", ApiStatus.unauthorized));
       }
 
-      // First 401 starts refresh; later concurrent 401 requests wait in the queue.
+      // 首个 401 启动刷新；后续并发的 401 请求在队列中等待。
       if (!isRefreshing) {
         isRefreshing = true;
         try {
@@ -386,28 +384,28 @@ request.interceptors.response.use(
           Auth.setTokens(newAccessToken, newRefreshToken, Auth.getRememberMe());
           isRefreshing = false;
           const newToken = Auth.getAccessToken();
-          // Replay all queued requests.
+          // 重放队列中的所有请求。
           onRefreshed(newToken);
-          // Retry the current request with the new token.
+          // 使用新令牌重试当前请求。
           config.headers.Authorization = `Bearer ${newToken}`;
           return request(config);
         } catch {
           isRefreshing = false;
-          // Refresh failed: reject queued requests and redirect to login.
+          // 刷新失败：拒绝队列中的请求并跳转登录页。
           onRefreshFailed();
           const msg = data?.msg || "登录已失效，请重新登录";
           await redirectToLogin(msg);
           return Promise.reject(new HttpError(msg, ApiStatus.unauthorized));
         }
       } else {
-        // Another refresh is already running; queue this request for replay.
+        // 已有刷新请求在执行，将当前请求加入队列等待重放。
         return new Promise((resolve, reject) => {
           pendingRequests.push({ config: config!, resolve, reject });
         });
       }
     }
 
-    // Business errors mapped by code.
+    // 按错误码映射业务错误。
     if (data?.code === ResultEnum.ERROR) {
       const message = data.msg || "请求错误";
       if (showErrorMessage) ElMessage.error(message);

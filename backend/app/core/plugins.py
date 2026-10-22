@@ -1,9 +1,7 @@
-"""Core AI module registration.
+"""注册核心 AI 模块。
 
-The backend currently has one AI module: ``module_ai``. Its ``plugin.toml``
-is the single source for routes, models, startup hooks, permissions, and
-dependency checks. There is deliberately no plugin discovery or reload
-mechanism until the product has a second plugin.
+后端当前只有 ``module_ai`` 一个 AI 模块，其 ``plugin.toml`` 统一声明路由、
+模型、启动 hook、权限和依赖检查。当前不提供插件发现或热重载机制。
 """
 
 import importlib
@@ -21,7 +19,7 @@ AI_MANIFEST_PATH = Path(__file__).resolve().parents[1] / "plugin" / "module_ai" 
 
 @dataclass(frozen=True)
 class AiPluginManifest:
-    """Describe the core AI module without importing its implementation."""
+    """描述核心 AI 模块，避免提前导入模块实现。"""
 
     package: str
     name: str
@@ -36,17 +34,17 @@ class AiPluginManifest:
 
 
 def _as_tuple(value: Any, field_name: str) -> tuple[str, ...]:
-    """Validate one string-list field from the AI manifest.
+    """校验 AI 清单中的字符串列表字段。
 
     Args:
-        value: Parsed TOML value.
-        field_name: Field name used in diagnostics.
+        value: 已解析的 TOML 字段值。
+        field_name: 用于诊断信息的字段名。
 
     Returns:
-        A tuple of non-empty strings.
+        由非空字符串组成的元组。
 
     Raises:
-        ValueError: If the configured value is not a string list.
+        ValueError: 配置值不是字符串列表。
     """
     if value is None:
         return ()
@@ -57,13 +55,13 @@ def _as_tuple(value: Any, field_name: str) -> tuple[str, ...]:
 
 @lru_cache(maxsize=1)
 def get_ai_plugin_manifest() -> AiPluginManifest:
-    """Load and validate the core AI module manifest.
+    """加载并校验核心 AI 模块清单。
 
     Returns:
-        Parsed AI module metadata.
+        已解析的 AI 模块元数据。
 
     Raises:
-        ValueError: If required AI metadata is invalid.
+        ValueError: 必需的 AI 模块元数据无效。
     """
     with AI_MANIFEST_PATH.open("rb") as file:
         raw = tomllib.load(file)
@@ -94,15 +92,15 @@ def get_ai_plugin_manifest() -> AiPluginManifest:
 
 
 def _missing_dependencies(manifest: AiPluginManifest) -> tuple[str, ...]:
-    """Return unavailable Python modules required by the AI module."""
+    """返回 AI 模块依赖中不可用的 Python 模块名。"""
     return tuple(module for module in manifest.required_modules if importlib.util.find_spec(module) is None)
 
 
 def ensure_ai_dependencies() -> None:
-    """Fail fast when a core AI dependency is unavailable.
+    """在核心 AI 依赖不可用时立即终止启动。
 
     Raises:
-        RuntimeError: If a required AI package or module directory is missing.
+        RuntimeError: 必需的 AI 依赖包或模块目录不存在。
     """
     manifest = get_ai_plugin_manifest()
     if importlib.util.find_spec(f"app.plugin.{manifest.package}") is None:
@@ -114,17 +112,17 @@ def ensure_ai_dependencies() -> None:
 
 
 def _resolve_entrypoint(manifest: AiPluginManifest, entrypoint: str) -> Any:
-    """Import a manifest entry point from the AI module.
+    """导入 AI 清单声明的入口。
 
     Args:
-        manifest: Validated AI metadata.
-        entrypoint: ``module:attribute`` value from ``plugin.toml``.
+        manifest: 已校验的 AI 模块元数据。
+        entrypoint: ``plugin.toml`` 中的 ``module:attribute`` 入口值。
 
     Returns:
-        Exported AI module attribute.
+        AI 模块导出的属性。
 
     Raises:
-        ValueError: If the entry point format is invalid.
+        ValueError: 入口格式无效。
     """
     module_path, separator, attribute = entrypoint.partition(":")
     if not separator or not module_path or not attribute:
@@ -134,7 +132,7 @@ def _resolve_entrypoint(manifest: AiPluginManifest, entrypoint: str) -> Any:
 
 
 def get_ai_routers() -> tuple[APIRouter, ...]:
-    """Load HTTP routers declared by the core AI manifest."""
+    """加载核心 AI 清单声明的 HTTP 路由。"""
     ensure_ai_dependencies()
     manifest = get_ai_plugin_manifest()
     container_router = APIRouter(prefix=manifest.route_prefix)

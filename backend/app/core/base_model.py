@@ -19,8 +19,7 @@ from app.utils.common_util import uuid4_str
 
 
 class MappedBase(AsyncAttrs, DeclarativeBase):
-    """
-    声明式基类
+    """声明式基类。
 
     `AsyncAttrs <https://docs.sqlalchemy.org/en/20/orm/extensions/asyncio.html#sqlalchemy.ext.asyncio.AsyncAttrs>`__
 
@@ -38,8 +37,7 @@ class MappedBase(AsyncAttrs, DeclarativeBase):
 
 
 class ModelMixin(MappedBase):
-    """
-    模型混入类 - 提供通用字段和功能
+    """模型混入类 - 提供通用字段和功能。
 
     基础模型混合类 Mixin: 一种面向对象编程概念, 使结构变得更加清晰
 
@@ -112,8 +110,7 @@ class ModelMixin(MappedBase):
 
 
 class UserMixin(MappedBase):
-    """
-    用户审计字段 Mixin
+    """用户审计字段 Mixin。
 
     用于记录数据的创建者和更新者
     用于实现数据权限中的"仅本人数据权限"
@@ -149,11 +146,10 @@ class UserMixin(MappedBase):
 
     @declared_attr
     def created_by(self) -> Mapped[Optional["UserModel"]]:
-        """
-        创建人关联关系（延迟加载，避免循环依赖）。
+        """创建人关联关系（延迟加载，避免循环依赖）。
 
-        返回:
-        - Mapped[Optional[UserModel]]: 创建人 ORM 关系。
+        Returns:
+            Mapped[Optional[UserModel]]: 创建人 ORM 关系。
         """
         return relationship(
             "UserModel",
@@ -164,11 +160,10 @@ class UserMixin(MappedBase):
 
     @declared_attr
     def updated_by(self) -> Mapped[Optional["UserModel"]]:
-        """
-        更新人关联关系（延迟加载，避免循环依赖）。
+        """更新人关联关系（延迟加载，避免循环依赖）。
 
-        返回:
-        - Mapped[Optional[UserModel]]: 更新人 ORM 关系。
+        Returns:
+            Mapped[Optional[UserModel]]: 更新人 ORM 关系。
         """
         return relationship(
             "UserModel",
@@ -179,11 +174,10 @@ class UserMixin(MappedBase):
 
     @declared_attr
     def deleted_by(self) -> Mapped[Optional["UserModel"]]:
-        """
-        删除人关联关系（延迟加载，避免循环依赖）。
+        """删除人关联关系（延迟加载，避免循环依赖）。
 
-        返回:
-        - Mapped[Optional[UserModel]]: 删除人 ORM 关系。
+        Returns:
+            Mapped[Optional[UserModel]]: 删除人 ORM 关系。
         """
         return relationship(
             "UserModel",

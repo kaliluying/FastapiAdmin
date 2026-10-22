@@ -74,7 +74,7 @@ export interface LoginFormData {
   captcha?: string;
 }
 
-/** Login CAPTCHA challenge. */
+/** 登录 CAPTCHA 验证码挑战。 */
 export interface CaptchaResult {
   enable: boolean;
   key: string;

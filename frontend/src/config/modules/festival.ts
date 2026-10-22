@@ -1,8 +1,8 @@
 /**
- * Optional manually scheduled celebrations.
+ * 可选的手动排期庆祝活动。
  *
- * Built-in public holidays remain in ``festival.builtin.ts``. Keep this list
- * empty until the deployed product has a real operational announcement.
+ * 内置公共节日保留在 ``festival.builtin.ts`` 中。部署后的产品有实际运营公告需求前，
+ * 请将此列表保持为空。
  */
 import type { FestivalConfig } from "@/types/config";
 

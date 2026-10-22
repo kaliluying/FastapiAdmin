@@ -9,7 +9,7 @@ from app.core.base_model import ModelMixin, UserMixin
 
 
 class ChatSessionModel(ModelMixin):
-    """AI chat session persisted by the application."""
+    """由应用持久化保存的 AI 聊天会话。"""
 
     __tablename__ = "ai_chat_session"
     __table_args__ = {"comment": "AI chat session"}
@@ -22,7 +22,7 @@ class ChatSessionModel(ModelMixin):
 
 
 class AiModelConfigModel(ModelMixin, UserMixin):
-    """Persisted global chat-model override for the single-organization app."""
+    """单组织应用持久化保存的全局聊天模型覆盖配置。"""
 
     __tablename__ = "ai_model_config"
     __table_args__ = {"comment": "AI chat model configuration"}

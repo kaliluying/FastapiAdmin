@@ -1,4 +1,4 @@
-"""Persist staged document replacement and recoverable file cleanup."""
+"""持久化文档替换暂存状态和可恢复的文件清理任务。"""
 
 import sqlalchemy as sa
 from alembic import op

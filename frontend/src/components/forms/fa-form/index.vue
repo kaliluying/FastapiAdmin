@@ -251,7 +251,7 @@ const isMobile = computed(() => width.value < 500);
 
 const formInstance = useTemplateRef<FormInstance>("formRef");
 
-// 表单项配置
+/** 表单项配置 */
 export interface FormItem {
   /** 表单项的唯一标识 */
   key: string;

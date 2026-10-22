@@ -14,7 +14,7 @@ UserT = TypeVar("UserT")
 
 
 class CommonSchema(BaseModel):
-    """通用信息模型"""
+    """通用信息模型。"""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -23,7 +23,7 @@ class CommonSchema(BaseModel):
 
 
 class BaseSchema(BaseModel):
-    """通用输出模型，包含基础字段和审计字段"""
+    """通用输出模型，包含基础字段和审计字段。"""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -36,7 +36,7 @@ class BaseSchema(BaseModel):
 
 
 class UserBySchema(BaseModel):
-    """通用创建模型，包含基础字段和审计字段"""
+    """通用创建模型，包含基础字段和审计字段。"""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -49,14 +49,14 @@ class UserBySchema(BaseModel):
 
 
 class BatchSetAvailable(BaseModel):
-    """批量设置可用状态的请求模型"""
+    """批量设置可用状态的请求模型。"""
 
     ids: list[int] = Field(default_factory=list, description="ID列表")
     status: int = Field(default=0, ge=0, le=1, description="是否可用")
 
 
 class UploadResponseSchema(BaseModel):
-    """上传响应模型"""
+    """上传响应模型。"""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -67,20 +67,20 @@ class UploadResponseSchema(BaseModel):
 
 
 class DownloadFileSchema(BaseModel):
-    """下载文件模型"""
+    """下载文件模型。"""
 
     file_path: str = Field(..., description="新文件映射路径")
     file_name: str = Field(..., description="新文件名称")
 
 
 class BatchDelete(BaseModel):
-    """批量删除请求模型"""
+    """批量删除请求模型。"""
 
     ids: list[int] = Field(..., min_length=1, description="ID列表")
 
 
 class AuthSchema(BaseModel):
-    """权限认证模型
+    """权限认证模型。
 
     ``user`` 字段运行时为 ``Any``（避免与 SQLAlchemy 懒加载冲突，也避免
     循环依赖）。通过 ``get_user()`` 方法获得 IDE 类型推断。
@@ -105,7 +105,7 @@ class AuthSchema(BaseModel):
 
 
 class JWTPayloadSchema(BaseModel):
-    """JWT载荷模型"""
+    """JWT载荷模型。"""
 
     sub: str = Field(..., description="用户登录信息")
     is_refresh: bool = Field(default=False, description="是否刷新token")
@@ -120,7 +120,7 @@ class JWTPayloadSchema(BaseModel):
 
 
 class JWTOutSchema(BaseModel):
-    """JWT响应模型"""
+    """JWT响应模型。"""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -131,19 +131,19 @@ class JWTOutSchema(BaseModel):
 
 
 class RefreshTokenPayloadSchema(BaseModel):
-    """刷新Token载荷模型"""
+    """刷新Token载荷模型。"""
 
     refresh_token: str = Field(..., min_length=1, description="刷新token")
 
 
 class LogoutPayloadSchema(BaseModel):
-    """退出登录载荷模型"""
+    """退出登录载荷模型。"""
 
     token: str = Field(..., min_length=1, description="token")
 
 
 class PageResultSchema[T](BaseModel):
-    """分页查询结果模型"""
+    """分页查询结果模型。"""
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -40,12 +40,12 @@ export const AUTH_KEYS = {
   REMEMBER_ME: REMEMBER_ME_KEY,
 } as const;
 
-// 缓存相关键集合
+/** 缓存相关键集合 */
 export const CACHE_KEYS = {
   DICT_CACHE: DICT_CACHE_KEY,
 } as const;
 
-// 设置相关键集合
+/** 设置相关键集合 */
 export const SETTINGS_KEYS = {
   SHOW_TAGS_VIEW: SHOW_TAGS_VIEW_KEY,
   SHOW_APP_LOGO: SHOW_APP_LOGO_KEY,
@@ -64,7 +64,7 @@ export const SETTINGS_KEYS = {
   PAGE_SWITCHING_ANIMATION: PAGE_SWITCHING_ANIMATION_KEY,
 } as const;
 
-// 📦 所有存储键的统一集合
+/** 📦 所有存储键的统一集合 */
 export const ALL_STORAGE_KEYS = {
   ...AUTH_KEYS,
   ...CACHE_KEYS,

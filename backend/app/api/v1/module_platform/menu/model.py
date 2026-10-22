@@ -11,8 +11,7 @@ if TYPE_CHECKING:
 
 
 class MenuModel(ModelMixin):
-    """
-    菜单表 - 用于存储系统菜单资源定义
+    """菜单表 - 用于存储系统菜单资源定义。
 
     菜单类型说明:
     - 1: 目录(一级菜单)

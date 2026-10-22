@@ -28,16 +28,16 @@ from .schema import (
 
 
 class UserService:
-    """用户管理服务"""
+    """用户管理服务。"""
 
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth
 
     def _ensure_role_assignment_allowed(self) -> None:
-        """Restrict assignment of security roles to super administrators.
+        """仅允许超级管理员分配安全角色。
 
         Raises:
-            CustomException: If the current user is not a super administrator.
+            CustomException: 当前用户不是超级管理员。
         """
         if not self.auth.user or not self.auth.user.is_superuser:
             raise CustomException(msg="仅超级管理员可以分配用户角色", code=10403, status_code=403)

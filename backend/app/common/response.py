@@ -23,7 +23,7 @@ def jsonable_response_content(content: Any) -> Any:
 
 
 class ResponseSchema[T](BaseModel):
-    """响应模型"""
+    """响应模型。"""
 
     code: int = Field(default=RET.OK.code, description="业务状态码")
     msg: str = Field(default=RET.OK.msg, description="响应消息")
@@ -33,7 +33,7 @@ class ResponseSchema[T](BaseModel):
 
 
 class SuccessResponse(JSONResponse):
-    """成功响应类"""
+    """成功响应类。"""
 
     def __init__(
         self,
@@ -43,18 +43,14 @@ class SuccessResponse(JSONResponse):
         status_code: int = status.HTTP_200_OK,
         success: bool = True,
     ) -> None:
-        """
-        初始化成功响应类
+        """初始化成功响应类。
 
-        参数:
-        - data (Any | None): 响应数据。
-        - msg (str): 响应消息。
-        - code (int): 业务状态码。
-        - status_code (int): HTTP 状态码。
-        - success (bool): 操作是否成功。
-
-        返回:
-        - None
+        Args:
+            data (Any | None): 响应数据。
+            msg (str): 响应消息。
+            code (int): 业务状态码。
+            status_code (int): HTTP 状态码。
+            success (bool): 操作是否成功。
         """
         content = ResponseSchema(
             code=code,
@@ -68,7 +64,7 @@ class SuccessResponse(JSONResponse):
 
 
 class ErrorResponse(JSONResponse):
-    """错误响应类"""
+    """错误响应类。"""
 
     def __init__(
         self,
@@ -78,18 +74,14 @@ class ErrorResponse(JSONResponse):
         status_code: int = status.HTTP_400_BAD_REQUEST,
         success: bool = False,
     ) -> None:
-        """
-        初始化错误响应类
+        """初始化错误响应类。
 
-        参数:
-        - data (Any): 响应数据。
-        - msg (str): 响应消息。
-        - code (int): 业务状态码。
-        - status_code (int): HTTP 状态码。
-        - success (bool): 操作是否成功。
-
-        返回:
-        - None
+        Args:
+            data (Any): 响应数据。
+            msg (str): 响应消息。
+            code (int): 业务状态码。
+            status_code (int): HTTP 状态码。
+            success (bool): 操作是否成功。
         """
         content = ResponseSchema(
             code=code,
@@ -103,7 +95,7 @@ class ErrorResponse(JSONResponse):
 
 
 class StreamResponse(StreamingResponse):
-    """流式响应类"""
+    """流式响应类。"""
 
     def __init__(
         self,
@@ -113,18 +105,14 @@ class StreamResponse(StreamingResponse):
         media_type: str | None = None,
         background: BackgroundTask | None = None,
     ) -> None:
-        """
-        初始化流式响应类
+        """初始化流式响应类。
 
-        参数:
-        - data (Any): 响应数据。
-        - status_code (int): HTTP 状态码。
-        - headers (Mapping[str, str] | None): 响应头。
-        - media_type (str | None): 媒体类型。
-        - background (BackgroundTask | None): 后台任务。
-
-        返回:
-        - None
+        Args:
+            data (Any): 响应数据。
+            status_code (int): HTTP 状态码。
+            headers (Mapping[str, str] | None): 响应头。
+            media_type (str | None): 媒体类型。
+            background (BackgroundTask | None): 后台任务。
         """
         super().__init__(
             content=data,
@@ -136,9 +124,7 @@ class StreamResponse(StreamingResponse):
 
 
 class UploadFileResponse(FileResponse):
-    """
-    文件响应
-    """
+    """文件响应。"""
 
     def __init__(
         self,
@@ -149,19 +135,15 @@ class UploadFileResponse(FileResponse):
         background: BackgroundTask | None = None,
         status_code: int = 200,
     ) -> None:
-        """
-        初始化文件响应类
+        """初始化文件响应类。
 
-        参数:
-        - file_path (str): 文件路径。
-        - filename (str): 文件名。
-        - media_type (str): 文件类型。
-        - headers (Mapping[str, str] | None): 响应头。
-        - background (BackgroundTask | None): 后台任务。
-        - status_code (int): HTTP 状态码。
-
-        返回:
-        - None
+        Args:
+            file_path (str): 文件路径。
+            filename (str): 文件名。
+            media_type (str): 文件类型。
+            headers (Mapping[str, str] | None): 响应头。
+            background (BackgroundTask | None): 后台任务。
+            status_code (int): HTTP 状态码。
         """
         super().__init__(
             path=file_path,

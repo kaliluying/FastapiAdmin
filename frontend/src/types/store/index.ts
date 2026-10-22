@@ -26,18 +26,18 @@
 import { MenuThemeEnum, SystemThemeEnum } from "@/enums/appEnum";
 import { LocationQueryRaw } from "vue-router";
 
-// 系统主题样式（light | dark）
+/** 系统主题样式（light | dark） */
 export interface SystemThemeType {
   /** 主题类名 */
   className: string;
 }
 
-// 定义包含多个主题的类型
+/** 定义包含多个主题的类型 */
 export type SystemThemeTypes = {
   [key in Exclude<SystemThemeEnum, SystemThemeEnum.AUTO>]: SystemThemeType;
 };
 
-// 菜单主题样式
+/** 菜单主题样式 */
 export interface MenuThemeType {
   /** 主题类型 */
   theme: MenuThemeEnum;
@@ -53,7 +53,7 @@ export interface MenuThemeType {
   img?: string;
 }
 
-// 设置中心
+/** 设置中心 */
 export interface SettingState {
   /** 主题 */
   theme: string;
@@ -77,7 +77,7 @@ export interface SettingState {
   themeModel: string;
 }
 
-// 多标签
+/** 多标签 */
 export interface WorkTab {
   /** 标签标题 */
   title: string;
@@ -101,7 +101,7 @@ export interface WorkTab {
   isActive?: boolean;
 }
 
-// 用户Store状态
+/** 用户Store状态 */
 export interface UserState {
   /** 用户信息 */
   userInfo: Api.Auth.UserInfo | null;
@@ -113,9 +113,9 @@ export interface UserState {
   permissions: string[];
 }
 
-// 设置Store状态
+/** 设置Store状态 */
 export interface SettingStoreState extends SettingState {
-  // 额外的设置状态
+  /** 额外的设置状态 */
   /** 菜单是否折叠 */
   collapsed: boolean;
   /** 设备类型 */
@@ -124,7 +124,7 @@ export interface SettingStoreState extends SettingState {
   language: string;
 }
 
-// 工作标签页Store状态
+/** 工作标签页Store状态 */
 export interface WorkTabState {
   /** 标签页列表 */
   tabs: WorkTab[];
@@ -134,7 +134,7 @@ export interface WorkTabState {
   cachedTabs: string[];
 }
 
-// 菜单Store状态
+/** 菜单Store状态 */
 export interface MenuState {
   /** 菜单列表 */
   menuList: any[];
@@ -144,7 +144,7 @@ export interface MenuState {
   collapsed: boolean;
 }
 
-// 根Store状态类型
+/** 根Store状态类型 */
 export interface RootState {
   /** 用户状态 */
   user: UserState;

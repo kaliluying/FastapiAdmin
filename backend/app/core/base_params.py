@@ -9,7 +9,7 @@ from app.core.validator import DateTimeStr
 
 @dataclass
 class QueryParam:
-    """公共基类 —— 自动按 MRO 链式调用所有 __post_init__，子类无需 super()"""
+    """公共基类 —— 自动按 MRO 链式调用所有 __post_init__，子类无需 super()。"""
 
     def __init_subclass__(cls, **kwargs: object) -> None:
         super().__init_subclass__(**kwargs)
@@ -33,7 +33,7 @@ class QueryParam:
 
 
 def _unwrap_query_defaults(self: object) -> None:
-    """将 @dataclass 字段中残留的 FastAPI Query(...) 默认值替换为 None"""
+    """将 @dataclass 字段中残留的 FastAPI Query(...) 默认值替换为 None。"""
     for f in self.__dataclass_fields__:  # type: ignore[attr-defined]
         raw = getattr(self, f)
         if raw is not None and type(raw).__name__ == "Query":
@@ -42,7 +42,7 @@ def _unwrap_query_defaults(self: object) -> None:
 
 @dataclass
 class PaginationQueryParam(QueryParam):
-    """分页 —— 自动继承 page_no / page_size / order_by，子类无需重复声明"""
+    """分页 —— 自动继承 page_no / page_size / order_by，子类无需重复声明。"""
 
     page_no: int = Query(default=1, description="当前页码", ge=1)
     page_size: int = Query(default=10, description="每页数量", ge=1, le=100)
@@ -63,7 +63,7 @@ class PaginationQueryParam(QueryParam):
 
 @dataclass
 class BaseQueryParam(QueryParam):
-    """created_time + updated_time —— 子类自动继承"""
+    """created_time + updated_time —— 子类自动继承。"""
 
     created_time: list[DateTimeStr] | None = Query(
         None,
@@ -87,7 +87,7 @@ class BaseQueryParam(QueryParam):
 
 @dataclass
 class UserByQueryParam(QueryParam):
-    """created_id + updated_id —— 子类自动继承"""
+    """created_id + updated_id —— 子类自动继承。"""
 
     created_id: int | None = Query(None, description="创建人")
     updated_id: int | None = Query(None, description="更新人")

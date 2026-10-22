@@ -11,7 +11,7 @@ from .runtime_logs import RuntimeLogQuerySchema
 
 
 class ChatQuerySchema(BaseModel):
-    """Streaming chat request shared by SSE and legacy WebSocket."""
+    """SSE 与旧版 WebSocket 共用的流式聊天请求。"""
 
     message: str = Field(..., min_length=1, max_length=8_000, description="Message content")
     session_id: str | None = Field(None, description="Session ID")
@@ -30,7 +30,7 @@ class ChatQuerySchema(BaseModel):
 
 
 class ChatSessionCreateSchema(BaseModel):
-    """Create chat session request."""
+    """创建聊天会话的请求。"""
 
     title: str = Field(..., min_length=1, max_length=200, description="Session title")
 
@@ -44,7 +44,7 @@ class ChatSessionCreateSchema(BaseModel):
 
 
 class ChatSessionUpdateSchema(BaseModel):
-    """Update chat session request."""
+    """更新聊天会话的请求。"""
 
     title: str = Field(..., min_length=1, max_length=200, description="Session title")
 
@@ -59,13 +59,13 @@ class ChatSessionUpdateSchema(BaseModel):
 
 @dataclass
 class ChatSessionQueryParam(BaseQueryParam, UserByQueryParam):
-    """Chat session list query."""
+    """聊天会话列表查询。"""
 
     title: str | None = Query(None, description="Session title")
 
 
 class AiChatRequestSchema(BaseModel):
-    """Non-streaming AI chat request."""
+    """非流式 AI 聊天请求。"""
 
     message: str = Field(..., min_length=1, max_length=8_000, description="User message")
     session_id: str | None = Field(None, description="Session ID; creates a new session when omitted")
@@ -82,7 +82,7 @@ class AiChatRequestSchema(BaseModel):
 
 
 class AiChatResponseSchema(BaseModel):
-    """Non-streaming AI chat response."""
+    """非流式 AI 聊天响应。"""
 
     response: str = Field(..., description="AI response content")
     session_id: str = Field(..., description="Session ID")
@@ -95,7 +95,7 @@ ChatProtocol = Literal["openai", "openai_responses", "anthropic"]
 
 
 class AiModelConfigOutSchema(BaseModel):
-    """Safe AI runtime configuration status."""
+    """可安全展示的 AI 运行配置状态。"""
 
     chat_protocol: ChatProtocol
     openai_base_url: str
@@ -109,7 +109,7 @@ class AiModelConfigOutSchema(BaseModel):
 
 
 class AiModelConfigUpdateSchema(BaseModel):
-    """Editable chat-model configuration; vector settings are intentionally excluded."""
+    """可编辑的聊天模型配置；有意排除向量设置。"""
 
     chat_protocol: ChatProtocol = "openai"
     openai_base_url: str = Field(..., min_length=1, max_length=500)
@@ -119,7 +119,7 @@ class AiModelConfigUpdateSchema(BaseModel):
     @field_validator("openai_base_url")
     @classmethod
     def validate_base_url(cls, value: str) -> str:
-        # The service performs DNS checks after comparing with the configured endpoint.
+        # 服务层先与已配置的端点比较，再执行 DNS 检查。
         return validate_model_base_url(value, resolve_dns=False)
 
     @field_validator("openai_model")
@@ -140,7 +140,7 @@ class AiModelConfigUpdateSchema(BaseModel):
 
 
 class AiModelListRequestSchema(BaseModel):
-    """Connection settings used for one model-list request without saving them."""
+    """仅供单次模型列表请求使用、不予保存的连接设置。"""
 
     chat_protocol: ChatProtocol
     openai_base_url: str = Field(..., min_length=1, max_length=500)
@@ -149,8 +149,8 @@ class AiModelListRequestSchema(BaseModel):
     @field_validator("openai_base_url")
     @classmethod
     def validate_base_url(cls, value: str) -> str:
-        # DNS-aware validation happens in the service after it can compare the
-        # submitted URL with the already configured provider endpoint.
+        # 服务层先将提交的 URL 与已配置的服务商端点比较，
+        # 再执行包含 DNS 检查的校验。
         return validate_model_base_url(value, resolve_dns=False)
 
     @field_validator("openai_api_key")

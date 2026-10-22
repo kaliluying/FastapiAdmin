@@ -69,10 +69,10 @@ export const getFirstMenuPath = (menuList: AppRouteRecordFromTypes[]): string =>
 };
 
 /**
- * Open a validated external menu link without exposing the opener window.
+ * 打开已校验的外部菜单链接，避免向新窗口暴露来源窗口。
  *
- * @param link HTTPS URL configured for the external menu.
- * @returns The newly opened window, or null when the browser blocks it.
+ * @param link 外部菜单配置的 HTTPS URL。
+ * @returns 新打开的窗口；被浏览器拦截时返回 null。
  */
 export const openExternalLink = (link: string) =>
   window.open(link, "_blank", "noopener,noreferrer");

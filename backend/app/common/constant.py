@@ -2,8 +2,7 @@ from enum import Enum
 
 
 class RET(Enum):
-    """
-    系统返回码枚举
+    """系统返回码枚举。
 
     0~200: 成功状态码
     400~600: HTTP标准错误码
@@ -56,36 +55,30 @@ class RET(Enum):
     EXPIRED_TOKEN = (4505, "令牌过期")
 
     def __init__(self, code: int, msg: str) -> None:
-        """
-        初始化返回码。
+        """初始化返回码。
 
-        参数:
-        - code (int): 错误码。
-        - msg (str): 错误信息。
-
-        返回:
-        - None
+        Args:
+            code (int): 错误码。
+            msg (str): 错误信息。
         """
         self._code = code
         self._msg = msg
 
     @property
     def code(self) -> int:
-        """
-        获取错误码。
+        """获取错误码。
 
-        返回:
-        - int: 错误码数值。
+        Returns:
+            int: 错误码数值。
         """
         return self._code
 
     @property
     def msg(self) -> str:
-        """
-        获取错误信息。
+        """获取错误信息。
 
-        返回:
-        - str: 错误信息文本。
+        Returns:
+            str: 错误信息文本。
         """
         return self._msg
 

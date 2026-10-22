@@ -9,17 +9,14 @@ from app.config.setting import settings
 
 
 class CaptchaUtil:
-    """
-    验证码工具类
-    """
+    """验证码工具类。"""
 
     @classmethod
     def generate_captcha(cls) -> tuple[str, str]:
-        """
-        生成带有噪声和干扰的验证码图片（4位随机字符）。
+        """生成带有噪声和干扰的验证码图片（4位随机字符）。
 
-        返回:
-        - tuple[str, str]: Base64 PNG 字符串与验证码明文。
+        Returns:
+            tuple[str, str]: Base64 PNG 字符串与验证码明文。
         """
         # 生成4位随机验证码
         chars = string.digits + string.ascii_letters
@@ -81,14 +78,13 @@ class CaptchaUtil:
 
     @classmethod
     def captcha_arithmetic(cls, difficulty: str = "medium") -> tuple[str, int]:
-        """
-        创建算术验证码图片（加减乘运算）；浅色底、居中算式，无旋转与干扰线/噪点。
+        """创建算术验证码图片（加减乘运算）；浅色底、居中算式，无旋转与干扰线/噪点。
 
-        参数:
-        - difficulty (str): 难度级别（easy / medium / hard），控制数字范围与可用运算符。
+        Args:
+            difficulty (str): 难度级别（easy / medium / hard），控制数字范围与可用运算符。
 
-        返回:
-        - tuple[str, int]: base64 编码的 PNG 图片字符串与正确答案（整数）。
+        Returns:
+            tuple[str, int]: base64 编码的 PNG 图片字符串与正确答案（整数）。
         """
         difficulty_config = {
             "easy": {"num_range": (1, 9), "operators": ["+", "-"]},

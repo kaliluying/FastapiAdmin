@@ -55,7 +55,7 @@ async def _write_login_log(
     request_browser: str | None = None,
     msg: str | None = None,
 ) -> None:
-    """写入登录日志（独立 session，避免事务回滚时丢失失败记录）"""
+    """写入登录日志（独立 session，避免事务回滚时丢失失败记录）。"""
     from app.api.v1.module_system.log.crud import LoginLogCRUD
     from app.api.v1.module_system.log.schema import LoginLogCreateSchema
     from app.core.base_schema import AuthSchema
@@ -79,30 +79,30 @@ async def _write_login_log(
 
 
 def _resolve_request_ip(request: Request) -> str:
-    """从请求中解析客户端真实 IP"""
+    """从请求中解析客户端真实 IP。"""
     return get_client_ip(request)
 
 
 def _login_subject_digest(username: str, request_ip: str) -> str:
-    """Hash the login subject and trusted client address for Redis keys."""
+    """对登录主体和可信客户端地址取哈希，供 Redis 键名使用。"""
     subject = f"{username.strip().lower()}\x00{request_ip.strip()}"
     return hashlib.sha256(subject.encode("utf-8")).hexdigest()
 
 
 def _login_failure_key(username: str, request_ip: str) -> str:
-    """Return a Redis key that does not expose raw login input."""
+    """生成不暴露原始登录输入的 Redis 键名。"""
     digest = _login_subject_digest(username, request_ip)
     return f"auth:login:failure:{digest}"
 
 
 def _login_lock_key(username: str, request_ip: str) -> str:
-    """Return the short-lived Redis account-lock key."""
+    """返回 Redis 短期账号锁的键名。"""
     digest = _login_subject_digest(username, request_ip)
     return f"auth:login:lock:{digest}"
 
 
 async def _get_login_failure_count(redis: Redis, username: str, request_ip: str) -> int:
-    """Read the current failed-login counter for one account/client pair."""
+    """读取指定账号与客户端组合的当前登录失败次数。"""
     if await RedisCURD(redis).exists(_login_lock_key(username, request_ip)):
         return settings.LOGIN_MAX_FAILURES
     value = await RedisCURD(redis).get(_login_failure_key(username, request_ip))
@@ -115,10 +115,9 @@ async def _get_login_failure_count(redis: Redis, username: str, request_ip: str)
 
 
 async def _record_login_failure(redis: Redis, username: str, request_ip: str) -> int:
-    """Increment and expire an account failure counter.
+    """递增账号登录失败计数并设置过期时间。
 
-    Redis' atomic ``INCR`` is preferred; the fallback keeps lightweight test
-    doubles and nonstandard Redis clients functional.
+    优先使用 Redis 原子操作 ``INCR``；兼容路径用于轻量测试替身及非标准 Redis 客户端。
     """
     key = _login_failure_key(username, request_ip)
     try:
@@ -144,7 +143,7 @@ async def _record_login_failure(redis: Redis, username: str, request_ip: str) ->
 
 
 async def _clear_login_failures(redis: Redis, username: str, request_ip: str) -> None:
-    """Clear the account/client failure counter after a successful login."""
+    """在登录成功后清除对应账号与客户端的失败计数。"""
     await RedisCURD(redis).delete(
         _login_failure_key(username, request_ip),
         _login_lock_key(username, request_ip),
@@ -152,12 +151,12 @@ async def _clear_login_failures(redis: Redis, username: str, request_ip: str) ->
 
 
 def _locked_message() -> str:
-    """Return the stable client-facing account lock message."""
+    """返回对客户端展示的固定账号锁定提示。"""
     return "登录失败次数过多，请稍后再试"
 
 
 class LoginService:
-    """登录认证服务"""
+    """登录认证服务。"""
 
     def __init__(self, auth: AuthSchema | None = None) -> None:
         self.auth = auth
@@ -170,7 +169,7 @@ class LoginService:
         login_form: CustomOAuth2PasswordRequestForm,
         db: AsyncSession,
     ) -> LoginSchema:
-        """用户认证"""
+        """用户认证。"""
         ua_result = ua_parser.parse(request.headers.get("user-agent"))
         request_ip = _resolve_request_ip(request)
         login_location = await IpLocalUtil.resolve_location_for_log(request_ip)
@@ -284,7 +283,7 @@ class LoginService:
 
     @classmethod
     async def create_token(cls, request: Request, redis: Redis, user: UserModel, login_type: str) -> JWTOutSchema:
-        """创建访问令牌和刷新令牌"""
+        """创建访问令牌和刷新令牌。"""
         session_id = str(uuid.uuid4())
         request_ip = _resolve_request_ip(request)
 
@@ -363,7 +362,7 @@ class LoginService:
         redis: Redis,
         refresh_token: RefreshTokenPayloadSchema,
     ) -> JWTOutSchema:
-        """刷新访问令牌"""
+        """刷新访问令牌。"""
         token_payload: JWTPayloadSchema = decode_access_token(token=refresh_token.refresh_token)
         if not token_payload.is_refresh:
             raise CustomException(msg="非法凭证，请传入刷新令牌")
@@ -445,7 +444,7 @@ class LoginService:
 
     @staticmethod
     async def logout(redis: Redis, session_id: str) -> bool:
-        """Revoke only the session authenticated by the current request."""
+        """仅注销当前请求认证的会话。"""
         if not session_id:
             raise CustomException(msg="非法凭证,无法获取会话编号")
 
@@ -459,14 +458,14 @@ class LoginService:
 
     @staticmethod
     async def create_ws_ticket(redis: Redis, session_id: str) -> str:
-        """Issue a short-lived, one-time ticket for a WebSocket upgrade.
+        """为 WebSocket 升级签发短期一次性票据。
 
         Args:
-            redis: Redis connection used for the ticket store.
-            session_id: Session belonging to the already authenticated request.
+            redis: 用于存储票据的 Redis 连接。
+            session_id: 当前已认证请求所属的会话 ID。
 
         Returns:
-            Opaque ticket value that may be consumed exactly once.
+            仅可消费一次的不透明票据值。
         """
         if not session_id:
             raise CustomException(msg="认证已失效", code=10401, status_code=401)
@@ -482,14 +481,13 @@ class LoginService:
 
 
 class CaptchaService:
-    """验证码服务"""
+    """验证码服务。"""
 
     @staticmethod
     async def get_captcha(redis: Redis) -> CaptchaOutSchema:
-        """Generate a challenge for enabled or adaptive CAPTCHA flows.
+        """为已启用或自适应验证码流程生成验证挑战。
 
-        The endpoint remains callable while the global switch is disabled so
-        the login page can reveal a challenge after repeated failures.
+        全局开关关闭时仍允许调用，以便登录页在连续失败后展示验证码。
         """
 
         captcha_base64, captcha_value = CaptchaUtil.captcha_arithmetic()
@@ -510,7 +508,7 @@ class CaptchaService:
 
     @staticmethod
     async def check_captcha(redis: Redis, key: str, captcha: str) -> bool:
-        """校验验证码"""
+        """校验验证码。"""
         if not captcha:
             raise CustomException(msg="验证码不能为空")
 
@@ -527,14 +525,14 @@ class CaptchaService:
 
 
 class AutoLoginService:
-    """免登录服务"""
+    """免登录服务。"""
 
     AUTO_LOGIN_PREFIX = "fastcore:auto_login:"
     TOKEN_EXPIRE = 300
 
     @classmethod
     async def get_auto_login_users(cls, db: AsyncSession) -> list[AutoLoginUserSchema]:
-        """获取免登录用户列表"""
+        """获取免登录用户列表。"""
         from sqlalchemy import select
 
         from app.api.v1.module_system.user.model import UserModel
@@ -561,7 +559,7 @@ class AutoLoginService:
         db: AsyncSession,
         user_id: int,
     ) -> AutoLoginTokenSchema:
-        """创建免登录Token"""
+        """创建免登录Token。"""
         from sqlalchemy import select
 
         from app.api.v1.module_system.user.model import UserModel
@@ -612,7 +610,7 @@ class AutoLoginService:
         db: AsyncSession,
         token: str,
     ) -> JWTOutSchema:
-        """免登录"""
+        """免登录。"""
         from sqlalchemy import select
 
         from app.api.v1.module_system.user.model import UserModel

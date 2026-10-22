@@ -1,4 +1,4 @@
-"""BM25全文检索索引模块
+"""BM25全文检索索引模块。
 
 使用Whoosh实现BM25算法的关键词检索，用于混合检索场景。
 """
@@ -23,7 +23,7 @@ _cache_lock = Lock()
 
 
 class BM25KnowledgeIndex:
-    """基于Whoosh的BM25全文检索索引
+    """基于Whoosh的BM25全文检索索引。
 
     提供文档块的关键词检索能力，与向量检索互补：
     - 向量检索：语义相似度
@@ -31,7 +31,7 @@ class BM25KnowledgeIndex:
     """
 
     def __init__(self, index_dir: str | None = None, tokenizer: str | None = None) -> None:
-        """初始化BM25索引
+        """初始化BM25索引。
 
         Args:
             index_dir: 索引存储目录，默认从配置读取
@@ -55,7 +55,7 @@ class BM25KnowledgeIndex:
         self._index_lock = Lock()
 
     def _create_analyzer(self):
-        """创建中文分词器
+        """创建中文分词器。
 
         根据配置选择：
         - char: 单字分词（召回率高，适合短查询）
@@ -79,7 +79,7 @@ class BM25KnowledgeIndex:
         return tokenizer | LowercaseFilter()
 
     def _get_index(self):
-        """获取或创建索引实例（延迟加载）"""
+        """获取或创建索引实例（延迟加载）。"""
         with self._index_lock:
             if self._index is None:
                 if index.exists_in(str(self.index_dir)):
@@ -92,7 +92,7 @@ class BM25KnowledgeIndex:
         self,
         chunks: list[dict[str, Any]],
     ) -> None:
-        """批量添加文档块到BM25索引
+        """批量添加文档块到BM25索引。
 
         Args:
             chunks: 文档块列表，每个元素包含:
@@ -134,7 +134,7 @@ class BM25KnowledgeIndex:
         knowledge_base_ids: list[int],
         top_k: int = 20,
     ) -> list[dict[str, Any]]:
-        """BM25关键词检索
+        """BM25关键词检索。
 
         Args:
             query: 查询文本
@@ -193,7 +193,7 @@ class BM25KnowledgeIndex:
         return await anyio.to_thread.run_sync(_search)
 
     async def delete_by_document(self, document_id: int) -> None:
-        """删除指定文档的所有chunk索引
+        """删除指定文档的所有chunk索引。
 
         Args:
             document_id: 文档ID
@@ -231,7 +231,7 @@ class BM25KnowledgeIndex:
         await anyio.to_thread.run_sync(_delete)
 
     async def clear_index(self) -> None:
-        """清空整个索引"""
+        """清空整个索引。"""
 
         def _clear():
             # 先关闭索引
@@ -263,7 +263,7 @@ class BM25KnowledgeIndex:
         await anyio.to_thread.run_sync(_clear)
 
     def __del__(self):
-        """析构函数：关闭索引"""
+        """析构函数：关闭索引。"""
         if self._index:
             try:
                 self._index.close()
@@ -273,7 +273,7 @@ class BM25KnowledgeIndex:
 
 @lru_cache(maxsize=4)
 def _cached_bm25_index(index_dir: str | None = None, tokenizer: str | None = None) -> BM25KnowledgeIndex:
-    """Reuse the process-local Whoosh index for the same configuration."""
+    """配置相同时复用进程内的 Whoosh 索引。"""
     return BM25KnowledgeIndex(index_dir=index_dir, tokenizer=tokenizer)
 
 

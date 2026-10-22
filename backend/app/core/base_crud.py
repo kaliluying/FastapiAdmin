@@ -1,4 +1,4 @@
-""""统一 CRUD 基类 — 同时支持有认证和无认证场景
+"""统一 CRUD 基类，同时支持有认证和无认证场景。
 
 - 当 `auth` 不为 None 时（Controller 注入）：自动处理数据权限过滤、审计字段填充
 - 当 `auth` 为 None 时（后台任务/脚本）：纯数据操作，无权限过滤
@@ -39,7 +39,7 @@ OutSchemaType = TypeVar("OutSchemaType", bound=BaseModel)
 
 
 class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaType: BaseModel]:
-    """统一数据层基类 — 有认证时自动处理权限，无认证时纯数据操作"""
+    """统一数据层基类 — 有认证时自动处理权限，无认证时纯数据操作。"""
 
     def __init__(
         self,
@@ -47,13 +47,12 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
         auth: AuthSchema | None = None,
         session: AsyncSession | None = None,
     ) -> None:
-        """
-        初始化 CRUDBase。
+        """初始化 CRUDBase。
 
-        参数:
-        - model: 数据模型类
-        - auth: 认证信息（Controller 场景），为 None 时跳过所有权限/审计逻辑
-        - session: 数据库会话（后台任务场景），仅在 auth=None 时使用
+        Args:
+            model: 数据模型类
+            auth: 认证信息（Controller 场景），为 None 时跳过所有权限/审计逻辑
+            session: 数据库会话（后台任务场景），仅在 auth=None 时使用
         """
         self.model = model
         self.auth = auth
@@ -64,7 +63,7 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             )
 
     def _get_pk_col(self) -> ColumnElement:
-        """获取模型主键列"""
+        """获取模型主键列。"""
         mapper = sa_inspect(self.model)
         pk_cols = list(getattr(mapper, "primary_key", []))
         if not pk_cols:
@@ -75,13 +74,13 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
 
     @property
     def _supports_soft_delete(self) -> bool:
-        """模型是否支持软删除"""
+        """模型是否支持软删除。"""
         return all(
             hasattr(self.model, attr) for attr in ("is_deleted", "deleted_time", "deleted_id")
         )
 
     def _soft_delete_values(self) -> dict[str, Any]:
-        """软删除时需要更新的字段值"""
+        """软删除时需要更新的字段值。"""
         data: dict[str, Any] = {"is_deleted": True, "deleted_time": datetime.now()}
         if self.auth and self.auth.user:
             data["deleted_id"] = self.auth.user.id
@@ -90,14 +89,14 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
     async def _get_one(
         self, preload: list[str | Any] | None = None, **kwargs
     ) -> ModelType | None:
-        """内部方法：在当前实例会话上执行单条查询（get / update 共用）
+        """内部方法：在当前实例会话上执行单条查询（get / update 共用）。
 
-        参数:
-        - preload: 预加载关系
-        - **kwargs: 查询条件
+        Args:
+            preload: 预加载关系
+            **kwargs: 查询条件
 
-        返回:
-        - 对象实例或 None
+        Returns:
+            对象实例或 None
         """
         conditions = await self.__build_conditions(**kwargs)
         sql = select(self.model).where(*conditions)
@@ -108,15 +107,14 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
         return result.scalars().first()
 
     async def get(self, preload: list[str | Any] | None = None, **kwargs) -> ModelType | None:
-        """
-        根据条件获取单个对象（复用请求级事务会话，保证读已写一致性）
+        """根据条件获取单个对象（复用请求级事务会话，保证读已写一致性）。
 
-        参数:
-        - preload: 预加载关系
-        - **kwargs: 查询条件
+        Args:
+            preload: 预加载关系
+            **kwargs: 查询条件
 
-        返回:
-        - 对象实例或 None
+        Returns:
+            对象实例或 None
         """
         try:
             return await self._get_one(preload=preload, **kwargs)
@@ -126,7 +124,7 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             raise CustomException(msg="获取查询失败") from e
 
     async def get_by_id(self, model_id: int) -> ModelType | None:
-        """按主键查询"""
+        """按主键查询。"""
         return await self.get(id=model_id)
 
     async def get_or_404(
@@ -137,21 +135,20 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
         out_schema: type[OutSchemaType] | None = None,
         **kwargs,
     ) -> ModelType | OutSchemaType:
-        """
-        按条件查询单条记录，不存在时抛出 404。
+        """按条件查询单条记录，不存在时抛出 404。
 
-        参数:
-        - id: 主键 ID（快捷方式，等价于 kwargs={"id": id}）。
-        - msg: 不存在时的错误消息。
-        - preload: 预加载关系列表。
-        - out_schema: 输出 Schema，为 None 时返回 ORM 对象。
-        - **kwargs: 其他查询条件（与 id 互斥）。
+        Args:
+            id: 主键 ID（快捷方式，等价于 kwargs={"id": id}）。
+            msg: 不存在时的错误消息。
+            preload: 预加载关系列表。
+            out_schema: 输出 Schema，为 None 时返回 ORM 对象。
+            **kwargs: 其他查询条件（与 id 互斥）。
 
-        返回:
-        - ORM 对象或 Pydantic Schema 实例。
+        Returns:
+            ORM 对象或 Pydantic Schema 实例。
 
-        异常:
-        - CustomException: 记录不存在。
+        Raises:
+            CustomException: 记录不存在。
         """
         if id is not None:
             kwargs["id"] = id
@@ -161,26 +158,24 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
         return out_schema.model_validate(obj) if out_schema else obj
 
     async def exists(self, **kwargs) -> bool:
-        """
-        检查是否存在符合条件的记录
+        """检查是否存在符合条件的记录。
 
-        参数:
-        - **kwargs: 查询条件
+        Args:
+            **kwargs: 查询条件
 
-        返回:
-        - 是否存在
+        Returns:
+            是否存在
         """
         return await self.get(**kwargs) is not None
 
     async def count(self, **kwargs) -> int:
-        """
-        统计符合条件的记录数（复用请求级事务会话）
+        """统计符合条件的记录数（复用请求级事务会话）。
 
-        参数:
-        - **kwargs: 查询条件，支持元组语法
+        Args:
+            **kwargs: 查询条件，支持元组语法
 
-        返回:
-        - 记录数
+        Returns:
+            记录数
         """
         try:
             conditions = await self.__build_conditions(**kwargs)
@@ -199,16 +194,15 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
         order_by: list[dict[str, str]] | None = None,
         preload: list[str | Any] | None = None,
     ) -> Sequence[ModelType]:
-        """
-        根据条件获取对象列表（复用请求级事务会话）
+        """根据条件获取对象列表（复用请求级事务会话）。
 
-        参数:
-        - search: 查询条件
-        - order_by: 排序字段, 格式为 [{'id': 'asc'}, {'name': 'desc'}]
-        - preload: 预加载关系
+        Args:
+            search: 查询条件
+            order_by: 排序字段, 格式为 [{'id': 'asc'}, {'name': 'desc'}]
+            preload: 预加载关系
 
-        返回:
-        - 对象列表
+        Returns:
+            对象列表
         """
         try:
             conditions = await self.__build_conditions(**(search or {}))
@@ -231,17 +225,16 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
         children_attr: str | None = None,
         preload: list[str | Any] | None = None,
     ) -> Sequence[ModelType]:
-        """
-        获取树形结构数据列表（复用请求级事务会话）
+        """获取树形结构数据列表（复用请求级事务会话）。
 
-        参数:
-        - search: 查询条件
-        - order_by: 排序字段
-        - children_attr: 子节点属性名（None 时自动从模型 __tree_children_attr__ 推断）
-        - preload: 额外预加载关系
+        Args:
+            search: 查询条件
+            order_by: 排序字段
+            children_attr: 子节点属性名（None 时自动从模型 __tree_children_attr__ 推断）
+            preload: 额外预加载关系
 
-        返回:
-        - 树形结构数据列表
+        Returns:
+            树形结构数据列表
         """
         # 自动从模型推断 children_attr
         if children_attr is None:
@@ -276,19 +269,18 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
         out_schema: type[OutSchemaType] | None = None,
         preload: list[str | Any] | None = None,
     ) -> PageResultSchema:
-        """
-        获取分页数据（复用请求级事务会话；count 与 data 共享同一会话）
+        """获取分页数据（复用请求级事务会话；count 与 data 共享同一会话）。
 
-        参数:
-        - offset: 偏移量
-        - limit: 每页数量
-        - order_by: 排序字段
-        - search: 查询条件
-        - out_schema: 输出数据模型（None 时返回原始 ORM 对象）
-        - preload: 预加载关系
+        Args:
+            offset: 偏移量
+            limit: 每页数量
+            order_by: 排序字段
+            search: 查询条件
+            out_schema: 输出数据模型（None 时返回原始 ORM 对象）
+            preload: 预加载关系
 
-        返回:
-        - PageResultSchema: 分页结果
+        Returns:
+            PageResultSchema: 分页结果
         """
         try:
             conditions = await self.__build_conditions(**(search or {}))
@@ -335,15 +327,15 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             raise CustomException(msg="分页查询失败") from e
 
     async def create(self, data: CreateSchemaType) -> ModelType:
-        """创建新对象（有认证时自动填充审计字段）
+        """创建新对象（有认证时自动填充审计字段）。
 
         事务由 request 级 db_getter 统一管理，本方法不开启独立事务。
 
-        参数:
-        - data: 对象属性
+        Args:
+            data: 对象属性
 
-        返回:
-        - 新创建的对象实例
+        Returns:
+            新创建的对象实例
         """
         try:
             obj_dict = data if isinstance(data, dict) else data.model_dump()
@@ -365,16 +357,16 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             raise CustomException(msg="创建失败") from e
 
     async def update(self, id: int, data: UpdateSchemaType) -> ModelType:
-        """更新对象（有认证时填充审计字段）
+        """更新对象（有认证时填充审计字段）。
 
         事务由 request 级 db_getter 统一管理，本方法不开启独立事务。
 
-        参数:
-        - id: 对象 ID
-        - data: 更新属性
+        Args:
+            id: 对象 ID
+            data: 更新属性
 
-        返回:
-        - 更新后的对象实例
+        Returns:
+            更新后的对象实例
         """
         try:
             obj_dict = data if isinstance(data, dict) else data.model_dump(exclude_unset=True, exclude={"id"})
@@ -400,7 +392,7 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             raise CustomException(msg="更新失败") from e
 
     async def delete(self, ids: list[int]) -> None:
-        """软删除对象（有认证时填充删除人）"""
+        """软删除对象（有认证时填充删除人）。"""
         try:
             pk = self._get_pk_col()
 
@@ -417,7 +409,7 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             raise CustomException(msg="删除失败") from e
 
     async def clear(self) -> None:
-        """软清空对象表（有认证时填充删除人）"""
+        """软清空对象表（有认证时填充删除人）。"""
         try:
             if self._supports_soft_delete:
                 sql = update(self.model).values(**self._soft_delete_values())
@@ -432,7 +424,7 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             raise CustomException(msg="清空失败") from e
 
     async def set(self, ids: list[int], **kwargs) -> None:
-        """批量更新字段"""
+        """批量更新字段。"""
         try:
             pk = self._get_pk_col()
             sql = update(self.model).where(pk.in_(ids)).values(**kwargs)
@@ -445,7 +437,7 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             raise CustomException(msg="批量更新失败") from e
 
     async def restore(self, ids: list[int]) -> None:
-        """恢复软删除对象"""
+        """恢复软删除对象。"""
         try:
             if not self._supports_soft_delete:
                 raise CustomException(msg="该模型不支持软删除，无法恢复")
@@ -526,14 +518,13 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
     def _parse_order(
         self, order: list[dict[str, str]]
     ) -> list[ColumnElement]:
-        """
-        解析排序参数
+        """解析排序参数。
 
-        参数:
-        - order: 排序字段列表, 格式为 [{'id': 'asc'}, {'name': 'desc'}]
+        Args:
+            order: 排序字段列表, 格式为 [{'id': 'asc'}, {'name': 'desc'}]
 
-        返回:
-        - 排序表达式列表
+        Returns:
+            排序表达式列表
         """
         columns: list[ColumnElement] = []
         for item in order:
@@ -545,14 +536,13 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
     def __loader_options(
         self, preload: list[str | Any] | None = None
     ) -> list[Any]:
-        """
-        构建预加载选项
+        """构建预加载选项。
 
-        参数:
-        - preload: 预加载关系，支持关系名字符串或 SQLAlchemy loader option
+        Args:
+            preload: 预加载关系，支持关系名字符串或 SQLAlchemy loader option
 
-        返回:
-        - 预加载选项列表
+        Returns:
+            预加载选项列表
         """
         options: list[Any] = []
         model_loader_options = getattr(self.model, "__loader_options__", [])

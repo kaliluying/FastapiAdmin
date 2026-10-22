@@ -1,4 +1,4 @@
-"""Chat adapter from knowledge search results to prompt context documents."""
+"""将知识库检索结果转换为提示词上下文文档的聊天适配器。"""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ from .rag import KeywordKnowledgeRetriever, RagDocument
 
 
 class KnowledgeBaseChatRetriever:
-    """Adapt the Knowledge module API to Chat's RAG protocol and file fallback."""
+    """将知识库模块 API 适配为聊天模块的 RAG 协议，并支持文件回退。"""
 
     def __init__(
         self,
@@ -74,6 +74,6 @@ class KnowledgeBaseChatRetriever:
         return documents
 
 
-# Keep the old import name for existing callers while the implementation now
-# delegates all persisted knowledge search to the Knowledge module.
+# 保留旧导入名称以兼容现有调用方；当前实现将所有持久化知识检索
+# 委托给知识库模块。
 HybridKnowledgeRetriever = KnowledgeBaseChatRetriever

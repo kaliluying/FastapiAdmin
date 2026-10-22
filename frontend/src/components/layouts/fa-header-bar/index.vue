@@ -297,7 +297,7 @@ html.dark .relative.box-border {
   background: transparent;
 }
 
-/* Toolbar states stay quiet; content changes, not decorative motion, carry attention. */
+/* 工具栏保持克制的状态反馈，通过内容变化传达状态，避免装饰动效分散注意力。 */
 #app-header-toolbar :deep(.fa-icon-button),
 #app-header-toolbar :deep(.el-button) {
   border-radius: 8px;

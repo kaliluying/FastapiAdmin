@@ -30,7 +30,7 @@ export function resetStorageInvalidated(): void {
   invalidated = false;
 }
 
-/** Storage config + versioned key helpers. */
+/** 存储配置与版本化键名辅助工具。 */
 export class StorageConfig {
   /** 当前应用版本 */
   static readonly CURRENT_VERSION = __APP_VERSION__;

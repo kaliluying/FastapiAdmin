@@ -1,4 +1,4 @@
-"""Add the copyable category module without changing existing business data."""
+"""增加可复制的分类范例模块，不修改已有业务数据。"""
 
 import sqlalchemy as sa
 from alembic import op

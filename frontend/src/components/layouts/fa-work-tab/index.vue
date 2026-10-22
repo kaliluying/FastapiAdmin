@@ -165,7 +165,7 @@
  *   tab-google   —— 谷歌模式，连体标签
  *
  * 核心流程：路由切换 → setWorktab (utils/navigation) 同步 → 本组件响应式渲染。
- * 关闭/切换/Pin 操作全部通过 worktabStore 管理。
+ * 关闭/切换/固定操作全部通过 worktabStore 管理。
  */
 import { computed, onMounted, ref, watch, nextTick, onUnmounted } from "vue";
 import { LocationQueryRaw, useRoute, useRouter } from "vue-router";

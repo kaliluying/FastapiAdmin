@@ -61,17 +61,16 @@ Email = Annotated[
 
 
 def datetime_validator(value: str | datetime) -> datetime:
-    """
-    日期格式验证器。
+    """日期格式验证器。
 
-    参数:
-    - value (str | datetime): 日期值。
+    Args:
+        value (str | datetime): 日期值。
 
-    返回:
-    - datetime: 格式化后的日期。
+    Returns:
+        datetime: 格式化后的日期。
 
-    异常:
-    - CustomException: 日期格式无效时抛出。
+    Raises:
+        CustomException: 日期格式无效时抛出。
     """
     try:
         if isinstance(value, str):
@@ -83,17 +82,16 @@ def datetime_validator(value: str | datetime) -> datetime:
 
 
 def date_validator(value: str | date) -> date:
-    """
-    日期格式验证器。
+    """日期格式验证器。
 
-    参数:
-    - value (str | date): 日期值。
+    Args:
+        value (str | date): 日期值。
 
-    返回:
-    - date: 格式化后的日期。
+    Returns:
+        date: 格式化后的日期。
 
-    异常:
-    - CustomException: 日期格式无效时抛出。
+    Raises:
+        CustomException: 日期格式无效时抛出。
     """
     try:
         if isinstance(value, str):
@@ -105,17 +103,16 @@ def date_validator(value: str | date) -> date:
 
 
 def time_validator(value: str | time) -> time:
-    """
-    时间格式验证器。
+    """时间格式验证器。
 
-    参数:
-    - value (str | time): 时间值。
+    Args:
+        value (str | time): 时间值。
 
-    返回:
-    - time: 格式化后的时间。
+    Returns:
+        time: 格式化后的时间。
 
-    异常:
-    - CustomException: 时间格式无效时抛出。
+    Raises:
+        CustomException: 时间格式无效时抛出。
     """
     try:
         if isinstance(value, str):
@@ -127,17 +124,16 @@ def time_validator(value: str | time) -> time:
 
 
 def email_validator(value: str) -> str:
-    """
-    邮箱地址验证器。
+    """邮箱地址验证器。
 
-    参数:
-    - value (str): 邮箱地址。
+    Args:
+        value (str): 邮箱地址。
 
-    返回:
-    - str: 验证后的邮箱地址。
+    Returns:
+        str: 验证后的邮箱地址。
 
-    异常:
-    - CustomException: 邮箱格式无效时抛出。
+    Raises:
+        CustomException: 邮箱格式无效时抛出。
     """
     if not value:
         raise CustomException(code=RET.ERROR.code, msg="邮箱地址不能为空")
@@ -151,17 +147,16 @@ def email_validator(value: str) -> str:
 
 
 def mobile_validator(value: str | None) -> str | None:
-    """
-    手机号验证器。
+    """手机号验证器。
 
-    参数:
-    - value (str | None): 手机号。
+    Args:
+        value (str | None): 手机号。
 
-    返回:
-    - str | None: 验证后的手机号。
+    Returns:
+        str | None: 验证后的手机号。
 
-    异常:
-    - CustomException: 手机号格式无效时抛出。
+    Raises:
+        CustomException: 手机号格式无效时抛出。
     """
     if not value:
         return value
@@ -178,17 +173,16 @@ def mobile_validator(value: str | None) -> str | None:
 
 
 def validate_required_code(value: str | None) -> str:
-    """
-    必填编码校验：字母开头，总长 2–64，仅含字母/数字/下划线。
+    """必填编码校验：字母开头，总长 2–64，仅含字母/数字/下划线。
 
-    参数:
-    - value (str | None): 编码。
+    Args:
+        value (str | None): 编码。
 
-    返回:
-    - str: 去空白后的编码。
+    Returns:
+        str: 去空白后的编码。
 
-    异常:
-    - ValueError: 为空或格式不合法。
+    Raises:
+        ValueError: 为空或格式不合法。
     """
     if value is None or not str(value).strip():
         raise ValueError("编码不能为空")
@@ -201,17 +195,16 @@ def validate_required_code(value: str | None) -> str:
 
 
 def code_validator(value: str | None) -> str | None:
-    """
-    可选编码验证器（为空则跳过）。
+    """可选编码验证器（为空则跳过）。
 
-    参数:
-    - value (str | None): 编码。
+    Args:
+        value (str | None): 编码。
 
-    返回:
-    - str | None: 验证后的编码；未填写时返回 None。
+    Returns:
+        str | None: 验证后的编码；未填写时返回 None。
 
-    异常:
-    - CustomException: 已填写但格式无效时抛出。
+    Raises:
+        CustomException: 已填写但格式无效时抛出。
     """
     if not value:
         return value
@@ -227,17 +220,16 @@ def code_validator(value: str | None) -> str | None:
 
 
 def menu_request_validator(data: Any) -> Any:
-    """
-    菜单请求数据验证器。
+    """菜单请求数据验证器。
 
-    参数:
-    - data (Any): 请求数据。
+    Args:
+        data (Any): 请求数据。
 
-    返回:
-    - Any: 验证后的请求数据。
+    Returns:
+        Any: 验证后的请求数据。
 
-    异常:
-    - CustomException: 请求数据无效时抛出。
+    Raises:
+        CustomException: 请求数据无效时抛出。
     """
     menu_types = {1: "目录", 2: "功能", 3: "权限", 4: "外链"}
 
@@ -248,13 +240,13 @@ def menu_request_validator(data: Any) -> Any:
         )
 
     def reject_fields(*fields: str) -> None:
-        """Reject fields that do not belong to the selected menu type.
+        """拒绝不属于当前菜单类型的字段。
 
         Args:
-            *fields: Field names that must be empty for the menu type.
+            *fields: 当前菜单类型下必须为空的字段名。
 
         Raises:
-            CustomException: If a disallowed field has a value.
+            CustomException: 不允许的字段包含值。
         """
         labels = {
             "permission": "权限标识",

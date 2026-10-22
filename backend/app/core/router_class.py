@@ -29,14 +29,14 @@ _LOG_VALUE_LIMIT = 2000
 
 
 def _redact_sensitive_values(value: Any, key: str | None = None) -> Any:
-    """Recursively replace credential-like values before audit persistence.
+    """在审计落库前递归替换疑似凭据的值。
 
     Args:
-        value: Parsed request or response payload.
-        key: Current mapping key, if the value belongs to one.
+        value: 已解析的请求或响应内容。
+        key: 当前值所属的映射键；非映射值可不提供。
 
     Returns:
-        A copy safe to serialize into an operation log.
+        可安全序列化到操作日志的副本。
     """
     normalized_key = "".join(character for character in (key or "").lower() if character.isalnum())
     if normalized_key and (
@@ -57,13 +57,13 @@ def _redact_sensitive_values(value: Any, key: str | None = None) -> Any:
 
 
 def _serialize_log_value(value: Any) -> str:
-    """Serialize and cap a redacted operation-log payload.
+    """序列化已脱敏的操作日志内容，并限制存储长度。
 
     Args:
-        value: Request or response content ready for audit serialization.
+        value: 待序列化为审计记录的请求或响应内容。
 
     Returns:
-        JSON text capped to the storage policy length.
+        按存储长度限制截断的 JSON 文本。
     """
     text = json.dumps(_redact_sensitive_values(value), ensure_ascii=False, default=str)
     return text if len(text) <= _LOG_VALUE_LIMIT else "日志内容过长，已省略"
@@ -118,7 +118,7 @@ class OperationLogRoute(APIRoute):
             failure_type = type(error).__name__
             raise
         finally:
-            # A dependency commit may fail after the handler prepared a success response.
+            # 路由已准备成功响应后，依赖收尾时的事务提交仍可能失败。
             if failure_type is not None or record["response_code"] >= 400:
                 record["request_payload"] = _serialize_log_value({"omitted": True})
                 record["response_json"] = _serialize_log_value({
@@ -148,7 +148,7 @@ class OperationLogRoute(APIRoute):
             finally:
                 try:
                     if response is None:
-                        # A rejected/cancelled request must not drain an unread body just for auditing.
+                        # 请求被拒绝或取消后，不能仅为审计而继续读取未消费的请求体。
                         record["request_payload"] = _serialize_log_value({"omitted": True})
                     elif (self.openapi_extra or {}).get("x-audit-payload") is not False:
                         oper_param: dict[str, Any] = {}

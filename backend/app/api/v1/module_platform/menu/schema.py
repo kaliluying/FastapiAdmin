@@ -18,17 +18,17 @@ _COMPONENT_PATH_PATTERN = re.compile(r"^[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*$")
 
 
 def _validate_local_route_path(value: str, field_name: str) -> str:
-    """Validate a local router path without traversal or query segments.
+    """校验本地路由路径，拒绝路径穿越和查询片段。
 
     Args:
-        value: Route path supplied by the menu editor.
-        field_name: Field name used in validation feedback.
+        value: 菜单编辑器提供的路由路径。
+        field_name: 用于校验反馈的字段名。
 
     Returns:
-        The trimmed local route path.
+        去除首尾空白后的本地路由路径。
 
     Raises:
-        ValueError: If the path contains unsupported or unsafe segments.
+        ValueError: 路径包含不支持或不安全的片段。
     """
     path = value.strip()
     if not path or not _ROUTE_PATH_PATTERN.fullmatch(path) or "//" in path or ".." in path:
@@ -37,16 +37,16 @@ def _validate_local_route_path(value: str, field_name: str) -> str:
 
 
 def _validate_external_url(value: str) -> str:
-    """Validate an externally opened or embedded URL.
+    """校验外部打开或内嵌页面使用的 URL。
 
     Args:
-        value: Candidate external URL.
+        value: 待校验的外部 URL。
 
     Returns:
-        A trimmed HTTPS URL.
+        去除首尾空白后的 HTTPS URL。
 
     Raises:
-        ValueError: If the value is not an absolute HTTPS URL.
+        ValueError: 传入值不是绝对 HTTPS URL。
     """
     url = value.strip()
     parsed = urlparse(url)
@@ -68,7 +68,7 @@ def _validate_external_url(value: str) -> str:
 
 
 class MenuCreateSchema(BaseModel):
-    """菜单创建模型"""
+    """菜单创建模型。"""
 
     name: str = Field(..., min_length=1, max_length=50, description="菜单名称")
     type: int = Field(..., ge=1, le=4, description="菜单类型(1:目录 2:菜单 3:按钮 4:外链)")
@@ -175,20 +175,19 @@ class MenuCreateSchema(BaseModel):
 
     @model_validator(mode="after")
     def validate_fields(self):
-        """
-        统一校验菜单请求字段（委托到 `menu_request_validator`）。
+        """统一校验菜单请求字段（委托到 `menu_request_validator`）。
 
-        返回:
-        - MenuCreateSchema: 校验后的同一实例。
+        Returns:
+            MenuCreateSchema: 校验后的同一实例。
 
-        异常:
-        - CustomException: 字段不满足菜单类型约束时抛出。
+        Raises:
+            CustomException: 字段不满足菜单类型约束时抛出。
         """
         return menu_request_validator(self)
 
 
 class MenuUpdateSchema(BaseModel):
-    """菜单更新模型 — 所有字段可选"""
+    """菜单更新模型 — 所有字段可选。"""
 
     name: str | None = Field(default=None, min_length=1, max_length=50, description="菜单名称")
     type: int | None = Field(default=None, ge=1, le=4, description="菜单类型(1:目录 2:菜单 3:按钮 4:外链)")
@@ -303,7 +302,7 @@ class MenuUpdateSchema(BaseModel):
 
 
 class MenuOutSchema(MenuCreateSchema, BaseSchema):
-    """菜单详情响应模型（不含 children，用于详情和更新）"""
+    """菜单详情响应模型（不含 children，用于详情和更新）。"""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -311,14 +310,14 @@ class MenuOutSchema(MenuCreateSchema, BaseSchema):
 
 
 class MenuTreeOutSchema(MenuOutSchema):
-    """菜单树形响应模型（含 children，用于树形列表）"""
+    """菜单树形响应模型（含 children，用于树形列表）。"""
 
     children: list["MenuTreeOutSchema"] | None = Field(default=None, description="子菜单列表")
 
 
 @dataclass
 class MenuQueryParam(BaseQueryParam):
-    """菜单管理查询参数（菜单为平台级资源，无用户归属）"""
+    """菜单管理查询参数（菜单为平台级资源，无用户归属）。"""
 
     name: str | None = Query(None, description="菜单名称")
     route_path: str | None = Query(None, description="路由地址")

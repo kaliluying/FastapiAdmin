@@ -12,7 +12,7 @@ _store_lock = Lock()
 
 
 class ChromaKnowledgeStore:
-    """Thin adapter around local ChromaDB collection operations."""
+    """本地 ChromaDB 集合操作的轻量适配器。"""
 
     def __init__(
         self,
@@ -67,7 +67,7 @@ class ChromaKnowledgeStore:
         await anyio.to_thread.run_sync(lambda: self.collection.delete(where={"document_id": document_id}))
 
     async def delete_chunks(self, ids: list[str]) -> None:
-        """Delete only the supplied chunk generation; empty lists are a no-op."""
+        """仅删除指定代际的分块；空列表不执行操作。"""
         if ids:
             await anyio.to_thread.run_sync(lambda: self.collection.delete(ids=ids))
 
@@ -77,7 +77,7 @@ def _cached_chroma_store(
     persist_dir: str | None = None,
     collection_name: str | None = None,
 ) -> ChromaKnowledgeStore:
-    """Reuse one Chroma client per local collection configuration."""
+    """每种本地集合配置复用一个 Chroma 客户端。"""
     return ChromaKnowledgeStore(persist_dir=persist_dir, collection_name=collection_name)
 
 

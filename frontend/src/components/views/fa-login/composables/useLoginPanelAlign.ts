@@ -10,7 +10,7 @@ function readInitial(): LoginPanelAlign {
     const v = localStorage.getItem(STORAGE_KEY);
     if (v === "left" || v === "center" || v === "right") return v;
   } catch {
-    /* ignore */
+    /* 本地存储不可用时沿用默认布局。 */
   }
   /** 默认：插画在左、表单在右 */
   return "right";
@@ -28,7 +28,7 @@ export function useLoginPanelAlign() {
     try {
       localStorage.setItem(STORAGE_KEY, v);
     } catch {
-      /* ignore */
+      /* 持久化失败时保留本次会话中的布局选择。 */
     }
   });
 

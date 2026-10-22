@@ -1,4 +1,4 @@
-"""Stable cross-feature API for knowledge access and retrieval."""
+"""供不同功能访问和检索知识库的稳定 API。"""
 
 from __future__ import annotations
 
@@ -24,11 +24,11 @@ class KnowledgeSearch(Protocol):
         knowledge_base_ids: list[int],
         top_k: int | None = None,
     ) -> list[KnowledgeSearchResult]:
-        """Search only the supplied, already-authorized knowledge bases."""
+        """仅检索传入且已获授权的知识库。"""
 
 
 async def accessible_knowledge_base_ids(auth: Any, ids: list[int]) -> list[int]:
-    """Deduplicate requested IDs and reject any unavailable to the caller."""
+    """对请求中的 ID 去重，并拒绝调用方无权访问或不存在的知识库。"""
     normalized = list(dict.fromkeys(ids))
     if not normalized or not getattr(auth, "user", None) or not getattr(auth, "db", None):
         return normalized

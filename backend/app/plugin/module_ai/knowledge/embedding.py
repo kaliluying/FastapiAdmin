@@ -13,11 +13,11 @@ _client_lock = Lock()
 
 class EmbeddingClient(Protocol):
     async def embed_texts(self, texts: list[str]) -> list[list[float]]:
-        """Return one embedding vector per input text."""
+        """为每条输入文本返回一个嵌入向量。"""
 
 
 class LocalFastEmbedEmbeddingClient:
-    """Local embedding client backed by fastembed."""
+    """基于 fastembed 的本地嵌入客户端。"""
 
     def __init__(self, model_name: str | None = None) -> None:
         self.model_name = model_name or settings.LOCAL_EMBEDDING_MODEL
@@ -38,7 +38,7 @@ class LocalFastEmbedEmbeddingClient:
 
 
 class OpenAICompatibleEmbeddingClient:
-    """Embedding client for OpenAI-compatible providers."""
+    """兼容 OpenAI 接口的服务商嵌入客户端。"""
 
     # 单批次最多提交的文本条数；超过 provider 单请求条数/token 上限会导致整批失败，
     # 分批后单批失败不影响其它批次已经成功的向量。
@@ -93,12 +93,12 @@ def create_embedding_client(provider: str | None = None) -> EmbeddingClient:
 
 @lru_cache(maxsize=4)
 def _cached_embedding_client(config: tuple[str, ...]) -> EmbeddingClient:
-    """Create one embedding client per effective provider configuration."""
+    """为每种有效服务商配置创建一个嵌入客户端。"""
     return create_embedding_client(config[0])
 
 
 def get_cached_embedding_client(provider: str | None = None) -> EmbeddingClient:
-    """Reuse the process-local embedding client for normal request paths."""
+    """常规请求路径复用进程内的嵌入客户端。"""
     selected = (provider or settings.EMBEDDING_PROVIDER or "local").strip().lower()
     config = (
         selected,

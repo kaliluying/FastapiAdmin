@@ -22,7 +22,7 @@ MAX_STORED_RUNS = 50
 
 
 def run_identifier(run: dict[str, Any]) -> str:
-    """Keep legacy answers addressable without rewriting stored transcripts."""
+    """保留旧回复的可寻址性，避免改写已保存的对话记录。"""
     return run.get("run_id") or hashlib.sha256(json.dumps(run, sort_keys=True, ensure_ascii=False, default=str).encode()).hexdigest()
 
 
@@ -63,7 +63,7 @@ class ChatSession:
 
 
 class ChatSessionCRUD:
-    """Chat session data layer backed by the project database."""
+    """基于项目数据库的聊天会话数据层。"""
 
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth
@@ -153,7 +153,7 @@ class ChatSessionCRUD:
                 ChatSessionModel.user_id == self.user_id,
                 ChatSessionModel.is_deleted == False,  # noqa: E712
             )
-            # Take the write lock before reading, including on SQLite; only saving holds this lock.
+            # 读取前先获取写锁，SQLite 也不例外；仅保存期间持有此锁。
             await self.db.execute(
                 update(ChatSessionModel).where(*conditions).values(runs=ChatSessionModel.runs)
                 .execution_options(synchronize_session=False)
@@ -181,7 +181,7 @@ class ChatSessionCRUD:
                     ],
                 }
             )
-            # ponytail: keep the JSON transcript bounded; add archival storage when full history is required.
+            # ponytail: 限制 JSON 对话记录的大小；需要完整历史时再增加归档存储。
             obj.runs = runs[-MAX_STORED_RUNS:]
             self.db.add(MemoryExtractionJobModel(
                 run_id=self.last_run_id,
@@ -198,7 +198,7 @@ class ChatSessionCRUD:
 
     async def delete_crud(self, session_ids: list[str]) -> bool:
         try:
-            # Serialize deletion with a worker's final transaction before removing the source session.
+            # 删除源会话前，先使删除操作与工作进程的最终事务串行执行。
             await self.db.execute(delete(MemoryExtractionJobModel).where(
                 MemoryExtractionJobModel.session_id.in_(session_ids),
                 MemoryExtractionJobModel.user_id == self.user_id,

@@ -47,7 +47,7 @@ INDEX_RETRY_SECONDS = 60
 
 
 async def index_document_in_background(document_id: int, user_id: int | None) -> None:
-    """Index one uploaded document with an independent database session."""
+    """使用独立数据库会话为单个上传文档建立索引。"""
     async with async_db_session() as db:
         auth = AuthSchema(
             user=SimpleNamespace(id=user_id),
@@ -92,7 +92,7 @@ class KnowledgeService:
 
     @staticmethod
     def _automatic_index_conditions(now: datetime) -> list[Any]:
-        """Share durable eligibility rules between recovery scans and atomic claims."""
+        """恢复扫描和原子任务认领共用持久化状态的资格判定规则。"""
         return [
             KnowledgeDocumentModel.is_deleted == False,
             or_(KnowledgeDocumentModel.index_lease_until.is_(None), KnowledgeDocumentModel.index_lease_until <= now),
@@ -102,7 +102,7 @@ class KnowledgeService:
 
     @classmethod
     async def recover_pending_documents(cls) -> None:
-        """Reconcile durable jobs; SQL claims fence competing application workers."""
+        """核对持久化任务状态；通过 SQL 认领隔离相互竞争的应用工作进程。"""
         now = datetime.now()
         available = or_(KnowledgeDocumentModel.index_lease_until.is_(None), KnowledgeDocumentModel.index_lease_until <= now)
         async with async_db_session() as db:
@@ -287,7 +287,7 @@ class KnowledgeService:
         saved = None
         commit_started = False
         try:
-            # Fence recovery before creating a file, including while the stream is incomplete.
+            # 创建文件前先阻止恢复任务介入，流尚未传输完成时也保持隔离。
             locked = await self.auth.db.execute(
                 update(KnowledgeDocumentModel)
                 .where(KnowledgeDocumentModel.id == document_id, KnowledgeDocumentModel.is_deleted == False)
@@ -352,7 +352,7 @@ class KnowledgeService:
             commit_started = True
             await self.auth.db.commit()
         except (Exception, asyncio.CancelledError):
-            # A commit error can mean the server committed but its reply was lost.
+            # 提交报错也可能表示服务端已提交，但响应丢失。
             if not commit_started:
                 await asyncio.shield(self._discard_uncommitted_upload(saved_path))
             raise
@@ -649,7 +649,7 @@ class KnowledgeService:
         )
 
     async def _delete_index_chunks(self, ids: list[str], *, vector: bool, bm25: bool) -> None:
-        """Remove one generation of chunks without deleting other document indexes."""
+        """删除一个代际的分块，不删除文档的其他索引。"""
         if not ids:
             return
         if vector:
@@ -829,7 +829,7 @@ class KnowledgeService:
         suffix = Path(file.filename or "").suffix.lower()
         if suffix not in {".txt", ".md", ".pdf", ".docx"}:
             raise CustomException(msg="only txt, md, pdf, and docx documents are supported")
-        # The name is a durable upload intent; its owner row stays locked until commit/rollback.
+        # 文件名记录持久化上传意图；所属记录行保持锁定直至提交或回滚。
         file_path = UPLOAD_DIR / f"{upload_owner}-{uuid.uuid4().hex}{suffix}"
         from app.utils.upload_util import UploadUtil
 
@@ -838,17 +838,17 @@ class KnowledgeService:
 
     @staticmethod
     def _resolve_knowledge_path(file_path: str) -> Path:
-        """Resolve a stored document reference under the knowledge root.
+        """在知识库存储根目录内解析已保存的文档引用。
 
         Args:
-            file_path: Relative path from the database or a legacy absolute
-                path that still points inside the knowledge storage root.
+            file_path: 数据库中的相对路径，或仍位于知识库存储根目录内的
+                旧版绝对路径。
 
         Returns:
-            A resolved existing document path.
+            解析后的现存文档路径。
 
         Raises:
-            CustomException: If the path escapes storage or is missing.
+            CustomException: 路径越出存储范围或文件不存在时抛出。
         """
         root = UPLOAD_DIR.resolve()
         raw_path = Path(file_path)
@@ -864,14 +864,14 @@ class KnowledgeService:
 
     @staticmethod
     def _safe_knowledge_path(file_path: str | Path | None) -> str | None:
-        """Convert an internal document path to a root-relative response value.
+        """将内部文档路径转换为相对于存储根目录的响应值。
 
         Args:
-            file_path: Stored document path.
+            file_path: 已保存的文档路径。
 
         Returns:
-            A POSIX relative path, or ``None`` when the legacy value is outside
-            the controlled knowledge storage root.
+            POSIX 相对路径；旧路径位于受控知识库存储根目录之外时，
+            返回 ``None``。
         """
         if not file_path:
             return None
@@ -886,7 +886,7 @@ class KnowledgeService:
 
     @classmethod
     def _document_output(cls, document: Any) -> KnowledgeDocumentOutSchema:
-        """Build a document response without exposing the server filesystem."""
+        """构建文档响应，不暴露服务器文件系统。"""
         output = KnowledgeDocumentOutSchema.model_validate(document)
         output.file_path = cls._safe_knowledge_path(output.file_path)
         output.replacement_pending = bool(getattr(document, "pending_file", None))

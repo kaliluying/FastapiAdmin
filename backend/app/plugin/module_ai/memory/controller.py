@@ -1,4 +1,4 @@
-"""Memory controller — CRUD endpoints for AI memory management."""
+"""记忆控制器，提供 AI 记忆管理的增删改查接口。"""
 
 from __future__ import annotations
 

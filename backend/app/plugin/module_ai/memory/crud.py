@@ -1,4 +1,4 @@
-"""Memory CRUD backed by the project database."""
+"""基于项目数据库的记忆增删改查。"""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from .schema import MemoryCreateSchema, MemoryUpdateSchema
 
 @dataclass(slots=True)
 class MemoryEntry:
-    """Plain data object for a memory entry."""
+    """记忆条目的普通数据对象。"""
 
     id: int
     user_id: str
@@ -47,7 +47,7 @@ class MemoryEntry:
 
 
 class MemoryCRUD:
-    """Memory data layer — generic per-user long-term memory for the AI assistant."""
+    """记忆数据层，为 AI 助手提供按用户隔离的通用长期记忆。"""
 
     def __init__(self, auth: AuthSchema) -> None:
         self.auth = auth
@@ -91,15 +91,15 @@ class MemoryCRUD:
         limit: int,
         search: dict[str, Any] | None = None,
     ) -> tuple[list[MemoryEntry], int]:
-        """Fetch one memory page and its total count in the database.
+        """从数据库获取一页记忆及匹配记录总数。
 
         Args:
-            offset: Number of matching rows to skip.
-            limit: Maximum number of rows to return.
-            search: Optional memory filters.
+            offset: 跳过的匹配记录数。
+            limit: 最多返回的记录数。
+            search: 可选的记忆筛选条件。
 
         Returns:
-            A tuple of page entries and the matching row count.
+            由当前页条目和匹配记录总数组成的元组。
         """
         try:
             filters = [
@@ -183,7 +183,7 @@ class MemoryCRUD:
         return True
 
     async def get_active_memories(self, *, memory_type: str | None = None) -> list[MemoryEntry]:
-        """Fetch active memories for prompt injection (used by rag.py)."""
+        """获取用于注入提示词的活跃记忆（由 rag.py 使用）。"""
         stmt = select(AiMemoryModel).where(
             AiMemoryModel.user_id == self.user_id,
             AiMemoryModel.is_active == True,  # noqa: E712
@@ -196,9 +196,9 @@ class MemoryCRUD:
         return [self._to_entry(obj) for obj in result.scalars().all()]
 
     async def upsert(self, memory_type: str, key: str, value: str, *, category: str | None = None, priority: int = 0) -> MemoryEntry | None:
-        """Create or update a memory entry by user_id + key.
+        """按 user_id + key 创建或更新记忆条目。
 
-        Returns the created/updated MemoryEntry; database failures propagate.
+        返回创建或更新后的 MemoryEntry；数据库异常向上传播。
         """
         stmt = select(AiMemoryModel).where(
             AiMemoryModel.user_id == self.user_id,

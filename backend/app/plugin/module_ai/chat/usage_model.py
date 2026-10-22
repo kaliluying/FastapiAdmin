@@ -1,4 +1,4 @@
-"""Durable provider-call ledger and atomic daily call allowance."""
+"""持久化的服务商调用账本与原子化每日调用额度。"""
 from datetime import date, datetime
 
 from sqlalchemy import CheckConstraint, Date, DateTime, Integer, String

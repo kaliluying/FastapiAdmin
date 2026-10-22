@@ -6,9 +6,7 @@ from app.core.base_model import ModelMixin, UserMixin
 
 
 def get_log_text_column_type():
-    """
-    根据数据库类型选择适合存储大文本的列类型。
-    """
+    """根据数据库类型选择适合存储大文本的列类型。"""
     db_type = settings.DATABASE_TYPE
     if db_type == "mysql":
         from sqlalchemy.dialects.mysql import LONGTEXT
@@ -19,9 +17,7 @@ def get_log_text_column_type():
 
 
 class LoginLogModel(ModelMixin, UserMixin):
-    """
-    登录日志模型
-    """
+    """登录日志模型。"""
 
     __tablename__: str = "sys_login_log"
     __table_args__: dict[str, str] = {"comment": "登录日志表"}
@@ -38,9 +34,7 @@ class LoginLogModel(ModelMixin, UserMixin):
 
 
 class OperationLogModel(ModelMixin, UserMixin):
-    """
-    操作日志模型
-    """
+    """操作日志模型。"""
 
     __tablename__: str = "sys_operation_log"
     __table_args__: dict[str, str] = {"comment": "操作日志表"}

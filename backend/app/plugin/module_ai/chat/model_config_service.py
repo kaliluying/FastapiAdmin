@@ -32,7 +32,7 @@ _active_config: ChatModelRuntimeConfig | None = None
 
 
 def _fernet() -> Fernet:
-    # Derive a stable encryption key from the existing application secret.
+    # 从现有应用密钥派生稳定的加密密钥。
     key = base64.urlsafe_b64encode(hashlib.sha256(core_settings.SECRET_KEY.encode("utf-8")).digest())
     return Fernet(key)
 
@@ -54,8 +54,8 @@ def _decrypt_api_key(value: str | None) -> str | None:
 def _environment_config() -> ChatModelRuntimeConfig:
     return ChatModelRuntimeConfig(
         protocol="openai",
-        # Environment files are deployment-owned configuration. User-edited
-        # database values still go through the DNS-aware validator below.
+        # 环境文件属于部署配置；用户在数据库中编辑的配置值
+        # 仍须通过下方包含 DNS 检查的校验器。
         base_url=validate_model_base_url(settings.OPENAI_BASE_URL, resolve_dns=False) if settings.OPENAI_BASE_URL.strip() else "",
         model=settings.OPENAI_MODEL.strip(),
         api_key=settings.OPENAI_API_KEY.strip(),
@@ -74,8 +74,8 @@ def _apply_record(record: AiModelConfigModel | None) -> ChatModelRuntimeConfig:
 
     _active_config = ChatModelRuntimeConfig(
         protocol=record.protocol if record.protocol in {"openai", "openai_responses", "anthropic"} else "openai",
-        # Persisted URLs were validated when saved; resolver interception must
-        # not make an existing configuration unloadable after restart.
+        # 持久化 URL 在保存时已完成校验；DNS 解析被拦截时，
+        # 不能导致现有配置在重启后无法加载。
         base_url=validate_model_base_url(record.openai_base_url, resolve_dns=False),
         model=record.openai_model.strip(),
         api_key=_decrypt_api_key(record.encrypted_api_key) or _environment_config().api_key,
@@ -92,13 +92,13 @@ async def _find_record(auth: AuthSchema) -> AiModelConfigModel | None:
 
 
 async def load_runtime_chat_model_config(auth: AuthSchema) -> ChatModelRuntimeConfig:
-    """Load the persisted override for this process/request, if one exists."""
+    """为当前进程或请求加载持久化的覆盖配置（若存在）。"""
     record = await _find_record(auth)
     return _apply_record(record)
 
 
 async def initialize_runtime_chat_model_config() -> ChatModelRuntimeConfig:
-    """Load the persisted override during application startup."""
+    """在应用启动时加载持久化的覆盖配置。"""
     async with async_db_session() as db:
         async with db.begin():
             auth = AuthSchema(db=db, check_data_scope=False)
@@ -125,7 +125,7 @@ async def get_model_config(auth: AuthSchema) -> AiModelConfigOutSchema:
 
 
 async def list_provider_models(auth: AuthSchema, data: AiModelListRequestSchema) -> list[str]:
-    """List provider models using edited settings, without persisting credentials."""
+    """使用编辑后的设置列出服务商模型，不持久化凭证。"""
     current = await load_runtime_chat_model_config(auth)
     same_endpoint = data.openai_base_url == current.base_url
     base_url = await async_validate_model_base_url(data.openai_base_url, resolve_dns=not same_endpoint)

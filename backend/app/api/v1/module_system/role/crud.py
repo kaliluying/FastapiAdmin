@@ -8,21 +8,17 @@ from .schema import RoleCreateSchema, RoleUpdateSchema
 
 
 class RoleCRUD(CRUDBase[RoleModel, RoleCreateSchema, RoleUpdateSchema]):
-    """角色模块数据层"""
+    """角色模块数据层。"""
 
     def __init__(self, auth: AuthSchema) -> None:
         super().__init__(model=RoleModel, auth=auth)
 
     async def set_role_menus_crud(self, role_ids: list[int], menu_ids: list[int]) -> None:
-        """
-        设置角色的菜单权限
+        """设置角色的菜单权限。
 
-        参数:
-        - role_ids (list[int]): 角色ID列表
-        - menu_ids (list[int]): 菜单ID列表
-
-        返回:
-        - None
+        Args:
+            role_ids (list[int]): 角色ID列表
+            menu_ids (list[int]): 菜单ID列表
         """
         requested_role_ids = set(role_ids)
         roles = await self.get_list(search={"id": ("in", list(requested_role_ids))})

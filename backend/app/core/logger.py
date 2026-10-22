@@ -9,7 +9,7 @@ from app.core.request_context import get_correlation_id
 
 
 def _get_log_level() -> str:
-    """Get LOGGER_LEVEL from env or settings (lazy to avoid early settings import)."""
+    """延迟从环境变量或配置中读取 LOGGER_LEVEL，避免过早导入配置。"""
     try:
         from app.config.setting import settings
         return str(settings.LOGGER_LEVEL)
@@ -23,7 +23,7 @@ def _context_patcher(record: dict) -> None:
 
 
 class InterceptHandler(logging.Handler):
-    """将标准库 logging 重定向到 Loguru"""
+    """将标准库 logging 重定向到 Loguru。"""
 
     def emit(self, record: logging.LogRecord) -> None:
         try:

@@ -156,40 +156,40 @@ import { useResizeObserver } from "@vueuse/core";
 import type { FormInstance, PopoverProps, TableInstance } from "element-plus";
 import { ElMessage } from "element-plus";
 
-// 对象类型
+/** 对象类型 */
 export type IObject = Record<string, any>;
-// 定义接收的属性
+/** 定义接收的属性 */
 export interface ISelectConfig<T = any> {
-  // 宽度
+  /** 宽度 */
   width?: string;
-  // 占位符
+  /** 占位符 */
   placeholder?: string;
-  // popover组件属性
+  /** popover组件属性 */
   popover?: Partial<Omit<PopoverProps, "visible" | "v-model:visible">> & {
     width?: number | string;
   };
-  // 列表的网络请求函数(需返回promise)
+  /** 列表的网络请求函数(需返回promise) */
   indexAction: (_queryParams: T) => Promise<any>;
-  // 主键名(跨页选择必填,默认为id)
+  /** 主键名(跨页选择必填,默认为id) */
   pk?: string;
-  // 多选
+  /** 多选 */
   multiple?: boolean;
-  // 表单项
+  /** 表单项 */
   formItems: Array<{
-    // 组件类型(如input,select等)
+    /** 组件类型(如input,select等) */
     type?: "input" | "select" | "tree-select" | "date-picker";
-    // 标签文本
+    /** 标签文本 */
     label: string;
-    // 键名
+    /** 键名 */
     prop: string;
-    // 组件属性
+    /** 组件属性 */
     attrs?: IObject;
-    // 初始值
+    /** 初始值 */
     initialValue?: any;
-    // 可选项(适用于select组件)
+    /** 可选项(适用于select组件) */
     options?: { label: string; value: any }[];
   }>;
-  // 列选项
+  /** 列选项 */
   tableColumns: Array<{
     type?: "default" | "selection" | "index" | "expand";
     label?: string;

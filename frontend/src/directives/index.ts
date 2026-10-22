@@ -6,7 +6,7 @@ import { setupCountUpDirective, type CountUpDirective } from "./business/countUp
 import { setupRolesDirective, type RolesDirective } from "./core/roles";
 import { hasPerm } from "./permission";
 
-// 全局注册 directive
+/** 全局注册 directive */
 export function initGlobDirectives(app: App<Element>) {
   setupAuthDirective(app); // 权限指令
   setupRolesDirective(app); // 角色权限指令

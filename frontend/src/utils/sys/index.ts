@@ -1,4 +1,4 @@
-/** System helpers (flattened). */
+/** 系统辅助工具（集中定义）。 */
 
 import type { App } from "vue";
 import mitt, { type Emitter } from "mitt";
@@ -10,7 +10,7 @@ export function printConsoleBanner(): void {
 }
 
 // -----------------------------
-// Mitt bus
+// Mitt 事件总线
 // -----------------------------
 
 type SysEvents = {
@@ -21,7 +21,7 @@ type SysEvents = {
 export const mittBus: Emitter<SysEvents> = mitt<SysEvents>();
 
 // -----------------------------
-// Error handling
+// 错误处理
 // -----------------------------
 
 const IGNORABLE_SCRIPT_ERRORS = [
@@ -101,7 +101,7 @@ export function initErrorHandle(app: App) {
 }
 
 // -----------------------------
-// Upgrade
+// 版本升级
 // -----------------------------
 
 /**

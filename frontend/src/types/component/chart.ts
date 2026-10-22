@@ -29,20 +29,13 @@
  */
 import type { EChartsOption } from "@/plugins/echarts";
 
-// 图例位置类型
+/** 图例位置类型 */
 export type LegendPosition = "bottom" | "top" | "left" | "right";
 
 export type SymbolType =
-  | "circle"
-  | "rect"
-  | "roundRect"
-  | "triangle"
-  | "diamond"
-  | "pin"
-  | "arrow"
-  | "none";
+  "circle" | "rect" | "roundRect" | "triangle" | "diamond" | "pin" | "arrow" | "none";
 
-// 图表主题配置
+/** 图表主题配置 */
 export interface ChartThemeConfig {
   /** 图表高度 */
   chartHeight: string;
@@ -56,7 +49,7 @@ export interface ChartThemeConfig {
   colors: string[];
 }
 
-// 图表初始化选项
+/** 图表初始化选项 */
 export interface UseChartOptions {
   /** 初始化选项 */
   initOptions?: EChartsOption;
@@ -68,7 +61,7 @@ export interface UseChartOptions {
   autoTheme?: boolean;
 }
 
-// 基础图表 Props 接口 - 统一所有图表的基础属性
+/** 基础图表 Props 接口 - 统一所有图表的基础属性 */
 export interface BaseChartProps {
   /** 图表高度 */
   height?: string;
@@ -79,7 +72,7 @@ export interface BaseChartProps {
   colors?: string[];
 }
 
-// 轴线显示控制接口 - 统一轴线相关配置
+/** 轴线显示控制接口 - 统一轴线相关配置 */
 export interface AxisDisplayProps {
   /** 是否显示坐标轴标签 */
   showAxisLabel?: boolean;
@@ -89,7 +82,7 @@ export interface AxisDisplayProps {
   showSplitLine?: boolean;
 }
 
-// 交互显示控制接口 - 统一交互相关配置
+/** 交互显示控制接口 - 统一交互相关配置 */
 export interface InteractionProps {
   /** 是否显示提示框 */
   showTooltip?: boolean;
@@ -99,7 +92,7 @@ export interface InteractionProps {
   legendPosition?: LegendPosition;
 }
 
-// 柱状图数据项接口
+/** 柱状图数据项接口 */
 export interface BarDataItem {
   /** 系列名称 */
   name: string;
@@ -111,7 +104,7 @@ export interface BarDataItem {
   stack?: string;
 }
 
-// 柱状图 Props 接口 - 统一柱状图配置
+/** 柱状图 Props 接口 - 统一柱状图配置 */
 export interface BarChartProps extends BaseChartProps, AxisDisplayProps, InteractionProps {
   /** 图表数据 - 支持单组数据或多组数据 */
   data: number[] | BarDataItem[];
@@ -125,7 +118,7 @@ export interface BarChartProps extends BaseChartProps, AxisDisplayProps, Interac
   borderRadius?: number | number[];
 }
 
-// 折线图数据项接口
+/** 折线图数据项接口 */
 export interface LineDataItem {
   /** 系列名称 */
   name: string;
@@ -152,7 +145,7 @@ export interface LineDataItem {
   symbolSize?: number;
 }
 
-// 折线图 Props 接口 - 统一折线图配置
+/** 折线图 Props 接口 - 统一折线图配置 */
 export interface LineChartProps extends BaseChartProps, AxisDisplayProps, InteractionProps {
   /** 图表数据 - 支持单组数据或多组数据 */
   data: number[] | LineDataItem[];
@@ -172,7 +165,7 @@ export interface LineChartProps extends BaseChartProps, AxisDisplayProps, Intera
   animationDelay?: number;
 }
 
-// 雷达图数据项接口
+/** 雷达图数据项接口 */
 export interface RadarDataItem {
   /** 系列名称 */
   name: string;
@@ -180,7 +173,7 @@ export interface RadarDataItem {
   value: number[];
 }
 
-// 雷达图 Props 接口 - 统一雷达图配置
+/** 雷达图 Props 接口 - 统一雷达图配置 */
 export interface RadarChartProps extends BaseChartProps, InteractionProps {
   /** 雷达图指标配置 */
   indicator?: Array<{ name: string; max: number }>;
@@ -188,7 +181,7 @@ export interface RadarChartProps extends BaseChartProps, InteractionProps {
   data?: RadarDataItem[];
 }
 
-// 饼图/环形图数据项接口
+/** 饼图/环形图数据项接口 */
 export interface PieDataItem {
   /** 数据值 */
   value: number;
@@ -196,7 +189,7 @@ export interface PieDataItem {
   name: string;
 }
 
-// 环形图 Props 接口 - 统一环形图配置
+/** 环形图 Props 接口 - 统一环形图配置 */
 export interface RingChartProps extends BaseChartProps, InteractionProps {
   /** 图表数据 */
   data: PieDataItem[];
@@ -210,7 +203,7 @@ export interface RingChartProps extends BaseChartProps, InteractionProps {
   showLabel?: boolean;
 }
 
-// K线图数据项接口
+/** K线图数据项接口 */
 export interface KLineDataItem {
   /** 时间标签 */
   time: string;
@@ -224,7 +217,7 @@ export interface KLineDataItem {
   low: number;
 }
 
-// K线图 Props 接口 - 统一K线图配置
+/** K线图 Props 接口 - 统一K线图配置 */
 export interface KLineChartProps extends BaseChartProps {
   /** 图表数据 */
   data?: KLineDataItem[];
@@ -236,13 +229,13 @@ export interface KLineChartProps extends BaseChartProps {
   dataZoomEnd?: number;
 }
 
-// 散点图数据项接口
+/** 散点图数据项接口 */
 export interface ScatterDataItem {
   /** 坐标值 [x, y] */
   value: number[];
 }
 
-// 散点图 Props 接口 - 统一散点图配置
+/** 散点图 Props 接口 - 统一散点图配置 */
 export interface ScatterChartProps extends BaseChartProps, AxisDisplayProps, InteractionProps {
   /** 图表数据 */
   data?: ScatterDataItem[];
@@ -250,7 +243,7 @@ export interface ScatterChartProps extends BaseChartProps, AxisDisplayProps, Int
   symbolSize?: number;
 }
 
-// 双柱对比图 Props 接口 - 统一双柱对比图配置
+/** 双柱对比图 Props 接口 - 统一双柱对比图配置 */
 export interface DualBarCompareChartProps extends BaseChartProps {
   /** 上方数据 */
   topData: number[];
@@ -266,7 +259,7 @@ export interface DualBarCompareChartProps extends BaseChartProps {
   barWidth?: number;
 }
 
-// 地图图表 Props 接口 - 统一地图图表配置
+/** 地图图表 Props 接口 - 统一地图图表配置 */
 export interface MapChartProps extends BaseChartProps {
   /** 地图数据 */
   mapData?: any[];
@@ -278,7 +271,7 @@ export interface MapChartProps extends BaseChartProps {
   showScatter?: boolean;
 }
 
-// 双向堆叠柱状图 Props 接口（人口金字塔样式）
+/** 双向堆叠柱状图 Props 接口（人口金字塔样式） */
 export interface BidirectionalBarChartProps
   extends BaseChartProps, AxisDisplayProps, InteractionProps {
   /** 正向数据（向上显示） */
@@ -305,13 +298,13 @@ export interface BidirectionalBarChartProps
   negativeBorderRadius?: number | number[];
 }
 
-// 图表配置生成器函数类型
+/** 图表配置生成器函数类型 */
 export type ChartOptionGenerator = () => EChartsOption;
 
-// 图表事件回调类型
+/** 图表事件回调类型 */
 export type ChartEventCallback = (params: any) => void;
 
-// 图表错误信息接口
+/** 图表错误信息接口 */
 export interface ChartError {
   /** 错误码 */
   code: string;

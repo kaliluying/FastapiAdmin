@@ -1,4 +1,4 @@
-"""Persist answer feedback and retrieval evaluation evidence."""
+"""持久化回答反馈和检索评估记录。"""
 
 import sqlalchemy as sa
 from alembic import op

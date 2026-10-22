@@ -8,9 +8,7 @@ from openpyxl.worksheet.datavalidation import DataValidation
 
 
 class ExcelUtil:
-    """
-    Excel 模板生成与列表导出（openpyxl）。
-    """
+    """Excel 模板生成与列表导出（openpyxl）。"""
 
     @classmethod
     def get_excel_template(
@@ -19,16 +17,15 @@ class ExcelUtil:
         selector_header_list: list[str],
         option_list: list[dict[str, list[str]]],
     ) -> bytes:
-        """
-        生成 Excel 模板文件。
+        """生成 Excel 模板文件。
 
-        参数:
-        - header_list (list[str]): 表头列表。
-        - selector_header_list (list[str]): 需要设置下拉选择的表头列表。
-        - option_list (list[dict[str, list[str]]]): 下拉选项配置列表。
+        Args:
+            header_list (list[str]): 表头列表。
+            selector_header_list (list[str]): 需要设置下拉选择的表头列表。
+            option_list (list[dict[str, list[str]]]): 下拉选项配置列表。
 
-        返回:
-        - bytes: Excel 文件的二进制数据。
+        Returns:
+            bytes: Excel 文件的二进制数据。
         """
         wb = Workbook()
         ws = wb.active
@@ -73,17 +70,16 @@ class ExcelUtil:
 
     @classmethod
     def export_list2excel(cls, list_data: list[dict[str, Any]], mapping_dict: dict) -> bytes:
-        """
-        将列表数据导出为 Excel 文件。
+        """将列表数据导出为 Excel 文件。
 
-        参数:
-        - list_data (list[dict[str, Any]]): 要导出的数据列表。
-        - mapping_dict (dict): 字段名映射字典。
+        Args:
+            list_data (list[dict[str, Any]]): 要导出的数据列表。
+            mapping_dict (dict): 字段名映射字典。
 
-        返回:
-        - bytes: Excel 文件的二进制数据。
+        Returns:
+            bytes: Excel 文件的二进制数据。
         """
-        # write_only avoids building a second DataFrame-sized object for large exports.
+        # 大批量导出使用 write_only，避免再构建与 DataFrame 等大的内存对象。
         workbook = Workbook(write_only=True)
         worksheet = workbook.create_sheet()
         keys = list(mapping_dict)

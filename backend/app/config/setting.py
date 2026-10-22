@@ -12,7 +12,7 @@ from app.config.path_conf import BASE_DIR, ENV_DIR
 
 
 class Settings(BaseSettings):
-    """系统配置类"""
+    """系统配置类。"""
 
     model_config = SettingsConfigDict(
         env_file_encoding="utf-8",
@@ -283,13 +283,13 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_security_settings(self) -> "Settings":
-        """Reject missing or insecure JWT settings before the application starts.
+        """在应用启动前拒绝缺失或不安全的 JWT 配置。
 
         Returns:
-            The validated settings instance.
+            已校验的配置实例。
 
         Raises:
-            ValueError: If the JWT key is missing or too short for production.
+            ValueError: JWT 密钥缺失，或生产环境密钥长度不足。
         """
         if not self.SECRET_KEY.strip():
             raise ValueError("必须通过 SECRET_KEY 配置 JWT 密钥")

@@ -13,11 +13,10 @@ fastcore_cli = typer.Typer()
 
 
 def create_app() -> FastAPI:
-    """
-    创建 FastAPI 应用实例并完成日志、中间件、路由与静态资源注册。
+    """创建 FastAPI 应用实例并完成日志、中间件、路由与静态资源注册。
 
-    返回:
-    - FastAPI: 已配置生命周期的应用对象。
+    Returns:
+        FastAPI: 已配置生命周期的应用对象。
     """
     from app.config.setting import settings
     from app.init_app import lifespan, register_exceptions, register_files, register_middlewares, register_routers, reset_api_docs
@@ -46,14 +45,10 @@ def run(
         EnvironmentEnum, typer.Option("--env", help="运行环境 (dev, prod)")
     ] = EnvironmentEnum.DEV,
 ) -> None:
-    """
-    按指定环境加载配置并启动 Uvicorn（开发环境开启 reload）。
+    """按指定环境加载配置并启动 Uvicorn（开发环境开启 reload）。
 
-    参数:
-    - env (EnvironmentEnum): 运行环境，对应 `--env`。
-
-    返回:
-    - None
+    Args:
+        env (EnvironmentEnum): 运行环境，对应 `--env`。
     """
     # 设置环境变量（必须在 import settings/logger 之前，确保加载正确环境；
     # app.core.logger 模块顶层会调用 setup_logger() 间接读取 settings，
@@ -89,7 +84,7 @@ def run(
 def bootstrap(
     env: Annotated[EnvironmentEnum, typer.Option("--env", help="运行环境 (dev, prod)")] = EnvironmentEnum.DEV,
 ) -> None:
-    """Initialize the selected database under the same lock used by development startup."""
+    """使用与开发启动相同的锁初始化所选数据库。"""
     os.environ["ENVIRONMENT"] = env.value
     from app.config.setting import get_settings
 
@@ -128,18 +123,14 @@ def reset(
         bool, typer.Option("--yes", "-y", help="跳过确认，直接执行")
     ] = False,
 ) -> None:
-    """
-    删除全部 ORM 表并重建结构，然后写入基础种子数据。
+    """删除全部 ORM 表并重建结构，然后写入基础种子数据。
 
     单进程内导入 initialize（注册全部模型到 metadata），依次执行
     drop_all → create_all → 种子导入，避免分步执行时元数据不完整。
 
-    参数:
-    - env (EnvironmentEnum): 运行环境，对应 `--env`。
-    - yes (bool): 跳过交互式确认，对应 `--yes/-y`。
-
-    返回:
-    - None
+    Args:
+        env (EnvironmentEnum): 运行环境，对应 `--env`。
+        yes (bool): 跳过交互式确认，对应 `--yes/-y`。
     """
     os.environ["ENVIRONMENT"] = env.value
     from app.config.setting import get_settings
@@ -168,17 +159,13 @@ def reset(
         """通过当前数据库方言反射并删除全部表，再重建 ORM 表结构。"""
 
         def drop_reflected_tables(connection) -> None:
-            """Drop reflected tables and foreign keys without vendor SQL.
+            """通过反射删除数据表和外键，不使用数据库专有 SQL。
 
-            参数:
-            - connection: SQLAlchemy 同步连接，由异步连接的 ``run_sync`` 提供。
+            先删除可反射的外键约束，再按逆依赖顺序删表，避免依赖
+            MySQL ``information_schema`` 或 ``FOREIGN_KEY_CHECKS``。
 
-            返回:
-            - None
-
-            说明:
-            - 先删除可反射的外键约束，再按逆依赖顺序删表，避免依赖
-              MySQL ``information_schema`` 或 ``FOREIGN_KEY_CHECKS``。
+            Args:
+                connection: 异步连接通过 ``run_sync`` 提供的 SQLAlchemy 同步连接。
             """
             inspector = inspect(connection)
             table_names = inspector.get_table_names()
@@ -223,14 +210,10 @@ def revision(
         EnvironmentEnum, typer.Option("--env", help="运行环境 (dev, prod)")
     ] = EnvironmentEnum.DEV,
 ) -> None:
-    """
-    使用 Alembic 自动生成迁移脚本（autogenerate）。
+    """使用 Alembic 自动生成迁移脚本（autogenerate）。
 
-    参数:
-    - env (EnvironmentEnum): 运行环境，用于加载对应数据库模型元数据。
-
-    返回:
-    - None
+    Args:
+        env (EnvironmentEnum): 运行环境，用于加载对应数据库模型元数据。
     """
     os.environ["ENVIRONMENT"] = env.value
     from app.config.setting import get_settings
@@ -254,14 +237,10 @@ def upgrade(
         EnvironmentEnum, typer.Option("--env", help="运行环境 (dev, prod)")
     ] = EnvironmentEnum.DEV,
 ) -> None:
-    """
-    将数据库升级到 Alembic 最新版本（head）。
+    """将数据库升级到 Alembic 最新版本（head）。
 
-    参数:
-    - env (EnvironmentEnum): 运行环境。
-
-    返回:
-    - None
+    Args:
+        env (EnvironmentEnum): 运行环境。
     """
     os.environ["ENVIRONMENT"] = env.value
     from app.config.setting import get_settings

@@ -1,4 +1,4 @@
-"""Helpers for applying committed Alembic database migrations."""
+"""提供应用已纳入版本管理的 Alembic 数据库迁移的辅助方法。"""
 
 from alembic import command
 from alembic.config import Config
@@ -9,7 +9,7 @@ from app.config.path_conf import BASE_DIR
 
 
 async def migrate_database(environment: EnvironmentEnum) -> None:
-    """Own the CLI Redis connection; the parent alone holds the startup lock."""
+    """管理 CLI 的 Redis 连接，仅由父进程持有启动锁。"""
     from redis.asyncio import Redis
 
     from app.config.setting import get_settings
@@ -27,14 +27,12 @@ async def migrate_database(environment: EnvironmentEnum) -> None:
 
 
 def upgrade_database() -> bool:
-    """Apply all committed Alembic migrations to the configured database.
+    """将所有已纳入版本管理的 Alembic 迁移应用到配置指向的数据库。
+
+    此操作会执行尚未应用的结构和数据迁移，可能修改目标数据库。
 
     Returns:
-        bool: Whether a migration head was found and the upgrade was invoked.
-
-    Side effects:
-        Executes pending schema and data migrations against the configured
-        database.
+        bool: 是否存在迁移版本并已调用升级操作。
     """
     alembic_config = Config(str(BASE_DIR / "alembic.ini"))
     script = ScriptDirectory.from_config(alembic_config)

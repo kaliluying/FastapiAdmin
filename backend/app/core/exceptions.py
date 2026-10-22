@@ -33,7 +33,7 @@ class CustomException(Exception):
 
 
 def _tb_source(exc: Exception) -> str:
-    """从 traceback 提取抛出的 文件名:行号:函数名"""
+    """从 traceback 提取抛出的 文件名:行号:函数名。"""
     if exc.__traceback__ and (tb := traceback.extract_tb(exc.__traceback__)):
         f = tb[-1]
         return f"{f.filename}:{f.lineno}:{f.name}"

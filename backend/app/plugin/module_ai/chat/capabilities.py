@@ -1,4 +1,4 @@
-"""Explicit, bounded checks using the application's provider adapter."""
+"""通过应用的服务商适配器执行显式且有界的检查。"""
 from __future__ import annotations
 
 import asyncio
@@ -35,7 +35,7 @@ async def check_model_capabilities(auth: Any, data: AiModelConfigUpdateSchema) -
         raise CustomException(msg="API 地址不能包含查询参数或片段")
     base_url = await async_validate_model_base_url(base_url, resolve_dns=not same_endpoint)
     config = ChatModelRuntimeConfig(protocol=data.chat_protocol, base_url=base_url, model=data.openai_model, api_key=key)
-    # Release configuration-read transactions before independently reserving calls.
+    # 先结束读取配置的事务，再独立预留调用额度。
     await auth.db.rollback()
     model = LangChainChatModel(config)
     results = []

@@ -302,7 +302,7 @@ function handleBeforeUpload(file: UploadRawFile) {
   return true;
 }
 
-/*
+/**
  * 上传图片
  */
 async function handleUpload(options: UploadRequestOptions) {

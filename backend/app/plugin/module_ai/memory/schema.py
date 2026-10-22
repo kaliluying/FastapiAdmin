@@ -1,4 +1,4 @@
-"""Memory schema definitions for AI memory CRUD."""
+"""AI 记忆增删改查的数据模型定义。"""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ MEMORY_TYPE_CHOICES = ["user_preference", "fact", "work_rule"]
 
 
 class MemoryCreateSchema(BaseModel):
-    """Create a memory entry."""
+    """创建记忆条目。"""
 
     memory_type: str = Field("fact", description="Type: user_preference / fact / work_rule")
     category: str | None = Field(None, max_length=64, description="Optional grouping category")
@@ -28,7 +28,7 @@ class MemoryCreateSchema(BaseModel):
 
 
 class MemoryUpdateSchema(BaseModel):
-    """Update a memory entry."""
+    """更新记忆条目。"""
 
     memory_type: str | None = Field(None, description="Type")
     category: str | None = Field(None, max_length=64)
@@ -46,7 +46,7 @@ class MemoryUpdateSchema(BaseModel):
 
 
 class MemoryQueryParam(BaseModel):
-    """Query filter for memory list."""
+    """记忆列表的查询筛选条件。"""
 
     memory_type: str | None = Field(None, description="Filter by type")
     category: str | None = Field(None, description="Filter by category")
@@ -57,7 +57,7 @@ class MemoryQueryParam(BaseModel):
 
 
 class MemoryOutSchema(BaseModel):
-    """Memory entry output."""
+    """记忆条目输出。"""
 
     id: int
     user_id: str

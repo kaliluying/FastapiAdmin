@@ -19,14 +19,13 @@ from app.core.logger import logger
 def create_engine_and_session(
     db_url: str = settings.DB_URI,
 ) -> tuple[Engine, sessionmaker]:
-    """
-    创建同步数据库引擎和会话工厂。
+    """创建同步数据库引擎和会话工厂。
 
-    参数:
-    - db_url (str): 数据库连接URL,默认从配置中获取。
+    Args:
+        db_url (str): 数据库连接URL,默认从配置中获取。
 
-    返回:
-    - tuple[Engine, sessionmaker]: 同步数据库引擎和会话工厂。
+    Returns:
+        tuple[Engine, sessionmaker]: 同步数据库引擎和会话工厂。
     """
     try:
         if not settings.SQL_DB_ENABLE:
@@ -53,14 +52,13 @@ def create_engine_and_session(
 def create_async_engine_and_session(
     db_url: str = settings.ASYNC_DB_URI,
 ) -> tuple[AsyncEngine, async_sessionmaker[AsyncSession]]:
-    """
-    获取异步数据库会话连接。
+    """获取异步数据库会话连接。
 
-    参数:
-    - db_url (str): 异步数据库 URL，默认取配置项 ASYNC_DB_URI。
+    Args:
+        db_url (str): 异步数据库 URL，默认取配置项 ASYNC_DB_URI。
 
-    返回:
-    - tuple[AsyncEngine, async_sessionmaker[AsyncSession]]: 异步数据库引擎和会话工厂。
+    Returns:
+        tuple[AsyncEngine, async_sessionmaker[AsyncSession]]: 异步数据库引擎和会话工厂。
     """
     try:
         if not settings.SQL_DB_ENABLE:
@@ -111,12 +109,7 @@ async_engine, async_db_session = create_async_engine_and_session(settings.ASYNC_
 
 
 async def create_tables() -> None:
-    """
-    创建数据库表（根据 ORM metadata）。
-
-    返回:
-    - None
-    """
+    """创建数据库表（根据 ORM metadata）。"""
     async with async_engine.begin() as coon:
         await coon.run_sync(MappedBase.metadata.create_all)
 
@@ -125,7 +118,7 @@ _CORE_SCHEMA_INDEXES: list[Index] | None = None
 
 
 def _get_schema_indexes() -> list[Index]:
-    """Return one stable set of core composite index definitions."""
+    """返回固定的核心复合索引定义。"""
     global _CORE_SCHEMA_INDEXES
     if _CORE_SCHEMA_INDEXES is None:
         from app.api.v1.module_system.role.model import RoleMenusModel
@@ -144,11 +137,10 @@ def _get_schema_indexes() -> list[Index]:
 
 
 async def ensure_schema_indexes() -> None:
-    """Create the small set of composite indexes missing from old databases.
+    """为已有数据库幂等补齐缺失的核心复合索引。
 
-    ``metadata.create_all`` does not add indexes to tables that already exist,
-    so startup keeps these indexes idempotent for the skeleton database and
-    installations that have no committed Alembic head yet.
+    ``metadata.create_all`` 不会为已存在的表补建索引，因此启动时单独处理
+    骨架数据库以及尚无已纳入版本管理的 Alembic 版本的部署。
     """
     indexes = _get_schema_indexes()
 
@@ -164,26 +156,20 @@ async def ensure_schema_indexes() -> None:
 
 
 async def drop_tables() -> None:
-    """
-    删除数据库表（根据 ORM metadata）。
-
-    返回:
-    - None
-    """
+    """删除数据库表（根据 ORM metadata）。"""
     async with async_engine.begin() as conn:
         await conn.run_sync(MappedBase.metadata.drop_all)
 
 
 async def redis_connect(app: FastAPI, status: bool) -> Redis | None:
-    """
-    创建或关闭Redis连接。
+    """创建或关闭Redis连接。
 
-    参数:
-    - app (FastAPI): FastAPI应用实例。
-    - status (bool): 连接状态,True为创建连接,False为关闭连接。
+    Args:
+        app (FastAPI): FastAPI应用实例。
+        status (bool): 连接状态,True为创建连接,False为关闭连接。
 
-    返回:
-    - Redis | None: Redis连接实例,如果连接失败则返回None。
+    Returns:
+        Redis | None: Redis连接实例,如果连接失败则返回None。
     """
     if not settings.REDIS_ENABLE:
         raise CustomException(

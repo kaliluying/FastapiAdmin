@@ -1,10 +1,10 @@
-"""Split extracted documents at text boundaries without assuming a document type."""
+"""沿文本边界拆分提取后的文档，不预设文档类型。"""
 
 _BOUNDARIES = ("\n\n", "\n", "。", "！", "？", ". ", "! ", "? ", "；", "; ", " ")
 
 
 def split_text(text: str, *, chunk_size: int = 1000, overlap: int = 150) -> list[str]:
-    """Keep every non-edge character while preferring paragraph and sentence ends."""
+    """优先在段落和句子结尾拆分，保留去除首尾空白后的全部字符。"""
     if chunk_size <= 0 or not 0 <= overlap < chunk_size:
         raise ValueError("chunk_size must be positive and overlap must be between 0 and chunk_size")
 

@@ -1,4 +1,4 @@
-"""Persist document indexing claims and interrupted-generation cleanup."""
+"""持久化文档索引任务认领状态，以及中断索引代次的清理状态。"""
 
 import sqlalchemy as sa
 from alembic import op

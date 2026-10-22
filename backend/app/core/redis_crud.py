@@ -7,20 +7,20 @@ from app.core.logger import logger
 
 
 class RedisCURD:
-    """缓存工具类"""
+    """缓存工具类。"""
 
     def __init__(self, redis: Redis) -> None:
-        """初始化"""
+        """初始化。"""
         self.redis = redis
 
     async def mget(self, keys: list) -> list:
-        """批量获取缓存
+        """批量获取缓存。
 
-        参数:
-        - keys (list): 键名列表
+        Args:
+            keys (list): 键名列表
 
-        返回:
-        - list: 返回缓存值列表,如果获取失败则返回空列表
+        Returns:
+            list: 返回缓存值列表,如果获取失败则返回空列表
         """
         try:
             data = await self.redis.mget(*[str(key) for key in keys])
@@ -30,13 +30,13 @@ class RedisCURD:
             return []
 
     async def get_keys(self, pattern: str = "*") -> list:
-        """获取缓存键名
+        """获取缓存键名。
 
-        参数:
-        - pattern (str, optional): 匹配模式,默认值为"*"。
+        Args:
+            pattern (str, optional): 匹配模式,默认值为"*"。
 
-        返回:
-        - list: 返回匹配的缓存键名列表,如果获取失败则返回空列表
+        Returns:
+            list: 返回匹配的缓存键名列表,如果获取失败则返回空列表
         """
         try:
             keys = await self.redis.keys(f"{pattern}")
@@ -46,13 +46,13 @@ class RedisCURD:
             return []
 
     async def get(self, key: str) -> Any:
-        """获取缓存
+        """获取缓存。
 
-        参数:
-        - key (str): 缓存键名
+        Args:
+            key (str): 缓存键名
 
-        返回:
-        - Any: 返回缓存值,如果缓存不存在则返回None
+        Returns:
+            Any: 返回缓存值,如果缓存不存在则返回None
         """
         try:
             data = await self.redis.get(f"{key}")
@@ -67,18 +67,16 @@ class RedisCURD:
             return None
 
     async def getdel(self, key: str) -> Any:
-        """Atomically read and delete a one-time cache value.
+        """原子读取并删除一次性缓存值。
+
+        Redis 6.2 及以上版本直接使用 ``GETDEL``，旧版本使用等价的 Lua 脚本，
+        避免一次性认证票据退化为存在竞态的独立 ``GET`` 和 ``DEL`` 操作。
 
         Args:
-            key: Redis key.
+            key: Redis 键名。
 
         Returns:
-            The cached value before deletion, or ``None`` when absent.
-
-        Notes:
-            Redis 6.2+ provides ``GETDEL`` directly. Older Redis servers use
-            an equivalent Lua script so one-time authentication tickets do not
-            fall back to a race-prone separate ``GET`` and ``DEL``.
+            删除前的缓存值；不存在时返回 ``None``。
         """
         getdel_error: Exception | None = None
         try:
@@ -96,9 +94,9 @@ class RedisCURD:
                 key,
             )
         except Exception as eval_error:
-            # Lightweight test doubles may implement neither GETDEL nor EVAL.
-            # Keep a final compatibility path, but never use it on a real
-            # Redis client that supports the atomic primitives above.
+            # 轻量测试替身可能同时缺少 GETDEL 和 EVAL。
+            # 仅为此类替身保留兼容路径；支持原子操作的真实 Redis 客户端不走此分支。
+
             try:
                 value = await self.redis.get(key)
                 if value is not None:
@@ -110,19 +108,17 @@ class RedisCURD:
                 return None
 
     async def compare_and_delete(self, key: str, expected: str) -> bool:
-        """Delete a cached value only when it still equals ``expected``.
+        """仅在缓存值仍等于 ``expected`` 时删除。
+
+        真实 Redis 客户端使用单个 Lua 脚本，避免两个并发请求同时完成刷新令牌轮换。
+        不支持 ``eval`` 的轻量测试替身使用兼容的读取、删除路径。
 
         Args:
-            key: Redis key to compare.
-            expected: Value supplied by the caller.
+            key: 待比较的 Redis 键名。
+            expected: 调用方提供的预期值。
 
         Returns:
-            ``True`` when the matching value was deleted, otherwise ``False``.
-
-        Notes:
-            Real Redis clients use one Lua script, so refresh-token rotation
-            cannot be won by two concurrent requests. Lightweight test
-            doubles without ``eval`` use a compatibility read/delete path.
+            匹配值被删除时返回 ``True``，否则返回 ``False``。
         """
         script = """
         if redis.call('get', KEYS[1]) == ARGV[1] then
@@ -142,15 +138,15 @@ class RedisCURD:
             return True
 
     async def set(self, key: str, value: Any, expire: int | None = 86400) -> bool:
-        """设置缓存
+        """设置缓存。
 
-        参数:
-        - key (str): 缓存键名
-        - value (Any): 缓存值
-        - expire (int | None, optional): 过期时间,单位为秒,默认值为86400（24小时）。
+        Args:
+            key (str): 缓存键名
+            value (Any): 缓存值
+            expire (int | None, optional): 过期时间,单位为秒,默认值为86400（24小时）。
 
-        返回:
-        - bool: 如果设置缓存成功则返回True,否则返回False
+        Returns:
+            bool: 如果设置缓存成功则返回True,否则返回False
         """
         try:
             # 根据数据类型选择序列化方式
@@ -171,15 +167,15 @@ class RedisCURD:
             return False
 
     async def lock(self, key: str, expire: int, value: str | None = None) -> tuple[bool, str]:
-        """获取分布式锁
+        """获取分布式锁。
 
-        参数:
-        - key (str): 锁键名
-        - expire (int): 锁过期时间,单位为秒
-        - value (str, optional): 锁值,默认值为None（自动生成UUID）。
+        Args:
+            key (str): 锁键名
+            expire (int): 锁过期时间,单位为秒
+            value (str, optional): 锁值,默认值为None（自动生成UUID）。
 
-        返回:
-        - tuple[bool, str]: (获取锁是否成功, 锁值)
+        Returns:
+            tuple[bool, str]: (获取锁是否成功, 锁值)
         """
         try:
             import uuid
@@ -199,14 +195,14 @@ class RedisCURD:
             return (False, "")
 
     async def unlock(self, key: str, value: str) -> bool:
-        """释放分布式锁（安全版本，验证锁值）
+        """释放分布式锁（安全版本，验证锁值）。
 
-        参数:
-        - key (str): 锁键名
-        - value (str): 锁值，用于验证锁的持有者
+        Args:
+            key (str): 锁键名
+            value (str): 锁值，用于验证锁的持有者
 
-        返回:
-        - bool: 如果释放锁成功则返回True,否则返回False
+        Returns:
+            bool: 如果释放锁成功则返回True,否则返回False
         """
         try:
             # 使用Lua脚本确保原子性验证和删除
@@ -220,9 +216,9 @@ class RedisCURD:
             result = await self.redis.eval(script, 1, key, value)  # pyright: ignore[reportGeneralTypeIssues]
             if result == 1:
                 return True
-            # Lightweight doubles may expose ``eval`` as an AsyncMock without
-            # executing Lua. Keep the compatibility path limited to non-int
-            # results; real Redis still remains compare-and-delete atomic.
+            # 测试替身的 eval 可能只是未执行 Lua 的 AsyncMock，
+            # 因而仅对非整数结果使用兼容路径；真实 Redis 仍执行原子比较删除。
+
             if not isinstance(result, int):
                 current = await self.get(key)
                 current_value = current.decode("utf-8") if isinstance(current, bytes) else str(current or "")
@@ -235,13 +231,13 @@ class RedisCURD:
             return False
 
     async def delete(self, *keys: str) -> bool:
-        """删除缓存
+        """删除缓存。
 
-        参数:
-        - keys (str): 缓存键名
+        Args:
+            keys (str): 缓存键名
 
-        返回:
-        - bool: 如果删除缓存成功则返回True,否则返回False
+        Returns:
+            bool: 如果删除缓存成功则返回True,否则返回False
         """
         try:
             await self.redis.delete(*keys)
@@ -251,13 +247,13 @@ class RedisCURD:
             return False
 
     async def clear(self, pattern: str = "*") -> bool:
-        """清空缓存
+        """清空缓存。
 
-        参数:
-        - pattern (str, optional): 匹配模式,默认值为"*"。
+        Args:
+            pattern (str, optional): 匹配模式,默认值为"*"。
 
-        返回:
-        - bool: 如果清空缓存成功则返回True,否则返回False
+        Returns:
+            bool: 如果清空缓存成功则返回True,否则返回False
         """
         try:
             keys = await self.redis.keys(f"{pattern}")
@@ -269,13 +265,13 @@ class RedisCURD:
             return False
 
     async def exists(self, key: str) -> bool:
-        """判断缓存是否存在
+        """判断缓存是否存在。
 
-        参数:
-        - key (str): 缓存键名
+        Args:
+            key (str): 缓存键名
 
-        返回:
-        - bool: 如果缓存存在则返回True,否则返回False
+        Returns:
+            bool: 如果缓存存在则返回True,否则返回False
         """
         try:
             return await self.redis.exists(f"{key}")
@@ -284,13 +280,13 @@ class RedisCURD:
             return False
 
     async def ttl(self, key: str) -> int:
-        """获取缓存过期时间
+        """获取缓存过期时间。
 
-        参数:
-        - key (str): 缓存键名
+        Args:
+            key (str): 缓存键名
 
-        返回:
-        - int: 返回缓存过期时间,单位为秒,如果缓存没有设置过期时间则返回-1
+        Returns:
+            int: 返回缓存过期时间,单位为秒,如果缓存没有设置过期时间则返回-1
         """
         try:
             return await self.redis.ttl(f"{key}")
@@ -299,15 +295,15 @@ class RedisCURD:
             return -1
 
     async def renew_lock(self, key: str, expire: int, value: str) -> bool:
-        """续约分布式锁
+        """续约分布式锁。
 
-        参数:
-        - key (str): 锁键名
-        - expire (int): 新的过期时间,单位为秒
-        - value (str): 锁值，用于验证锁的持有者
+        Args:
+            key (str): 锁键名
+            expire (int): 新的过期时间,单位为秒
+            value (str): 锁值，用于验证锁的持有者
 
-        返回:
-        - bool: 如果续约锁成功则返回True,否则返回False
+        Returns:
+            bool: 如果续约锁成功则返回True,否则返回False
         """
         try:
             # 使用Lua脚本确保原子性验证和续约
@@ -331,14 +327,14 @@ class RedisCURD:
             return False
 
     async def expire(self, key: str, expire: int) -> bool:
-        """设置缓存过期时间
+        """设置缓存过期时间。
 
-        参数:
-        - key (str): 缓存键名
-        - expire (int): 过期时间,单位为秒
+        Args:
+            key (str): 缓存键名
+            expire (int): 过期时间,单位为秒
 
-        返回:
-        - bool: 如果设置缓存过期时间成功则返回True,否则返回False
+        Returns:
+            bool: 如果设置缓存过期时间成功则返回True,否则返回False
         """
         try:
             return await self.redis.expire(f"{key}", expire)
@@ -347,10 +343,10 @@ class RedisCURD:
             return False
 
     async def info(self) -> dict:
-        """获取缓存信息
+        """获取缓存信息。
 
-        返回:
-        - dict: 返回缓存信息字典,如果获取失败则返回空字典
+        Returns:
+            dict: 返回缓存信息字典,如果获取失败则返回空字典
         """
         try:
             return await self.redis.info()
@@ -359,10 +355,10 @@ class RedisCURD:
             return {}
 
     async def db_size(self) -> int:
-        """获取数据库大小
+        """获取数据库大小。
 
-        返回:
-        - int: 返回数据库大小,如果获取失败则返回0
+        Returns:
+            int: 返回数据库大小,如果获取失败则返回0
         """
         try:
             return await self.redis.dbsize()
@@ -371,10 +367,10 @@ class RedisCURD:
             return 0
 
     async def commandstats(self) -> dict:
-        """获取命令统计信息
+        """获取命令统计信息。
 
-        返回:
-        - dict: 返回命令统计信息字典,如果获取失败则返回空字典
+        Returns:
+            dict: 返回命令统计信息字典,如果获取失败则返回空字典
         """
         try:
             return await self.redis.info("commandstats")
@@ -383,15 +379,15 @@ class RedisCURD:
             return {}
 
     async def hash_set(self, name: str, key: str, value: Any) -> bool:
-        """设置哈希缓存
+        """设置哈希缓存。
 
-        参数:
-        - name (str): 哈希缓存名称
-        - key (str): 哈希缓存键名
-        - value (Any): 哈希缓存值
+        Args:
+            name (str): 哈希缓存名称
+            key (str): 哈希缓存键名
+            value (Any): 哈希缓存值
 
-        返回:
-        - bool: 如果设置哈希缓存成功则返回True,否则返回False
+        Returns:
+            bool: 如果设置哈希缓存成功则返回True,否则返回False
         """
         try:
             await self.redis.hset(name=name, key=key, value=value)
@@ -401,14 +397,14 @@ class RedisCURD:
             return False
 
     async def hash_get(self, name: str, keys: list[str]) -> list[Any]:
-        """获取哈希缓存
+        """获取哈希缓存。
 
-        参数:
-        - name (str): 哈希缓存名称
-        - keys (list[str]): 哈希缓存键名列表
+        Args:
+            name (str): 哈希缓存名称
+            keys (list[str]): 哈希缓存键名列表
 
-        返回:
-        - Awaitable[list[Any]] | list[Any]: 返回哈希缓存值列表,如果获取失败则返回空列表
+        Returns:
+            Awaitable[list[Any]] | list[Any]: 返回哈希缓存值列表,如果获取失败则返回空列表
         """
         try:
             data = await self.redis.hmget(name=name, keys=keys)
