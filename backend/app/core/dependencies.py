@@ -17,7 +17,7 @@ from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.core.redis_crud import RedisCURD
 from app.core.request_context import RequestContext
-from app.core.security import OAuth2Schema, decode_access_token
+from app.core.security import OAuth2Schema, decode_access_token, verify_session_credentials
 
 WS_TICKET_PREFIX = "auth:ws_ticket:"
 
@@ -225,6 +225,7 @@ async def get_current_user(
     await _try_sliding_refresh(redis, session_id)
 
     user = await _load_authenticated_user(user_info.get("user_id"))
+    verify_session_credentials(user_info, user.id, user.password)
     permission_map = _build_permission_map(user)
 
     # 设置请求上下文（仅在当前 request 对象上，业务方通过 request.state.ctx 读取）
@@ -286,6 +287,7 @@ async def _verify_session(session_id: str, db: AsyncSession, redis: Redis) -> Au
     except (TypeError, json.JSONDecodeError):
         raise CustomException(msg="认证已失效", code=10401, status_code=401)
     user = await _load_authenticated_user(user_info.get("user_id"))
+    verify_session_credentials(user_info, user.id, user.password)
     auth = AuthSchema(db=db, redis=redis, permission_map=_build_permission_map(user), check_data_scope=False, session_id=session_id)
     auth.user = user
     return auth

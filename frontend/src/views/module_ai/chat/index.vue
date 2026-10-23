@@ -240,6 +240,7 @@ const workspaceHeight = computed(
 let activeRequest: { id: string; messageId: string } | null = null;
 let sendGeneration = 0;
 let selectionGeneration = 0;
+let pendingSelectionId: string | null = null;
 
 // 移动端抽屉
 const isMobileDrawerOpen = ref(false);
@@ -468,6 +469,7 @@ const handleSelectSession = async (session: ChatSession) => {
   }
   stopGeneration();
   const generation = ++selectionGeneration;
+  pendingSelectionId = sessionId;
   switchingSession.value = true;
   try {
     const response = await AiChatAPI.getSessionDetail(sessionId);
@@ -515,13 +517,17 @@ const handleSelectSession = async (session: ChatSession) => {
   } catch {
     if (generation === selectionGeneration) ElMessage.error("获取会话详情失败");
   } finally {
-    if (generation === selectionGeneration) switchingSession.value = false;
+    if (generation === selectionGeneration) {
+      pendingSelectionId = null;
+      switchingSession.value = false;
+    }
   }
 };
 
 const handleNewSession = () => {
   stopGeneration();
   selectionGeneration += 1;
+  pendingSelectionId = null;
   switchingSession.value = false;
   isMobileDrawerOpen.value = false;
   error.value = "";
@@ -534,7 +540,7 @@ const handleNewSession = () => {
 };
 
 const handleDeleteSession = (sessionId: string) => {
-  if (currentSessionId.value !== sessionId) return;
+  if (currentSessionId.value !== sessionId && pendingSelectionId !== sessionId) return;
 
   handleNewSession();
 };
@@ -548,6 +554,7 @@ const handleClearChat = async () => {
     });
     stopGeneration();
     selectionGeneration += 1;
+    pendingSelectionId = null;
     switchingSession.value = false;
     messages.value = [];
     currentLogContextId.value = null;
@@ -594,12 +601,20 @@ onMounted(() => {
   loadKnowledgeBases();
   loadRuntimeLogStatus();
 });
-onUnmounted(stopGeneration);
+onUnmounted(() => {
+  selectionGeneration += 1;
+  pendingSelectionId = null;
+  switchingSession.value = false;
+  stopGeneration();
+});
 // 离开缓存视图时取消当前生成，返回后只刷新权限状态。
 onActivated(() => {
   loadRuntimeLogStatus();
 });
 onDeactivated(() => {
+  selectionGeneration += 1;
+  pendingSelectionId = null;
+  switchingSession.value = false;
   currentLogContextId.value = null;
   stopGeneration();
 });

@@ -3,9 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ChatPage from "@/views/module_ai/chat/index.vue";
 import type { ChatMessage, UploadedFile } from "@/views/module_ai/chat/types";
 
-const { createSession, getDetail, clearDraft, streamRequest } = vi.hoisted(() => ({
+const { createSession, getDetail, getFeedback, clearDraft, streamRequest } = vi.hoisted(() => ({
   createSession: vi.fn(),
   getDetail: vi.fn(),
+  getFeedback: vi.fn(),
   clearDraft: vi.fn(),
   streamRequest: vi.fn(),
 }));
@@ -23,7 +24,7 @@ vi.mock("@/api/module_ai/knowledge", () => ({
   },
 }));
 vi.mock("@/api/module_ai/quality", () => ({
-  default: { feedbackList: vi.fn().mockResolvedValue({ data: { data: { items: [] } } }) },
+  default: { feedbackList: getFeedback },
 }));
 vi.mock("element-plus", () => ({
   ElMessage: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
@@ -52,12 +53,14 @@ interface Page {
   error: string;
   processStage: string;
   currentSessionId: string | null;
+  switchingSession: boolean;
   isMobileDrawerOpen: boolean;
   mobileSidebarRef: { loadSessions: () => void };
   handleSendMessage: (message: string, files?: UploadedFile[]) => Promise<void>;
   handleNewSession: () => void;
   stopGeneration: () => void;
   handleSelectSession: (session: { id: string }) => Promise<void>;
+  handleDeleteSession: (id: string) => void;
   retryMessage: (id: string) => void;
 }
 let wrapper: VueWrapper;
@@ -77,9 +80,14 @@ beforeEach(async () => {
   clearDraft.mockClear();
   createSession.mockReset().mockResolvedValue({ data: { code: 200, data: { id: "session-one" } } });
   getDetail.mockReset();
+  getFeedback.mockReset().mockResolvedValue({ data: { data: { items: [] } } });
   wrapper = shallowMount(ChatPage, {
     global: {
       stubs: {
+        FaSvgIcon: true,
+        ElButton: true,
+        ElDrawer: true,
+        ElDialog: true,
         ElSplitter: { template: "<div><slot /></div>" },
         ElSplitterPanel: { template: "<div><slot /></div>" },
         ElContainer: { template: "<div><slot /></div>" },
@@ -87,6 +95,7 @@ beforeEach(async () => {
         ElMain: { template: "<div><slot /></div>" },
         ElFooter: { template: "<div><slot /></div>" },
         FaSidebar: {
+          name: "FaSidebar",
           setup: (_, { expose }) => {
             expose({ loadSessions: vi.fn() });
           },
@@ -109,6 +118,90 @@ beforeEach(async () => {
   });
   await flushPromises();
   page = wrapper.vm as unknown as Page;
+});
+
+const deferred = <T>() => {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: Error) => void;
+  const promise = new Promise<T>((done, fail) => {
+    resolve = done;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
+};
+
+const savedSession = (content: string) => ({
+  data: {
+    code: 200,
+    data: { runs: [{ run_id: content, messages: [{ role: "assistant", content }] }] },
+  },
+});
+
+describe("session selection races", () => {
+  it.each(["detail", "feedback"])(
+    "does not restore a deleted pending session after late %s or send to it",
+    async (stage) => {
+      getDetail.mockResolvedValueOnce(savedSession("A"));
+      await page.handleSelectSession({ id: "A" });
+      const detail = deferred<ReturnType<typeof savedSession>>();
+      const feedback = deferred<{ data: { data: { items: [] } } }>();
+      getDetail.mockReturnValueOnce(detail.promise);
+      getFeedback.mockReturnValueOnce(feedback.promise);
+      const selection = page.handleSelectSession({ id: "B" });
+      if (stage === "feedback") {
+        detail.resolve(savedSession("B"));
+        await flushPromises();
+      }
+      wrapper.getComponent({ name: "FaSidebar" }).vm.$emit("delete-session", "B");
+      await flushPromises();
+      detail.resolve(savedSession("B"));
+      feedback.resolve({ data: { data: { items: [] } } });
+      await selection;
+      expect(page.switchingSession).toBe(false);
+      expect(page.currentSessionId).toBeNull();
+      expect(page.messages).toEqual([]);
+      if (stage === "detail") expect(getFeedback).toHaveBeenCalledTimes(1);
+      void page.handleSendMessage("删除之后的新问题");
+      expect(stream.sent[0]?.session_id).toBeNull();
+    }
+  );
+
+  it("keeps a newer selection when an unrelated pending session is deleted", async () => {
+    const oldDetail = deferred<ReturnType<typeof savedSession>>();
+    getDetail.mockReturnValueOnce(oldDetail.promise);
+    const oldSelection = page.handleSelectSession({ id: "B" });
+    getDetail.mockResolvedValueOnce(savedSession("C"));
+    const selection = page.handleSelectSession({ id: "C" });
+    page.handleDeleteSession("B");
+    oldDetail.resolve(savedSession("B"));
+    await Promise.all([oldSelection, selection]);
+    expect(page.currentSessionId).toBe("C");
+    expect(page.messages.map((message) => message.content)).toEqual(["C"]);
+    page.handleDeleteSession("B");
+    expect(page.currentSessionId).toBe("C");
+  });
+
+  it.each(["detail", "feedback"])("ignores late %s after unmount", async (stage) => {
+    const detail = deferred<ReturnType<typeof savedSession>>();
+    const feedback = deferred<{ data: { data: { items: [] } } }>();
+    getDetail.mockReturnValueOnce(detail.promise);
+    getFeedback.mockReturnValueOnce(feedback.promise);
+    const selection = page.handleSelectSession({ id: "B" });
+    if (stage === "feedback") {
+      detail.resolve(savedSession("B"));
+      await flushPromises();
+    }
+    const { ElMessage } = await import("element-plus");
+    vi.mocked(ElMessage.success).mockClear();
+    wrapper.unmount();
+    detail.resolve(savedSession("B"));
+    feedback.resolve({ data: { data: { items: [] } } });
+    await selection;
+    expect(page.messages).toEqual([]);
+    expect(page.switchingSession).toBe(false);
+    expect(ElMessage.success).not.toHaveBeenCalled();
+    if (stage === "detail") expect(getFeedback).not.toHaveBeenCalled();
+  });
 });
 afterEach(() => {
   wrapper.unmount();

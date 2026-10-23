@@ -58,8 +58,10 @@ vi.mock("./staticRoutes", () => ({
 }));
 
 import { resetDynamicRoutesSync, setupBeforeEachGuard } from "./beforeEach";
+import { Auth } from "@/utils/auth";
 
 test("empty menus allow navigation and reinitialize only after an explicit reset", async () => {
+  Auth.setTokens("access", "refresh", false);
   const router = createRouter({
     history: createMemoryHistory(),
     routes: ["home", "profile"].map((path) => ({

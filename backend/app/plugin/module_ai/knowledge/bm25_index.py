@@ -13,7 +13,9 @@ from typing import Any
 import anyio
 from whoosh import index
 from whoosh.fields import ID, STORED, TEXT, Schema
+from whoosh.filedb.filestore import FileStorage
 from whoosh.query import Or, Term
+from whoosh.util.filelock import try_for
 
 from app.config.path_conf import BASE_DIR
 from app.core.logger import logger
@@ -82,10 +84,17 @@ class BM25KnowledgeIndex:
         """获取或创建索引实例（延迟加载）。"""
         with self._index_lock:
             if self._index is None:
-                if index.exists_in(str(self.index_dir)):
-                    self._index = index.open_dir(str(self.index_dir))
-                else:
-                    self._index = index.create_in(str(self.index_dir), self.schema)
+                # create_in 会删除已有索引，必须跨进程锁定后重新检查。
+                init_lock = FileStorage(str(self.index_dir)).lock("BM25_INITLOCK")
+                if not try_for(init_lock.acquire, timeout=10):
+                    raise index.LockError("Timed out waiting for BM25 index initialization")
+                try:
+                    if index.exists_in(str(self.index_dir)):
+                        self._index = index.open_dir(str(self.index_dir))
+                    else:
+                        self._index = index.create_in(str(self.index_dir), self.schema)
+                finally:
+                    init_lock.release()
             return self._index
 
     async def add_chunks(

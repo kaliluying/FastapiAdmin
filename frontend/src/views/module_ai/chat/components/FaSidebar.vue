@@ -124,7 +124,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { ElMessage, ElMessageBox, ElScrollbar } from "element-plus";
 import {
   ChatDotRound,
@@ -161,6 +161,8 @@ const userStore = useUserStoreHook();
 const sessions = ref<ChatSession[]>([]);
 const loading = ref(false);
 const loadError = ref(false);
+let listGeneration = 0;
+let unmounted = false;
 const searchQuery = ref("");
 const collapsedGroups = ref<Set<string>>(new Set());
 
@@ -260,9 +262,15 @@ const handleSessionCommand = async (command: string, session: ChatSession) => {
         inputPattern: /.+/,
         inputErrorMessage: "会话名称不能为空",
       });
+      if (unmounted) return;
       await AiChatAPI.updateSession(session.id, { title: value });
-      session.title = value;
+      if (unmounted) return;
+      listGeneration += 1;
+      loading.value = false;
+      const currentSession = sessions.value.find((item) => item.id === session.id);
+      if (currentSession) currentSession.title = value;
     } catch (error) {
+      if (unmounted) return;
       if (error !== "cancel") {
         ElMessage.error("重命名失败");
       } else {
@@ -276,7 +284,11 @@ const handleSessionCommand = async (command: string, session: ChatSession) => {
         cancelButtonText: "取消",
         type: "warning",
       });
+      if (unmounted) return;
       await AiChatAPI.deleteSession([session.id]);
+      if (unmounted) return;
+      listGeneration += 1;
+      loading.value = false;
       const index = sessions.value.findIndex((s: ChatSession) => s.id === session.id);
       if (index > -1) {
         sessions.value.splice(index, 1);
@@ -284,6 +296,7 @@ const handleSessionCommand = async (command: string, session: ChatSession) => {
       emit("delete-session", session.id);
       ElMessage.success("咨询对话已删除");
     } catch (error) {
+      if (unmounted) return;
       if (error !== "cancel") {
         ElMessage.error("删除失败");
       } else {
@@ -294,10 +307,13 @@ const handleSessionCommand = async (command: string, session: ChatSession) => {
 };
 
 const loadSessions = async () => {
+  if (unmounted) return;
+  const generation = ++listGeneration;
   loading.value = true;
   loadError.value = false;
   try {
     const res = await AiChatAPI.getSessionList({ page_no: 1, page_size: 100 });
+    if (generation !== listGeneration) return;
     const responseData = res.data;
     const data = responseData?.data;
 
@@ -330,15 +346,22 @@ const loadSessions = async () => {
         }));
     }
   } catch (error) {
+    if (generation !== listGeneration) return;
     loadError.value = true;
     console.error("加载会话列表失败:", error);
   } finally {
-    loading.value = false;
+    if (generation === listGeneration) loading.value = false;
   }
 };
 
 onMounted(() => {
   loadSessions();
+});
+
+onUnmounted(() => {
+  unmounted = true;
+  listGeneration += 1;
+  loading.value = false;
 });
 
 defineExpose({

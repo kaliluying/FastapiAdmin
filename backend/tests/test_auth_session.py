@@ -10,20 +10,20 @@ from app.common.enums import RedisInitKeyConfig
 from app.core import dependencies
 from app.core.base_schema import JWTOutSchema, RefreshTokenPayloadSchema
 from app.core.exceptions import CustomException
-from app.core.security import decode_access_token
+from app.core.security import credential_fingerprint, decode_access_token
 
 
 @pytest.mark.parametrize("cached", [False, True])
 async def test_http_auth_preserves_verified_login_session(monkeypatch, cached):
     from sqlalchemy.ext.asyncio import AsyncSession
 
-    user_info = {"user_id": 7, "user_name": "admin", "session_id": "verified-http-session"}
+    user_info = {"user_id": 7, "user_name": "admin", "session_id": "verified-http-session", "credential_fingerprint": credential_fingerprint(7, "fixture")}
     state = SimpleNamespace()
     if cached:
         state.ctx = dependencies.RequestContext(jwt_user_info=user_info)
     request = SimpleNamespace(state=state)
     redis = FakeRedis()
-    user = SimpleNamespace(id=7, username="admin")
+    user = SimpleNamespace(id=7, username="admin", password="fixture")
     decode = AsyncMock(return_value=(user_info, user_info["session_id"]))
     online = AsyncMock()
     monkeypatch.setattr(dependencies, "_decode_token_info", decode)
@@ -95,7 +95,7 @@ async def test_create_token_stores_user_session() -> None:
         state=SimpleNamespace(),
     )
     redis = FakeRedis()
-    user = SimpleNamespace(id=7, username="admin")
+    user = SimpleNamespace(id=7, username="admin", password="fixture")
 
     token = await LoginService.create_token(
         request=request,  # type: ignore[arg-type]
@@ -125,7 +125,7 @@ async def test_logout_revokes_only_the_authenticated_session() -> None:
         state=SimpleNamespace(),
     )
     redis = FakeRedis()
-    user = SimpleNamespace(id=7, username="admin")
+    user = SimpleNamespace(id=7, username="admin", password="fixture")
 
     first = await LoginService.create_token(request=request, redis=redis, user=user, login_type="PC端")
     second = await LoginService.create_token(request=request, redis=redis, user=user, login_type="移动端")
@@ -153,7 +153,7 @@ async def test_refresh_token_is_rotated_atomically(monkeypatch) -> None:
         state=SimpleNamespace(),
     )
     redis = FakeRedis()
-    user = SimpleNamespace(id=7, username="admin", status=0)
+    user = SimpleNamespace(id=7, username="admin", password="fixture", status=0)
     initial = await LoginService.create_token(request=request, redis=redis, user=user, login_type="PC端")
 
     async def load_user(self, **_: object):
@@ -246,13 +246,13 @@ async def test_websocket_ticket_is_single_use(monkeypatch) -> None:
     redis = FakeRedis()
     redis.values[f"{RedisInitKeyConfig.ACCESS_TOKEN.key}:{session_id}"] = b"online"
     redis.values[f"{RedisInitKeyConfig.USER_SESSION.key}:{session_id}"] = json.dumps(
-        {"user_id": 7, "user_name": "admin", "session_id": session_id}
+        {"user_id": 7, "user_name": "admin", "session_id": session_id, "credential_fingerprint": credential_fingerprint(7, "fixture")}
     ).encode("utf-8")
     ticket = await LoginService.create_ws_ticket(redis=redis, session_id=session_id)
 
     async def load_user(_db, *, user_id):
         assert user_id == 7
-        return SimpleNamespace(id=7, username="admin", status=0)
+        return SimpleNamespace(id=7, username="admin", password="fixture", status=0)
 
     monkeypatch.setattr(dependencies, "_load_user_from_db", load_user)
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -294,12 +294,12 @@ async def test_auto_login_token_is_consumed_before_session_creation() -> None:
     token = "auto-login-once"
     redis = FakeRedis()
     redis.values[f"{AutoLoginService.AUTO_LOGIN_PREFIX}{token}"] = json.dumps(
-        {"user_id": 7, "username": "admin"}
+        {"user_id": 7, "username": "admin", "credential_fingerprint": credential_fingerprint(7, "fixture")}
     ).encode("utf-8")
 
     class FakeResult:
         def scalar_one_or_none(self):
-            return SimpleNamespace(id=7, username="admin", status=0)
+            return SimpleNamespace(id=7, username="admin", password="fixture", status=0)
 
     class FakeDb:
         async def execute(self, _statement):

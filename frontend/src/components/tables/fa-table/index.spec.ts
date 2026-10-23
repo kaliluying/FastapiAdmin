@@ -278,10 +278,14 @@ it("accepts a pending response after token renewal within the same session", asy
   const api = vi.fn().mockReturnValue(pending.promise);
   const token = (expiry: number) =>
     `header.${btoa(JSON.stringify({ sub: "test-same-session", exp: expiry }))}.signature`;
-  Auth.setTokens(token(1), "", false);
+  Auth.setTokens(token(1), "refresh", false);
   const first = createTable(api);
   const firstRequest = first.table.fetchData();
-  Auth.setTokens(token(2), "", false);
+  const { default: AuthAPI } = await import("@/api/module_system/auth");
+  vi.spyOn(AuthAPI, "refreshToken").mockResolvedValue({
+    data: { data: { access_token: token(2), refresh_token: "renewed-refresh" } },
+  } as Awaited<ReturnType<typeof AuthAPI.refreshToken>>);
+  await Auth.refreshTokens();
   const second = createTable(api);
   const secondRequest = second.table.fetchData();
   pending.resolve({ records: [{ id: 1 }], total: 1, current: 1, size: 10 });

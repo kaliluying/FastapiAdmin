@@ -25,7 +25,7 @@ from app.core.base_model import MappedBase
 from app.core.base_schema import AuthSchema, JWTPayloadSchema
 from app.core.exceptions import CustomException, handle_exception
 from app.core.redis_crud import RedisCURD
-from app.core.security import create_access_token
+from app.core.security import create_access_token, credential_fingerprint
 
 
 @pytest.fixture
@@ -50,6 +50,114 @@ async def arch_redis():
         await redis.aclose()
 
 
+@pytest.mark.parametrize("operation", ["change", "reset"])
+@pytest.mark.parametrize("transport", ["http", "refresh", "ws", "ticket"])
+async def test_password_change_invalidates_all_preexisting_sessions(
+    arch_sessions, arch_redis, monkeypatch, operation, transport,
+):
+    from app.api.v1.module_system.auth.service import LoginService
+    from app.api.v1.module_system.user.schema import ResetPasswordSchema, UserChangePasswordSchema
+    from app.api.v1.module_system.user.service import UserService
+    from app.core.base_schema import RefreshTokenPayloadSchema
+    from app.core.security import decode_access_token
+    from app.utils.hash_bcrpy_util import PwdUtil
+    from app.utils.ip_local_util import IpLocalUtil
+
+    monkeypatch.setattr(IpLocalUtil, "resolve_location_for_log", AsyncMock(return_value=""))
+    monkeypatch.setattr(arch_redis, "eval", AsyncMock(side_effect=NotImplementedError))
+    request = SimpleNamespace(headers={}, client=None, state=SimpleNamespace())
+    async with arch_sessions() as db:
+        user = UserModel(username="credential-test", name="Credential", password=PwdUtil.hash_password("old-password"), status=0)
+        db.add(user)
+        await db.commit()
+        tokens = [
+            await LoginService.create_token(request, arch_redis, user, "PC端")
+            for _ in range(2)
+        ]
+        service = UserService(AuthSchema(db=db, user=user, check_data_scope=False))
+        if operation == "change":
+            await service.change_password(UserChangePasswordSchema(old_password="old-password", new_password="new-password"))
+        else:
+            await service.reset_password(ResetPasswordSchema(id=user.id, password="new-password"))
+        await db.commit()
+        new_token = await LoginService.create_token(request, arch_redis, user, "PC端")
+
+    async def authenticate(token):
+        session_id = decode_access_token(token.access_token).sub
+        async with arch_sessions() as db:
+            if transport == "refresh":
+                return await LoginService.refresh_token(db, arch_redis, RefreshTokenPayloadSchema(refresh_token=token.refresh_token))
+            if transport == "http":
+                return await dependencies.get_current_user(
+                    request=SimpleNamespace(state=SimpleNamespace()), db=db, redis=arch_redis, token=token.access_token,
+                )
+            if transport == "ticket":
+                ticket = await LoginService.create_ws_ticket(arch_redis, session_id)
+                return await dependencies._verify_ws_ticket(ticket, db, arch_redis)
+            return await dependencies._verify_session(session_id, db, arch_redis)
+
+    for token in tokens:
+        with pytest.raises(CustomException) as error:
+            await authenticate(token)
+        assert error.value.status_code == 401
+    assert await authenticate(new_token)
+
+
+async def test_legacy_session_cannot_acquire_current_credential_binding(arch_sessions, arch_redis):
+    async with arch_sessions() as db:
+        user = UserModel(username="legacy", name="Legacy", password="fixture", status=0)
+        db.add(user)
+        await db.commit()
+    await RedisCURD(arch_redis).set(
+        f"{RedisInitKeyConfig.USER_SESSION.key}:legacy",
+        {"session_id": "legacy", "user_id": user.id}, expire=300,
+    )
+    await RedisCURD(arch_redis).set(f"{RedisInitKeyConfig.ACCESS_TOKEN.key}:legacy", "online", expire=300)
+    async with arch_sessions() as db:
+        with pytest.raises(CustomException) as error:
+            await dependencies._verify_session("legacy", db, arch_redis)
+    assert error.value.status_code == 401
+
+
+@pytest.mark.parametrize("operation", ["change", "reset", "legacy"])
+async def test_auto_login_ticket_keeps_issued_credential_binding(
+    arch_sessions, arch_redis, monkeypatch, operation,
+):
+    from app.api.v1.module_system.auth.service import AutoLoginService
+    from app.api.v1.module_system.user.schema import ResetPasswordSchema, UserChangePasswordSchema
+    from app.api.v1.module_system.user.service import UserService
+    from app.utils.hash_bcrpy_util import PwdUtil
+    from app.utils.ip_local_util import IpLocalUtil
+
+    monkeypatch.setattr(IpLocalUtil, "resolve_location_for_log", AsyncMock(return_value=""))
+    request = SimpleNamespace(headers={}, client=None, state=SimpleNamespace())
+    async with arch_sessions() as db:
+        user = UserModel(username="auto-credential", name="Auto", password=PwdUtil.hash_password("old-password"), status=0)
+        db.add(user)
+        await db.commit()
+        old_ticket = await AutoLoginService.create_auto_login_token(arch_redis, db, user.id)
+        service = UserService(AuthSchema(db=db, user=user, check_data_scope=False))
+        if operation == "change":
+            await service.change_password(UserChangePasswordSchema(old_password="old-password", new_password="new-password"))
+        elif operation == "reset":
+            await service.reset_password(ResetPasswordSchema(id=user.id, password="new-password"))
+        else:
+            import json
+
+            await RedisCURD(arch_redis).set(
+                f"{AutoLoginService.AUTO_LOGIN_PREFIX}{old_ticket.token}",
+                json.dumps({"user_id": user.id, "username": user.username}), expire=300,
+            )
+        await db.commit()
+        with pytest.raises(CustomException) as error:
+            await AutoLoginService.auto_login(request, arch_redis, db, old_ticket.token)
+        assert error.value.status_code == 401
+        assert not await arch_redis.exists(f"{AutoLoginService.AUTO_LOGIN_PREFIX}{old_ticket.token}")
+        new_ticket = await AutoLoginService.create_auto_login_token(arch_redis, db, user.id)
+        new_session = await AutoLoginService.auto_login(request, arch_redis, db, new_ticket.token)
+        assert await dependencies.get_current_user(request=request, db=db, redis=arch_redis, token=new_session.access_token)
+
+
 @pytest.mark.parametrize("transport", ["http", "ws", "ticket"])
 async def test_live_session_keeps_user_id_when_username_is_reused(arch_sessions, arch_redis, transport):
     async with arch_sessions() as db:
@@ -65,7 +173,7 @@ async def test_live_session_keeps_user_id_when_username_is_reused(arch_sessions,
     token = create_access_token(JWTPayloadSchema(sub=session_id, exp=datetime.now() + timedelta(minutes=5), jti="arch-token"))
     await RedisCURD(arch_redis).set(
         f"{RedisInitKeyConfig.USER_SESSION.key}:{session_id}",
-        {"session_id": session_id, "user_id": original_id, "user_name": "original"},
+        {"session_id": session_id, "user_id": original_id, "user_name": "original", "credential_fingerprint": credential_fingerprint(original_id, "fixture")},
         expire=300,
     )
     await RedisCURD(arch_redis).set(f"{RedisInitKeyConfig.ACCESS_TOKEN.key}:{session_id}", token, expire=300)

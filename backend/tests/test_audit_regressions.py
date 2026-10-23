@@ -25,6 +25,7 @@ from app.core.exceptions import CustomException
 from app.core.http_limit import http_limit_callback, ws_limit_callback
 from app.core.permission import Permission
 from app.core.redis_crud import RedisCURD
+from app.core.security import credential_fingerprint
 from app.plugin.module_ai.chat import ws
 from app.plugin.module_ai.chat.crud import ChatSessionCRUD
 from app.plugin.module_ai.chat.schema import ChatSessionCreateSchema
@@ -181,7 +182,7 @@ async def online_session(redis, user_id):
     session_id = "audit-session"
     await RedisCURD(redis).set(
         f"{RedisInitKeyConfig.USER_SESSION.key}:{session_id}",
-        {"session_id": session_id, "user_name": "audit", "user_id": user_id}, expire=60,
+        {"session_id": session_id, "user_name": "audit", "user_id": user_id, "credential_fingerprint": credential_fingerprint(user_id, "fixture")}, expire=60,
     )
     await RedisCURD(redis).set(f"{RedisInitKeyConfig.ACCESS_TOKEN.key}:{session_id}", "fixture", expire=60)
     return session_id

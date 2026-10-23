@@ -37,6 +37,7 @@ import {
 } from "@utils";
 import { RouteRegistry } from "./core";
 import { MenuProcessor } from "./MenuProcessor";
+import { Auth } from "@/utils/auth";
 
 // --- 模块级单例与守卫状态 ---
 
@@ -64,6 +65,8 @@ let routeInitFailed = false;
  * 第二次导航 `next(false)` 取消，由首次初始化完成后重新恢复。
  */
 let routeInitInProgress = false;
+let routeInitGeneration = 0;
+let routeSessionKey = "";
 
 export function getPendingLoading(): boolean {
   return pendingLoading;
@@ -79,8 +82,13 @@ export function getRouteInitFailed(): boolean {
 
 /** 重新登录等场景重置初始化标记 */
 export function resetRouteInitState(): void {
+  routeInitGeneration++;
   routeInitFailed = false;
   routeInitInProgress = false;
+  if (pendingLoading) {
+    loadingService.hideLoading();
+    pendingLoading = false;
+  }
 }
 
 /** 防止 dev/HMR 或异常重复 init 导致多个 beforeEach 叠加（导航副作用与请求会成倍增长） */
@@ -110,7 +118,9 @@ export function setupBeforeEachGuard(router: Router): void {
 
 function closeLoading(): void {
   if (pendingLoading) {
+    const generation = routeInitGeneration;
     nextTick(() => {
+      if (generation !== routeInitGeneration) return;
       loadingService.hideLoading();
       pendingLoading = false;
     });
@@ -138,6 +148,17 @@ async function handleRouteGuard(
   // 顺序：登录 → 动态路由初始化失败兜底 → 动态路由注册 → 根路径 → 已匹配页 → 404
   const settingStore = useSettingsStore();
   const userStore = useUserStore();
+  // 新标签页可能只继承 localStorage 的登录标记，未继承 sessionStorage 凭证。
+  if (userStore.isLogin && !Auth.isLoggedIn()) {
+    userStore.resetAllState();
+    resetDynamicRoutesSync();
+  }
+  if (
+    (routeRegistry?.isRegistered() || routeInitInProgress) &&
+    routeSessionKey !== Auth.getSessionKey()
+  ) {
+    resetDynamicRoutesSync();
+  }
 
   if (settingStore.showNprogress) {
     NProgress.start();
@@ -258,8 +279,12 @@ function isStaticRoute(path: string): boolean {
  * 处理动态路由注册
  */
 async function handleDynamicRoutes(to: RouteLocationNormalized, router: Router) {
+  const sessionKey = Auth.getSessionKey();
+  const generation = routeInitGeneration;
+  const isCurrent = () => generation === routeInitGeneration && sessionKey === Auth.getSessionKey();
   // 标记初始化进行中
   routeInitInProgress = true;
+  routeSessionKey = sessionKey;
 
   // 显示 loading
   pendingLoading = true;
@@ -271,9 +296,11 @@ async function handleDynamicRoutes(to: RouteLocationNormalized, router: Router) 
     if (!userStore.hasGetRoute) {
       await fetchUserInfo();
     }
+    if (!isCurrent()) return false;
 
     // 2. 获取菜单数据
     const menuList = await menuProcessor.getMenuList();
+    if (!isCurrent()) return false;
 
     // 3. 验证菜单数据（空菜单不阻塞：用户可能未分配角色，允许进入首页）
     const menuValid = menuProcessor.validateMenuList(menuList);
@@ -322,6 +349,7 @@ async function handleDynamicRoutes(to: RouteLocationNormalized, router: Router) 
 
     return { path: to.path, query: to.query, hash: to.hash, replace: true };
   } catch (error) {
+    if (!isCurrent()) return false;
     console.error("[RouteGuard] 动态路由注册失败:", error);
     closeLoading();
 
@@ -356,6 +384,7 @@ async function fetchUserInfo(): Promise<void> {
  */
 export function resetDynamicRoutesSync(): void {
   routeRegistry?.unregister();
+  routeSessionKey = "";
   useMenuStore().setMenuList([]);
 
   resetRouteInitState();
@@ -367,10 +396,14 @@ export function resetDynamicRoutesSync(): void {
  */
 export async function refreshMenuAndRoutes(): Promise<void> {
   resetDynamicRoutesSync();
+  const sessionKey = Auth.getSessionKey();
+  const generation = routeInitGeneration;
   const menuStore = useMenuStore();
 
   const menuList = await menuProcessor.getMenuList();
+  if (generation !== routeInitGeneration || sessionKey !== Auth.getSessionKey()) return;
   routeRegistry?.register(menuList);
+  routeSessionKey = sessionKey;
   menuStore.setMenuList(menuList);
 }
 

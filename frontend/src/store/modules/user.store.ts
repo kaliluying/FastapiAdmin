@@ -63,6 +63,7 @@ export const useUserStore = defineStore(
     const hasGetRoute = ref(false);
     // 记住我状态。
     const rememberMe = ref(Auth.getRememberMe());
+    let userInfoRequest = 0;
     /** 扩展用户信息类型：兼容 API 返回的 `user_id`，该字段不属于标准 UserInfo。 */
     type UserInfoLike = Partial<UserInfo> & Record<string, any>;
 
@@ -158,8 +159,13 @@ export const useUserStore = defineStore(
      * 获取当前用户信息。
      */
     async function getUserInfo() {
+      const sessionKey = Auth.getSessionKey();
+      const requestId = ++userInfoRequest;
       try {
         const response = await UserAPI.getCurrentUserInfo();
+        if (!sessionKey || sessionKey !== Auth.getSessionKey() || requestId !== userInfoRequest) {
+          throw new Error("用户信息请求已过期");
+        }
         const data = response.data.data;
         const menus: MenuTable[] = data?.menus || [];
         delete data?.menus;
@@ -171,7 +177,9 @@ export const useUserStore = defineStore(
         } as Partial<UserInfo>;
         setRoute(menus);
       } catch (error) {
-        console.error("获取用户信息失败:", error);
+        if (sessionKey === Auth.getSessionKey() && requestId === userInfoRequest) {
+          console.error("获取用户信息失败:", error);
+        }
         throw error;
       }
     }
@@ -224,14 +232,19 @@ export const useUserStore = defineStore(
       // 重建路由前清理上一会话残留的路由和菜单状态。
       useMenuStore().setMenuList([]);
       useMenuStore().setHomePath("");
-      (await getRouterUtils()).resetRouteInitState();
+      (await getRouterUtils()).resetDynamicRoutesSync();
+      clearUserInfo();
+      prems.value = [];
+      setLoginStatus(false);
       Auth.setTokens(accessToken, refreshToken, rememberMe.value);
+      const sessionKey = Auth.getSessionKey();
       setToken(accessToken, refreshToken);
       if (data?.user_info) {
         info.value = { ...info.value, ...data.user_info } as Partial<UserInfo>;
       }
 
       await getUserInfo();
+      if (sessionKey !== Auth.getSessionKey()) throw new Error("登录会话已变更");
       setLoginStatus(true);
     }
 
@@ -249,10 +262,19 @@ export const useUserStore = defineStore(
 
       let apiError: unknown;
       const token = Auth.getAccessToken();
-      if (token) {
+      const logoutRequest = token
+        ? AuthAPI.logout().catch((error) => {
+            apiError = error;
+          })
+        : undefined;
+      // 请求已绑定旧凭证；先注销本地会话，避免等待网络期间的刷新使会话复活。
+      resetAllState();
+      const routerUtils = await getRouterUtils();
+      if (!Auth.getSessionKey()) routerUtils.resetDynamicRoutesSync();
+      if (logoutRequest) {
         try {
-          const response = await AuthAPI.logout();
-          if (response.data.code === ResultEnum.SUCCESS) {
+          const response = await logoutRequest;
+          if (response?.data.code === ResultEnum.SUCCESS && !Auth.getSessionKey()) {
             ElNotification({
               title: "退出成功",
               message: response.data.msg,
@@ -264,11 +286,7 @@ export const useUserStore = defineStore(
         }
       }
 
-      resetAllState();
-      useMenuStore().setHomePath("");
-      (await getRouterUtils()).resetDynamicRoutesSync();
-
-      if (shouldNavigate) {
+      if (shouldNavigate && !Auth.getSessionKey()) {
         const currentRoute = router.currentRoute.value;
         const redirect = currentRoute.path !== "/login" ? currentRoute.fullPath : undefined;
         await router.push({
@@ -286,6 +304,7 @@ export const useUserStore = defineStore(
      * 重置所有认证相关状态。
      */
     function resetAllState() {
+      userInfoRequest++;
       Auth.clearAuth();
       info.value = {};
       routeList.value = [];
@@ -302,6 +321,7 @@ export const useUserStore = defineStore(
      * 清空用户信息。
      */
     function clearUserInfo() {
+      userInfoRequest++;
       info.value = {};
       routeList.value = [];
       hasGetRoute.value = false;
@@ -311,28 +331,17 @@ export const useUserStore = defineStore(
      * 刷新 token。
      */
     async function refreshTokenFn() {
-      const currentRefreshToken = Auth.getRefreshToken();
-
-      if (!currentRefreshToken) {
-        throw new Error("没有有效的刷新令牌");
-      }
-
-      const response = await AuthAPI.refreshToken({ refresh_token: currentRefreshToken });
-      const data = response.data.data;
-      // 更新令牌，并保留当前“记住我”状态。
-      Auth.setTokens(data.access_token, data.refresh_token, Auth.getRememberMe());
-      setToken(data.access_token, data.refresh_token);
+      const sessionKey = Auth.getSessionKey();
+      await Auth.refreshTokens(sessionKey);
+      if (sessionKey !== Auth.getSessionKey()) throw new Error("登录会话已变更");
+      setToken(Auth.getAccessToken(), Auth.getRefreshToken());
     }
 
     /**
      * 完全重置所有状态，包括路由、标签页和字典。
      */
     function fullResetAllState() {
-      // 重置用户认证状态。
-      Auth.clearAuth();
-      // 重置用户信息。
-      clearUserInfo();
-      useWorktabStore().clearAll();
+      resetAllState();
       return Promise.resolve();
     }
 

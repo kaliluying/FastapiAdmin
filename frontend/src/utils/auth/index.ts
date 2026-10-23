@@ -14,7 +14,10 @@ const AUTH_KEYS = {
   ACCESS_TOKEN: "access_token",
   REFRESH_TOKEN: "refresh_token",
   REMEMBER_ME: "remember_me",
+  SESSION_KEY: "auth_session",
 } as const;
+
+const refreshPromises = new Map<string, Promise<void>>();
 
 export class Auth {
   static isLoggedIn(): boolean {
@@ -37,29 +40,64 @@ export class Auth {
 
   /** 请求共享按登录会话隔离，同一会话的令牌续期不改变标识。 */
   static getSessionKey(): string {
-    const token = this.getAccessToken();
-    try {
-      const payload = token.split(".")[1];
-      if (!payload) return token;
-      const { sub } = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
-      return typeof sub === "string" && sub ? sub : token;
-    } catch {
-      return token;
+    if (!this.getAccessToken()) return "";
+    const storage = this.getRememberMe() ? localStorage : sessionStorage;
+    let key = storage.getItem(AUTH_KEYS.SESSION_KEY);
+    // 为升级前已登录的会话补建标识，刷新页面后仍使用同一标识。
+    if (!key) {
+      key = this.createSessionKey();
+      storage.setItem(AUTH_KEYS.SESSION_KEY, key);
     }
+    return key;
   }
 
   static setTokens(accessToken: string, refreshToken: string, rememberMe: boolean): void {
-    localStorage.setItem(AUTH_KEYS.REMEMBER_ME, String(rememberMe));
+    this.storeTokens(accessToken, refreshToken, rememberMe, this.createSessionKey());
+  }
 
-    if (rememberMe) {
-      localStorage.setItem(AUTH_KEYS.ACCESS_TOKEN, accessToken);
-      localStorage.setItem(AUTH_KEYS.REFRESH_TOKEN, refreshToken);
-    } else {
-      sessionStorage.setItem(AUTH_KEYS.ACCESS_TOKEN, accessToken);
-      sessionStorage.setItem(AUTH_KEYS.REFRESH_TOKEN, refreshToken);
-      localStorage.removeItem(AUTH_KEYS.ACCESS_TOKEN);
-      localStorage.removeItem(AUTH_KEYS.REFRESH_TOKEN);
+  private static createSessionKey(): string {
+    return crypto.getRandomValues(new Uint32Array(4)).join("-");
+  }
+
+  private static storeTokens(
+    accessToken: string,
+    refreshToken: string,
+    rememberMe: boolean,
+    sessionKey: string
+  ): void {
+    const storage = rememberMe ? localStorage : sessionStorage;
+    const otherStorage = rememberMe ? sessionStorage : localStorage;
+    storage.setItem(AUTH_KEYS.ACCESS_TOKEN, accessToken);
+    storage.setItem(AUTH_KEYS.REFRESH_TOKEN, refreshToken);
+    storage.setItem(AUTH_KEYS.SESSION_KEY, sessionKey);
+    for (const key of [AUTH_KEYS.ACCESS_TOKEN, AUTH_KEYS.REFRESH_TOKEN, AUTH_KEYS.SESSION_KEY]) {
+      otherStorage.removeItem(key);
     }
+    localStorage.setItem(AUTH_KEYS.REMEMBER_ME, String(rememberMe));
+  }
+
+  /** HTTP 和主动续期共享刷新；旧会话的成功/失败都不得修改新会话。 */
+  static refreshTokens(sessionKey = this.getSessionKey()): Promise<void> {
+    if (!sessionKey || sessionKey !== this.getSessionKey()) {
+      return Promise.reject(new Error("登录会话已变更"));
+    }
+    const existing = refreshPromises.get(sessionKey);
+    if (existing) return existing;
+
+    const refreshToken = this.getRefreshToken();
+    const rememberMe = this.getRememberMe();
+    const refreshing = (async () => {
+      if (!refreshToken) throw new Error("没有有效的刷新令牌");
+      const { default: AuthAPI } = await import("@/api/module_system/auth");
+      if (sessionKey !== this.getSessionKey()) throw new Error("登录会话已变更");
+      const response = await AuthAPI.refreshToken({ refresh_token: refreshToken });
+      if (sessionKey !== this.getSessionKey()) throw new Error("登录会话已变更");
+      const data = response.data.data;
+      if (!data?.access_token || !data.refresh_token) throw new Error("刷新令牌响应无效");
+      this.storeTokens(data.access_token, data.refresh_token, rememberMe, sessionKey);
+    })().finally(() => refreshPromises.delete(sessionKey));
+    refreshPromises.set(sessionKey, refreshing);
+    return refreshing;
   }
 
   static clearAuth(): void {
@@ -67,6 +105,8 @@ export class Auth {
     localStorage.removeItem(AUTH_KEYS.REFRESH_TOKEN);
     sessionStorage.removeItem(AUTH_KEYS.ACCESS_TOKEN);
     sessionStorage.removeItem(AUTH_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(AUTH_KEYS.SESSION_KEY);
+    sessionStorage.removeItem(AUTH_KEYS.SESSION_KEY);
   }
 
   static getRememberMe(): boolean {
@@ -79,17 +119,29 @@ export { AUTH_KEYS };
 import { ElMessage, ElNotification } from "element-plus";
 
 /** 登录页跳转进行中，合并并发调用，避免重复通知与重复路由 */
-let redirectToLoginInFlight: Promise<void> | null = null;
+const loginRedirects = new Map<string, Promise<void>>();
 
 /**
  * 认证失效或需重新登录时跳转登录页：清空本地会话并带上 redirect。
  * 与 HTTP 拦截器、改密后重登等场景共用；并发只执行一次。
  */
-export async function redirectToLogin(message: string = "请重新登录"): Promise<void> {
-  if (redirectToLoginInFlight) return redirectToLoginInFlight;
+export async function redirectToLogin(
+  message: string = "请重新登录",
+  sessionKey = Auth.getSessionKey()
+): Promise<void> {
+  if (sessionKey !== Auth.getSessionKey()) return;
+  const existing = loginRedirects.get(sessionKey);
+  if (existing) return existing;
 
-  redirectToLoginInFlight = (async () => {
+  const redirect = (async () => {
     try {
+      const [{ router }, { useUserStore }, { resetDynamicRoutesSync }] = await Promise.all([
+        import("@/router/instance"),
+        import("@/store/modules/user.store"),
+        import("@/router/beforeEach"),
+      ]);
+      if (sessionKey !== Auth.getSessionKey()) return;
+
       ElNotification({
         title: "提示",
         message,
@@ -97,20 +149,17 @@ export async function redirectToLogin(message: string = "请重新登录"): Prom
         duration: 3000,
       });
 
-      const [{ router }, { useUserStore }] = await Promise.all([
-        import("@/router"),
-        import("@/store/modules/user.store"),
-      ]);
-      await useUserStore().resetAllState();
-
       const currentPath = router.currentRoute.value.fullPath;
+      useUserStore().resetAllState();
+      resetDynamicRoutesSync();
       await router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
     } catch (error: any) {
       ElMessage.error(error?.message ?? String(error));
     } finally {
-      redirectToLoginInFlight = null;
+      loginRedirects.delete(sessionKey);
     }
   })();
+  loginRedirects.set(sessionKey, redirect);
 
-  return redirectToLoginInFlight;
+  return redirect;
 }

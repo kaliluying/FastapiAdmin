@@ -15,6 +15,7 @@ from urllib.parse import quote, urlencode, urlparse
 import httpx
 from fastapi import Request
 from redis.asyncio.client import Redis
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.module_system.user.crud import UserCRUD
@@ -227,7 +228,7 @@ async def exchange_wechat_token(app_id: str, secret: str, code: str) -> tuple[st
     openid = data.get("openid")
     if not token or not openid:
         raise CustomException(msg=data.get("errmsg") or "微信换取令牌失败")
-    return str(token), str(openid)
+    return str(token), _validate_oauth_subject(openid)
 
 
 async def exchange_qq_token(client_id: str, client_secret: str, code: str, redirect_uri: str) -> tuple[str, str]:
@@ -255,7 +256,7 @@ async def exchange_qq_token(client_id: str, client_secret: str, code: str, redir
     openid = me.get("openid")
     if not openid:
         raise CustomException(msg="QQ 获取 openid 失败")
-    return str(token), str(openid)
+    return str(token), _validate_oauth_subject(openid)
 
 
 async def fetch_github_profile(access_token: str) -> tuple[str, str, str | None]:
@@ -263,6 +264,10 @@ async def fetch_github_profile(access_token: str) -> tuple[str, str, str | None]
     user = await _http_fetch("GET", "https://api.github.com/user", headers=headers)
     if not isinstance(user, dict):
         raise CustomException(msg="GitHub 用户信息格式错误")
+    subject = user.get("id")
+    if type(subject) is not int or subject <= 0:
+        raise CustomException(msg="GitHub 用户标识无效")
+    subject = _validate_oauth_subject(str(subject))
     login = str(user.get("login") or "")
     name = str(user.get("name") or login or "github")
     email = user.get("email")
@@ -272,7 +277,7 @@ async def fetch_github_profile(access_token: str) -> tuple[str, str, str | None]
             primary = next((e for e in emails if isinstance(e, dict) and e.get("primary")), None)
             if primary:
                 email = primary.get("email")
-    return login, name, email
+    return subject, name, email
 
 
 async def fetch_gitee_profile(access_token: str) -> tuple[str, str, str | None]:
@@ -283,24 +288,33 @@ async def fetch_gitee_profile(access_token: str) -> tuple[str, str, str | None]:
     )
     if not isinstance(user, dict):
         raise CustomException(msg="Gitee 用户信息格式错误")
+    subject = user.get("id")
+    if type(subject) is not int or subject <= 0:
+        raise CustomException(msg="Gitee 用户标识无效")
+    subject = _validate_oauth_subject(str(subject))
     login = str(user.get("login") or "")
     name = str(user.get("name") or login)
     email = user.get("email")
-    return login, name, email
+    return subject, name, email
 
 
 async def fetch_wechat_profile(access_token: str, openid: str) -> tuple[str, str]:
+    openid = _validate_oauth_subject(openid)
     qs = urlencode({"access_token": access_token, "openid": openid, "lang": "zh_CN"})
     user = await _http_fetch("GET", f"https://api.weixin.qq.com/sns/userinfo?{qs}")
     if not isinstance(user, dict):
         raise CustomException(msg="微信用户信息格式错误")
+    if user.get("errcode"):
+        raise CustomException(msg="微信用户信息失败")
+    if _validate_oauth_subject(user.get("openid")) != openid:
+        raise CustomException(msg="微信用户标识不匹配")
     nickname = str(user.get("nickname") or "wechat")
-    unionid = user.get("unionid")
-    oid = unionid or openid
-    return str(oid), nickname
+    subject = _validate_oauth_subject(user["unionid"]) if "unionid" in user else openid
+    return subject, nickname
 
 
 async def fetch_qq_profile(access_token: str, app_id: str, openid: str) -> tuple[str, str]:
+    openid = _validate_oauth_subject(openid)
     qs = urlencode(
         {
             "access_token": access_token,
@@ -311,21 +325,18 @@ async def fetch_qq_profile(access_token: str, app_id: str, openid: str) -> tuple
     user = await _http_fetch("GET", f"https://graph.qq.com/user/get_user_info?{qs}")
     if not isinstance(user, dict):
         raise CustomException(msg="QQ 用户信息格式错误")
-    if user.get("ret") not in (0, "0", None):
-        raise CustomException(msg=user.get("msg") or "QQ 用户信息失败")
+    ret = user.get("ret")
+    if not (type(ret) is int and ret == 0 or ret == "0"):
+        raise CustomException(msg="QQ 用户信息失败")
     nickname = str(user.get("nickname") or "qq")
     return openid, nickname
 
 
-def _username_for_oauth(provider: OAuthProvider, unique_id: str) -> str:
-    """生成符合注册规则的登录名：oauth_{provider}_{id}。"""
-    raw = f"oauth_{provider}_{unique_id}"
-    raw = "".join(c if c.isalnum() or c in "_-." else "_" for c in raw)[:32]
-    if len(raw) < 3:
-        raw = (raw + "usr")[:32]
-    if not raw[0].isalpha():
-        raw = "o" + raw[:31]
-    return raw
+def _validate_oauth_subject(subject: Any) -> str:
+    """绑定字段容量固定，不清洗、截断或强制转换外部身份。"""
+    if not isinstance(subject, str) or not 1 <= len(subject) <= 32 or any(c.isspace() or not c.isprintable() for c in subject):
+        raise CustomException(msg="OAuth 用户标识无效")
+    return subject
 
 
 async def ensure_oauth_user(
@@ -335,13 +346,19 @@ async def ensure_oauth_user(
     unique_id: str,
     display_name: str,
 ) -> UserModel:
-    auth = AuthSchema(db=db, user=None, check_data_scope=False)
-    username = _username_for_oauth(provider, unique_id)
-    existing = await UserCRUD(auth).get(username=username)
-    if existing:
-        return existing
-
-    raise CustomException(msg="OAuth 账号未绑定，请由管理员先创建内部账号")
+    subject = _validate_oauth_subject(unique_id)
+    fields = {"github": "github_login", "gitee": "gitee_login", "wechat": "wx_login", "qq": "qq_login"}
+    if provider not in fields:
+        raise CustomException(msg="不支持的 OAuth 渠道")
+    field = fields[provider]
+    candidates = await db.scalars(select(UserModel).where(getattr(UserModel, field) == subject))
+    # MySQL 排序规则可能忽略大小写；身份必须在 Python 中再次精确比较。
+    matches = [user for user in candidates.unique() if getattr(user, field) == subject]
+    if len(matches) > 1:
+        raise CustomException(msg="OAuth 账号绑定冲突，请联系管理员")
+    if not matches or matches[0].is_deleted:
+        raise CustomException(msg="OAuth 账号未绑定，请由管理员创建内部账号并绑定")
+    return matches[0]
 
 
 async def complete_oauth_login(
@@ -374,12 +391,10 @@ async def complete_oauth_login(
 
     if provider == "github":
         access = await exchange_github_token(cid, csec, code, callback_url)
-        login_k, name, _email = await fetch_github_profile(access)
-        uid = login_k
+        uid, name, _email = await fetch_github_profile(access)
     elif provider == "gitee":
         access = await exchange_gitee_token(cid, csec, code, callback_url)
-        login_k, name, _email = await fetch_gitee_profile(access)
-        uid = login_k
+        uid, name, _email = await fetch_gitee_profile(access)
     elif provider == "wechat":
         access, openid = await exchange_wechat_token(cid, csec, code)
         uid, name = await fetch_wechat_profile(access, openid)

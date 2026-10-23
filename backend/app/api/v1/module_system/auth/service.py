@@ -28,7 +28,9 @@ from app.core.redis_crud import RedisCURD
 from app.core.security import (
     CustomOAuth2PasswordRequestForm,
     create_access_token,
+    credential_fingerprint,
     decode_access_token,
+    verify_session_credentials,
 )
 from app.utils.captcha_util import CaptchaUtil
 from app.utils.common_util import get_random_character
@@ -312,6 +314,7 @@ class LoginService:
             "user_name": user.username,
             "login_type": login_type,
             "login_time": now.isoformat(),
+            "credential_fingerprint": credential_fingerprint(user.id, user.password),
         }
         access_token = create_access_token(
             payload=JWTPayloadSchema(
@@ -391,6 +394,7 @@ class LoginService:
         if user.status == 1:
             raise CustomException(msg="用户已被停用")
 
+        verify_session_credentials(session_data, user.id, user.password)
         refresh_key = f"{RedisInitKeyConfig.REFRESH_TOKEN.key}:{session_id}"
         if not await RedisCURD(redis).compare_and_delete(refresh_key, refresh_token.refresh_token):
             raise CustomException(msg="刷新令牌已失效，请重新登录")
@@ -582,6 +586,7 @@ class AutoLoginService:
         token_data = {
             "user_id": user.id,
             "username": user.username,
+            "credential_fingerprint": credential_fingerprint(user.id, user.password),
             "created_at": datetime.now().isoformat(),
         }
         await RedisCURD(redis).set(
@@ -637,6 +642,7 @@ class AutoLoginService:
         if user.status == 1:
             raise CustomException(msg="用户已被停用")
 
+        verify_session_credentials(token_data, user.id, user.password)
         await RedisCURD(redis).delete(token_key)
 
         jwt_token = await LoginService.create_token(request=request, redis=redis, user=user, login_type="PC端")

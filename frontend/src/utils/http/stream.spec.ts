@@ -1,22 +1,18 @@
 import { AxiosError, AxiosHeaders, type AxiosResponse } from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { request } from "./index";
+import { Auth } from "@/utils/auth";
 
-const auth = vi.hoisted(() => ({
-  getAccessToken: vi.fn(() => "old-access"),
-  getRefreshToken: vi.fn(() => "refresh"),
-  getRememberMe: vi.fn(() => false),
-  setTokens: vi.fn(),
-}));
 const refreshToken = vi.hoisted(() => vi.fn());
-vi.mock("@/utils/auth", () => ({ Auth: auth, redirectToLogin: vi.fn() }));
 vi.mock("@/locales", () => ({ $t: (key: string) => key }));
 vi.mock("element-plus", () => ({ ElMessage: { error: vi.fn(), success: vi.fn() } }));
 vi.mock("@/api/module_system/auth", () => ({ default: { refreshToken } }));
 
 beforeEach(() => {
   vi.clearAllMocks();
-  auth.getAccessToken.mockReturnValue("old-access");
+  localStorage.clear();
+  sessionStorage.clear();
+  Auth.setTokens("old-access", "refresh", false);
 });
 
 describe("HTTP streaming authentication", () => {
@@ -41,7 +37,6 @@ describe("HTTP streaming authentication", () => {
     const attempts: string[] = [];
     const data = { message: "保留请求", request_id: "same-request" };
     refreshToken.mockImplementationOnce(async () => {
-      auth.getAccessToken.mockReturnValue("new-access");
       return { data: { data: { access_token: "new-access", refresh_token: "new-refresh" } } };
     });
     const response = await request({

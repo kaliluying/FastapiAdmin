@@ -18,6 +18,8 @@ declare module "axios" {
   interface AxiosRequestConfig {
     showErrorMessage?: boolean;
     showSuccessMessage?: boolean;
+    authSessionKey?: string;
+    authRetried?: boolean;
   }
 }
 
@@ -186,34 +188,6 @@ function createHttpError(
   });
 }
 
-// --- 令牌刷新去重 ---------------------------------------------
-
-/**
- * 令牌刷新中的标记，防止并发的 401 响应触发多次刷新请求。
- * 刷新成功后重放等待中的请求。
- */
-let isRefreshing = false;
-let pendingRequests: Array<{
-  config: InternalAxiosRequestConfig;
-  resolve: (value: Promise<AxiosResponse>) => void;
-  reject: (reason?: Error) => void;
-}> = [];
-
-function onRefreshed(newToken: string) {
-  const list = pendingRequests;
-  pendingRequests = [];
-  list.forEach(({ config, resolve }) => {
-    config.headers.Authorization = `Bearer ${newToken}`;
-    resolve(request(config));
-  });
-}
-
-function onRefreshFailed() {
-  const err = new HttpError("登录已失效，请重新登录", ApiStatus.unauthorized);
-  pendingRequests.forEach(({ reject }) => reject(err));
-  pendingRequests = [];
-}
-
 // --- Axios 实例 ------------------------------------------------------------
 
 export const request: AxiosInstance = axios.create({
@@ -233,6 +207,10 @@ request.interceptors.request.use(
       return config;
     }
 
+    if (config.authSessionKey !== undefined && config.authSessionKey !== Auth.getSessionKey()) {
+      throw new axios.CanceledError("登录会话已变更");
+    }
+    config.authSessionKey ??= Auth.getSessionKey();
     if (!auth && accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
@@ -240,10 +218,13 @@ request.interceptors.request.use(
     return config;
   },
   (error) => {
+    if (axios.isCancel(error)) throw error;
     const msg = error instanceof Error ? error.message : String(error);
     ElMessage.error(msg);
-    return Promise.reject(error);
-  }
+    throw error;
+  },
+  // 发起登出请求时立即绑定凭证，随后本地即可同步注销会话。
+  { synchronous: true }
 );
 
 /**
@@ -287,6 +268,7 @@ request.interceptors.response.use(
     return response;
   },
   async (error: AxiosError<ApiResponse>) => {
+    if (axios.isCancel(error)) return Promise.reject(error);
     if (error.config?.signal?.aborted) return Promise.reject(error);
     if (error.response?.config.responseType === "stream") {
       try {
@@ -359,49 +341,31 @@ request.interceptors.response.use(
         );
       }
 
-      // 缺少请求配置或登出接口本身返回 401 时，直接跳转。
-      if (!config || config.url?.includes("auth/logout")) {
-        await redirectToLogin("登录状态异常，请重新登录");
-        return Promise.reject(new HttpError("Unauthorized", ApiStatus.unauthorized));
+      const sessionKey = config?.authSessionKey;
+      if (!config || !sessionKey || sessionKey !== Auth.getSessionKey()) {
+        return Promise.reject(new HttpError("登录会话已变更", ApiStatus.unauthorized));
       }
 
-      // 首个 401 启动刷新；后续并发的 401 请求在队列中等待。
-      if (!isRefreshing) {
-        isRefreshing = true;
-        try {
-          // 仅在刷新时加载 API，避免 HTTP 与 AuthAPI 的静态循环。
-          const refreshToken = Auth.getRefreshToken();
-          if (!refreshToken) {
-            throw new HttpError("没有有效的刷新令牌", ApiStatus.unauthorized);
-          }
-          const { default: AuthAPI } = await import("@/api/module_system/auth");
-          const refreshResp = await AuthAPI.refreshToken({
-            refresh_token: refreshToken,
-          });
-          const tokenData = refreshResp.data.data;
-          const newAccessToken = tokenData?.access_token || "";
-          const newRefreshToken = tokenData?.refresh_token || "";
-          Auth.setTokens(newAccessToken, newRefreshToken, Auth.getRememberMe());
-          isRefreshing = false;
-          const newToken = Auth.getAccessToken();
-          // 重放队列中的所有请求。
-          onRefreshed(newToken);
-          // 使用新令牌重试当前请求。
-          config.headers.Authorization = `Bearer ${newToken}`;
-          return request(config);
-        } catch {
-          isRefreshing = false;
-          // 刷新失败：拒绝队列中的请求并跳转登录页。
-          onRefreshFailed();
-          const msg = data?.msg || "登录已失效，请重新登录";
-          await redirectToLogin(msg);
-          return Promise.reject(new HttpError(msg, ApiStatus.unauthorized));
+      const msg = data?.msg || "登录已失效，请重新登录";
+      if (config.authRetried || config.url?.includes("auth/logout")) {
+        await redirectToLogin(msg, sessionKey);
+        return Promise.reject(new HttpError(msg, ApiStatus.unauthorized));
+      }
+
+      config.authRetried = true;
+      try {
+        // 同一会话中，迟到的旧 token 401 可直接使用已续期的 token。
+        if (config.headers.Authorization === `Bearer ${Auth.getAccessToken()}`) {
+          await Auth.refreshTokens(sessionKey);
         }
-      } else {
-        // 已有刷新请求在执行，将当前请求加入队列等待重放。
-        return new Promise((resolve, reject) => {
-          pendingRequests.push({ config: config!, resolve, reject });
-        });
+        if (sessionKey !== Auth.getSessionKey()) {
+          throw new HttpError("登录会话已变更", ApiStatus.unauthorized);
+        }
+        config.headers.Authorization = `Bearer ${Auth.getAccessToken()}`;
+        return request(config);
+      } catch {
+        await redirectToLogin(msg, sessionKey);
+        return Promise.reject(new HttpError(msg, ApiStatus.unauthorized));
       }
     }
 

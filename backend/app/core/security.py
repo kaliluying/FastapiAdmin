@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 from datetime import datetime
 
 import jwt
@@ -8,6 +10,24 @@ from fastapi.security.utils import get_authorization_scheme_param
 from app.config.setting import settings
 from app.core.base_schema import JWTPayloadSchema
 from app.core.exceptions import CustomException
+
+
+def credential_fingerprint(user_id: int, password_hash: str) -> str:
+    """Bind sessions to persisted credentials without caching the password hash."""
+    return hmac.new(
+        settings.SECRET_KEY.encode(),
+        f"session-credentials:{user_id}:{password_hash}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def verify_session_credentials(session_info: dict, user_id: int, password_hash: str) -> None:
+    fingerprint = session_info.get("credential_fingerprint")
+    # Sessions from before this check must reauthenticate rather than acquire a new binding.
+    if not isinstance(fingerprint, str) or not hmac.compare_digest(
+        fingerprint, credential_fingerprint(user_id, password_hash),
+    ):
+        raise CustomException(msg="登录凭证已变更，请重新登录", code=10401, status_code=401)
 
 
 class CustomOAuth2PasswordBearer(OAuth2PasswordBearer):
