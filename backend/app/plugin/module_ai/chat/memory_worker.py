@@ -1,4 +1,4 @@
-"""基于 SQL 的记忆队列：限制工作任务数量、按用户顺序处理并隔离重试。"""
+"""聊天的记忆提取发件箱：按用户顺序调度，校验来源后原子写入记忆。"""
 
 from __future__ import annotations
 
@@ -14,13 +14,12 @@ from sqlalchemy.orm import aliased
 from app.api.v1.module_system.user.model import UserModel
 from app.core.database import async_db_session
 from app.core.logger import logger
-from app.plugin.module_ai.chat.model import ChatSessionModel
-from app.plugin.module_ai.chat.usage import usage_context
+from app.plugin.module_ai.memory.public import MemoryExtractor, MemoryService
 
-from .crud import MemoryCRUD
-from .extractor import MemoryExtractor
+from .model import ChatSessionModel
 from .model import MemoryExtractionJobModel as Job
-from .service import MemoryService
+from .rag import get_cached_chat_model
+from .usage import usage_context
 
 MEMORY_WORKERS = 4
 MEMORY_TIMEOUT_SECONDS = 90
@@ -93,7 +92,7 @@ async def _source_exists(db: AsyncSession, job: Job) -> bool:
     )) is not None
 
 
-async def _apply_job(job: Job, extractor: MemoryExtractor, actions) -> None:
+async def _apply_job(job: Job, actions) -> None:
     async with async_db_session() as db, db.begin():
         owned = await db.execute(update(Job).where(
             Job.id == job.id, Job.token == job.token, Job.lease_until > datetime.now(),
@@ -101,25 +100,25 @@ async def _apply_job(job: Job, extractor: MemoryExtractor, actions) -> None:
         if owned.rowcount != 1:
             return
         if await _source_exists(db, job):
-            await extractor.save_actions(crud=MemoryCRUD(MemoryService.for_user(db, job.user_id).auth), actions=actions)
+            await MemoryService.for_user(db, job.user_id).apply_extracted_actions(actions)
         # 任务完成与全部记忆写入共用一次提交，避免响应丢失后重复执行操作。
         await db.execute(delete(Job).where(Job.id == job.id, Job.token == job.token))
 
 
 async def process_memory_job(job: Job) -> None:
-    extractor = MemoryExtractor()
     try:
         async with asyncio.timeout(MEMORY_TIMEOUT_SECONDS):
             active, existing = await _finish_sql(_load_memories(job))
             if not active:
-                await _finish_sql(_apply_job(job, extractor, []))
+                await _finish_sql(_apply_job(job, []))
                 return
             with usage_context(int(job.user_id), "memory"):
+                extractor = MemoryExtractor(chat_model=get_cached_chat_model())
                 actions = await extractor.extract_actions(
                     user_message=job.user_message, assistant_response=job.assistant_response,
                     existing_memories=existing,
                 )
-            await _finish_sql(_apply_job(job, extractor, actions))
+            await _finish_sql(_apply_job(job, actions))
     except asyncio.CancelledError:
         # 即使关闭时无法连接 SQL 数据库，持久化租约仍支持后续恢复。
         await _finish_sql(_retry_job(job, immediate=True))

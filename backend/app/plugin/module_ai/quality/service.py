@@ -8,9 +8,8 @@ from sqlalchemy.exc import IntegrityError
 
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
-from app.plugin.module_ai.chat.crud import ChatSessionCRUD, run_identifier
-from app.plugin.module_ai.knowledge.crud import KnowledgeDocumentCRUD
-from app.plugin.module_ai.knowledge.public import accessible_knowledge_base_ids
+from app.plugin.module_ai.chat.public import get_saved_answer
+from app.plugin.module_ai.knowledge.public import accessible_knowledge_base_ids, validate_document_scope
 from app.plugin.module_ai.knowledge.schema import RetrievalTestSchema
 from app.plugin.module_ai.knowledge.service import KnowledgeService
 
@@ -59,18 +58,8 @@ class QualityService:
         }
 
     async def submit_feedback(self, data: AnswerFeedbackSchema) -> dict[str, Any]:
-        session = await ChatSessionCRUD(self.auth).get_by_id_crud(data.session_id)
-        if not session:
-            raise CustomException(msg="会话不存在或无权访问", status_code=404)
-        run = next((run for run in session.runs if isinstance(run, dict) and run_identifier(run) == data.run_id), None)
-        if not run:
-            raise CustomException(msg="回答未保存或已不在当前会话历史中", status_code=404)
-        messages = run.get("messages", [])
-        answer = next((message for message in messages if message.get("role") == "assistant"), None)
-        question = next((message for message in messages if message.get("role") == "user"), {})
-        if not answer:
-            raise CustomException(msg="该记录没有可评价的回答", status_code=422)
-        citations = answer.get("citations", [])
+        answer = await get_saved_answer(self.auth, session_id=data.session_id, run_id=data.run_id)
+        citations = answer["citations"]
         base_ids = [item["knowledge_base_id"] for item in citations if item.get("knowledge_base_id")]
         if base_ids:
             await accessible_knowledge_base_ids(self.auth, base_ids)
@@ -81,8 +70,8 @@ class QualityService:
                 user_id=self.user_id,
                 session_id=data.session_id,
                 run_id=data.run_id,
-                question=question.get("content", ""),
-                answer=answer.get("content", ""),
+                question=answer["question"],
+                answer=answer["answer"],
                 citations=citations,
                 rating=data.rating,
                 comment=data.comment,
@@ -149,11 +138,7 @@ class QualityService:
 
     async def evaluate(self, data: EvaluationSchema) -> dict[str, Any]:
         base_ids = await accessible_knowledge_base_ids(self.auth, data.knowledge_base_ids)
-        documents = KnowledgeDocumentCRUD(self.auth)
-        for identifier in {identifier for case in data.cases for identifier in case.expected_document_ids}:
-            document = await documents.get_or_404(id=identifier, msg="标注文档不存在或无权访问")
-            if document.knowledge_base_id not in base_ids:
-                raise CustomException(msg="标注文档必须属于所选知识库", status_code=422)
+        await validate_document_scope(self.auth, {identifier for case in data.cases for identifier in case.expected_document_ids}, base_ids)
         dataset = [{"query": case.query, "expected_document_ids": sorted(set(case.expected_document_ids))} for case in data.cases]
         digest = hashlib.sha256(json.dumps({"cases": dataset, "knowledge_base_ids": sorted(base_ids), "top_k": data.top_k}, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
         cases = []

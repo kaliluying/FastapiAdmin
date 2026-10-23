@@ -12,7 +12,7 @@ from langchain_openai import ChatOpenAI
 
 from app.core.logger import logger
 from app.plugin.module_ai.config import settings
-from app.plugin.module_ai.memory.service import MemoryService
+from app.plugin.module_ai.memory.public import MemoryService
 
 from .model_config_service import ChatModelRuntimeConfig, get_active_chat_model_config
 from .usage import provider_call

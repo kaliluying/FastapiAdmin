@@ -25,14 +25,13 @@ async def verify_reliability() -> dict:
     from app.config.setting import settings
     from app.core.base_schema import AuthSchema
     from app.core.database import async_db_session, async_engine
+    from app.plugin.module_ai.chat import memory_worker as worker
     from app.plugin.module_ai.chat import service as chat
+    from app.plugin.module_ai.chat.model import MemoryExtractionJobModel as Job
     from app.plugin.module_ai.knowledge import _upload_recovery as uploads
     from app.plugin.module_ai.knowledge import document_lifecycle as knowledge
     from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeDocumentModel
-    from app.plugin.module_ai.memory import worker
-    from app.plugin.module_ai.memory.extractor import MemoryExtractor
     from app.plugin.module_ai.memory.model import AiMemoryModel
-    from app.plugin.module_ai.memory.model import MemoryExtractionJobModel as Job
     from app.utils.hash_bcrpy_util import PwdUtil
     from main import create_app
 
@@ -59,7 +58,7 @@ async def verify_reliability() -> dict:
         if False:
             yield
 
-    worker.MemoryExtractor = lambda: MemoryExtractor(chat_model=SimpleNamespace(complete=complete))
+    worker.get_cached_chat_model = lambda: SimpleNamespace(complete=complete)
     chat.ChatService._validate_ai_config = staticmethod(AsyncMock(return_value=None))
     chat.ChatService._stream_log_analysis = ordinary_routing
     chat.create_rag_chain = lambda **_: SimpleNamespace(ainvoke=AsyncMock(return_value="accepted"))
@@ -207,14 +206,13 @@ async def memory_restart_phase(phase: str) -> dict:
     from app.api.v1.module_system.user.model import UserModel
     from app.core.base_schema import AuthSchema
     from app.core.database import async_db_session, async_engine
+    from app.plugin.module_ai.chat import memory_worker as worker
     from app.plugin.module_ai.chat.crud import ChatSessionCRUD
+    from app.plugin.module_ai.chat.model import MemoryExtractionJobModel as Job
     from app.plugin.module_ai.chat.schema import ChatSessionCreateSchema
     from app.plugin.module_ai.knowledge import document_lifecycle as knowledge
     from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel
-    from app.plugin.module_ai.memory import worker
-    from app.plugin.module_ai.memory.extractor import MemoryExtractor
     from app.plugin.module_ai.memory.model import AiMemoryModel
-    from app.plugin.module_ai.memory.model import MemoryExtractionJobModel as Job
     from main import create_app
 
     root = Path(os.environ["FASTCORE_INTEGRATION_ROOT"])
@@ -263,7 +261,7 @@ async def memory_restart_phase(phase: str) -> dict:
                 await asyncio.Event().wait()
             return RESULT
 
-        worker.MemoryExtractor = lambda: MemoryExtractor(chat_model=SimpleNamespace(complete=complete))
+        worker.get_cached_chat_model = lambda: SimpleNamespace(complete=complete)
         if phase == "crash-memory":
             worker.MEMORY_LEASE_SECONDS = 2
         app = create_app()

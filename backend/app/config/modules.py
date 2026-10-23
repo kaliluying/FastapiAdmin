@@ -2,6 +2,6 @@
 
 INSTALLED_MODULES = (
     "app.api.v1.module_demo.module:get_module",
-    "app.api.v1.module_common.monitoring.dashboard:get_module",
+    "app.api.v1.module_dashboard.dashboard:get_module",
     "app.plugin.module_ai.module:get_module",
 )

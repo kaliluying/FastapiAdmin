@@ -10,7 +10,7 @@ from fastapi import UploadFile
 
 from app.core.exceptions import CustomException
 
-from .crud import KnowledgeBaseCRUD
+from .crud import KnowledgeBaseCRUD, KnowledgeDocumentCRUD
 from .extractors import extract_text
 from .query_analyzer import QueryAnalysis, QueryAnalyzer
 from .retrieval import KnowledgeRetriever, KnowledgeSearchResult, RetrievalMode
@@ -38,6 +38,15 @@ async def accessible_knowledge_base_ids(auth: Any, ids: list[int]) -> list[int]:
     if visible_ids != set(normalized):
         raise CustomException(msg="知识库不存在或无权访问", status_code=403)
     return normalized
+
+
+async def validate_document_scope(auth: Any, document_ids: set[int], knowledge_base_ids: list[int]) -> None:
+    """校验评测标注的文档可见性及所选知识库归属。"""
+    documents = KnowledgeDocumentCRUD(auth)
+    for identifier in document_ids:
+        document = await documents.get_or_404(id=identifier, msg="标注文档不存在或无权访问")
+        if document.knowledge_base_id not in knowledge_base_ids:
+            raise CustomException(msg="标注文档必须属于所选知识库", status_code=422)
 
 
 async def extract_chat_attachment(file: UploadFile) -> dict[str, Any]:
@@ -69,4 +78,5 @@ __all__ = [
     "RetrievalMode",
     "accessible_knowledge_base_ids",
     "extract_chat_attachment",
+    "validate_document_scope",
 ]

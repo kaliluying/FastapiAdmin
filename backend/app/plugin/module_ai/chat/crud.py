@@ -11,9 +11,8 @@ from sqlalchemy import delete, func, select, update
 
 from app.core.base_schema import AuthSchema
 from app.core.logger import logger
-from app.plugin.module_ai.memory.model import MemoryExtractionJobModel
 
-from .model import ChatSessionModel
+from .model import ChatSessionModel, MemoryExtractionJobModel
 from .schema import ChatSessionCreateSchema, ChatSessionUpdateSchema
 
 MAX_STORED_MESSAGE_CHARS = 8_000

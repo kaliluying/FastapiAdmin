@@ -193,9 +193,8 @@ def main() -> None:
 
         registry = backend / "app/config/modules.py"
         registry.write_text('INSTALLED_MODULES = ("app.api.v1.module_business.module:get_module",)\n')
-        for path in (backend / "app/plugin/module_ai", backend / "app/api/v1/module_demo"):
+        for path in (backend / "app/plugin/module_ai", backend / "app/api/v1/module_demo", backend / "app/api/v1/module_dashboard"):
             shutil.rmtree(path)
-        (backend / "app/api/v1/module_common/monitoring/dashboard.py").unlink()
         for module in ("module_ai", "module_demo"):
             shutil.rmtree(frontend / "src/api" / module)
             shutil.rmtree(frontend / "src/views" / module)

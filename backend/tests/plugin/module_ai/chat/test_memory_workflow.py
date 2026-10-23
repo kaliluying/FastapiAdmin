@@ -84,7 +84,7 @@ async def test_background_database_failure_is_nonfatal(monkeypatch):
         raise RuntimeError("database unavailable")
 
     monkeypatch.setattr(memory_service, "async_db_session", unavailable_database)
-    await extract_conversation_in_background(user_id=1, user_message="问题", assistant_response="回答")
+    await extract_conversation_in_background(user_id=1, user_message="问题", assistant_response="回答", chat_model=SimpleNamespace(complete=AsyncMock()))
 
 
 def test_chat_only_wakes_workers_without_calling_the_provider(monkeypatch):

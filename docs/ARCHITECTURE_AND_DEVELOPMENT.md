@@ -75,6 +75,12 @@ FastCore 正式支持的运行和生产数据库为 **MySQL**。**SQLite 仅用�
 
 文档写操作的 controller 和恢复 worker 直接使用 `knowledge/document_lifecycle.py`，知识库删除委托它清理关联文档；`knowledge/_upload_recovery.py` 是上传核对的私有实现。生命周期 module 保留 HTTP 行为、权限和数据范围检查，自行负责事务结果与存储清理顺序，提交结果不确定时保留文件，孤儿回收在锁内确认无引用后才执行。这里采用 CodeVault Scheduler Reconciliation 的“SQL 保存事实、轮询核对”原则，沿用现有 SQL 原子认领及两个独立 worker，不引入全局 Leader 或进程内任务队列。
 
+AI 内部依赖保持单向：`quality → chat / knowledge`、`chat → memory / knowledge`；`memory` 与 `knowledge` 不依赖其他 AI 功能。跨模块读取保存的回答使用 `chat.public.get_saved_answer()`，文档归属校验使用 `knowledge.public.validate_document_scope()`；质量评测继续使用承担检索与权限校验的 `KnowledgeService.query_retrieval()`，不直接访问知识库 CRUD。静态导入约束由 `backend/tests/test_module_boundaries.py` 检查，覆盖绝对、相对及函数内导入。AI 的 `module.py` 仍是组合根，统一登记各模块模型、索引和生命周期。
+
+聊天提取任务属于聊天的事务发件箱：`chat.model.MemoryExtractionJobModel` 与一轮回答共用提交，`chat.memory_worker` 负责用户顺序、租约、重试、来源校验以及删除互斥；记忆写入和任务确认仍在同一事务内完成。`memory.public` 提供提取器与用户隔离的 `MemoryService`，模型只需实现 `complete(prompt)` 并由调用方显式传入，记忆模块不创建全局模型、不读取聊天表或计费上下文。原表 `ai_memory_extraction_job` 的名称、列、索引及状态语义保持原样，不需因 Python 路径变更迁移数据。自定义脚本需将 `memory.worker`、`memory.model.MemoryExtractionJobModel` 分别更新为 `chat.memory_worker`、`chat.model.MemoryExtractionJobModel`；调用记忆提取方法须传入 `chat_model`。
+
+首页运营概览位于独立注册的 `app/api/v1/module_dashboard/`，负责组合账号与登录审计统计；`module_common/monitoring/` 只负责健康和就绪探针，不导入业务模型。概览 URL 仍为 `/common/monitoring/login-trend`，保留登录日志权限及数据范围过滤。核心认证、RBAC 与审计依赖属于后台基础能力，本次不为消除所有 import 而新增转发层。CodeVault 本次模块公开入口及双向依赖检索无匹配，沿用现有显式注册、SQL 发件箱和 Service 入口。
+
 动态路由的移除回调和 iframe 缓存由 `RouteRegistry` 统一管理，菜单 store 只保存展示数据。退出登录同步清理路由，避免延迟清理影响再次登录；注册失败会回滚已添加的路由和 iframe 数据。此处采用 CodeVault `server-driven-route-registry` 的集中所有权原则；知识任务已有 SQL 租约和持久化状态，无需引入 `persistent-failure-guard` 的文件锁与 JSON 状态层。
 
 新增回归检查覆盖模型内容转换、恢复资格、路由重复清理及缓存写入失败回滚。`frontend/tests/route-lifecycle-e2e.cjs` 使用隔离的 SQLite、模拟 Redis 与确定性模型，在真实浏览器中验证登录、刷新、菜单重建、退出和重新登录；不代表生产数据库或外部模型验收。

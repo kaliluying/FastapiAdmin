@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,15 +13,12 @@ from app.core.exceptions import CustomException
 from app.core.logger import logger
 
 from .crud import MemoryCRUD
-from .extractor import MemoryExtractor
-from .schema import MemoryCreateSchema, MemoryOutSchema, MemoryQueryParam, MemoryUpdateSchema
-
-if TYPE_CHECKING:
-    from app.plugin.module_ai.chat.rag import ChatModel
+from .extractor import ExtractionModel, MemoryExtractor
+from .schema import MemoryCreateSchema, MemoryExtractAction, MemoryOutSchema, MemoryQueryParam, MemoryUpdateSchema
 
 
 async def extract_conversation_in_background(
-    *, user_id: int | str, user_message: str, assistant_response: str, chat_model: ChatModel | None = None,
+    *, user_id: int | str, user_message: str, assistant_response: str, chat_model: ExtractionModel,
 ) -> None:
     """使用独立事务提取记忆，避免提取失败影响聊天。"""
     try:
@@ -35,7 +32,7 @@ async def extract_conversation_in_background(
         if actions:
             async with async_db_session() as db:
                 async with db.begin():
-                    saved = await extractor.save_actions(crud=MemoryCRUD(MemoryService.for_user(db, user_id).auth), actions=actions)
+                    saved = await MemoryService.for_user(db, user_id).apply_extracted_actions(actions)
             if saved > 0:
                 logger.info(f"记忆提取完成: 已保存 {saved} 条")
     except Exception as e:
@@ -103,9 +100,45 @@ class MemoryService:
         return [entry.to_dict() for entry in entries]
 
     async def extract_from_conversation(
-        self, *, user_message: str, assistant_response: str, chat_model: ChatModel | None = None,
+        self, *, user_message: str, assistant_response: str, chat_model: ExtractionModel,
     ) -> int:
         """在调用方事务中提取并保存当前用户的记忆。"""
-        return await MemoryExtractor(chat_model=chat_model).extract_and_save(
-            crud=MemoryCRUD(self.auth), user_message=user_message, assistant_response=assistant_response,
-        )
+        try:
+            actions = await MemoryExtractor(chat_model=chat_model).extract_actions(
+                user_message=user_message, assistant_response=assistant_response,
+                existing_memories=await self.get_active_memories(),
+            )
+            return await self.apply_extracted_actions(actions)
+        except Exception as e:
+            logger.warning(f"记忆提取失败（非致命）: {e}")
+            return 0
+
+    async def apply_extracted_actions(self, actions: list[MemoryExtractAction]) -> int:
+        """在调用方事务内写入当前用户的记忆，不自行提交。"""
+        crud = MemoryCRUD(self.auth)
+        saved = 0
+        for action in actions:
+            saved += await self._execute_action(crud, action)
+        return saved
+
+    async def _execute_action(self, crud: MemoryCRUD, action: MemoryExtractAction) -> int:
+        if action.action == "delete":
+            if action.memory_id is not None:
+                ok = await crud.delete_crud([action.memory_id])
+                if ok:
+                    logger.info(f"记忆提取: 删除记忆 id={action.memory_id}, reason={action.reason}")
+                    return 1
+            return 0
+        if action.action in ("create", "update"):
+            key = (action.key or "").strip()
+            value = (action.value or "").strip()
+            if not key or not value:
+                logger.warning(f"记忆提取: 跳过空 key/value, action={action}")
+                return 0
+            entry = await crud.upsert(
+                memory_type=action.memory_type or "fact", key=key, value=value,
+                category=action.category, priority=action.priority,
+            )
+            return 1 if entry else 0
+        logger.warning(f"记忆提取: 未知操作类型 action={action.action}")
+        return 0

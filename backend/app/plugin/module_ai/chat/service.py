@@ -21,11 +21,11 @@ from app.core.exceptions import CustomException
 from app.core.logger import logger
 from app.plugin.module_ai.config import async_validate_model_base_url
 from app.plugin.module_ai.knowledge.public import accessible_knowledge_base_ids
-from app.plugin.module_ai.memory.worker import wake_memory_worker
 
 from . import rag
 from .crud import ChatSession, ChatSessionCRUD, run_identifier
 from .log_context import log_query_contexts
+from .memory_worker import wake_memory_worker
 from .model_config_service import (
     get_active_chat_model_config,
     load_runtime_chat_model_config,

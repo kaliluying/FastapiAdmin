@@ -1,4 +1,4 @@
-"""记忆提取器 —— 从对话中自动提取关键信息并写入长期记忆。
+"""记忆提取器 —— 使用调用方提供的模型从对话中提取关键信息。
 
 每轮对话结束后异步调用，提取置信度低于阈值的内容会被自动跳过。
 """
@@ -6,15 +6,14 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any
+from typing import Any, Protocol
 
-from app.core.logger import logger
-
-from .crud import MemoryCRUD
 from .schema import MemoryExtractAction, MemoryExtractResult
 
-if TYPE_CHECKING:
-    from app.plugin.module_ai.chat.rag import ChatModel
+
+class ExtractionModel(Protocol):
+    async def complete(self, prompt: str) -> str:
+        """返回用于提取记忆的模型结果。"""
 
 # ── 配置 ──
 
@@ -154,39 +153,11 @@ def _parse_extract_result(raw: str) -> MemoryExtractResult:
 
 
 class MemoryExtractor:
-    """从对话中提取长期记忆并写入数据库。"""
+    """提取并校验记忆动作，不访问会话、数据库或全局模型配置。"""
 
-    def __init__(self, confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD, *, chat_model: ChatModel | None = None) -> None:
+    def __init__(self, confidence_threshold: float = DEFAULT_CONFIDENCE_THRESHOLD, *, chat_model: ExtractionModel) -> None:
         self.confidence_threshold = confidence_threshold
-        self._llm = chat_model
-
-    @property
-    def llm(self) -> ChatModel:
-        if self._llm is None:
-            from app.plugin.module_ai.chat.rag import LangChainChatModel
-
-            self._llm = LangChainChatModel()
-        return self._llm
-
-    async def extract_and_save(
-        self,
-        *,
-        crud: MemoryCRUD,
-        user_message: str,
-        assistant_response: str,
-    ) -> int:
-        """在调用方事务中提取并保存记忆。"""
-        try:
-            existing = await crud.get_active_memories()
-            actions = await self.extract_actions(
-                user_message=user_message,
-                assistant_response=assistant_response,
-                existing_memories=[m.to_dict() for m in existing],
-            )
-            return await self.save_actions(crud=crud, actions=actions)
-        except Exception as e:
-            logger.warning(f"记忆提取失败（非致命）: {e}")
-            return 0
+        self.llm = chat_model
 
     async def extract_actions(
         self, *, user_message: str, assistant_response: str, existing_memories: list[dict[str, Any]],
@@ -209,37 +180,3 @@ class MemoryExtractor:
             action for action in actions
             if action.action != "skip" and action.confidence >= self.confidence_threshold
         ]
-
-    async def save_actions(self, *, crud: MemoryCRUD, actions: list[MemoryExtractAction]) -> int:
-        saved = 0
-        for action in actions:
-            saved += await self._execute_action(crud, action)
-        return saved
-
-    async def _execute_action(self, crud: MemoryCRUD, action: MemoryExtractAction) -> int:
-        """执行单条记忆操作，返回 1 表示成功，0 表示失败。"""
-        if action.action == "delete":
-            if action.memory_id is not None:
-                ok = await crud.delete_crud([action.memory_id])
-                if ok:
-                    logger.info(f"记忆提取: 删除记忆 id={action.memory_id}, reason={action.reason}")
-                    return 1
-            return 0
-
-        if action.action in ("create", "update"):
-            key = (action.key or "").strip()
-            value = (action.value or "").strip()
-            if not key or not value:
-                logger.warning(f"记忆提取: 跳过空 key/value, action={action}")
-                return 0
-            entry = await crud.upsert(
-                memory_type=action.memory_type or "fact",
-                key=key,
-                value=value,
-                category=action.category,
-                priority=action.priority,
-            )
-            return 1 if entry else 0
-
-        logger.warning(f"记忆提取: 未知操作类型 action={action.action}")
-        return 0

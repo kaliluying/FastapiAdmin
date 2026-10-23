@@ -47,7 +47,7 @@ def get_module() -> ModuleSpec:
 在新项目副本操作，先检查模块调用方与资源归属。停用正在运行的服务，保留备份，再执行：
 
 1. 从 `app/config/modules.py` 删除模块入口。
-2. 删除对应后端源码、前端 API／视图和依赖这些源码的模块测试。分类范例目录为 `app/api/v1/module_demo/`、`src/api/module_demo/`、`src/views/module_demo/`；AI 目录为 `app/plugin/module_ai/`、`src/api/module_ai/`、`src/views/module_ai/`。删除首页监控展示时移除 dashboard 注册项和 `monitoring/dashboard.py`，保留核心 health 接口与审计记录。
+2. 删除对应后端源码、前端 API／视图和依赖这些源码的模块测试。分类范例目录为 `app/api/v1/module_demo/`、`src/api/module_demo/`、`src/views/module_demo/`；AI 目录为 `app/plugin/module_ai/`、`src/api/module_ai/`、`src/views/module_ai/`。删除首页监控展示时移除 dashboard 注册项和 `app/api/v1/module_dashboard/`，保留核心 health 接口与审计记录。
 3. 新数据库不导入被删除模块的模型和种子；已有数据库显式清理模块菜单与授权关系。先预览，例如裁剪 AI 后，从 `backend/` 执行：
 
    ```bash

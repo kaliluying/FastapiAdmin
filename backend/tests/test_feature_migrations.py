@@ -14,9 +14,9 @@ from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from alembic.script import ScriptDirectory
 
+from app.plugin.module_ai.chat.model import MemoryExtractionJobModel
 from app.plugin.module_ai.chat.usage_model import AiUsageDailyModel, AiUsageQuotaModel, AiUsageRecordModel
 from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeDocumentModel
-from app.plugin.module_ai.memory.model import MemoryExtractionJobModel
 from app.plugin.module_ai.quality.model import AnswerFeedbackModel, RetrievalEvaluationModel
 
 VERSIONS = Path(__file__).resolve().parents[1] / "app" / "alembic" / "versions"

@@ -23,7 +23,7 @@ def get_module() -> ModuleSpec:
         seed_dir=Path(__file__).parent / "data",
         startup_hooks=tuple(f"{package}.{entry}" for entry in manifest.startup_hooks),
         shutdown_hooks=(
-            f"{package}.memory.worker:stop_memory_extraction",
+            f"{package}.chat.memory_worker:stop_memory_extraction",
             f"{package}.knowledge.recovery:stop_knowledge_recovery",
         ),
         schema_indexes=f"{package}.module:get_schema_indexes",

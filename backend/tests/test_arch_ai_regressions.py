@@ -10,10 +10,10 @@ from app.config.setting import settings
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
 from app.plugin.module_ai.chat import service as chat_service
-from app.plugin.module_ai.chat.model import ChatSessionModel
+from app.plugin.module_ai.chat.model import ChatSessionModel, MemoryExtractionJobModel
 from app.plugin.module_ai.chat.schema import AiChatRequestSchema
 from app.plugin.module_ai.memory import service as memory_service
-from app.plugin.module_ai.memory.model import AiMemoryModel, MemoryExtractionJobModel
+from app.plugin.module_ai.memory.model import AiMemoryModel
 
 
 def test_download_never_deletes_the_source(test_client, auth_headers, tmp_path, monkeypatch):

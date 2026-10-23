@@ -2,33 +2,10 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-
-from sqlalchemy import DateTime, Index, Integer, String, Text
+from sqlalchemy import Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.base_model import MappedBase, ModelMixin
-
-
-class MemoryExtractionJobModel(MappedBase):
-    """随一轮对话提交；与相应记忆变更一起原子化移除。"""
-
-    __tablename__ = "ai_memory_extraction_job"
-    __table_args__ = (
-        Index("ix_ai_memory_job_user_order", "user_id", "id"),
-        Index("ix_ai_memory_job_available", "available_at", "lease_until"),
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    run_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
-    session_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
-    user_id: Mapped[str] = mapped_column(String(64), nullable=False)
-    user_message: Mapped[str] = mapped_column(Text, nullable=False)
-    assistant_response: Mapped[str] = mapped_column(Text, nullable=False)
-    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    available_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
-    lease_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    token: Mapped[str | None] = mapped_column(String(32), nullable=True)
+from app.core.base_model import ModelMixin
 
 
 class AiMemoryModel(ModelMixin):

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, String, Text
+from sqlalchemy import JSON, DateTime, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.base_model import ModelMixin, UserMixin
+from app.core.base_model import MappedBase, ModelMixin, UserMixin
 
 
 class ChatSessionModel(ModelMixin):
@@ -32,3 +33,24 @@ class AiModelConfigModel(ModelMixin, UserMixin):
     openai_base_url: Mapped[str] = mapped_column(String(500), nullable=False)
     openai_model: Mapped[str] = mapped_column(String(200), nullable=False)
     encrypted_api_key: Mapped[str | None] = mapped_column(Text, default=None, nullable=True)
+
+
+class MemoryExtractionJobModel(MappedBase):
+    """随一轮对话提交；与相应记忆变更一起原子化移除。"""
+
+    __tablename__ = "ai_memory_extraction_job"
+    __table_args__ = (
+        Index("ix_ai_memory_job_user_order", "user_id", "id"),
+        Index("ix_ai_memory_job_available", "available_at", "lease_until"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    run_id: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    session_id: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    user_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    user_message: Mapped[str] = mapped_column(Text, nullable=False)
+    assistant_response: Mapped[str] = mapped_column(Text, nullable=False)
+    attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    available_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    token: Mapped[str | None] = mapped_column(String(32), nullable=True)

@@ -230,9 +230,8 @@ async def test_chat_session_crud_persists_session_messages_with_sqlalchemy() -> 
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
     from app.plugin.module_ai.chat.crud import ChatSessionCRUD
-    from app.plugin.module_ai.chat.model import ChatSessionModel
+    from app.plugin.module_ai.chat.model import ChatSessionModel, MemoryExtractionJobModel
     from app.plugin.module_ai.chat.schema import ChatSessionCreateSchema, ChatSessionUpdateSchema
-    from app.plugin.module_ai.memory.model import MemoryExtractionJobModel
 
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     async with engine.begin() as conn:

@@ -1,4 +1,4 @@
-"""首页运营概览数据接口。"""
+"""组合账号与登录审计数据的首页运营概览；独立于公共健康检查。"""
 
 from datetime import date, datetime, time, timedelta
 from typing import Annotated
@@ -22,7 +22,7 @@ DashboardRouter = APIRouter(prefix="/monitoring", tags=["公共模块", "运营�
 def get_module():
     from app.core.modules import ModuleSpec
 
-    return ModuleSpec(name="dashboard", routers=("app.api.v1.module_common.monitoring.dashboard:dashboard_router",))
+    return ModuleSpec(name="dashboard", routers=("app.api.v1.module_dashboard.dashboard:dashboard_router",))
 
 
 dashboard_router = APIRouter(prefix="/common")

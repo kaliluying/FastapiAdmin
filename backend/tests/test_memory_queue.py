@@ -1,21 +1,28 @@
 import asyncio
 import json
+from contextvars import ContextVar
 from datetime import datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import pytest
+from langchain_core.messages import AIMessage
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.api.v1.module_system.user.model import UserModel
+from app.core.modules import resolve_entrypoint
+from app.plugin.module_ai.chat import memory_worker as worker
+from app.plugin.module_ai.chat import rag, usage
 from app.plugin.module_ai.chat.crud import ChatSessionCRUD
 from app.plugin.module_ai.chat.model import ChatSessionModel
+from app.plugin.module_ai.chat.model import MemoryExtractionJobModel as Job
+from app.plugin.module_ai.chat.model_config_service import ChatModelRuntimeConfig
 from app.plugin.module_ai.chat.schema import ChatSessionCreateSchema
-from app.plugin.module_ai.memory import worker
-from app.plugin.module_ai.memory.extractor import MemoryExtractor
+from app.plugin.module_ai.chat.usage_model import AiUsageDailyModel, AiUsageQuotaModel, AiUsageRecordModel
 from app.plugin.module_ai.memory.model import AiMemoryModel
-from app.plugin.module_ai.memory.model import MemoryExtractionJobModel as Job
+from app.plugin.module_ai.memory.public import MemoryService
+from app.plugin.module_ai.module import get_module
 
 RESULT = '{"actions":[{"action":"create","key":"style","value":"concise","confidence":0.9}]}'
 
@@ -36,7 +43,7 @@ async def queue(tmp_path, monkeypatch):
     monkeypatch.setattr(worker, "async_db_session", sessions)
     monkeypatch.setattr(worker, "MEMORY_POLL_SECONDS", 0.01)
     model = SimpleNamespace(complete=AsyncMock(return_value=RESULT))
-    monkeypatch.setattr(worker, "MemoryExtractor", lambda: MemoryExtractor(chat_model=model))
+    monkeypatch.setattr(worker, "get_cached_chat_model", lambda: model)
     try:
         yield sessions, model
     finally:
@@ -62,6 +69,52 @@ async def wait_empty(sessions):
     async with asyncio.timeout(5):
         while await count(sessions, Job):
             await asyncio.sleep(0.01)
+
+
+@pytest.mark.parametrize("limit", [0, 1])
+async def test_registered_worker_injects_model_and_keeps_memory_usage_and_quota(queue, monkeypatch, limit):
+    sessions, _ = queue
+    async with sessions() as db:
+        async with db.bind.begin() as connection:
+            for model in (AiUsageDailyModel, AiUsageQuotaModel, AiUsageRecordModel):
+                await connection.run_sync(model.__table__.create)
+    monkeypatch.setattr(usage, "async_db_session", sessions)
+    monkeypatch.setattr(usage, "_usage_owner", ContextVar("worker_usage_owner", default=None))
+    model = object.__new__(rag.LangChainChatModel)
+    model.config = ChatModelRuntimeConfig("openai", "https://fixture.invalid/v1", "fixture", "synthetic")
+    model.llm = SimpleNamespace(ainvoke=AsyncMock(return_value=AIMessage(
+        content=RESULT, usage_metadata={"input_tokens": 2, "output_tokens": 3, "total_tokens": 5},
+    )))
+    monkeypatch.setattr(worker, "get_cached_chat_model", lambda: model)
+    await usage.set_quota(1, limit)
+    await add_turn(sessions)
+    spec = get_module()
+    start = next(entry for entry in spec.startup_hooks if entry.endswith(":initialize_memory_worker"))
+    stop = next(entry for entry in spec.shutdown_hooks if entry.endswith(":stop_memory_extraction"))
+    await resolve_entrypoint(start)()
+    try:
+        if limit:
+            await wait_empty(sessions)
+            assert await count(sessions, AiMemoryModel) == 1
+            model.llm.ainvoke.assert_awaited_once()
+            async with sessions() as db:
+                record = (await db.scalars(select(AiUsageRecordModel))).one()
+                assert (record.user_id, record.purpose, record.status, record.total_tokens) == (1, "memory", "succeeded", 5)
+        else:
+            async with asyncio.timeout(3):
+                while True:
+                    async with sessions() as db:
+                        job = (await db.scalars(select(Job))).one()
+                        if job.attempts and job.token is None:
+                            break
+                    await asyncio.sleep(0.01)
+            model.llm.ainvoke.assert_not_awaited()
+            assert await count(sessions, AiMemoryModel) == 0
+            assert await count(sessions, AiUsageRecordModel) == 0
+        assert usage._usage_owner.get() is None
+    finally:
+        await resolve_entrypoint(stop)()
+    assert not worker._workers
 
 
 async def test_turn_and_job_commit_or_rollback_together(queue):
@@ -166,13 +219,13 @@ async def test_failures_keep_jobs_and_retry_without_partial_memory_writes(queue,
     if failure == "provider":
         model.complete.side_effect = RuntimeError("provider unavailable")
     elif failure == "write":
-        original = MemoryExtractor.save_actions
+        original = MemoryService.apply_extracted_actions
 
-        async def fail_after_write(self, **kwargs):
-            await original(self, **kwargs)
+        async def fail_after_write(self, actions):
+            await original(self, actions)
             raise RuntimeError("write interrupted")
 
-        monkeypatch.setattr(MemoryExtractor, "save_actions", fail_after_write)
+        monkeypatch.setattr(MemoryService, "apply_extracted_actions", fail_after_write)
     else:
         model.complete.return_value = {"empty": "", "json": "invalid", "schema": "{}"}[failure]
     await worker.process_memory_job(job)
@@ -185,7 +238,7 @@ async def test_failures_keep_jobs_and_retry_without_partial_memory_writes(queue,
         stored.available_at = datetime.now() - timedelta(seconds=1)
         await db.commit()
     if failure == "write":
-        monkeypatch.setattr(MemoryExtractor, "save_actions", original)
+        monkeypatch.setattr(MemoryService, "apply_extracted_actions", original)
     model.complete.side_effect = None
     model.complete.return_value = RESULT
     retry = await worker.claim_memory_job()

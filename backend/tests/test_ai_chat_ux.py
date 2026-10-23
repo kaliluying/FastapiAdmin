@@ -27,13 +27,12 @@ from app.core.exceptions import CustomException
 from app.plugin.module_ai.chat import service, ws
 from app.plugin.module_ai.chat.crud import ChatSession, ChatSessionCRUD
 from app.plugin.module_ai.chat.hybrid_retriever import KnowledgeBaseChatRetriever
-from app.plugin.module_ai.chat.model import ChatSessionModel
+from app.plugin.module_ai.chat.model import ChatSessionModel, MemoryExtractionJobModel
 from app.plugin.module_ai.chat.rag import MAX_CONTEXT_CHARS, MAX_DOCUMENT_CHARS, RagChatChain, RagDocument, RagPromptBuilder
 from app.plugin.module_ai.chat.schema import ChatQuerySchema, ChatSessionCreateSchema
 from app.plugin.module_ai.knowledge import public
 from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeChunkModel, KnowledgeDocumentModel
 from app.plugin.module_ai.knowledge.public import KnowledgeSearchResult
-from app.plugin.module_ai.memory.model import MemoryExtractionJobModel
 from app.utils.hash_bcrpy_util import PwdUtil
 
 
