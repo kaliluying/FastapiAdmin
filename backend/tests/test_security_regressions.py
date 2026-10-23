@@ -175,7 +175,7 @@ async def test_upload_stream_enforces_size_limit_without_buffering_the_whole_fil
 @pytest.mark.parametrize("entrypoint", ["stream", "upload", "knowledge"])
 @pytest.mark.parametrize("symlink", [False, True])
 async def test_upload_collision_preserves_existing_destination(tmp_path, monkeypatch, entrypoint, symlink):
-    from app.plugin.module_ai.knowledge import service as knowledge_service
+    from app.plugin.module_ai.knowledge import document_lifecycle as knowledge_service
 
     filename = "kb-1-existing.txt" if entrypoint == "knowledge" else "existing.txt"
     destination = (tmp_path / "resource" if entrypoint == "upload" else tmp_path) / filename
@@ -199,7 +199,7 @@ async def test_upload_collision_preserves_existing_destination(tmp_path, monkeyp
         elif entrypoint == "upload":
             await UploadUtil.upload_file(upload, "https://example.test", upload_type="resource")
         else:
-            await knowledge_service.KnowledgeService(SimpleNamespace())._save_upload_file(upload, upload_owner="kb-1")
+            await knowledge_service.KnowledgeDocumentLifecycle(SimpleNamespace())._save_upload_file(upload, upload_owner="kb-1")
 
     assert destination.is_symlink() == symlink
     assert destination.read_bytes() == b"existing content"

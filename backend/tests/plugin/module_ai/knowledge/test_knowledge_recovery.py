@@ -13,11 +13,11 @@ from sqlalchemy import create_engine, inspect, text, update
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
 from app.core.plugins import get_ai_plugin_manifest
+from app.plugin.module_ai.knowledge import document_lifecycle as service_module
 from app.plugin.module_ai.knowledge import recovery, retrieval
-from app.plugin.module_ai.knowledge import service as service_module
+from app.plugin.module_ai.knowledge.document_lifecycle import KnowledgeDocumentLifecycle
 from app.plugin.module_ai.knowledge.model import KnowledgeDocumentModel
 from app.plugin.module_ai.knowledge.retrieval import KnowledgeRetriever, KnowledgeSearchResult
-from app.plugin.module_ai.knowledge.service import KnowledgeService
 
 processing = processing_tests.processing
 document_snapshot = processing_tests.document_snapshot
@@ -91,12 +91,12 @@ async def test_old_run_cannot_write_or_overwrite_new_generation(processing):
         processing.embeddings.embed_texts.side_effect = None
         await set_document(processing, index_lease_until=datetime.now() - timedelta(seconds=1))
         async with processing.sessions() as db:
-            await KnowledgeService(AuthSchema(db=db, check_data_scope=False)).index_document(processing.document_id, automatic=True)
+            await KnowledgeDocumentLifecycle(AuthSchema(db=db, check_data_scope=False)).index_document(processing.document_id, automatic=True)
         return [[0.5, 0.5]]
 
     processing.embeddings.embed_texts.side_effect = expire_and_replace
     with pytest.raises(CustomException) as error:
-        await processing.service.index_document(processing.document_id)
+        await processing.lifecycle.index_document(processing.document_id)
     assert error.value.status_code == 409
     document, chunks = await document_snapshot(processing)
     assert document.index_status == "success" and document.index_attempts == 2
@@ -124,7 +124,7 @@ async def test_retry_backoff_is_persistent_and_bounded(processing):
     assert document.index_attempts == 3 and document.index_status == "failed"
     assert processing.embeddings.embed_texts.await_count == 3
     processing.embeddings.embed_texts.side_effect = None
-    await processing.service.index_document(processing.document_id)
+    await processing.lifecycle.index_document(processing.document_id)
     document, _chunks = await document_snapshot(processing)
     assert document.index_status == "success" and document.index_attempts == 1
 
@@ -138,21 +138,26 @@ async def test_exhausted_crashed_run_does_not_remain_indexing(processing):
     assert processing.embeddings.embed_texts.await_count == 0
 
 
-@pytest.mark.parametrize(("status", "attempts", "active_lease"), [
-    ("pending", 0, True),
-    ("failed", 3, False),
-    ("success", 0, False),
-    ("indexing", 1, True),
-])
+@pytest.mark.parametrize(
+    ("status", "attempts", "active_lease"),
+    [
+        ("pending", 0, True),
+        ("failed", 3, False),
+        ("success", 0, False),
+        ("indexing", 1, True),
+    ],
+)
 async def test_recovery_scan_and_automatic_claim_share_eligibility(processing, status, attempts, active_lease):
     await set_document(
-        processing, index_status=status, index_attempts=attempts,
+        processing,
+        index_status=status,
+        index_attempts=attempts,
         index_lease_until=datetime.now() + timedelta(minutes=1) if active_lease else None,
     )
-    await KnowledgeService.recover_pending_documents()
+    await KnowledgeDocumentLifecycle.recover_pending_documents()
     assert processing.embeddings.embed_texts.await_count == 0
     with pytest.raises(CustomException) as error:
-        await processing.service.index_document(processing.document_id, automatic=True)
+        await processing.lifecycle.index_document(processing.document_id, automatic=True)
     assert error.value.status_code == 409
     await processing.db.rollback()
     document, chunks = await document_snapshot(processing)
@@ -173,7 +178,7 @@ async def test_deletion_race_rejects_claim_before_external_cleanup(processing, m
 
     async def competing_index():
         async with processing.sessions() as db:
-            await KnowledgeService(AuthSchema(db=db, check_data_scope=False)).index_document(processing.document_id)
+            await KnowledgeDocumentLifecycle(AuthSchema(db=db, check_data_scope=False)).index_document(processing.document_id)
 
     async def stale_list(crud, **kwargs):
         nonlocal index_task
@@ -187,7 +192,7 @@ async def test_deletion_race_rejects_claim_before_external_cleanup(processing, m
     monkeypatch.setattr(service_module.KnowledgeDocumentCRUD, "get_list", stale_list)
     try:
         with pytest.raises(CustomException) as error:
-            await processing.service.delete_document([processing.document_id])
+            await processing.lifecycle.delete_document([processing.document_id])
         assert error.value.status_code == 409
         assert processing.store.delete_document.await_count == 0
         assert processing.path.exists()
@@ -200,7 +205,7 @@ async def test_deletion_race_rejects_claim_before_external_cleanup(processing, m
 async def test_deleted_document_cleanup_recovers_after_partial_failure(processing):
     processing.store.delete_document.side_effect = lambda _document_id: processing.vectors.clear()
     processing.bm25.delete_by_document.side_effect = RuntimeError("temporary keyword-store failure")
-    await processing.service.delete_document([processing.document_id])
+    await processing.lifecycle.delete_document([processing.document_id])
     document, _chunks = await document_snapshot(processing)
     assert document.is_deleted and document.index_status == "deleting"
     assert processing.path.exists()
@@ -228,7 +233,7 @@ async def test_uncertain_commit_never_deletes_committed_generation(processing, m
 
     monkeypatch.setattr(processing.db, "commit", commit_then_disconnect)
     with pytest.raises(CustomException):
-        await processing.service.index_document(processing.document_id)
+        await processing.lifecycle.index_document(processing.document_id)
     document, chunks = await document_snapshot(processing)
     assert document.index_status == "success"
     active_ids = {chunk.chroma_id for chunk in chunks}
@@ -274,7 +279,7 @@ async def test_lease_loss_cancels_old_owner_without_overwriting_new_claim(proces
     await set_document(processing, index_status="indexing", index_token="new-owner", index_lease_until=datetime.now() + timedelta(seconds=300))
     owner = asyncio.create_task(asyncio.Event().wait())
     monkeypatch.setattr(service_module.asyncio, "sleep", AsyncMock())
-    await KnowledgeService._renew_index_lease(processing.document_id, "old-owner", owner)
+    await KnowledgeDocumentLifecycle._renew_index_lease(processing.document_id, "old-owner", owner)
     with pytest.raises(asyncio.CancelledError):
         await owner
     document, _chunks = await document_snapshot(processing)
@@ -339,7 +344,7 @@ async def test_completed_generation_does_not_cancel_owner_on_late_heartbeat(proc
     await set_document(processing, index_status="success", index_token=None)
     owner = asyncio.create_task(asyncio.Event().wait())
     monkeypatch.setattr(service_module.asyncio, "sleep", AsyncMock())
-    await KnowledgeService._renew_index_lease(processing.document_id, "completed-token", owner)
+    await KnowledgeDocumentLifecycle._renew_index_lease(processing.document_id, "completed-token", owner)
     assert not owner.cancelled() and not owner.cancelling()
     owner.cancel()
     with pytest.raises(asyncio.CancelledError):

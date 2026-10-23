@@ -8,8 +8,8 @@ from fastapi import BackgroundTasks, UploadFile
 from sqlalchemy import update
 
 from app.core.exceptions import CustomException
+from app.plugin.module_ai.knowledge import document_lifecycle as service_module
 from app.plugin.module_ai.knowledge import extractors
-from app.plugin.module_ai.knowledge import service as service_module
 from app.plugin.module_ai.knowledge.model import KnowledgeDocumentModel
 
 processing = test_document_processing.processing
@@ -18,7 +18,7 @@ document_snapshot = test_document_processing.document_snapshot
 
 async def test_replacement_activates_file_and_chunks_together(processing):
     background = BackgroundTasks()
-    await processing.service.replace_document(processing.document_id, UploadFile(filename="replacement.txt", file=io.BytesIO("纠正后的正文".encode())), background)
+    await processing.lifecycle.replace_document(processing.document_id, UploadFile(filename="replacement.txt", file=io.BytesIO("纠正后的正文".encode())), background)
     staged, chunks = await document_snapshot(processing)
     assert staged.pending_file and staged.file_name == "guide.txt"
     assert chunks[0].content == "原有内容"
@@ -37,7 +37,7 @@ async def test_replacement_activates_file_and_chunks_together(processing):
 async def test_failed_replacement_preserves_old_file_chunks_and_retry(processing):
     processing.embeddings.embed_texts.side_effect = RuntimeError("provider secret")
     background = BackgroundTasks()
-    await processing.service.replace_document(processing.document_id, UploadFile(filename="fixed.txt", file=io.BytesIO(b"new text")), background)
+    await processing.lifecycle.replace_document(processing.document_id, UploadFile(filename="fixed.txt", file=io.BytesIO(b"new text")), background)
     await background()
     document, chunks = await document_snapshot(processing)
     assert document.index_status == "failed" and document.pending_file
@@ -45,14 +45,14 @@ async def test_failed_replacement_preserves_old_file_chunks_and_retry(processing
     assert chunks[0].chroma_id == "old-chunk"
     assert processing.vectors == processing.keywords == {"old-chunk": "原有内容"}
     processing.embeddings.embed_texts.side_effect = None
-    await processing.service.index_document(document.id)
+    await processing.lifecycle.index_document(document.id)
     document, chunks = await document_snapshot(processing)
     assert document.index_status == "success" and chunks[0].content == "new text"
 
 
 async def test_recovery_uses_persisted_pending_replacement(processing):
-    await processing.service.replace_document(processing.document_id, UploadFile(filename="fixed.txt", file=io.BytesIO(b"restart text")), BackgroundTasks())
-    await service_module.KnowledgeService.recover_pending_documents()
+    await processing.lifecycle.replace_document(processing.document_id, UploadFile(filename="fixed.txt", file=io.BytesIO(b"restart text")), BackgroundTasks())
+    await service_module.KnowledgeDocumentLifecycle.recover_pending_documents()
     document, chunks = await document_snapshot(processing)
     assert document.index_status == "success" and document.pending_file is None
     assert chunks[0].content == "restart text"
@@ -63,7 +63,7 @@ async def test_conflicting_replace_does_not_leak_upload(processing):
     await processing.db.commit()
     before = set(processing.path.parent.iterdir())
     with pytest.raises(CustomException) as error:
-        await processing.service.replace_document(processing.document_id, UploadFile(filename="fixed.txt", file=io.BytesIO(b"text")), BackgroundTasks())
+        await processing.lifecycle.replace_document(processing.document_id, UploadFile(filename="fixed.txt", file=io.BytesIO(b"text")), BackgroundTasks())
     assert error.value.status_code == 409
     assert set(processing.path.parent.iterdir()) == before
 
@@ -96,9 +96,9 @@ async def test_chunk_page_and_content_correction(processing):
     assert page["total"] == 1 and page["items"][0]["content"] == "原有内容"
     assert await processing.service.document_content(processing.document_id) == "可检索的文档内容"
     with pytest.raises(CustomException, match="不能为空"):
-        await processing.service.update_document_content(processing.document_id, "  ", BackgroundTasks())
+        await processing.lifecycle.update_document_content(processing.document_id, "  ", BackgroundTasks())
     background = BackgroundTasks()
-    await processing.service.update_document_content(processing.document_id, "人工纠错正文", background)
+    await processing.lifecycle.update_document_content(processing.document_id, "人工纠错正文", background)
     await background()
     document, chunks = await document_snapshot(processing)
     assert document.file_type == "txt" and chunks[0].content == "人工纠错正文"
@@ -149,12 +149,12 @@ def test_ocr_cli_uses_bounded_page_and_available_languages(monkeypatch, tmp_path
 async def test_replacing_a_failed_pending_file_cleans_discarded_upload(processing):
     processing.embeddings.embed_texts.side_effect = RuntimeError("temporary")
     first = BackgroundTasks()
-    await processing.service.replace_document(processing.document_id, UploadFile(filename="first.txt", file=io.BytesIO(b"first")), first)
+    await processing.lifecycle.replace_document(processing.document_id, UploadFile(filename="first.txt", file=io.BytesIO(b"first")), first)
     await first()
     failed, _chunks = await document_snapshot(processing)
     discarded = processing.path.parent / failed.pending_file["file_path"]
     second = BackgroundTasks()
-    await processing.service.replace_document(processing.document_id, UploadFile(filename="second.txt", file=io.BytesIO(b"second")), second)
+    await processing.lifecycle.replace_document(processing.document_id, UploadFile(filename="second.txt", file=io.BytesIO(b"second")), second)
     processing.embeddings.embed_texts.side_effect = None
     await second()
     document, chunks = await document_snapshot(processing)
@@ -163,7 +163,7 @@ async def test_replacing_a_failed_pending_file_cleans_discarded_upload(processin
 
 
 async def test_final_commit_failure_retains_original_file_and_pending_replacement(processing, monkeypatch):
-    await processing.service.replace_document(processing.document_id, UploadFile(filename="fixed.txt", file=io.BytesIO(b"fixed")), BackgroundTasks())
+    await processing.lifecycle.replace_document(processing.document_id, UploadFile(filename="fixed.txt", file=io.BytesIO(b"fixed")), BackgroundTasks())
     commit = processing.db.commit
     attempts = 0
 
@@ -176,7 +176,7 @@ async def test_final_commit_failure_retains_original_file_and_pending_replacemen
 
     monkeypatch.setattr(processing.db, "commit", fail_commit)
     with pytest.raises(CustomException):
-        await processing.service.index_document(processing.document_id)
+        await processing.lifecycle.index_document(processing.document_id)
     document, chunks = await document_snapshot(processing)
     assert document.file_path == processing.path.name and document.pending_file
     assert processing.path.exists() and chunks[0].chroma_id == "old-chunk"
@@ -186,11 +186,11 @@ async def test_final_commit_failure_retains_original_file_and_pending_replacemen
 async def test_deleting_failed_replacement_cleans_original_and_pending_files(processing):
     processing.embeddings.embed_texts.side_effect = RuntimeError("temporary")
     background = BackgroundTasks()
-    await processing.service.replace_document(processing.document_id, UploadFile(filename="pending.txt", file=io.BytesIO(b"pending")), background)
+    await processing.lifecycle.replace_document(processing.document_id, UploadFile(filename="pending.txt", file=io.BytesIO(b"pending")), background)
     await background()
     failed, _chunks = await document_snapshot(processing)
     pending_path = processing.path.parent / failed.pending_file["file_path"]
     processing.store.delete_document.side_effect = None
     processing.bm25.delete_by_document.side_effect = None
-    await processing.service.delete_document([processing.document_id])
+    await processing.lifecycle.delete_document([processing.document_id])
     assert not processing.path.exists() and not pending_path.exists()

@@ -42,7 +42,7 @@ def configure_child() -> None:
     path_conf.LOG_DIR = artifact_root / "logs"
     path_conf.UPLOAD_DIR = artifact_root / "uploads"
     path_conf.DOWNLOAD_DIR = artifact_root / "downloads"
-    from app.plugin.module_ai.knowledge import service
+    from app.plugin.module_ai.knowledge import document_lifecycle as service
 
     service.UPLOAD_DIR = artifact_root / "knowledge"
 
@@ -54,8 +54,8 @@ async def prepare_recovery() -> None:
     from app.api.v1.module_system.user.model import UserModel
     from app.core.base_schema import AuthSchema
     from app.core.database import async_db_session, async_engine
+    from app.plugin.module_ai.knowledge.document_lifecycle import KnowledgeDocumentLifecycle
     from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel
-    from app.plugin.module_ai.knowledge.service import KnowledgeService
 
     try:
         async with async_db_session() as database:
@@ -63,7 +63,7 @@ async def prepare_recovery() -> None:
             base = KnowledgeBaseModel(name="isolated restart acceptance", created_id=user_id)
             database.add(base)
             await database.commit()
-            service = KnowledgeService(AuthSchema(db=database, user=SimpleNamespace(id=user_id), check_data_scope=False))
+            service = KnowledgeDocumentLifecycle(AuthSchema(db=database, user=SimpleNamespace(id=user_id), check_data_scope=False))
             document = await service.upload_document(
                 knowledge_base_id=base.id,
                 file=UploadFile(filename="restart.txt", file=BytesIO("恢复验收事实：ORCHIDPERSISTENCE。".encode())),
@@ -80,7 +80,8 @@ async def run_recovery_phase(crash: bool) -> dict:
     from sqlalchemy import func, select
 
     from app.core.database import async_db_session, async_engine
-    from app.plugin.module_ai.knowledge import recovery, service
+    from app.plugin.module_ai.knowledge import document_lifecycle as service
+    from app.plugin.module_ai.knowledge import recovery
     from app.plugin.module_ai.knowledge.bm25_index import get_cached_bm25_index
     from app.plugin.module_ai.knowledge.model import KnowledgeChunkModel, KnowledgeDocumentModel
     from main import create_app

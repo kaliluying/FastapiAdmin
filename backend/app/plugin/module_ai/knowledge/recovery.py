@@ -8,17 +8,15 @@ from sqlalchemy import select
 from app.core.database import async_db_session
 from app.core.logger import logger
 
-from . import service as service_module
+from . import document_lifecycle
 from .model import KnowledgeDocumentModel
-from .service import KnowledgeService
-from .upload_recovery import recover_orphan_uploads
 
 _worker: asyncio.Task | None = None
 
 
 async def recover_document_indexes() -> None:
     """由生命周期工作任务执行知识库模块的恢复流程。"""
-    await KnowledgeService.recover_pending_documents()
+    await document_lifecycle.KnowledgeDocumentLifecycle.recover_pending_documents()
 
 
 async def _run_recovery() -> None:
@@ -39,7 +37,7 @@ async def _run_index_recovery() -> None:
 async def _run_upload_recovery() -> None:
     while True:
         try:
-            await recover_orphan_uploads(service_module.UPLOAD_DIR)
+            await document_lifecycle.reconcile_orphan_uploads()
         except Exception:
             logger.error("知识库上传文件恢复检查失败")
         await asyncio.sleep(15)

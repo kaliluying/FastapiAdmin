@@ -16,7 +16,8 @@ from app.plugin.module_ai import config
 from app.plugin.module_ai.chat import capabilities, model_config_service
 from app.plugin.module_ai.chat.schema import AiModelConfigUpdateSchema
 from app.plugin.module_ai.knowledge import bm25_index, chroma_store, embedding, retrieval
-from app.plugin.module_ai.knowledge import service as knowledge
+from app.plugin.module_ai.knowledge import document_lifecycle as knowledge
+from app.plugin.module_ai.knowledge.document_lifecycle import KnowledgeDocumentLifecycle
 
 
 @pytest.fixture
@@ -44,8 +45,8 @@ def upload_case(monkeypatch, tmp_path):
     )
     monkeypatch.setattr(knowledge, "KnowledgeDocumentCRUD", lambda _auth: crud)
     monkeypatch.setattr(knowledge, "KnowledgeBaseCRUD", lambda _auth: crud)
-    service = knowledge.KnowledgeService(SimpleNamespace(db=db, user=SimpleNamespace(id=1)))
-    monkeypatch.setattr(service, "_document_output", lambda _doc: document)
+    service = KnowledgeDocumentLifecycle(SimpleNamespace(db=db, user=SimpleNamespace(id=1)))
+    monkeypatch.setattr(knowledge, "document_output", lambda _doc: document)
 
     async def invoke(operation):
         file = UploadFile(filename="new.txt", file=io.BytesIO(b"replacement"))
@@ -54,8 +55,14 @@ def upload_case(monkeypatch, tmp_path):
         return await service.replace_document(document.id, file, BackgroundTasks())
 
     return SimpleNamespace(
-        db=db, crud=crud, document=document, service=service,
-        old=old, previous=previous, root=tmp_path, invoke=invoke,
+        db=db,
+        crud=crud,
+        document=document,
+        service=service,
+        old=old,
+        previous=previous,
+        root=tmp_path,
+        invoke=invoke,
     )
 
 
@@ -139,7 +146,7 @@ async def test_metadata_failure_after_saving_removes_the_new_file(upload_case, m
     def bad_metadata(_path):
         raise RuntimeError("metadata failed")
 
-    monkeypatch.setattr(case.service, "_safe_knowledge_path", bad_metadata)
+    monkeypatch.setattr(knowledge, "safe_knowledge_path", bad_metadata)
     with pytest.raises(RuntimeError, match="metadata failed"):
         await case.invoke(operation)
     assert {path.name for path in case.root.iterdir()} == {"old.txt", "previous.txt"}
@@ -160,6 +167,7 @@ async def test_retrieval_initializes_clients_off_event_loop(monkeypatch, mode):
         def load():
             seen.append((name, threading.get_ident()))
             return clients[name]
+
         return load
 
     monkeypatch.setattr(retrieval, "get_cached_embedding_client", getter("embedding"))
@@ -168,9 +176,7 @@ async def test_retrieval_initializes_clients_off_event_loop(monkeypatch, mode):
     retriever = retrieval.KnowledgeRetriever(mode=mode, auto_adjust_alpha=False)
     assert await retriever.search(query="text", knowledge_base_ids=[1]) == []
     assert seen and all(thread != loop_thread for _, thread in seen)
-    assert {name for name, _ in seen} == (
-        {"embedding", "chroma"} if mode == "vector" else {"bm25"} if mode == "bm25" else set(clients)
-    )
+    assert {name for name, _ in seen} == ({"embedding", "chroma"} if mode == "vector" else {"bm25"} if mode == "bm25" else set(clients))
 
 
 async def test_index_cleanup_preserves_sync_getter_overrides_off_event_loop(monkeypatch):
@@ -187,9 +193,9 @@ async def test_index_cleanup_preserves_sync_getter_overrides_off_event_loop(monk
         seen.append(threading.get_ident())
         return bm25
 
-    monkeypatch.setattr(knowledge.KnowledgeService, "_get_store", store_getter)
-    monkeypatch.setattr(knowledge.KnowledgeService, "_get_bm25_index", bm25_getter)
-    await knowledge.KnowledgeService(SimpleNamespace())._delete_index_chunks(["old-generation"], vector=True, bm25=True)
+    monkeypatch.setattr(KnowledgeDocumentLifecycle, "_get_store", store_getter)
+    monkeypatch.setattr(KnowledgeDocumentLifecycle, "_get_bm25_index", bm25_getter)
+    await KnowledgeDocumentLifecycle(SimpleNamespace())._delete_index_chunks(["old-generation"], vector=True, bm25=True)
     assert len(seen) == 2 and all(thread != loop_thread for thread in seen)
     store.delete_chunks.assert_awaited_once_with(["old-generation"])
     bm25.delete_chunks.assert_awaited_once_with(["old-generation"])
@@ -287,8 +293,10 @@ async def test_async_model_entry_points_resolve_dns_off_event_loop(monkeypatch, 
 @pytest.mark.parametrize("addresses", [["93.184.216.34"], ["127.0.0.1"], ["93.184.216.34", "10.0.0.1"], []])
 async def test_async_url_validator_preserves_dns_ssrf_policy(monkeypatch, addresses):
     monkeypatch.setattr(config.settings, "MODEL_ALLOWED_HOSTS", [])
+
     def resolve(*_args, **_kwargs):
         return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, 0)) for ip in addresses]
+
     monkeypatch.setattr(config.socket, "getaddrinfo", resolve)
     validate = getattr(config, "async_validate_model_base_url", None)
     assert callable(validate), "DNS-aware async validator is missing"

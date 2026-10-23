@@ -46,7 +46,7 @@ from app.plugin.module_ai.chat.model import ChatSessionModel
 from app.plugin.module_ai.chat.service import ChatService
 from app.plugin.module_ai.chat.usage_model import AiUsageRecordModel
 from app.plugin.module_ai.config import settings as ai_settings
-from app.plugin.module_ai.knowledge import service as knowledge_service
+from app.plugin.module_ai.knowledge import document_lifecycle as knowledge_service
 from app.plugin.module_ai.knowledge.bm25_index import BM25KnowledgeIndex
 
 knowledge_service.UPLOAD_DIR = ARTIFACTS / "knowledge"

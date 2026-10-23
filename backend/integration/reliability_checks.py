@@ -26,8 +26,8 @@ async def verify_reliability() -> dict:
     from app.core.base_schema import AuthSchema
     from app.core.database import async_db_session, async_engine
     from app.plugin.module_ai.chat import service as chat
-    from app.plugin.module_ai.knowledge import service as knowledge
-    from app.plugin.module_ai.knowledge import upload_recovery as uploads
+    from app.plugin.module_ai.knowledge import _upload_recovery as uploads
+    from app.plugin.module_ai.knowledge import document_lifecycle as knowledge
     from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeDocumentModel
     from app.plugin.module_ai.memory import worker
     from app.plugin.module_ai.memory.extractor import MemoryExtractor
@@ -137,7 +137,7 @@ async def verify_reliability() -> dict:
                         db.add(document)
                         await db.commit()
                         document_id = document.id
-                        service = knowledge.KnowledgeService(AuthSchema(db=db, user=SimpleNamespace(id=user_id), check_data_scope=False))
+                        service = knowledge.KnowledgeDocumentLifecycle(AuthSchema(db=db, user=SimpleNamespace(id=user_id), check_data_scope=False))
                         before = set(knowledge.UPLOAD_DIR.iterdir())
                         commit = db.commit
 
@@ -162,7 +162,7 @@ async def verify_reliability() -> dict:
                     new_files = set(knowledge.UPLOAD_DIR.iterdir()) - before
                     assert len(new_files) == 1
                     new_file = new_files.pop()
-                    await uploads.recover_orphan_uploads(knowledge.UPLOAD_DIR)
+                    await knowledge.reconcile_orphan_uploads(knowledge.UPLOAD_DIR)
                     assert new_file.exists() == committed
                     assert old.read_bytes() == b"original"
 
@@ -175,10 +175,10 @@ async def verify_reliability() -> dict:
                         orphan = knowledge.UPLOAD_DIR / f"{owner_kind}-{owner_id}-{uuid.uuid4().hex}.txt"
                         orphan.write_bytes(b"unfinished")
                         os.utime(orphan, (1, 1))
-                        await asyncio.wait_for(uploads.recover_orphan_uploads(knowledge.UPLOAD_DIR), 3)
+                        await asyncio.wait_for(knowledge.reconcile_orphan_uploads(knowledge.UPLOAD_DIR), 3)
                         assert orphan.exists()
                         await db.rollback()
-                    await uploads.recover_orphan_uploads(knowledge.UPLOAD_DIR)
+                    await knowledge.reconcile_orphan_uploads(knowledge.UPLOAD_DIR)
                     assert not orphan.exists()
 
             # Verify the production lifecycle loop itself eventually performs cleanup.
@@ -209,7 +209,7 @@ async def memory_restart_phase(phase: str) -> dict:
     from app.core.database import async_db_session, async_engine
     from app.plugin.module_ai.chat.crud import ChatSessionCRUD
     from app.plugin.module_ai.chat.schema import ChatSessionCreateSchema
-    from app.plugin.module_ai.knowledge import service as knowledge
+    from app.plugin.module_ai.knowledge import document_lifecycle as knowledge
     from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel
     from app.plugin.module_ai.memory import worker
     from app.plugin.module_ai.memory.extractor import MemoryExtractor
@@ -250,7 +250,7 @@ async def memory_restart_phase(phase: str) -> dict:
                     await asyncio.Event().wait()
 
                 db.commit = pause_commit
-                await knowledge.KnowledgeService(AuthSchema(db=db, user=SimpleNamespace(id=fixture["user_id"]), check_data_scope=False)).upload_document(
+                await knowledge.KnowledgeDocumentLifecycle(AuthSchema(db=db, user=SimpleNamespace(id=fixture["user_id"]), check_data_scope=False)).upload_document(
                     knowledge_base_id=fixture["base_id"],
                     file=UploadFile(filename="crashed.txt", file=io.BytesIO(b"uncommitted process crash")),
                     background_tasks=BackgroundTasks(),

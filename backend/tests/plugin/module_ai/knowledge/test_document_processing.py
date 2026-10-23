@@ -12,10 +12,11 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from app.core.base_model import MappedBase
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
-from app.plugin.module_ai.knowledge import service as service_module
+from app.plugin.module_ai.knowledge import document_lifecycle as service_module
 from app.plugin.module_ai.knowledge.bm25_index import BM25KnowledgeIndex
 from app.plugin.module_ai.knowledge.chroma_store import ChromaKnowledgeStore
 from app.plugin.module_ai.knowledge.controller import reindex_document_controller, upload_document_controller
+from app.plugin.module_ai.knowledge.document_lifecycle import KnowledgeDocumentLifecycle
 from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeChunkModel, KnowledgeDocumentModel
 from app.plugin.module_ai.knowledge.service import KnowledgeService
 
@@ -59,9 +60,9 @@ async def processing(monkeypatch, tmp_path):
         delete_by_document=AsyncMock(side_effect=AssertionError("Never delete the original keyword index before replacement")),
     )
     embeddings = SimpleNamespace(embed_texts=AsyncMock(return_value=[[0.5, 0.5]]))
-    monkeypatch.setattr(KnowledgeService, "_get_store", lambda _self: store)
-    monkeypatch.setattr(KnowledgeService, "_get_bm25_index", lambda _self: bm25)
-    monkeypatch.setattr(KnowledgeService, "_get_embedding_client", lambda _self: embeddings)
+    monkeypatch.setattr(KnowledgeDocumentLifecycle, "_get_store", lambda _self: store)
+    monkeypatch.setattr(KnowledgeDocumentLifecycle, "_get_bm25_index", lambda _self: bm25)
+    monkeypatch.setattr(KnowledgeDocumentLifecycle, "_get_embedding_client", lambda _self: embeddings)
 
     async with sessions() as db:
         base = KnowledgeBaseModel(name="测试知识库")
@@ -90,6 +91,7 @@ async def processing(monkeypatch, tmp_path):
         await db.commit()
         yield SimpleNamespace(
             service=KnowledgeService(AuthSchema(db=db, check_data_scope=False)),
+            lifecycle=KnowledgeDocumentLifecycle(AuthSchema(db=db, check_data_scope=False)),
             db=db,
             sessions=sessions,
             document_id=document.id,
@@ -118,7 +120,7 @@ async def test_rebuild_stages_visible_in_independent_sessions_and_duplicate_reje
         assert chunks[0].chroma_id == "old-chunk"
         async with processing.sessions() as competing:
             with pytest.raises(CustomException) as error:
-                await KnowledgeService(AuthSchema(db=competing)).index_document(processing.document_id)
+                await KnowledgeDocumentLifecycle(AuthSchema(db=competing)).index_document(processing.document_id)
             assert error.value.status_code == 409
         return "新的可检索内容"
 
@@ -154,7 +156,7 @@ async def test_parse_failure_is_actionable_redacted_and_persisted(processing, mo
             ),
         )
     with pytest.raises(CustomException) as error:
-        await processing.service.index_document(processing.document_id)
+        await processing.lifecycle.index_document(processing.document_id)
     await processing.db.rollback()
     document, chunks = await document_snapshot(processing)
     assert (document.parse_status, document.index_status) == ("failed", "failed")
@@ -207,7 +209,7 @@ async def test_index_failure_preserves_original_chunks_indexes_and_file(processi
         monkeypatch.setattr(processing.db, "commit", fail_final_commit)
 
     with pytest.raises(CustomException) as error:
-        await processing.service.index_document(processing.document_id)
+        await processing.lifecycle.index_document(processing.document_id)
     await processing.db.rollback()
     document, chunks = await document_snapshot(processing)
     assert (document.parse_status, document.index_status) == ("success", "failed")
@@ -221,14 +223,14 @@ async def test_index_failure_preserves_original_chunks_indexes_and_file(processi
 async def test_interrupted_processing_is_retryable_and_preserves_original_data(processing, monkeypatch):
     monkeypatch.setattr(service_module, "extract_text", AsyncMock(side_effect=asyncio.CancelledError()))
     with pytest.raises(asyncio.CancelledError):
-        await processing.service.index_document(processing.document_id)
+        await processing.lifecycle.index_document(processing.document_id)
     document, chunks = await document_snapshot(processing)
     assert document.index_status == "failed"
     assert "处理已中断" in document.error_message
     assert chunks[0].chroma_id == "old-chunk"
     assert processing.vectors == processing.keywords == {"old-chunk": "原有内容"}
     monkeypatch.setattr(service_module, "extract_text", AsyncMock(return_value="可恢复内容"))
-    result = await processing.service.index_document(processing.document_id)
+    result = await processing.lifecycle.index_document(processing.document_id)
     assert result.index_status == "success" and result.error_message is None
     assert processing.path.exists()
 
@@ -237,7 +239,7 @@ async def test_processing_document_cannot_be_deleted(processing):
     await processing.db.execute(update(KnowledgeDocumentModel).where(KnowledgeDocumentModel.id == processing.document_id).values(index_status="indexing"))
     await processing.db.commit()
     with pytest.raises(CustomException) as error:
-        await processing.service.delete_document([processing.document_id])
+        await processing.lifecycle.delete_document([processing.document_id])
     assert error.value.status_code == 409
     with pytest.raises(CustomException) as error:
         await processing.service.delete_knowledge_base([processing.base_id])
@@ -265,7 +267,7 @@ async def test_upload_is_committed_before_background_task_and_failure_remains_vi
 
 async def test_background_upload_reaches_searchable_status_without_real_indexes(processing):
     background = BackgroundTasks()
-    uploaded = await processing.service.upload_document(
+    uploaded = await processing.lifecycle.upload_document(
         knowledge_base_id=processing.base_id,
         file=UploadFile(filename="new.txt", file=io.BytesIO("新的文档内容".encode())),
         background_tasks=background,
@@ -281,7 +283,7 @@ async def test_background_upload_reaches_searchable_status_without_real_indexes(
 
 async def test_old_index_cleanup_failure_keeps_new_index_and_exposes_safe_warning(processing):
     processing.store.delete_chunks.side_effect = RuntimeError("private storage detail")
-    result = await processing.service.index_document(processing.document_id)
+    result = await processing.lifecycle.index_document(processing.document_id)
     assert result.index_status == "success"
     assert "旧索引清理失败" in result.error_message
     document, chunks = await document_snapshot(processing)
@@ -301,8 +303,8 @@ async def test_mode_switches_clean_real_indexes_and_delete_inactive_stores(proce
     monkeypatch.setattr(service_module.settings, "BM25_INDEX_DIR", str(tmp_path / "bm25"))
     store = ChromaKnowledgeStore()
     bm25 = BM25KnowledgeIndex(tokenizer="char")
-    monkeypatch.setattr(KnowledgeService, "_get_store", lambda _self: store)
-    monkeypatch.setattr(KnowledgeService, "_get_bm25_index", lambda _self: bm25)
+    monkeypatch.setattr(KnowledgeDocumentLifecycle, "_get_store", lambda _self: store)
+    monkeypatch.setattr(KnowledgeDocumentLifecycle, "_get_bm25_index", lambda _self: bm25)
     await store.upsert_chunks(
         ids=["old-chunk", "unrelated-chunk"],
         embeddings=[[0.5, 0.5], [0.5, 0.5]],
@@ -325,7 +327,7 @@ async def test_mode_switches_clean_real_indexes_and_delete_inactive_stores(proce
 
     for mode in modes:
         monkeypatch.setattr(service_module.settings, "RETRIEVAL_MODE", mode)
-        result = await processing.service.index_document(processing.document_id)
+        result = await processing.lifecycle.index_document(processing.document_id)
         assert result.index_status == "success" and result.error_message is None
         _document, chunks = await document_snapshot(processing)
         active_ids = {chunk.chroma_id for chunk in chunks}
@@ -334,7 +336,7 @@ async def test_mode_switches_clean_real_indexes_and_delete_inactive_stores(proce
 
     monkeypatch.setattr(service_module.settings, "RETRIEVAL_MODE", modes[0])
     if deletion == "document":
-        await processing.service.delete_document([processing.document_id])
+        await processing.lifecycle.delete_document([processing.document_id])
     else:
         await processing.service.delete_knowledge_base([processing.base_id])
     await processing.db.commit()
@@ -346,7 +348,7 @@ async def test_failed_mode_switch_preserves_both_original_indexes(processing, mo
     monkeypatch.setattr(service_module.settings, "RETRIEVAL_MODE", mode)
     monkeypatch.setattr(service_module.KnowledgeChunkCRUD, "replace_chunks", AsyncMock(side_effect=RuntimeError("database failure")))
     with pytest.raises(CustomException):
-        await processing.service.index_document(processing.document_id)
+        await processing.lifecycle.index_document(processing.document_id)
     document, chunks = await document_snapshot(processing)
     assert document.index_status == "failed" and chunks[0].chroma_id == "old-chunk"
     assert processing.vectors == processing.keywords == {"old-chunk": "原有内容"}

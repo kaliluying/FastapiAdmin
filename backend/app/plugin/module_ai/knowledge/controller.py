@@ -9,6 +9,7 @@ from app.core.base_schema import AuthSchema
 from app.core.dependencies import AuthPermission
 from app.core.router_class import OperationLogRoute
 
+from .document_lifecycle import KnowledgeDocumentLifecycle
 from .schema import (
     DocumentContentUpdateSchema,
     KnowledgeBaseCreateSchema,
@@ -147,7 +148,7 @@ async def update_document_content_controller(
     background_tasks: BackgroundTasks,
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:document:create"]))],
 ) -> JSONResponse:
-    result = await KnowledgeService(auth).update_document_content(id, data.content, background_tasks)
+    result = await KnowledgeDocumentLifecycle(auth).update_document_content(id, data.content, background_tasks)
     return SuccessResponse(data=result, msg="纠错已接收，索引完成后生效；原文件将转换为 TXT")
 
 
@@ -158,7 +159,7 @@ async def replace_document_controller(
     background_tasks: BackgroundTasks,
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:document:create"]))],
 ) -> JSONResponse:
-    result = await KnowledgeService(auth).replace_document(id, file, background_tasks)
+    result = await KnowledgeDocumentLifecycle(auth).replace_document(id, file, background_tasks)
     return SuccessResponse(data=result, msg="替换已接收，处理完成后生效；失败时保留原文件和原分块")
 
 
@@ -173,7 +174,7 @@ async def upload_document_controller(
     background_tasks: BackgroundTasks,
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:document:create"]))],
 ) -> JSONResponse:
-    result = await KnowledgeService(auth).upload_document(
+    result = await KnowledgeDocumentLifecycle(auth).upload_document(
         knowledge_base_id=knowledge_base_id,
         file=file,
         background_tasks=background_tasks,
@@ -190,7 +191,7 @@ async def reindex_document_controller(
     id: Annotated[int, Path(ge=1)],
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:document:create"]))],
 ) -> JSONResponse:
-    result = await KnowledgeService(auth).index_document(document_id=id)
+    result = await KnowledgeDocumentLifecycle(auth).index_document(document_id=id)
     return SuccessResponse(data=result, msg="索引重建完成，文档已可检索")
 
 
@@ -203,7 +204,7 @@ async def delete_document_controller(
     ids: Annotated[list[int], Body()],
     auth: Annotated[AuthSchema, Depends(AuthPermission(["module_ai:document:delete"]))],
 ) -> JSONResponse:
-    await KnowledgeService(auth).delete_document(ids=ids)
+    await KnowledgeDocumentLifecycle(auth).delete_document(ids=ids)
     return SuccessResponse(msg="delete knowledge document success")
 
 

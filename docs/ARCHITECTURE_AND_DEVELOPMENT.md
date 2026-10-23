@@ -61,7 +61,7 @@ FastCore 正式支持的运行和生产数据库为 **MySQL**。**SQLite 仅用�
 
 模型配置页可填写模型名，也可使用当前接口地址和 API Key 获取服务商模型列表后选择。获取列表不会保存配置；改用其他接口地址或在 OpenAI 与 Anthropic 之间切换时，保存前需填写对应接口的 API Key。
 
-**真实纵向链路示例：上传知识库文档。**前端 `src/api/module_ai/knowledge.ts` 调用 `POST /ai/knowledge/document/upload`；后端 `knowledge/controller.py` 校验文档创建权限，`knowledge/service.py` 保存原件和持久化 `pending` 记录。进程内后台任务只是加速器；manifest 声明的恢复任务每 15 秒扫描可领取的文档，通过 SQL 条件更新领取，抽取文本、切块并按 `RETRIEVAL_MODE` 更新 Chroma、BM25 或两者，最后更新索引状态。上传成功只代表文件与记录已接收；应继续检查文档索引状态和检索结果。AI 对话在 `chat/` 中使用知识库检索结果，当前界面使用 `POST /ai/chat/stream`，通过 Bearer 令牌鉴权并返回 SSE；`chat/ws.py` 的 ticket 入口保留兼容。停止生成会取消本次 HTTP 请求并关闭模型流，只有提交完成后才发送 `done`，详见[对话流协议](AI_CHAT_STREAMING.md)。
+**真实纵向链路示例：上传知识库文档。**前端 `src/api/module_ai/knowledge.ts` 调用 `POST /ai/knowledge/document/upload`；后端 `knowledge/controller.py` 校验文档创建权限，再将文档写操作交给 `knowledge/document_lifecycle.py` 保存原件和持久化 `pending` 记录。进程内后台任务只是加速器；manifest 声明的恢复任务每 15 秒扫描可领取的文档，通过 SQL 条件更新领取，抽取文本、切块并按 `RETRIEVAL_MODE` 更新 Chroma、BM25 或两者，最后更新索引状态。上传成功只代表文件与记录已接收；应继续检查文档索引状态和检索结果。AI 对话在 `chat/` 中使用知识库检索结果，当前界面使用 `POST /ai/chat/stream`，通过 Bearer 令牌鉴权并返回 SSE；`chat/ws.py` 的 ticket 入口保留兼容。停止生成会取消本次 HTTP 请求并关闭模型流，只有提交完成后才发送 `done`，详见[对话流协议](AI_CHAT_STREAMING.md)。
 
 - 索引租约默认 300 秒，每 30 秒续约；失败后等待 60 秒自动重试，最多 3 次。硬终止后过期的任务可被重启进程接管，耗尽次数会明确失败而不是永久 `indexing`；手动重建可重新开始。
 - 每次索引生成使用独立分块标识，保存待清理列表；旧索引在新 SQL 分块提交后清理。删除先通过 SQL 阻止重新领取，外部索引和源文件清理由持久化删除状态恢复。检索须以未删除文档和当前 SQL 分块为准，不能仅信任外部索引命中。
@@ -71,7 +71,9 @@ FastCore 正式支持的运行和生产数据库为 **MySQL**。**SQLite 仅用�
 
 对应回归检查位于 `tests/plugin/module_ai/knowledge/test_chunk_deletion.py` 与 `tests/plugin/module_ai/chat/test_memory_workflow.py`：分别使用临时真实 Chroma/Whoosh 索引，以及临时 SQLite 加确定性模型替身，验证代际删除、其他文档保留、用户隔离和后台提交。这些检查不代表外部模型或生产验收。
 
-文本模型使用 `ChatModel`；需要结构化工具调用的模型使用扩展协议 `ToolChatModel`。供应商内容块通过公共函数 `content_to_text()` 转换，调用方不依赖 LangChain 适配器的私有方法。知识任务的恢复扫描和自动领取共享 `KnowledgeService` 的状态、租约与重试条件；恢复 worker 只负责启动、轮询和停止。
+文本模型使用 `ChatModel`；需要结构化工具调用的模型使用扩展协议 `ToolChatModel`。供应商内容块通过公共函数 `content_to_text()` 转换，调用方不依赖 LangChain 适配器的私有方法。知识文档的索引恢复、状态、租约、重试及跨存储清理由 `KnowledgeDocumentLifecycle` 集中处理；知识库与文档只读、检索仍由 `KnowledgeService` 提供。恢复 worker 负责启动、轮询和停止。
+
+文档写操作的 controller 和恢复 worker 直接使用 `knowledge/document_lifecycle.py`，知识库删除委托它清理关联文档；`knowledge/_upload_recovery.py` 是上传核对的私有实现。生命周期 module 保留 HTTP 行为、权限和数据范围检查，自行负责事务结果与存储清理顺序，提交结果不确定时保留文件，孤儿回收在锁内确认无引用后才执行。这里采用 CodeVault Scheduler Reconciliation 的“SQL 保存事实、轮询核对”原则，沿用现有 SQL 原子认领及两个独立 worker，不引入全局 Leader 或进程内任务队列。
 
 动态路由的移除回调和 iframe 缓存由 `RouteRegistry` 统一管理，菜单 store 只保存展示数据。退出登录同步清理路由，避免延迟清理影响再次登录；注册失败会回滚已添加的路由和 iframe 数据。此处采用 CodeVault `server-driven-route-registry` 的集中所有权原则；知识任务已有 SQL 租约和持久化状态，无需引入 `persistent-failure-guard` 的文件锁与 JSON 状态层。
 

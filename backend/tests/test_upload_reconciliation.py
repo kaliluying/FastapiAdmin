@@ -17,9 +17,10 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.core.base_model import MappedBase
 from app.core.base_schema import AuthSchema
+from app.plugin.module_ai.knowledge import _upload_recovery as uploads
+from app.plugin.module_ai.knowledge import document_lifecycle as knowledge
 from app.plugin.module_ai.knowledge import recovery
-from app.plugin.module_ai.knowledge import service as knowledge
-from app.plugin.module_ai.knowledge import upload_recovery as uploads
+from app.plugin.module_ai.knowledge.document_lifecycle import KnowledgeDocumentLifecycle
 from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeDocumentModel
 
 
@@ -35,7 +36,7 @@ async def upload_db(tmp_path, monkeypatch):
     monkeypatch.setattr(knowledge, "UPLOAD_DIR", root)
     monkeypatch.setattr(uploads, "async_db_session", sessions)
     monkeypatch.setattr(uploads, "UPLOAD_RECOVERY_DELAY_SECONDS", 0)
-    monkeypatch.setattr(knowledge.KnowledgeService, "index_document", AsyncMock(side_effect=AssertionError("No model/index calls")))
+    monkeypatch.setattr(KnowledgeDocumentLifecycle, "index_document", AsyncMock(side_effect=AssertionError("No model/index calls")))
     async with sessions() as db:
         base = KnowledgeBaseModel(name="upload recovery")
         db.add(base)
@@ -59,7 +60,7 @@ async def upload_db(tmp_path, monkeypatch):
 
 
 async def invoke(case, db, operation, file=None):
-    service = knowledge.KnowledgeService(AuthSchema(db=db, check_data_scope=False))
+    service = KnowledgeDocumentLifecycle(AuthSchema(db=db, check_data_scope=False))
     file = file or UploadFile(filename="new.txt", file=io.BytesIO(b"new contents"))
     if operation == "upload":
         return await service.upload_document(knowledge_base_id=case.base_id, file=file, background_tasks=BackgroundTasks())
@@ -89,7 +90,7 @@ async def test_uncertain_commit_reconciles_from_database(upload_db, monkeypatch,
         with pytest.raises(RuntimeError, match="reply lost"):
             await invoke(case, db, operation)
     (new_file,) = set(case.root.iterdir()) - {case.old}
-    await uploads.recover_orphan_uploads(case.root)
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert new_file.exists() is committed
     assert case.old.read_bytes() == b"old contents"
     document = await document_snapshot(case)
@@ -97,7 +98,7 @@ async def test_uncertain_commit_reconciles_from_database(upload_db, monkeypatch,
         assert (document.pending_file["file_path"] if operation == "replace" else document.file_path) == new_file.name
     else:
         assert document.id == case.document_id and document.pending_file is None
-    await uploads.recover_orphan_uploads(case.root)
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert new_file.exists() is committed
 
 
@@ -131,14 +132,14 @@ async def test_long_transaction_and_cancellation_are_fenced(upload_db, monkeypat
             (new_file,) = set(case.root.iterdir()) - {case.old}
             # Ignore wall-clock age entirely: the SQL barrier must still protect the file.
             os.utime(new_file, (1, 1))
-            await asyncio.wait_for(uploads.recover_orphan_uploads(case.root), 3)
+            await asyncio.wait_for(knowledge.reconcile_orphan_uploads(case.root), 3)
             assert new_file.exists()
         finally:
             task.cancel()
             with pytest.raises(asyncio.CancelledError):
                 await task
             await db.rollback()
-    await uploads.recover_orphan_uploads(case.root)
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert not new_file.exists()
     assert case.old.exists()
 
@@ -167,7 +168,7 @@ sys.stdin.read()
     try:
         ready = await asyncio.wait_for(anyio.to_thread.run_sync(process.stdout.readline), 5)
         assert ready.strip() == "ready"
-        await uploads.recover_orphan_uploads(case.root)
+        await knowledge.reconcile_orphan_uploads(case.root)
         assert (case.root / filename).exists()
     finally:
         process.kill()
@@ -175,7 +176,7 @@ sys.stdin.read()
         process.stdin.close()
         process.stdout.close()
         process.stderr.close()
-    await uploads.recover_orphan_uploads(case.root)
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert not (case.root / filename).exists()
     assert case.old.exists()
 
@@ -203,7 +204,7 @@ async def test_all_reference_columns_and_legacy_absolute_paths_protect_files(upl
         # The owning KB may also have been soft-deleted.
         await db.execute(update(KnowledgeBaseModel).where(KnowledgeBaseModel.id == case.base_id).values(is_deleted=deleted))
         await db.commit()
-    await uploads.recover_orphan_uploads(case.root)
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert all(path.exists() for path in (case.old, pending, cleanup, alias))
 
 
@@ -213,7 +214,7 @@ async def test_successful_replacement_keeps_original_and_pending_files(upload_db
         await invoke(case, db, "replace")
     document = await document_snapshot(case)
     pending = case.root / document.pending_file["file_path"]
-    await uploads.recover_orphan_uploads(case.root)
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert pending.read_bytes() == b"new contents" and case.old.read_bytes() == b"old contents"
 
 
@@ -238,7 +239,7 @@ async def test_references_in_another_deleted_document_are_included(upload_db):
             )
         )
         await db.commit()
-    await uploads.recover_orphan_uploads(case.root)
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert all(path.exists() for path in files)
 
 
@@ -252,7 +253,7 @@ async def test_age_unknown_owner_and_legacy_names_are_conservative(upload_db, mo
     monkeypatch.setattr(uploads, "UPLOAD_RECOVERY_DELAY_SECONDS", 3600)
     os.utime(unknown, (1, 1))
     os.utime(legacy, (1, 1))
-    await uploads.recover_orphan_uploads(case.root)
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert all(path.exists() for path in (recent, unknown, legacy))
 
 
@@ -269,7 +270,7 @@ async def test_symlinks_traversal_and_nested_files_are_never_deleted(upload_db):
     async with case.sessions() as db:
         await db.execute(update(KnowledgeDocumentModel).values(file_cleanup_paths=["../outside.txt", str(outside)]))
         await db.commit()
-    await uploads.recover_orphan_uploads(case.root)
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert link.is_symlink() and outside.read_bytes() == b"outside" and nested_file.exists()
     root_alias = case.root.parent / "root-alias"
     root_alias.symlink_to(case.root, target_is_directory=True)
@@ -290,7 +291,7 @@ async def test_file_replaced_by_symlink_between_scan_and_unlink_is_safe(upload_d
         unlink(root, name, info)
 
     monkeypatch.setattr(uploads, "_unlink_upload", swap_then_unlink)
-    await uploads.recover_orphan_uploads(case.root)
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert orphan.is_symlink() and outside.read_bytes() == b"keep"
 
 
@@ -310,7 +311,7 @@ async def test_root_replaced_by_symlink_after_scan_cannot_escape(upload_db, monk
         unlink(root, name, info)
 
     monkeypatch.setattr(uploads, "_unlink_upload", swap_root_then_unlink)
-    await uploads.recover_orphan_uploads(case.root)
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert (outside / filename).read_bytes() == b"outside contents"
     assert (moved / filename).exists()
 
@@ -328,10 +329,10 @@ async def test_partial_failed_save_is_recovered_when_immediate_unlink_fails(uplo
         with pytest.raises(PermissionError):
             await invoke(case, db, "upload")
         (partial_file,) = set(case.root.iterdir()) - {case.old}
-        await uploads.recover_orphan_uploads(case.root)
+        await knowledge.reconcile_orphan_uploads(case.root)
         assert partial_file.exists()
         await db.rollback()
-    await uploads.recover_orphan_uploads(case.root)
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert not partial_file.exists() and case.old.exists()
 
 
@@ -349,10 +350,10 @@ async def test_unlink_failure_retries_and_does_not_block_other_files(upload_db, 
         unlink(root, name, info)
 
     monkeypatch.setattr(uploads, "_unlink_upload", fail_one)
-    await uploads.recover_orphan_uploads(case.root)
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert orphan.exists() and not other.exists()
     monkeypatch.setattr(uploads, "_unlink_upload", unlink)
-    await uploads.recover_orphan_uploads(case.root)
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert not orphan.exists() and case.old.exists()
 
 
@@ -360,8 +361,8 @@ async def test_competing_recovery_workers_are_idempotent(upload_db):
     case = upload_db
     orphan = case.root / f"kb-{case.base_id}-{uuid.uuid4().hex}.txt"
     orphan.write_bytes(b"orphan")
-    await asyncio.gather(*(uploads.recover_orphan_uploads(case.root) for _ in range(3)))
-    await uploads.recover_orphan_uploads(case.root)
+    await asyncio.gather(*(knowledge.reconcile_orphan_uploads(case.root) for _ in range(3)))
+    await knowledge.reconcile_orphan_uploads(case.root)
     assert not orphan.exists() and case.old.exists()
 
 
@@ -385,7 +386,7 @@ async def test_worker_loops_run_independently_and_cancel_cleanly(monkeypatch, bl
 
     monkeypatch.setattr(recovery.asyncio, "sleep", tick)
     monkeypatch.setattr(recovery, "recover_document_indexes", lambda: run("indexes"))
-    monkeypatch.setattr(recovery, "recover_orphan_uploads", lambda _root: run("uploads"))
+    monkeypatch.setattr(recovery.document_lifecycle, "reconcile_orphan_uploads", lambda: run("uploads"))
     worker = asyncio.create_task(recovery._run_recovery())
     try:
         await asyncio.wait_for(progressed.wait(), 2)

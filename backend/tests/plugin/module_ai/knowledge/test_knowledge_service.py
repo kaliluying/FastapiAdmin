@@ -6,8 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.base_schema import AuthSchema
 from app.core.exceptions import CustomException
+from app.plugin.module_ai.knowledge.document_lifecycle import KnowledgeDocumentLifecycle, build_chroma_metadata
 from app.plugin.module_ai.knowledge.schema import KnowledgeBaseOutSchema, RetrievalTestSchema
-from app.plugin.module_ai.knowledge.service import KnowledgeService, build_chroma_metadata
+from app.plugin.module_ai.knowledge.service import KnowledgeService
 
 
 def test_build_chroma_metadata_contains_required_filters():
@@ -27,12 +28,12 @@ def test_build_chroma_metadata_contains_required_filters():
 
 @pytest.mark.parametrize(("mode", "expected"), [("bm25", (False, True)), ("vector", (True, False))])
 def test_index_cleanup_does_not_initialize_absent_inactive_stores(monkeypatch, tmp_path, mode, expected):
-    from app.plugin.module_ai.knowledge import service as service_module
+    from app.plugin.module_ai.knowledge import document_lifecycle as service_module
 
     monkeypatch.setattr(service_module.settings, "RETRIEVAL_MODE", mode)
     monkeypatch.setattr(service_module.settings, "CHROMA_PERSIST_DIR", str(tmp_path / "absent-chroma"))
     monkeypatch.setattr(service_module.settings, "BM25_INDEX_DIR", str(tmp_path / "absent-bm25"))
-    assert KnowledgeService(AuthSchema())._index_backends_to_clean() == expected
+    assert KnowledgeDocumentLifecycle(AuthSchema())._index_backends_to_clean() == expected
 
 
 def test_knowledge_base_output_exposes_index_status_counts():
@@ -58,7 +59,7 @@ def test_knowledge_base_output_exposes_index_status_counts():
 @pytest.mark.asyncio
 async def test_bm25_indexing_skips_vector_dependencies_and_uses_chroma_ids(monkeypatch, tmp_path):
     """Verify BM25-only indexing avoids embeddings and retains shared chunk IDs."""
-    from app.plugin.module_ai.knowledge import service as service_module
+    from app.plugin.module_ai.knowledge import document_lifecycle as service_module
 
     knowledge_root = tmp_path / "knowledge"
     knowledge_root.mkdir()
@@ -145,7 +146,7 @@ async def test_bm25_indexing_skips_vector_dependencies_and_uses_chroma_ids(monke
 
     db = AsyncMock(spec=AsyncSession)
     db.execute.return_value = SimpleNamespace(rowcount=1)
-    result = await KnowledgeService(
+    result = await KnowledgeDocumentLifecycle(
         AuthSchema(db=db),
         store=VectorDependency(),
         embedding_client=VectorDependency(),
@@ -160,7 +161,7 @@ async def test_bm25_indexing_skips_vector_dependencies_and_uses_chroma_ids(monke
 @pytest.mark.asyncio
 async def test_delete_document_validates_all_ids_before_deleting_external_indexes(monkeypatch):
     """Reject mixed-scope deletes before touching Chroma, BM25, or database rows."""
-    from app.plugin.module_ai.knowledge import service as service_module
+    from app.plugin.module_ai.knowledge import document_lifecycle as service_module
 
     class DocumentCrud:
         def __init__(self):
@@ -207,7 +208,7 @@ async def test_delete_document_validates_all_ids_before_deleting_external_indexe
     db = AsyncMock(spec=AsyncSession)
     db.execute.return_value = SimpleNamespace(rowcount=1)
     db.get.return_value = SimpleNamespace(file_path=None, file_cleanup_paths=None, pending_file=None)
-    service = KnowledgeService(AuthSchema(db=db), store=store, bm25_index=bm25_index)
+    service = KnowledgeDocumentLifecycle(AuthSchema(db=db), store=store, bm25_index=bm25_index)
     with pytest.raises(CustomException) as error:
         await service.delete_document([41, 99])
 
