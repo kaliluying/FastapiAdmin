@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, Index, Integer, String, Text
+from sqlalchemy import JSON, DateTime, Index, Integer, String, Text, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.base_model import MappedBase, ModelMixin, UserMixin
@@ -51,6 +51,8 @@ class MemoryExtractionJobModel(MappedBase):
     user_message: Mapped[str] = mapped_column(Text, nullable=False)
     assistant_response: Mapped[str] = mapped_column(Text, nullable=False)
     attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), default="pending", server_default=text("'pending'"), nullable=False, index=True)
+    error_message: Mapped[str | None] = mapped_column(Text, default=None, nullable=True)
     available_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
     lease_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     token: Mapped[str | None] = mapped_column(String(32), nullable=True)

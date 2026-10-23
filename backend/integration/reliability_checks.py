@@ -1,4 +1,4 @@
-"""Disposable MySQL checks; model responses are deterministic and never sent externally."""
+"""使用临时数据库执行可靠性验收，模型响应仅由本地确定性替身生成。"""
 
 import asyncio
 import io
@@ -38,10 +38,19 @@ async def verify_reliability() -> dict:
     release = asyncio.Event()
     entered = asyncio.Event()
     full = asyncio.Event()
-    concurrent = maximum = calls = 0
+    concurrent = maximum = calls = failures = 0
+    terminal_events = []
 
     async def complete(_):
-        nonlocal concurrent, maximum, calls
+        nonlocal concurrent, maximum, calls, failures
+        if "terminal-failure" in _:
+            failures += 1
+            terminal_events.append(f"failure-{failures}")
+            raise ValueError("本地模型确定性失败")
+        if "terminal-success" in _:
+            async with async_db_session() as db:
+                previous = await db.scalar(select(Job).where(Job.user_id == str(terminal_user_id), Job.user_message == "terminal-failure"))
+                terminal_events.append("success-after-dead" if previous.status == "dead" else "success-before-dead")
         calls += 1
         concurrent += 1
         maximum = max(maximum, concurrent)
@@ -119,6 +128,29 @@ async def verify_reliability() -> dict:
             await drained()
             assert maximum == 4 and calls == 13
 
+            async with async_db_session() as db:
+                user = UserModel(username="terminal-queue", name="终态验收", password="unused")
+                db.add(user)
+                await db.flush()
+                terminal_user_id = user.id
+                crud = ChatSessionCRUD(SimpleNamespace(db=db, user=user))
+                session = await crud.create_crud(ChatSessionCreateSchema(title="终态与顺序"))
+                for message in ("terminal-failure", "terminal-success"):
+                    assert await crud.append_run_crud(session_id=session.session_id, message=message, response="ack")
+                await db.commit()
+            worker.wake_memory_worker()
+            async with asyncio.timeout(30):
+                while True:
+                    async with async_db_session() as db:
+                        jobs = (await db.scalars(select(Job).where(Job.user_id == str(terminal_user_id)))).all()
+                        memories = await db.scalar(select(func.count()).select_from(AiMemoryModel).where(AiMemoryModel.user_id == str(terminal_user_id)))
+                        if len(jobs) == 1 and jobs[0].status == "dead" and memories == 1:
+                            assert jobs[0].attempts == failures == 3
+                            assert jobs[0].token is None and jobs[0].lease_until is None
+                            assert terminal_events == ["failure-1", "failure-2", "failure-3", "success-after-dead"]
+                            break
+                    await asyncio.sleep(0.1)
+
             for operation in ("upload", "replace"):
                 for committed in (False, True):
                     async with async_db_session() as db:
@@ -165,7 +197,7 @@ async def verify_reliability() -> dict:
                     assert new_file.exists() == committed
                     assert old.read_bytes() == b"original"
 
-                    # The MySQL row lock must protect an aged file even before commit resolves.
+                    # 数据库行锁必须在事务结果确定前保护已写盘文件。
                     async with async_db_session() as db:
                         owner_model = KnowledgeBaseModel if operation == "upload" else KnowledgeDocumentModel
                         owner_id = base_id if operation == "upload" else document_id
@@ -191,7 +223,8 @@ async def verify_reliability() -> dict:
             "passed": True, "model": "deterministic local stand-in; no provider request",
             "checks": ["authenticated HTTP chat persists seven queued turns", "real SQL queue drains without lost turns",
                        "six users saturate four workers without skipping", "upload and replacement commit/rollback acknowledgment loss",
-                       "MySQL busy transaction is skipped, then orphan removed after rollback",
+                       "three failures reach dead status and unblock the next turn of the same user",
+                       "busy SQL transaction is skipped, then orphan removed after rollback",
                        "production recovery loop deletes orphan", "production shutdown drains memory workers"],
         }
     finally:

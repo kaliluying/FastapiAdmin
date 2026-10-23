@@ -4,11 +4,11 @@
 
 提供独立离线 CLI，不启动应用、不迁移数据库，也不直接覆盖正在使用的数据。所有命令从 `backend/` 执行。
 
-FastCore 正式支持的运行和生产数据库为 **MySQL**；**SQLite 仅用于自动化测试和隔离验收**。本指南的生产备份与恢复流程以 MySQL 为准。
+FastCore 正式支持的运行和生产数据库为 **MySQL 与 PostgreSQL**；**SQLite 仅用于自动化测试和隔离验收**。备份分别调用 `mysqldump` 与 `pg_dump`，均生成纯 SQL 文件。
 
 ## 备份范围与一致性前提
 
-备份包含选定环境的完整关系数据库、`storage/knowledge` 原件、私有上传目录、Chroma 持久化目录及 BM25 索引。正式运行环境使用 MySQL `mysqldump`，保留数据库原生结构和数据，不通过 JSON 重建表；自动化测试覆盖 SQLite backup API。
+备份包含选定环境的完整关系数据库、`storage/knowledge` 原件、私有上传目录、Chroma 持久化目录及 BM25 索引。关系库通过对应数据库的原生 dump 工具保留结构与数据，不通过 JSON 重建表；自动化测试覆盖 SQLite backup API。
 
 **必须先停止所有后端实例、文档处理/索引工作进程及其他数据库和文件写入方，等待任务收尾。** `--writers-stopped` 是操作人的明确确认，程序无法证明停机。分别复制正在写入的数据库与索引无法获得跨存储一致快照；MySQL `--single-transaction` 也不能解决跨文件和非事务表一致性。不得在备份期间进行 DDL。
 
@@ -30,7 +30,7 @@ uv run python -m app.scripts.backup verify /private/fastcore-backups/2026-10-11.
 
 目录示例须替换为实际可写的私有磁盘路径。已有输出不覆盖；输出不能位于被备份的存储源内。失败时不会发布 ZIP，暂存文件自动清理；进程被强制终止可能留下 `.backup-*` 私有暂存目录，确认无活动进程后人工清理。
 
-MySQL 需要与数据库服务版本兼容的 `mysqldump`。CLI 不安装系统软件；缺少工具、权限不足或连接失败会中止。MySQL 备份账号需要读取表及导出触发器、存储过程和事件的权限。密码不会进入命令参数、清单或正常日志；工具错误文本被隐藏，避免意外打印连接信息。
+MySQL 需要与数据库服务版本兼容的 `mysqldump`；PostgreSQL 需要兼容的 `pg_dump`。CLI 不安装系统软件；缺少工具、权限不足或连接失败会中止。MySQL 备份账号需要读取表及导出触发器、存储过程和事件的权限。PostgreSQL 账号需能读取目标数据库对象。密码不会进入命令参数、清单或正常日志；PostgreSQL 使用权限为 `0600` 的临时 `PGPASSFILE`，工具错误文本被隐藏，避免意外打印连接信息。
 
 清单记录格式版本、UTC 创建时间、停写前提、数据库类型、存储存在情况、所有文件大小和 SHA-256。验证拒绝缺失/额外文件、长度或摘要变化、重复条目、路径穿越和特殊文件。**SHA-256 用于发现损坏，不证明备份来源可信**；清单和文件一起被恶意重写不能被此机制识别。只恢复可信管理员保管的备份。
 
@@ -48,7 +48,7 @@ uv run python -m app.scripts.backup restore \
 
 ```text
 fastcore-restore-drill/
-  database.sql       # MySQL 正式运行数据库
+  database.sql       # MySQL 或 PostgreSQL 正式运行数据库
   database.db        # SQLite 测试产物
   knowledge/         # 存在时恢复，包含空目录
   upload/
@@ -74,6 +74,16 @@ mysql --login-path=restore-drill --database=fastcore_restore_drill \
 ```
 
 示例登录路径和数据库名必须事先由管理员设置。MySQL DDL 不保证全导入回滚，失败可能留下部分结构；失败目标不能继续作为完整恢复结果，只能重新准备新的空库重试。导出包含触发器、过程及事件，导入前审查其执行权限及 DEFINER；隔离演练服务关闭 event scheduler，避免执行定时事件。
+
+### PostgreSQL
+
+由管理员在隔离服务新建专用的空数据库和最小授权账号。确认目标库没有应用对象后，用 `psql` 导入纯 SQL 备份：
+
+```bash
+psql --no-psqlrc --set=ON_ERROR_STOP=1 --host=127.0.0.1 --username=restore_drill --dbname=fastcore_restore_drill --file=/private/fastcore-restore-drill/database.sql
+```
+
+不要在命令参数中提供密码；使用受保护的 `.pgpass`、`PGPASSFILE` 或交互式提示。备份通过 `--no-owner --no-privileges` 导出，不包含集群级角色；需要按部署策略预先创建角色并重新配置授权。SQL 导入失败可能留下部分对象，失败目标不可视为完整恢复结果，应重新准备空库再试。
 
 ## 文件、索引与上线验收
 

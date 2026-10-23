@@ -25,6 +25,7 @@ MEMORY_WORKERS = 4
 MEMORY_TIMEOUT_SECONDS = 90
 MEMORY_LEASE_SECONDS = 120
 MEMORY_POLL_SECONDS = 1
+MEMORY_MAX_ATTEMPTS = 3
 _workers: set[asyncio.Task] = set()
 _wake: asyncio.Event | None = None
 _stopping = False
@@ -50,8 +51,16 @@ async def claim_memory_job() -> Job | None:
     now = datetime.now()
     older = aliased(Job)
     # 每个用户仅允许执行最早的未完成轮次，跨进程也遵循此约束。
-    no_older = ~select(older.id).where(older.user_id == Job.user_id, older.id < Job.id).exists()
-    available = (Job.available_at <= now, or_(Job.lease_until.is_(None), Job.lease_until <= now))
+    no_older = ~select(older.id).where(
+        older.user_id == Job.user_id,
+        older.id < Job.id,
+        older.status == "pending",
+    ).exists()
+    available = (
+        Job.status == "pending",
+        Job.available_at <= now,
+        or_(Job.lease_until.is_(None), Job.lease_until <= now),
+    )
     async with async_db_session() as db, db.begin():
         job = await db.scalar(select(Job).where(*available, no_older).order_by(Job.id).limit(1))
         if job is None:
@@ -62,7 +71,7 @@ async def claim_memory_job() -> Job | None:
         await db.execute(update(UserModel).where(UserModel.id == int(user_id)).values(
             id=UserModel.id, updated_time=UserModel.updated_time,
         ))
-        job = await db.scalar(select(Job).where(Job.user_id == user_id).order_by(Job.id).limit(1).with_for_update())
+        job = await db.scalar(select(Job).where(Job.user_id == user_id, Job.status == "pending").order_by(Job.id).limit(1).with_for_update())
         running = await db.scalar(select(Job.id).where(
             Job.user_id == user_id, Job.lease_until > now,
         ).limit(1).with_for_update())
@@ -142,9 +151,14 @@ async def _load_memories(job: Job):
 
 async def _retry_job(job: Job, *, immediate: bool = False) -> None:
     delay = 0 if immediate else min(300, 2 ** min(job.attempts, 8))
+    terminal = not immediate and job.attempts >= MEMORY_MAX_ATTEMPTS
     async with async_db_session() as db, db.begin():
         await db.execute(update(Job).where(Job.id == job.id, Job.token == job.token).values(
-            token=None, lease_until=None, available_at=datetime.now() + timedelta(seconds=delay),
+            status="dead" if terminal else "pending",
+            token=None,
+            lease_until=None,
+            available_at=datetime.now() + timedelta(seconds=delay),
+            error_message="记忆提取失败，已达到最大重试次数" if terminal else None,
         ))
 
 

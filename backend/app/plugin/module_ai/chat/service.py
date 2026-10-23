@@ -52,20 +52,7 @@ from .usage import track_chat_usage, track_stream_usage
 
 
 async def _format_session_data(session: ChatSession, auth: AuthSchema | None = None) -> dict[str, Any]:
-    session_dict = (
-        session.to_dict()
-        if hasattr(session, "to_dict")
-        else {
-            "session_id": getattr(session, "session_id", ""),
-            "team_id": getattr(session, "team_id", None),
-            "user_id": getattr(session, "user_id", None),
-            "session_data": getattr(session, "session_data", None),
-            "runs": getattr(session, "runs", []),
-            "summary": getattr(session, "summary", None),
-            "created_at": getattr(session, "created_at", None),
-            "updated_at": getattr(session, "updated_at", None),
-        }
-    )
+    session_dict = session.to_dict()
     session_data = session_dict.get("session_data") or {}
     runs = session_dict.get("runs") or []
     if auth:

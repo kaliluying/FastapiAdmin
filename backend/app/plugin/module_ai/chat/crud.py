@@ -79,26 +79,6 @@ class ChatSessionCRUD:
             logger.error(f"获取聊天会话详情失败: {e}")
             return None
 
-    async def list_crud(
-        self,
-        search: dict[str, Any] | None = None,
-        order_by: list[dict[str, str]] | None = None,
-    ) -> list[ChatSession]:
-        try:
-            stmt = select(ChatSessionModel).where(
-                ChatSessionModel.user_id == self.user_id,
-                ChatSessionModel.is_deleted == False,  # noqa: E712
-            )
-            title = (search or {}).get("title")
-            if title:
-                stmt = stmt.where(ChatSessionModel.session_data["session_name"].as_string().like(f"%{title}%"))
-            stmt = stmt.order_by(ChatSessionModel.updated_time.desc())
-            result = await self.db.execute(stmt)
-            return [self._to_session(obj) for obj in result.scalars().all()]
-        except Exception as e:
-            logger.error(f"获取聊天会话列表失败: {e}")
-            return []
-
     async def create_crud(self, data: ChatSessionCreateSchema) -> ChatSession | None:
         try:
             obj = ChatSessionModel(

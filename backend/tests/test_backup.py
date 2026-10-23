@@ -193,7 +193,7 @@ with idx.searcher() as searcher:
         archive = self.root / "mysql.zip"
         database = {"type": "mysql", "host": "localhost", "port": 3306, "user": "test", "password": password, "name": "isolated"}
 
-        def run(args, *, stdout, stderr, check):
+        def run(args, *, stdout, stderr, check, env=None):
             self.assertNotIn(password, " ".join(args))
             stdout.write(b"native-dump-fixture")
             return subprocess.CompletedProcess(args, 0)
@@ -203,6 +203,25 @@ with idx.searcher() as searcher:
         with zipfile.ZipFile(archive) as bundle:
             self.assertNotIn(password, bundle.read("manifest.json").decode())
         restore_backup(archive, self.root / "restored-mysql")
+
+    def test_postgresql_dump_uses_private_passfile_and_escapes_match_fields(self):
+        password = "private:password\\value"
+        archive = self.root / "postgresql.zip"
+        database = {"type": "postgresql", "host": "db*host?", "port": 5432, "user": "test", "password": password, "name": "isolated"}
+
+        def run(args, *, stdout, stderr, check, env):
+            self.assertNotIn(password, " ".join(args))
+            self.assertEqual(args[0], "fake-pg-dump")
+            passfile = Path(env["PGPASSFILE"])
+            self.assertEqual(os.stat(passfile).st_mode & 0o777, 0o600)
+            self.assertEqual(passfile.read_text(), r"db\*host\?:5432:isolated:test:private\:password\\value" + "\n")
+            stdout.write(b"postgresql-dump-fixture")
+            return subprocess.CompletedProcess(args, 0)
+
+        with patch("app.scripts.backup.shutil.which", return_value="fake-pg-dump"), patch("app.scripts.backup.subprocess.run", side_effect=run):
+            create_backup(archive, database, self.stores, stopped=True)
+        manifest = verify_backup(archive)
+        self.assertEqual(manifest["database_type"], "postgresql")
 
 
 if __name__ == "__main__":

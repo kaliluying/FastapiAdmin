@@ -27,7 +27,7 @@ class MappedBase(AsyncAttrs, DeclarativeBase):
 
     `mapped_column() <https://docs.sqlalchemy.org/en/20/orm/mapping_api.html#sqlalchemy.orm.mapped_column>`__
 
-    MySQL 用于正式运行，SQLite 用于自动化测试
+    MySQL 和 PostgreSQL 用于正式运行，SQLite 用于自动化测试
     """
 
     __abstract__: bool = True

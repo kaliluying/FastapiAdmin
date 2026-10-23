@@ -1,7 +1,8 @@
-"""Standalone acceptance against explicitly disposable, loopback MySQL and Redis."""
+"""使用独立临时 MySQL/PostgreSQL 和 Redis 执行真实应用验收。"""
 
 import argparse
 import asyncio
+import hashlib
 import json
 import os
 import secrets
@@ -14,15 +15,17 @@ from io import BytesIO
 from pathlib import Path
 from types import SimpleNamespace
 
+from processes import run_isolated
+
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def validate_target(mysql_port: int, redis_port: int, acknowledged: bool) -> None:
     if not acknowledged:
-        raise ValueError("必须确认 --disposable-services；只允许独立临时 MySQL/Redis 实例")
+        raise ValueError("必须确认 --disposable-services；只允许独立临时数据库/Redis 实例")
     if any(port < 1024 or port > 65535 for port in (mysql_port, redis_port)):
         raise ValueError("集成端口必须位于 1024..65535")
-    if mysql_port in {3306, 6379} or redis_port in {3306, 6379} or mysql_port == redis_port:
+    if mysql_port in {3306, 5432, 6379} or redis_port in {3306, 5432, 6379} or mysql_port == redis_port:
         raise ValueError("拒绝默认或重复端口，请使用独立临时服务")
 
 
@@ -150,15 +153,30 @@ async def verify_runtime() -> dict:
 
     async def snapshot() -> dict:
         async with async_engine.connect() as connection:
-            tables = await connection.run_sync(lambda sync: sorted(inspect(sync).get_table_names()))
-            return {
-                table: int((await connection.execute(text(f"SELECT COUNT(*) FROM `{table}`"))).scalar_one())
-                for table in tables
-            }
+            quote = connection.dialect.identifier_preparer.quote
+            def structure(sync):
+                inspector = inspect(sync)
+                return {
+                    table: {
+                        "columns": [{**column, "type": str(column["type"])} for column in inspector.get_columns(table)],
+                        "primary_key": inspector.get_pk_constraint(table),
+                        "foreign_keys": inspector.get_foreign_keys(table),
+                        "indexes": inspector.get_indexes(table),
+                        "unique_constraints": inspector.get_unique_constraints(table),
+                    }
+                    for table in sorted(inspector.get_table_names())
+                }
+
+            result = await connection.run_sync(structure)
+            for table in result:
+                rows = sorted(json.dumps(list(row), sort_keys=True, default=str) for row in (await connection.execute(text(f"SELECT * FROM {quote(table)}"))).all())
+                result[table]["rows"] = len(rows)
+                result[table]["sha256"] = hashlib.sha256("\n".join(rows).encode()).hexdigest()
+            return result
 
     initial = await snapshot()
-    assert initial.get("sys_user", 0) > 0
-    assert initial.get("alembic_version", 0) > 0
+    assert initial["sys_user"]["rows"] > 0
+    assert initial["alembic_version"]["rows"] > 0
     redis = Redis.from_url(settings.REDIS_URI, decode_responses=True)
     try:
         crud = RedisCURD(redis)
@@ -239,7 +257,7 @@ async def verify_runtime() -> dict:
                     await connection.execute(text("INSERT INTO alembic_version (version_num) VALUES (:head)"), {"head": head})
         return {
             "passed": True,
-            "database": "disposable MySQL",
+            "database": f"disposable {settings.DATABASE_TYPE}",
             "redis": "real Redis database 15",
             "checks": ["automatic startup migration and initialization", "production restart preserves schema/seed data", "Redis expiry and owner fencing", "startup lock serialization", "configured HTTP limit and expiry", "explicit stale schema rejection"],
         }
@@ -274,14 +292,29 @@ def run_child(phase: str) -> None:
 
         evidence = asyncio.run(verify_reliability() if phase == "verify-reliability" else memory_restart_phase(phase))
         (Path(os.environ["FASTCORE_INTEGRATION_ROOT"]) / f"{phase}-{os.getpid()}.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
+    elif phase == "http":
+        from http_checks import verify_http
+
+        evidence = verify_http()
+        (Path(os.environ["FASTCORE_INTEGRATION_ROOT"]) / "http-results.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
+    elif phase == "backup":
+        from backup_checks import verify_backup_restore
+
+        evidence = verify_backup_restore()
+        (Path(os.environ["FASTCORE_INTEGRATION_ROOT"]) / "backup-results.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
+    elif phase == "legacy-upgrade":
+        from migration_checks import verify_legacy_upgrade
+
+        verify_legacy_upgrade()
     else:
         evidence = asyncio.run(verify_runtime())
         (Path(os.environ["FASTCORE_INTEGRATION_ROOT"]) / "runtime-results.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
 
 
-def run(mysql_port: int, redis_port: int, acknowledged: bool) -> Path:
+def run(mysql_port: int, redis_port: int, acknowledged: bool, database_type: str = "mysql") -> Path:
     validate_target(mysql_port, redis_port, acknowledged)
-    import pymysql
+    if database_type not in {"mysql", "postgresql"}:
+        raise ValueError("验收数据库必须为 mysql 或 postgresql")
     from redis import Redis
 
     redis = Redis(host="127.0.0.1", port=redis_port, db=15, decode_responses=True)
@@ -293,24 +326,37 @@ def run(mysql_port: int, redis_port: int, acknowledged: bool) -> Path:
         redis.ping()
         if redis.dbsize():
             raise ValueError("拒绝非空 Redis DB 15；请提供全新临时实例")
-        connection = pymysql.connect(
-            host="127.0.0.1",
-            port=mysql_port,
-            user=os.environ.get("INTEGRATION_MYSQL_USER", "root"),
-            password=os.environ.get("INTEGRATION_MYSQL_PASSWORD", ""),
-            autocommit=True,
-        )
+        if database_type == "postgresql":
+            import psycopg
+
+            database_user = os.environ.get("INTEGRATION_POSTGRESQL_USER", "postgres")
+            database_password = os.environ.get("INTEGRATION_POSTGRESQL_PASSWORD", "")
+            connection = psycopg.connect(
+                host="127.0.0.1", port=mysql_port, user=database_user,
+                password=database_password, dbname="postgres", autocommit=True,
+            )
+            create_statement = f'CREATE DATABASE "{database_name}"'
+        else:
+            import pymysql
+
+            database_user = os.environ.get("INTEGRATION_MYSQL_USER", "root")
+            database_password = os.environ.get("INTEGRATION_MYSQL_PASSWORD", "")
+            connection = pymysql.connect(
+                host="127.0.0.1", port=mysql_port, user=database_user,
+                password=database_password, autocommit=True,
+            )
+            create_statement = f"CREATE DATABASE `{database_name}` CHARACTER SET utf8mb4"
         with connection.cursor() as cursor:
-            cursor.execute(f"CREATE DATABASE `{database_name}` CHARACTER SET utf8mb4")
+            cursor.execute(create_statement)
         created = True
         environment = {
             **os.environ,
             "ENVIRONMENT": "prod",
-            "DATABASE_TYPE": "mysql",
+            "DATABASE_TYPE": database_type,
             "DATABASE_HOST": "127.0.0.1",
             "DATABASE_PORT": str(mysql_port),
-            "DATABASE_USER": os.environ.get("INTEGRATION_MYSQL_USER", "root"),
-            "DATABASE_PASSWORD": os.environ.get("INTEGRATION_MYSQL_PASSWORD", ""),
+            "DATABASE_USER": database_user,
+            "DATABASE_PASSWORD": database_password,
             "DATABASE_NAME": database_name,
             "REDIS_ENABLE": "true",
             "REDIS_HOST": "127.0.0.1",
@@ -334,16 +380,17 @@ def run(mysql_port: int, redis_port: int, acknowledged: bool) -> Path:
             "BM25_INDEX_DIR": str(artifacts / "bm25"),
             "LOCAL_EMBEDDING_CACHE_DIR": str(artifacts / "embeddings"),
             "ANONYMIZED_TELEMETRY": "False",
+            "IP_LOCATION_ENABLE": "false",
             "FASTCORE_INTEGRATION_ROOT": str(artifacts),
             "PYTHONPATH": os.pathsep.join([str(ROOT / "integration"), str(ROOT)]),
         }
         def run_phase(phase: str) -> None:
             with (artifacts / f"{phase}.log").open("w", encoding="utf-8") as log:
-                process = subprocess.run([sys.executable, str(Path(__file__).resolve()), "--phase", phase], cwd=ROOT, env=environment, stdout=log, stderr=log, timeout=180, check=False)
+                process = run_isolated([sys.executable, str(Path(__file__).resolve()), "--phase", phase], cwd=ROOT, env=environment, stdout=log, stderr=log, timeout=180)
             if process.returncode != 0:
                 raise RuntimeError(f"隔离集成 {phase} 失败，诊断日志：{artifacts / f'{phase}.log'}")
 
-        for phase in ["empty-schema", "bootstrap", "upgrade", "verify", "verify-reliability"]:
+        for phase in ["empty-schema", "bootstrap", "upgrade", "verify", "verify-reliability", "http"]:
             run_phase(phase)
 
         from reliability_checks import verify_memory_process_restart
@@ -366,10 +413,18 @@ def run(mysql_port: int, redis_port: int, acknowledged: bool) -> Path:
                     worker.kill()
                     worker.wait(timeout=5)
         fixture = json.loads((artifacts / "document.json").read_text(encoding="utf-8"))
-        with connection.cursor() as cursor:
-            cursor.execute(f"SELECT index_status, index_attempts, index_token FROM `{database_name}`.ai_knowledge_document WHERE id=%s", (fixture["document_id"],))
-            status, attempts, token = cursor.fetchone()
-            assert status == "indexing" and attempts == 1 and token
+        if database_type == "postgresql":
+            with psycopg.connect(
+                host="127.0.0.1", port=mysql_port, user=database_user,
+                password=database_password, dbname=database_name,
+            ) as database_connection, database_connection.cursor() as cursor:
+                cursor.execute("SELECT index_status, index_attempts, index_token FROM ai_knowledge_document WHERE id=%s", (fixture["document_id"],))
+                status, attempts, token = cursor.fetchone()
+        else:
+            with connection.cursor() as cursor:
+                cursor.execute(f"SELECT index_status, index_attempts, index_token FROM `{database_name}`.ai_knowledge_document WHERE id=%s", (fixture["document_id"],))
+                status, attempts, token = cursor.fetchone()
+        assert status == "indexing" and attempts == 1 and token
         time.sleep(2.2)
         restart_pids = []
         for restart in range(2):
@@ -383,31 +438,46 @@ def run(mysql_port: int, redis_port: int, acknowledged: bool) -> Path:
                         process.wait(timeout=5)
                 restart_pids.append(process.pid)
         assert len({worker.pid, *restart_pids}) == 3
+        run_phase("backup")
         evidence_file = artifacts / "runtime-results.json"
         evidence = json.loads(evidence_file.read_text(encoding="utf-8"))
         evidence["checks"].append("real process SIGKILL and two production startup/shutdown cycles recover persistent document")
         evidence["restart"] = {"killed_pid": worker.pid, "exit_code": -signal.SIGKILL, "restart_pids": restart_pids}
-        evidence["boundary"] = "real MySQL/Redis/production lifecycle/SQL claims/file parsing/BM25; parser pause barrier and 2-second lease only in killed fixture process; BM25 mode, no external model/embedding requests"
+        isolated = [json.loads(path.read_text(encoding="utf-8")) for path in artifacts.glob("isolation-*.json")]
+        assert sum(item["module_entry"] for item in isolated) >= 2, "必须包含实际初始化子进程的隔离证据"
+        for item in isolated:
+            for key, directory in {"environment": "environment", "logs": "logs", "uploads": "uploads", "downloads": "downloads"}.items():
+                assert Path(item[key]) == artifacts.resolve() / directory
+        evidence["isolation"] = {
+            "passed": True, "python_processes": len(isolated),
+            "module_bootstrap_processes": sum(item["module_entry"] for item in isolated),
+        }
+        evidence["boundary"] = f"real {database_type}/Redis/production lifecycle/TCP HTTP/SQL claims/file parsing/BM25; explicit local model and crash barriers; no external provider requests"
         evidence_file.write_text(json.dumps(evidence, indent=2), encoding="utf-8")
         return artifacts
     finally:
-        if created and connection is not None:
-            with connection.cursor() as cursor:
-                cursor.execute(f"DROP DATABASE `{database_name}`")
-        if connection is not None:
-            connection.close()
-        redis.close()
+        try:
+            if created and connection is not None:
+                with connection.cursor() as cursor:
+                    identifier = f'"{database_name}"' if database_type == "postgresql" else f"`{database_name}`"
+                    suffix = " WITH (FORCE)" if database_type == "postgresql" else ""
+                    cursor.execute(f"DROP DATABASE {identifier}{suffix}")
+        finally:
+            if connection is not None:
+                connection.close()
+            redis.close()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--mysql-port", type=int, default=33306)
+    parser.add_argument("--mysql-port", "--database-port", type=int, default=33306)
+    parser.add_argument("--database-type", choices=["mysql", "postgresql"], default="mysql")
     parser.add_argument("--redis-port", type=int, default=36379)
     parser.add_argument("--disposable-services", action="store_true")
     parser.add_argument("--phase", choices=["empty-schema", "bootstrap", "upgrade", "verify", "prepare-recovery", "crash-index", "recover-index",
-                                          "verify-reliability", "prepare-memory", "crash-memory", "recover-memory"], help=argparse.SUPPRESS)
+                                          "verify-reliability", "prepare-memory", "crash-memory", "recover-memory", "http", "backup", "legacy-upgrade"], help=argparse.SUPPRESS)
     arguments = parser.parse_args()
     if arguments.phase:
         run_child(arguments.phase)
     else:
-        print(f"Runtime acceptance passed; evidence: {run(arguments.mysql_port, arguments.redis_port, arguments.disposable_services)}")
+        print(f"Runtime acceptance passed; evidence: {run(arguments.mysql_port, arguments.redis_port, arguments.disposable_services, arguments.database_type)}")

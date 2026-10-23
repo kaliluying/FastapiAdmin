@@ -46,13 +46,13 @@ flowchart LR
 
 ## 数据库支持范围
 
-FastCore 正式支持的运行和生产数据库为 **MySQL**。**SQLite 仅用于自动化测试和隔离验收**，不作为开发部署或生产数据库。
+FastCore 正式支持的运行和生产数据库为 **MySQL 与 PostgreSQL**。**SQLite 仅用于自动化测试和隔离验收**，不作为开发部署或生产数据库。两种正式数据库使用各自的 SQLAlchemy async/sync 驱动；部署需安装相应原生 dump 客户端以执行数据库备份。
 
 ## 数据归属与知识库链路
 
 | 数据 | 存放位置 | 开发时要确认的事 |
 | --- | --- | --- |
-| 用户、权限、菜单、知识库元数据、chunk 与状态 | MySQL（正式支持）；SQLite 仅用于测试与隔离验收 | 数据库目标、迁移与事务；自动化测试默认使用临时 SQLite |
+| 用户、权限、菜单、知识库元数据、chunk 与状态 | MySQL/PostgreSQL（正式支持）；SQLite 仅用于测试与隔离验收 | 数据库目标、迁移与事务；自动化测试默认使用临时 SQLite |
 | 启动锁、缓存、限流与会话相关状态 | Redis | 正常启动需要可访问的 Redis |
 | 通用上传与知识库原件 | `backend/storage/upload/`、`backend/storage/knowledge/` | 私有文件与数据库记录的一致性；不要在 API 中暴露服务器绝对路径 |
 | 向量与文本块 | `CHROMA_PERSIST_DIR` 指定的 Chroma 目录 | Embedding 模型变化时检查向量维度与集合 |
@@ -74,6 +74,8 @@ FastCore 正式支持的运行和生产数据库为 **MySQL**。**SQLite 仅用�
 文本模型使用 `ChatModel`；需要结构化工具调用的模型使用扩展协议 `ToolChatModel`。供应商内容块通过公共函数 `content_to_text()` 转换，调用方不依赖 LangChain 适配器的私有方法。知识文档的索引恢复、状态、租约、重试及跨存储清理由 `KnowledgeDocumentLifecycle` 集中处理；知识库与文档只读、检索仍由 `KnowledgeService` 提供。恢复 worker 负责启动、轮询和停止。
 
 文档写操作的 controller 和恢复 worker 直接使用 `knowledge/document_lifecycle.py`，知识库删除委托它清理关联文档；`knowledge/_upload_recovery.py` 是上传核对的私有实现。生命周期 module 保留 HTTP 行为、权限和数据范围检查，自行负责事务结果与存储清理顺序，提交结果不确定时保留文件，孤儿回收在锁内确认无引用后才执行。这里采用 CodeVault Scheduler Reconciliation 的“SQL 保存事实、轮询核对”原则，沿用现有 SQL 原子认领及两个独立 worker，不引入全局 Leader 或进程内任务队列。
+
+聊天会话列表统一使用 `ChatSessionCRUD.page_crud()`，旧的 `list_crud()` 已移除。会话响应格式化接收 `chat.crud.ChatSession`，自定义调用方需先将普通对象转换为该类型；HTTP 响应字段保持原样。查询分析统一从 `app.plugin.module_ai.knowledge.public` 导入 `QueryAnalysis`、`QueryAnalyzer`，不再保留 `chat.query_analyzer` 兼容入口；聊天检索器使用 `chat.hybrid_retriever.KnowledgeBaseChatRetriever`，旧名 `HybridKnowledgeRetriever` 已移除。自定义脚本需同步更新这些导入与调用。
 
 AI 内部依赖保持单向：`quality → chat / knowledge`、`chat → memory / knowledge`；`memory` 与 `knowledge` 不依赖其他 AI 功能。跨模块读取保存的回答使用 `chat.public.get_saved_answer()`，文档归属校验使用 `knowledge.public.validate_document_scope()`；质量评测继续使用承担检索与权限校验的 `KnowledgeService.query_retrieval()`，不直接访问知识库 CRUD。静态导入约束由 `backend/tests/test_module_boundaries.py` 检查，覆盖绝对、相对及函数内导入。AI 的 `module.py` 仍是组合根，统一登记各模块模型、索引和生命周期。
 

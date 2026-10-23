@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 
 STORE_NAMES = {"knowledge", "upload", "chroma", "bm25"}
-DATABASE_FILES = {"sqlite": "database.db", "mysql": "database.sql"}
+DATABASE_FILES = {"sqlite": "database.db", "mysql": "database.sql", "postgresql": "database.sql"}
 
 
 class BackupError(ValueError):
@@ -71,24 +71,35 @@ def _run_dump(database: dict, target: Path) -> None:
                 raise BackupError("SQLite 完整性检查失败")
         os.chmod(target, 0o600)
         return
-    binary = shutil.which("mysqldump")
+    binary_name = "pg_dump" if kind == "postgresql" else "mysqldump"
+    binary = shutil.which(binary_name)
     if not binary:
-        raise BackupError("缺少 mysqldump，请先安装与数据库服务版本兼容的客户端")
+        raise BackupError(f"缺少 {binary_name}，请先安装与数据库服务版本兼容的客户端")
     # 凭据仅写入私有临时文件，不进入清单或命令行参数。
     with tempfile.TemporaryDirectory(prefix="fastcore-db-auth-") as auth_dir:
-        config = Path(auth_dir) / "client.cnf"
+        if kind == "postgresql":
+            config = Path(auth_dir) / "pgpass"
+            fields = (database["host"], database["port"], database["name"], database["user"], database["password"])
+            escaped = [str(field).replace("\\", "\\\\").replace(":", "\\:") for field in fields]
+            escaped[:4] = [field.replace("*", "\\*").replace("?", "\\?") for field in escaped[:4]]
+            config.write_text(":".join(escaped) + "\n", encoding="utf-8")
+            args = [binary, "--no-password", "--format=plain", "--no-owner", "--no-privileges", "--host", database["host"], "--port", str(database["port"]), "--username", database["user"], "--", database["name"]]
+            environment = {**os.environ, "PGPASSFILE": str(config)}
+        else:
+            config = Path(auth_dir) / "client.cnf"
 
-        def quote(value: object) -> str:
-            return '"' + str(value).replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r") + '"'
+            def quote(value: object) -> str:
+                return '"' + str(value).replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r") + '"'
 
-        config.write_text("[client]\n" + "\n".join(f"{key}={quote(database[key])}" for key in ("host", "port", "user", "password")), encoding="utf-8")
+            config.write_text("[client]\n" + "\n".join(f"{key}={quote(database[key])}" for key in ("host", "port", "user", "password")), encoding="utf-8")
+            args = [binary, f"--defaults-extra-file={config}", "--single-transaction", "--routines", "--events", "--triggers", "--hex-blob", "--no-tablespaces", "--", database["name"]]
+            environment = None
         os.chmod(config, 0o600)
-        args = [binary, f"--defaults-extra-file={config}", "--single-transaction", "--routines", "--events", "--triggers", "--hex-blob", "--no-tablespaces", "--", database["name"]]
         with target.open("xb") as stream:
             os.chmod(target, 0o600)
-            result = subprocess.run(args, stdout=stream, stderr=subprocess.PIPE, check=False)
+            result = subprocess.run(args, stdout=stream, stderr=subprocess.PIPE, check=False, env=environment)
         if result.returncode or target.stat().st_size == 0:
-            raise BackupError("mysqldump 备份失败；请检查连接、权限及客户端版本（错误内容已隐藏）")
+            raise BackupError(f"{binary_name} 备份失败；请检查连接、权限及客户端版本（错误内容已隐藏）")
 
 
 def create_backup(output: Path, database: dict, stores: dict[str, Path], *, stopped: bool) -> None:
@@ -232,7 +243,7 @@ def _project_sources(env: str) -> tuple[dict, dict[str, Path]]:
     database = {
         "type": settings.DATABASE_TYPE,
         "host": settings.DATABASE_HOST,
-        "port": settings.DATABASE_PORT,
+        "port": settings.DATABASE_PORT or (5432 if settings.DATABASE_TYPE == "postgresql" else 3306),
         "user": settings.DATABASE_USER,
         "password": settings.DATABASE_PASSWORD,
         "name": settings.DATABASE_NAME,

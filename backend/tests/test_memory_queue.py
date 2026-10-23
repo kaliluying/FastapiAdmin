@@ -248,6 +248,33 @@ async def test_failures_keep_jobs_and_retry_without_partial_memory_writes(queue,
     assert await count(sessions, AiMemoryModel) == 1
 
 
+async def test_permanent_failure_becomes_dead_and_does_not_block_later_turn(queue, monkeypatch):
+    sessions, model = queue
+    monkeypatch.setattr(worker, "MEMORY_MAX_ATTEMPTS", 1)
+    first_session_id, _ = await add_turn(sessions)
+    async with sessions() as db:
+        crud = ChatSessionCRUD(SimpleNamespace(db=db, user=SimpleNamespace(id=1)))
+        assert await crud.append_run_crud(session_id=first_session_id, message="another turn", response="ok")
+        await db.commit()
+    model.complete.side_effect = RuntimeError("provider unavailable")
+
+    first = await worker.claim_memory_job()
+    await worker.process_memory_job(first)
+
+    async with sessions() as db:
+        dead = await db.get(Job, first.id)
+        assert dead.status == "dead"
+        assert dead.token is None and dead.lease_until is None
+        assert dead.error_message == "记忆提取失败，已达到最大重试次数"
+
+    model.complete.side_effect = None
+    model.complete.return_value = RESULT
+    second = await worker.claim_memory_job()
+    assert second is not None and second.session_id == first_session_id
+    await worker.process_memory_job(second)
+    assert await count(sessions, Job) == 1
+
+
 @pytest.mark.parametrize("invalid", [
     {"action": "create", "key": "style"},
     {"action": "update", "key": "  ", "value": "concise"},

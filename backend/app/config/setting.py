@@ -2,10 +2,10 @@ import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
-from urllib.parse import quote_plus
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import URL
 
 from app.common.enums import EnvironmentEnum
 from app.config.path_conf import BASE_DIR, ENV_DIR
@@ -93,10 +93,10 @@ class Settings(BaseSettings):
     AUTOFETCH: bool | None = None  # 兼容旧环境变量名（保留别名，避免 .env 中已有 AUTOFETCH 的部署报错）
     EXPIRE_ON_COMMIT: bool = False  # 是否在提交时过期
 
-    # MySQL 数据库连接；SQLite 仅供自动化测试使用
-    DATABASE_TYPE: Literal["mysql", "sqlite"] = "mysql"
+    # MySQL/PostgreSQL 用于正式运行；SQLite 仅供自动化测试使用
+    DATABASE_TYPE: Literal["mysql", "postgresql", "sqlite"] = "mysql"
     DATABASE_HOST: str = "localhost"
-    DATABASE_PORT: int = 3306
+    DATABASE_PORT: int | None = None
     DATABASE_USER: str = "root"
     DATABASE_PASSWORD: str = ""
     DATABASE_NAME: str = "fastcore"
@@ -241,18 +241,32 @@ class Settings(BaseSettings):
 
     @property
     def ASYNC_DB_URI(self) -> str:
-        if self.DATABASE_TYPE not in ("mysql", "sqlite"):
-            raise ValueError(f"数据库驱动不支持: {self.DATABASE_TYPE}, 异步数据库请选择 mysql 或 sqlite")
+        if self.DATABASE_TYPE == "postgresql":
+            return URL.create(
+                "postgresql+asyncpg", username=self.DATABASE_USER, password=self.DATABASE_PASSWORD,
+                host=self.DATABASE_HOST, port=self.DATABASE_PORT or 5432, database=self.DATABASE_NAME,
+            ).render_as_string(hide_password=False)
         if self.DATABASE_TYPE == "mysql":
-            return f"mysql+asyncmy://{self.DATABASE_USER}:{quote_plus(self.DATABASE_PASSWORD)}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}?charset=utf8mb4"
+            return URL.create(
+                "mysql+asyncmy", username=self.DATABASE_USER, password=self.DATABASE_PASSWORD,
+                host=self.DATABASE_HOST, port=self.DATABASE_PORT or 3306, database=self.DATABASE_NAME,
+                query={"charset": "utf8mb4"},
+            ).render_as_string(hide_password=False)
         return f"sqlite+aiosqlite:///{self.DATABASE_NAME}.db"
 
     @property
     def DB_URI(self) -> str:
-        if self.DATABASE_TYPE not in ("mysql", "sqlite"):
-            raise ValueError(f"数据库驱动不支持: {self.DATABASE_TYPE}, 同步数据库请选择 mysql 或 sqlite")
+        if self.DATABASE_TYPE == "postgresql":
+            return URL.create(
+                "postgresql+psycopg", username=self.DATABASE_USER, password=self.DATABASE_PASSWORD,
+                host=self.DATABASE_HOST, port=self.DATABASE_PORT or 5432, database=self.DATABASE_NAME,
+            ).render_as_string(hide_password=False)
         if self.DATABASE_TYPE == "mysql":
-            return f"mysql+pymysql://{self.DATABASE_USER}:{quote_plus(self.DATABASE_PASSWORD)}@{self.DATABASE_HOST}:{self.DATABASE_PORT}/{self.DATABASE_NAME}?charset=utf8mb4"
+            return URL.create(
+                "mysql+pymysql", username=self.DATABASE_USER, password=self.DATABASE_PASSWORD,
+                host=self.DATABASE_HOST, port=self.DATABASE_PORT or 3306, database=self.DATABASE_NAME,
+                query={"charset": "utf8mb4"},
+            ).render_as_string(hide_password=False)
         return f"sqlite:///{self.DATABASE_NAME}.db"
 
     @property
@@ -295,6 +309,8 @@ class Settings(BaseSettings):
             raise ValueError("必须通过 SECRET_KEY 配置 JWT 密钥")
         if self.ENVIRONMENT == EnvironmentEnum.PROD and len(self.SECRET_KEY) < 32:
             raise ValueError("生产环境必须通过 SECRET_KEY 配置至少 32 个字符的 JWT 密钥")
+        if self.ENVIRONMENT == EnvironmentEnum.PROD and self.DATABASE_TYPE == "sqlite":
+            raise ValueError("生产环境必须使用 MySQL 或 PostgreSQL，SQLite 仅用于测试")
         if not self.UPLOAD_FILE_PATH.is_absolute():
             self.UPLOAD_FILE_PATH = BASE_DIR / self.UPLOAD_FILE_PATH
         if self.ENVIRONMENT == EnvironmentEnum.PROD:

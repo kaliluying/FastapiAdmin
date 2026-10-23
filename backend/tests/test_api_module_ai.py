@@ -16,12 +16,19 @@ class TestAiChat:
     def test_session_crud(self, ai_client: TestClient, auth_headers: dict) -> None:
         response = ai_client.post("/ai/chat/create", headers=auth_headers, json={"title": "测试会话"})
         assert response.status_code == 200
-        session_id = response.json()["data"]["session_id"]
+        created = response.json()["data"]
+        session_id = created["session_id"]
+        assert created["runs"] == created["messages"] == []
+        for field in ("agent_id", "team_id", "workflow_id", "agent_data", "team_data", "workflow_data", "metadata", "summary"):
+            assert created[field] is None
         try:
-            assert_route(ai_client, "GET", "/ai/chat/list", auth=auth_headers)
+            listing = ai_client.get("/ai/chat/list", headers=auth_headers)
+            assert listing.status_code == 200
+            listed = next(item for item in listing.json()["data"]["items"] if item["session_id"] == session_id)
+            assert listed == created
             detail = ai_client.get(f"/ai/chat/detail/{session_id}", headers=auth_headers)
             assert detail.status_code == 200
-            assert detail.json()["data"]["title"] == "测试会话"
+            assert detail.json()["data"] == created
             assert_route(ai_client, "PUT", f"/ai/chat/update/{session_id}", auth=auth_headers, json={"title": "更新会话"})
             updated = ai_client.get(f"/ai/chat/detail/{session_id}", headers=auth_headers)
             assert updated.status_code == 200

@@ -13,7 +13,7 @@
 .venv/bin/ruff check app tests --no-fix --output-format concise
 ```
 
-日常改动可选择对应测试文件。`tests/conftest.py` 使用临时 SQLite、模拟 Redis 和测试生命周期；这些测试不能证明 MySQL、真实 Redis、OCR 工具或外部模型服务已可用。MySQL 是正式支持的运行数据库，SQLite 只用于测试；需要 MySQL 运行证据时，使用[真实运行态隔离验收](../backend/integration/README.md)中的专用临时实例流程。
+日常改动可选择对应测试文件。`tests/conftest.py` 使用临时 SQLite、模拟 Redis 和测试生命周期；这些测试不能证明 MySQL、PostgreSQL、真实 Redis、OCR 工具或外部模型服务已可用。MySQL 与 PostgreSQL 是正式支持的运行数据库，SQLite 只用于测试；数据库运行态验收必须使用独立临时实例与测试库。
 
 ## 前端检查
 
@@ -55,7 +55,9 @@ node frontend/tests/quality-e2e.cjs
 
 ## 真实依赖与供应商
 
-MySQL/Redis 真实验收须使用可丢弃的独立实例与测试库，先确认数据库目标、端口和销毁范围。若工作区存在 `backend/integration/README.md`，按其说明检查前提后再执行；该目录若尚未提交，新克隆不会包含此入口。SQLite 测试结果不能替代 MySQL 验收。
+MySQL/PostgreSQL/Redis 真实验收须使用可丢弃的独立实例与测试库，先确认数据库目标、端口和销毁范围。SQLite 测试结果不能替代任一正式数据库的验收；跨数据库兼容需分别记录实际验证的引擎和版本。
+
+使用[真实运行态验收器](../backend/integration/README.md)，分别指定 `--database-type mysql` 和 `--database-type postgresql`。验收器覆盖生产初始化、真实 Redis、TCP HTTP、Chrome 页面操作、队列与文件崩溃恢复、原生备份还原及旧任务增量迁移；模型使用本地替身。依赖、专用临时实例和客户端前提见该目录说明。
 
 真实模型验收至少覆盖：保存配置、手动能力验证、AI 对话、知识库召回与引用、用量记录、失败或取消后的状态。模型列表可读取、权限状态正常或模拟模型通过，都不能单独证明供应商调用成功。远程 embedding 和模型请求可能产生费用，验收前确认目标与额度。
 

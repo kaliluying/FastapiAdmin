@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, text, true
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.base_model import ModelMixin, UserMixin
@@ -15,7 +15,7 @@ class KnowledgeBaseModel(ModelMixin, UserMixin):
 
     name: Mapped[str] = mapped_column(String(100), nullable=False, index=True, comment="Knowledge base name")
     description: Mapped[str | None] = mapped_column(Text, default=None, nullable=True, comment="Description")
-    is_enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("1"), nullable=False, index=True)
+    is_enabled: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true(), nullable=False, index=True)
 
     documents: Mapped[list["KnowledgeDocumentModel"]] = relationship(
         "KnowledgeDocumentModel",

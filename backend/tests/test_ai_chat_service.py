@@ -261,7 +261,8 @@ async def test_chat_session_crud_persists_session_messages_with_sqlalchemy() -> 
             {"role": "assistant", "content": "hello"},
         ]
 
-        listed = await crud.list_crud()
+        listed, total = await crud.page_crud(offset=0, limit=10)
+        assert total == 1
         assert [item.session_id for item in listed] == [session.session_id]
 
         await crud.delete_crud([session.session_id])

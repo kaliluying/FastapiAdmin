@@ -72,8 +72,3 @@ class KnowledgeBaseChatRetriever:
                 metadata["bm25_score"] = result.score
             documents.append(RagDocument(content=result.content, metadata=metadata))
         return documents
-
-
-# 保留旧导入名称以兼容现有调用方；当前实现将所有持久化知识检索
-# 委托给知识库模块。
-HybridKnowledgeRetriever = KnowledgeBaseChatRetriever

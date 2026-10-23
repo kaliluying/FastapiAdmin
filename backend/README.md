@@ -20,7 +20,7 @@
 
 ## 开发运行
 
-所有后端命令从 `backend/` 执行。需要 Python 3.12+、`uv`、MySQL 与 Redis。MySQL 是正式支持的运行数据库；SQLite 仅用于自动化测试和隔离验收，不用于生产部署。
+所有后端命令从 `backend/` 执行。需要 Python 3.12+、`uv`、MySQL 或 PostgreSQL 与 Redis。MySQL 和 PostgreSQL 均为正式支持的运行数据库；SQLite 仅用于自动化测试和隔离验收，不用于生产部署。
 
 ```bash
 cp env/.env.dev.example env/.env.dev
@@ -63,4 +63,4 @@ uv run main.py run --env=prod
 .venv/bin/ruff check app tests --no-fix --output-format concise
 ```
 
-测试默认使用临时 SQLite 和模拟 Redis，只证明测试环境行为，不能替代 MySQL 验收。跨层或真实依赖验收见[测试与验收](../docs/TESTING.md)。新增业务模块见[标准模块模板](../docs/STANDARD_MODULE_TEMPLATE.md)。
+测试默认使用临时 SQLite 和模拟 Redis，只证明测试环境行为，不能替代 MySQL 或 PostgreSQL 验收。跨层或真实依赖验收见[测试与验收](../docs/TESTING.md)。新增业务模块见[标准模块模板](../docs/STANDARD_MODULE_TEMPLATE.md)。

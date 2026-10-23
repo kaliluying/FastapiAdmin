@@ -39,4 +39,4 @@ corepack pnpm exec vitest run src/views/module_ai/document/DocumentInspector.spe
 corepack pnpm exec vue-tsc --noEmit --skipLibCheck
 ```
 
-回归覆盖文件/分块原子切换、索引失败与重试、重启恢复、处理中冲突、路径穿越/符号链接、拒绝访问、DOCX 实际表格顺序、扫描 PDF 缺依赖和 OCR 调用边界。这些临时 SQLite/模拟索引检查不证明正式支持的 MySQL、真实供应商或扫描识别质量；实际浏览器与 OCR 验收证据另由任务交付记录说明。
+回归覆盖文件/分块原子切换、索引失败与重试、重启恢复、处理中冲突、路径穿越/符号链接、拒绝访问、DOCX 实际表格顺序、扫描 PDF 缺依赖和 OCR 调用边界。这些临时 SQLite/模拟索引检查不证明正式支持的 MySQL/PostgreSQL、真实供应商或扫描识别质量；实际浏览器与 OCR 验收证据另由任务交付记录说明。

@@ -31,4 +31,4 @@ corepack pnpm exec vitest run src/views/module_ai/model-config/model-usage.spec.
 corepack pnpm exec vue-tsc --noEmit
 ```
 
-SQLite 真实 SQL 回归覆盖 20 路并发、额度为 0、身份隔离、失败、取消、流式提前关闭、工具多轮、后台记忆标记、结果写入失败保留账本；HTTP/SSE 替身覆盖 OpenAI Chat Completions、Responses 和 Anthropic 三协议及用量解析。这些 SQLite 回归不证明正式支持的 MySQL 并发行为；真实供应商行为和实际计费也需在相应环境验收。隔离浏览器入口为 `node frontend/tests/model-usage-e2e.cjs`（仓库根目录）；单元测试不能代替完整 UI 验收。
+SQLite 真实 SQL 回归覆盖 20 路并发、额度为 0、身份隔离、失败、取消、流式提前关闭、工具多轮、后台记忆标记、结果写入失败保留账本；HTTP/SSE 替身覆盖 OpenAI Chat Completions、Responses 和 Anthropic 三协议及用量解析。这些 SQLite 回归不证明正式支持的 MySQL/PostgreSQL 并发行为；真实供应商行为和实际计费也需在相应环境验收。隔离浏览器入口为 `node frontend/tests/model-usage-e2e.cjs`（仓库根目录）；单元测试不能代替完整 UI 验收。
