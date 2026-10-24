@@ -74,6 +74,7 @@ MIME_TYPE_MAPPING = {
     "application/msword": ".doc",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
     "application/pdf": ".pdf",
+    "application/zip": ".zip",
     "text/plain": ".txt",
     "text/csv": ".csv",
 }
@@ -185,8 +186,6 @@ class UploadUtil:
         if content.startswith(b"GIF87a") or content.startswith(b"GIF89a"):
             return "image/gif"
         if content.startswith(b"PK\x03\x04"):
-            if b"[Content_Types].xml" in content[:1000]:
-                return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             return "application/zip"
         if content.startswith(b"%PDF"):
             return "application/pdf"
@@ -236,6 +235,11 @@ class UploadUtil:
             compatible_extensions = {expected_ext}
             if detected_type == "image/jpeg":
                 compatible_extensions.add(".jpeg")
+            # 文件头只能识别容器，不能区分 ZIP/OLE 内的具体 Office 格式。
+            elif detected_type == "application/zip":
+                compatible_extensions.update({".docx", ".xlsx"})
+            elif detected_type == "application/msword":
+                compatible_extensions.add(".xls")
             if expected_ext and claimed_extension.lower() not in compatible_extensions:
                 raise CustomException(
                     msg=f"文件内容与扩展名不匹配：检测为 {detected_type}，声明为 {claimed_extension}"

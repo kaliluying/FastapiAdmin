@@ -93,3 +93,4 @@ progress.md
 task_plan.md
 /.worktrees/
 /.superpowers/
+frontend/.vitest
