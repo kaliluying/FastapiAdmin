@@ -150,6 +150,7 @@ def test_query_defaults_and_independent_levels(logs):
     assert second.levels == ["DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]
     assert logs.RuntimeLogQuerySchema(minutes=5, correlation_id="A_b-9").minutes == 5
     assert logs.RuntimeLogQuerySchema(minutes=1440, levels=["DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"]).minutes == 1440
+    assert logs.RuntimeLogQuerySchema(minutes=logs.MAX_QUERY_MINUTES).minutes == logs.MAX_QUERY_MINUTES
 
 
 @pytest.mark.parametrize(
@@ -157,6 +158,7 @@ def test_query_defaults_and_independent_levels(logs):
     [
         {"minutes": 0},
         {"minutes": -1},
+        {"minutes": 7 * 24 * 60 + 1},
         {"levels": []},
         {"levels": ["error"]},
         {"correlation_id": "a" * 65},
@@ -409,6 +411,42 @@ async def test_complete_file_is_read_in_chunks_on_background_thread(logs, monkey
     assert result["matched_count"] == 1
     assert "tail record" in result["entries"][0]["message"]
     assert result["truncated"] is True
+
+
+@pytest.mark.asyncio
+async def test_scan_budget_stops_file_bytes_records_and_matches(logs, monkeypatch):
+    data = write_records(logs, [record(f"match-{index}") for index in range(4)])
+    monkeypatch.setattr(logs, "MAX_MATCHED_ENTRIES", 2)
+    result = await query(logs)
+    assert result["matched_count"] == 2
+    assert len(result["entries"]) == 2
+    assert result["truncated"] is True
+
+    monkeypatch.setattr(logs, "MAX_MATCHED_ENTRIES", 100)
+    monkeypatch.setattr(logs, "MAX_SCAN_BYTES", len(data) - 1)
+    result = await query(logs)
+    assert result["scanned_bytes"] == 0
+    assert result["scanned_files"] == []
+    assert result["truncated"] is True
+
+    monkeypatch.setattr(logs, "MAX_SCAN_BYTES", 64 * 1024 * 1024)
+    monkeypatch.setattr(logs, "MAX_RECORD_BYTES", 128)
+    write_records(logs, [record("small"), record("x" * 200), record("tail")])
+    result = await query(logs)
+    messages = "\n".join(entry["message"] for entry in result["entries"])
+    assert "small" in messages and "tail" in messages and "x" * 200 not in messages
+    assert result["truncated"] is True
+
+
+@pytest.mark.asyncio
+async def test_compressed_expansion_budget_is_bounded(logs, monkeypatch):
+    monkeypatch.setattr(logs, "MAX_SCAN_BYTES", 128)
+    with gzip.open(logs.LOG_DIR / "fastcore.2026-10-02.log.gz", "wb") as archive:
+        archive.write(b"x" * 4096)
+    result = await query(logs)
+    assert result["scanned_files"] == ["fastcore.2026-10-02.log.gz"]
+    assert result["truncated"] is True
+    assert result["matched_count"] == 0
 
 
 @pytest.mark.asyncio

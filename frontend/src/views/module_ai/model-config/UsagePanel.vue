@@ -49,7 +49,8 @@
         }}</ElDescriptionsItem>
       </ElDescriptions>
       <p class="usage-note">
-        额度留空为不限，0 为禁止调用。每次供应商请求（含日志工具循环、记忆提取和能力验证）计 1
+        额度留空为不限，0
+        为禁止调用。每次供应商请求（含诊断任务、日志工具循环、记忆提取和能力验证）计 1
         次，失败或取消也计入。
       </p>
       <FaTable :data="usage.items" :loading="loading" empty-text="当日暂无模型调用">
@@ -116,6 +117,7 @@ const purposeLabels: Record<string, string> = {
   chat: "普通回答",
   chat_stream: "流式回答",
   tools: "日志工具",
+  agent: "诊断 Agent",
   memory: "记忆提取",
   capability_check: "能力验证",
 };

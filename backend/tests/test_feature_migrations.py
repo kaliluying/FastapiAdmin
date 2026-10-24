@@ -14,6 +14,7 @@ from alembic.migration import MigrationContext
 from alembic.operations import Operations
 from alembic.script import ScriptDirectory
 
+from app.plugin.module_ai.agent.model import AgentEventModel, AgentRunModel
 from app.plugin.module_ai.chat.model import MemoryExtractionJobModel
 from app.plugin.module_ai.chat.usage_model import AiUsageDailyModel, AiUsageQuotaModel, AiUsageRecordModel
 from app.plugin.module_ai.knowledge.model import KnowledgeBaseModel, KnowledgeDocumentModel
@@ -86,7 +87,31 @@ class FeatureMigrationTests(unittest.TestCase):
         self.assertEqual([migration.down_revision for migration in self.migrations], ["20261004_demo_category", *REVISIONS[:-1]])
         config = Config()
         config.set_main_option("script_location", str(VERSIONS.parent))
-        self.assertEqual(ScriptDirectory.from_config(config).get_heads(), [REVISIONS[-1]])
+        agent = load_revision("20261024_agent_runs")
+        self.assertEqual(agent.down_revision, REVISIONS[-1])
+        self.assertEqual(ScriptDirectory.from_config(config).get_heads(), [agent.revision])
+
+    def test_agent_migration_matches_models_and_preserves_history(self):
+        revision = load_revision("20261024_agent_runs")
+        with self.engine.begin() as connection:
+            context = MigrationContext.configure(connection)
+            with patch.object(revision, "op", Operations(context)):
+                revision.upgrade()
+                revision.upgrade()
+                with self.assertRaisesRegex(RuntimeError, "诊断任务"):
+                    revision.downgrade()
+        inspector = sa.inspect(self.engine)
+        for model in (AgentRunModel, AgentEventModel):
+            actual = {column["name"]: column for column in inspector.get_columns(model.__tablename__)}
+            self.assertEqual(set(actual), set(model.__table__.columns.keys()))
+            for column in model.__table__.columns:
+                self.assertEqual(actual[column.name]["nullable"], column.nullable)
+                self.assertEqual(actual[column.name]["type"]._type_affinity, column.type._type_affinity)
+            self.assertEqual({item["name"] for item in inspector.get_indexes(model.__tablename__)},
+                             {index.name for index in model.__table__.indexes})
+        self.assertIn(("user_id", "request_id"),
+                      [tuple(item["column_names"]) for item in inspector.get_unique_constraints("ai_agent_run")])
+        self.assertEqual(inspector.get_pk_constraint("ai_agent_event")["constrained_columns"], ["run_id", "seq"])
 
     def test_upgrade_preserves_old_document_and_matches_new_models(self):
         self.migrate()

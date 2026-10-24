@@ -20,17 +20,19 @@ required_modules = [
 ]
 
 routers = [
+  "agent.controller:AgentRouter",
   "chat.controller:ChatRouter",
   "knowledge.controller:KnowledgeRouter",
   "memory.controller:MemoryRouter",
   "quality.controller:QualityRouter",
 ]
 websocket_routers = ["chat.ws:WS_AI"]
-model_modules = ["chat.model", "chat.usage_model", "knowledge.model", "memory.model", "quality.model"]
+model_modules = ["agent.model", "chat.model", "chat.usage_model", "knowledge.model", "memory.model", "quality.model"]
 startup_hooks = [
   "chat.model_config_service:initialize_runtime_chat_model_config",
   "chat.memory_worker:initialize_memory_worker",
   "knowledge.recovery:initialize_knowledge_recovery",
+  "agent.runtime:initialize_agent_worker",
 ]
 
 permissions = [

@@ -77,7 +77,9 @@ FastCore 正式支持的运行和生产数据库为 **MySQL 与 PostgreSQL**。*
 
 聊天会话列表统一使用 `ChatSessionCRUD.page_crud()`，旧的 `list_crud()` 已移除。会话响应格式化接收 `chat.crud.ChatSession`，自定义调用方需先将普通对象转换为该类型；HTTP 响应字段保持原样。查询分析统一从 `app.plugin.module_ai.knowledge.public` 导入 `QueryAnalysis`、`QueryAnalyzer`，不再保留 `chat.query_analyzer` 兼容入口；聊天检索器使用 `chat.hybrid_retriever.KnowledgeBaseChatRetriever`，旧名 `HybridKnowledgeRetriever` 已移除。自定义脚本需同步更新这些导入与调用。
 
-AI 内部依赖保持单向：`quality → chat / knowledge`、`chat → memory / knowledge`；`memory` 与 `knowledge` 不依赖其他 AI 功能。跨模块读取保存的回答使用 `chat.public.get_saved_answer()`，文档归属校验使用 `knowledge.public.validate_document_scope()`；质量评测继续使用承担检索与权限校验的 `KnowledgeService.query_retrieval()`，不直接访问知识库 CRUD。静态导入约束由 `backend/tests/test_module_boundaries.py` 检查，覆盖绝对、相对及函数内导入。AI 的 `module.py` 仍是组合根，统一登记各模块模型、索引和生命周期。
+AI 内部依赖保持单向：`agent → chat / knowledge`、`quality → chat / knowledge`、`chat → memory / knowledge`；`memory` 与 `knowledge` 不依赖其他 AI 功能。跨模块读取保存的回答使用 `chat.public.get_saved_answer()`，文档归属校验使用 `knowledge.public.validate_document_scope()`；质量评测继续使用承担检索与权限校验的 `KnowledgeService.query_retrieval()`，不直接访问知识库 CRUD。静态导入约束由 `backend/tests/test_module_boundaries.py` 检查，覆盖绝对、相对及函数内导入。AI 的 `module.py` 仍是组合根，统一登记各模块模型、索引和生命周期。
+
+聊天页提供[只读诊断 Agent](DIAGNOSTIC_AGENT.md)：通过聊天公开入口准备模型和授权查询日志，通过知识库公开入口限定检索范围。任务与事件持久化到 SQL，后台 worker 负责受限工具循环和租约恢复；页面仅轮询进度，刷新或断线不会取消任务。普通聊天继续沿用原有 SSE 生命周期。
 
 聊天提取任务属于聊天的事务发件箱：`chat.model.MemoryExtractionJobModel` 与一轮回答共用提交，`chat.memory_worker` 负责用户顺序、租约、重试、来源校验以及删除互斥；记忆写入和任务确认仍在同一事务内完成。`memory.public` 提供提取器与用户隔离的 `MemoryService`，模型只需实现 `complete(prompt)` 并由调用方显式传入，记忆模块不创建全局模型、不读取聊天表或计费上下文。原表 `ai_memory_extraction_job` 的名称、列、索引及状态语义保持原样，不需因 Python 路径变更迁移数据。自定义脚本需将 `memory.worker`、`memory.model.MemoryExtractionJobModel` 分别更新为 `chat.memory_worker`、`chat.model.MemoryExtractionJobModel`；调用记忆提取方法须传入 `chat_model`。
 

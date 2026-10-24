@@ -32,6 +32,7 @@
               @show-evidence="isEvidenceDrawerOpen = true"
               @show-usage="usageOpen = true"
             />
+            <ElButton text @click="diagnosticAgentOpen = true">只读诊断 Agent</ElButton>
           </ElHeader>
           <ElMain class="chat-main">
             <FaChatMessages
@@ -106,6 +107,7 @@
         <FaCitationList :citations="activeCitations" @select="selectedCitation = $event" />
       </ElSplitterPanel>
     </ElSplitter>
+    <FaDiagnosticAgent v-model="diagnosticAgentOpen" />
     <ElDrawer v-model="usageOpen" append-to-body title="今日 AI 用量" size="min(92vw, 720px)">
       <UsagePanel v-if="usageOpen" />
     </ElDrawer>
@@ -167,6 +169,7 @@ import QualityAPI from "@/api/module_ai/quality";
 import UsagePanel from "@/views/module_ai/model-config/UsagePanel.vue";
 import type { ChatMessage, ChatCitation, ChatProcessStage, UploadedFile } from "./types";
 import FaRuntimeLogReport from "./components/FaRuntimeLogReport.vue";
+import FaDiagnosticAgent from "./components/FaDiagnosticAgent.vue";
 import FaSidebar from "./components/FaSidebar.vue";
 import FaChatNavbar from "./components/FaChatNavbar.vue";
 import FaChatMessages from "./components/FaChatMessages.vue";
@@ -177,6 +180,7 @@ import FaCitationList from "@/views/module_ai/components/FaCitationList.vue";
 // 状态
 const messages = ref<ChatMessage[]>([]);
 const usageOpen = ref(false);
+const diagnosticAgentOpen = ref(false);
 const sending = ref(false);
 const error = ref("");
 const currentSessionId = ref<string | null>(null);

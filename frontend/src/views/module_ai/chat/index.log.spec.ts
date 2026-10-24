@@ -37,6 +37,10 @@ beforeEach(async () => {
   wrapper = shallowMount(ChatPage, {
     global: {
       stubs: {
+        ElButton: defineComponent({
+          emits: ["click"],
+          template: "<button @click=\"$emit('click')\"><slot /></button>",
+        }),
         ElSplitter: Panel,
         ElSplitterPanel: Panel,
         ElContainer: Panel,
@@ -72,6 +76,16 @@ afterEach(() => {
 });
 
 describe("built-in runtime log tool", () => {
+  it("opens diagnostics from a visible entry without sending ordinary chat messages", async () => {
+    const button = wrapper.findAll("button").find((item) => item.text().includes("只读诊断 Agent"));
+    expect(button).toBeDefined();
+    await button!.trigger("click");
+    await flushPromises();
+    expect(wrapper.getComponent({ name: "FaDiagnosticAgent" }).props("modelValue")).toBe(true);
+    expect(api.stream).not.toHaveBeenCalled();
+    expect(api.create).not.toHaveBeenCalled();
+  });
+
   it("rejects mixed sources without sending and retries with the original context token", async () => {
     const input = wrapper.getComponent({ name: "FaChatInput" });
     const send = async (question: string, files?: unknown[]) => {

@@ -11,10 +11,7 @@ from uuid import uuid4
 
 from langchain_core.messages import HumanMessage, SystemMessage, ToolMessage
 from pydantic import ValidationError
-from sqlalchemy import select
 
-from app.api.v1.module_system.user.model import UserModel
-from app.common.enums import RedisInitKeyConfig
 from app.core.base_schema import AuthSchema, PageResultSchema
 from app.core.dependencies import _check_token_online
 from app.core.exceptions import CustomException
@@ -37,6 +34,7 @@ from .model_config_service import list_provider_models as list_runtime_provider_
 from .model_config_service import (
     update_model_config as update_runtime_model_config,
 )
+from .public import authorize_runtime_log_access
 from .rag import create_rag_chain
 from .runtime_logs import RUNTIME_LOG_TOOL, RuntimeLogQuerySchema, query_runtime_logs, redact_log_text
 from .schema import (
@@ -49,6 +47,10 @@ from .schema import (
     ChatSessionUpdateSchema,
 )
 from .usage import track_chat_usage, track_stream_usage
+
+MAX_CHAT_LOG_ENTRIES = 40
+MAX_CHAT_LOG_ENTRY_CHARS = 12_000
+_CHAT_LOG_TRUNCATION_NOTICE = "\n[日志证据为控制模型上下文已截断]"
 
 
 async def _format_session_data(session: ChatSession, auth: AuthSchema | None = None) -> dict[str, Any]:
@@ -231,18 +233,7 @@ class ChatService:
             yield {"type": "error", "message": message} if structured else message
 
     async def _authorize_log_analysis(self) -> None:
-        auth = self.auth
-        if getattr(auth.user, "is_superuser", False) is not True:
-            raise CustomException(msg="仅超级管理员可分析运行日志", status_code=403)
-        if not auth.db or not auth.redis or not getattr(auth, "session_id", None):
-            raise CustomException(msg="登录已失效，请重新登录后分析日志", status_code=401)
-        await _check_token_online(auth.redis, auth.session_id)
-        if not await auth.redis.exists(f"{RedisInitKeyConfig.USER_SESSION.key}:{auth.session_id}"):
-            raise CustomException(msg="登录已失效，请重新登录后分析日志", status_code=401)
-        allowed = await auth.db.scalar(select(UserModel.id).where(UserModel.id == auth.user.id, UserModel.is_superuser.is_(True), UserModel.is_deleted.is_(False), UserModel.status == 0))
-        await auth.db.rollback()
-        if allowed is None:
-            raise CustomException(msg="管理员权限已失效，请重新登录", status_code=403)
+        await authorize_runtime_log_access(self.auth, token_checker=_check_token_online)
 
     async def _stream_log_analysis(self, query: ChatQuerySchema) -> AsyncGenerator[dict[str, Any], None]:
         try:
@@ -341,7 +332,11 @@ class ChatService:
                         result = await query_runtime_logs(self.auth, log_query)
                         await self._authorize_log_analysis()
                         evidence = []
-                        for entry in result["entries"]:
+                        for original_entry in result["entries"][:MAX_CHAT_LOG_ENTRIES]:
+                            message = original_entry["message"]
+                            if len(message) > MAX_CHAT_LOG_ENTRY_CHARS:
+                                message = message[:MAX_CHAT_LOG_ENTRY_CHARS - len(_CHAT_LOG_TRUNCATION_NOTICE)] + _CHAT_LOG_TRUNCATION_NOTICE
+                            entry = {**original_entry, "message": message}
                             citation_id = str(len(citations) + 1)
                             title = f"{entry['timestamp']} {entry['level']}"
                             if entry.get("file"):
@@ -349,6 +344,10 @@ class ChatService:
                             citations.append({"id": citation_id, "title": title, "snippet": entry["message"], "source": "runtime-log"})
                             evidence.append({"citation": citation_id, **entry})
                         metadata = {key: value for key, value in result.items() if key != "entries"}
+                        if len(result["entries"]) > MAX_CHAT_LOG_ENTRIES or any(
+                            len(entry["message"]) > MAX_CHAT_LOG_ENTRY_CHARS for entry in result["entries"]
+                        ):
+                            metadata["truncated"] = True
                         yield {"type": "log_result", **metadata, "returned_count": len(evidence), "query": log_query.model_dump(), "query_index": used_calls}
                         yield {"type": "citations", "citations": list(citations)}
                         messages.append(ToolMessage(content=json.dumps({**metadata, "entries": evidence}, ensure_ascii=False), tool_call_id=call_id))

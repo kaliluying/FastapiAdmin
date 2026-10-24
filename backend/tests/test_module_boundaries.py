@@ -9,6 +9,7 @@ import pytest
 APP = Path(__file__).parents[1] / "app"
 AI = "app.plugin.module_ai"
 AI_DEPENDENCIES = {
+    "agent": {"chat.public", "knowledge.public"},
     "chat": {"memory.public", "knowledge.public"},
     "memory": set(),
     "knowledge": set(),

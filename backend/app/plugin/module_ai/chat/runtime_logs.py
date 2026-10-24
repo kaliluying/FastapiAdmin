@@ -1,7 +1,7 @@
 """管理员运行日志的独立只读查询，覆盖活动文件和 Loguru 轮转归档。
 
 安全打开固定日志目录内的普通文件，按文件大小快照逐行读取；不跟随软链接。
-完整记录先脱敏再匹配，返回全部匹配条目及完整堆栈，不截断证据正文。
+完整记录先脱敏再匹配，在扫描预算内返回匹配条目及完整堆栈。
 并发写入的未完成记录与无法识别的内容通过 truncated 标明，不能证明全局无故障。
 自动脱敏并非绝对保证，输出仍应视为敏感数据。
 """
@@ -36,7 +36,14 @@ _NOTICE = (
     "使用服务器本地时间；并发写入的多行 trace 可能不完整。"
     "完整 CID 按日志前 8 位兼容匹配，可能碰撞。"
     "自动脱敏非绝对保证，输出仍可能包含敏感信息。"
+    "扫描受文件数、字节数、单条记录和匹配数预算限制，truncated=true 时证据不完整。"
 )
+MAX_QUERY_MINUTES = 7 * 24 * 60
+MAX_SCAN_BYTES = 64 * 1024 * 1024
+MAX_SCAN_FILES = 64
+MAX_RECORD_BYTES = 4 * 1024 * 1024
+MAX_MATCHED_ENTRIES = 100
+MAX_MATCHED_BYTES = 8 * 1024 * 1024
 _HEADER = re.compile(
     rb"^(?P<timestamp>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3})"
     rb" \|\s*(?P<level>DEBUG|INFO|SUCCESS|WARNING|ERROR|CRITICAL)\s*\| "
@@ -62,11 +69,11 @@ _MOBILE = re.compile(r"(?<!\w)(?:\+?\d[\d ()-]{7,}\d)(?!\w)")
 
 
 class RuntimeLogQuerySchema(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", strict=True)
 
-    minutes: int = Field(default=60, ge=1)
-    levels: list[LogLevel] = Field(default_factory=lambda: list(get_args(LogLevel)), min_length=1)
-    keyword: str = ""
+    minutes: int = Field(default=60, ge=1, le=MAX_QUERY_MINUTES)
+    levels: list[LogLevel] = Field(default_factory=lambda: list(get_args(LogLevel)), min_length=1, max_length=6)
+    keyword: str = Field(default="", max_length=2_000)
     correlation_id: str = Field(default="", max_length=64, pattern=r"^[A-Za-z0-9_-]*$")
 
 
@@ -74,7 +81,7 @@ RUNTIME_LOG_TOOL = {
     "type": "function",
     "function": {
         "name": "query_runtime_logs",
-        "description": "只读查询当前后台实例的运行/报错日志，排查后台错误、异常、超时。覆盖完整活动文件和轮转归档，不含其他实例。参数为最近分钟数、级别、脱敏后忽略大小写的字面关键词、请求ID；不接受路径、SQL或命令。默认最近60分钟的所有级别，返回完整匹配记录。可按请求ID查全级别上下文，或缩小时间与关键词继续查询。",
+        "description": "只读查询当前后台实例的运行/报错日志，排查后台错误、异常、超时。覆盖活动文件和轮转归档，不含其他实例。参数为最近分钟数、级别、脱敏后忽略大小写的字面关键词、请求ID；不接受路径、SQL或命令。默认最近60分钟的所有级别，在扫描预算内返回完整匹配记录；超出预算会标记 truncated=true。可按请求ID查全级别上下文，或缩小时间与关键词继续查询。",
         "parameters": RuntimeLogQuerySchema.model_json_schema(),
     },
 }
@@ -213,39 +220,91 @@ def _query_snapshot(query: RuntimeLogQuerySchema, start_time: datetime, end_time
         "entries": [],
     }
     matched = []
+    matched_bytes = 0
+    expanded_bytes = 0
+    budget_exhausted = False
+    saw_candidate_file = False
     with closing(_read_snapshot(cancelled)) as snapshots:
         for filename, identity, size, stream in snapshots:
+            saw_candidate_file = True
+            if len(result["scanned_files"]) >= MAX_SCAN_FILES or result["scanned_bytes"] + size > MAX_SCAN_BYTES:
+                result["truncated"] = True
+                break
             result["scanned_files"].append(filename)
             result["scanned_bytes"] += size
             record = bytearray()
             record_offset = 0
             offset = 0
             complete = True
-            for line in stream:
+            skip_record = False
+            while True:
+                line = stream.readline(MAX_RECORD_BYTES + 1)
+                if not line:
+                    break
                 if cancelled.is_set():
                     return result
+                expanded_bytes += len(line)
+                if expanded_bytes > MAX_SCAN_BYTES:
+                    result["truncated"] = True
+                    budget_exhausted = True
+                    break
                 line_complete = line.endswith(b"\n")
-                if _HEADER.match(line if line_complete else line + b"\n"):
+                if skip_record:
+                    if line_complete:
+                        skip_record = False
+                    offset += len(line)
+                    continue
+                is_header = _HEADER.match(line if line_complete else line + b"\n")
+                if is_header:
                     if record:
                         entry = _matching_entry(bytes(record), identity, record_offset, filename, query, start_time, end_time)
                         if entry is not None:
+                            entry_size = len(record)
+                            if len(matched) >= MAX_MATCHED_ENTRIES or matched_bytes + entry_size > MAX_MATCHED_BYTES:
+                                result["truncated"] = True
+                                budget_exhausted = True
+                                break
                             matched.append((entry["timestamp"], filename, record_offset, entry))
-                    record = bytearray(line)
-                    record_offset = offset
-                    complete = line_complete
+                            matched_bytes += entry_size
+                    if len(line) > MAX_RECORD_BYTES:
+                        result["truncated"] = True
+                        record.clear()
+                        skip_record = not line_complete
+                    else:
+                        record = bytearray(line)
+                        record_offset = offset
+                        complete = line_complete
+                elif len(line) > MAX_RECORD_BYTES:
+                    result["truncated"] = True
+                    record.clear()
+                    skip_record = not line_complete
                 elif record:
                     record.extend(line)
                     complete = line_complete
+                    if len(record) > MAX_RECORD_BYTES:
+                        result["truncated"] = True
+                        record.clear()
+                        skip_record = not line_complete
                 else:
                     result["truncated"] = True
                 offset += len(line)
-            if record and complete:
+            if budget_exhausted:
+                break
+            if record and complete and not skip_record:
                 entry = _matching_entry(bytes(record), identity, record_offset, filename, query, start_time, end_time)
                 if entry is not None:
+                    entry_size = len(record)
+                    if len(matched) >= MAX_MATCHED_ENTRIES or matched_bytes + entry_size > MAX_MATCHED_BYTES:
+                        result["truncated"] = True
+                        budget_exhausted = True
+                        break
                     matched.append((entry["timestamp"], filename, record_offset, entry))
-            elif record:
+                    matched_bytes += entry_size
+            elif record or skip_record:
                 result["truncated"] = True
-    if not result["scanned_files"]:
+            if budget_exhausted:
+                break
+    if not result["scanned_files"] and not saw_candidate_file:
         result["notice"] += " 当前活动日志文件与轮转归档不存在。"
     result["entries"] = [item[3] for item in sorted(matched, key=lambda item: item[:3], reverse=True)]
     result["matched_count"] = len(result["entries"])

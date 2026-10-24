@@ -10,7 +10,8 @@ import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from pydantic import ValidationError
 
-from app.plugin.module_ai.chat import rag, runtime_logs, service
+from app.core.security import credential_fingerprint
+from app.plugin.module_ai.chat import public, rag, runtime_logs, service
 from app.plugin.module_ai.chat.schema import ChatQuerySchema
 from tests.test_auth_session import FakeRedis
 
@@ -22,14 +23,21 @@ def log_chat(monkeypatch, tmp_path):
     monkeypatch.setattr(runtime_logs, "LOG_DIR", tmp_path)
     monkeypatch.setattr(service, "load_runtime_chat_model_config", AsyncMock())
     monkeypatch.setattr(service.ChatService, "_validate_ai_config", staticmethod(AsyncMock(return_value=None)))
+    user = SimpleNamespace(id=7, is_superuser=True, password="fixture-password")
+    redis = FakeRedis()
+    redis.values["user_session:isolated-log-session"] = json.dumps({
+        "user_id": user.id,
+        "credential_fingerprint": credential_fingerprint(user.id, user.password),
+    }).encode()
     auth = SimpleNamespace(
-        user=SimpleNamespace(id=7, is_superuser=True),
+        user=user,
         session_id="isolated-log-session",
         db=SimpleNamespace(scalar=AsyncMock(return_value=7), rollback=AsyncMock()),
-        redis=FakeRedis(),
+        redis=redis,
     )
     auth.redis.exists = AsyncMock(return_value=True)
     auth.redis.set = AsyncMock(wraps=auth.redis.set)
+    monkeypatch.setattr(public, "_load_authenticated_user", AsyncMock(return_value=user))
     captured = {"calls": 0}
 
     class Model:
@@ -118,6 +126,33 @@ async def test_log_analysis_has_redacted_evidence_without_history_or_memory(log_
     create.assert_not_called()
     memory.assert_not_called()
     assert auth.db.scalar.await_count == 4
+
+
+async def test_chat_log_evidence_is_bounded_before_model_context(log_chat, monkeypatch):
+    auth, captured = log_chat
+    entries = [
+        {
+            "id": str(index),
+            "timestamp": "2026-10-03T12:00:00.000",
+            "level": "ERROR",
+            "correlation_id": "",
+            "file": "fastcore.log",
+            "message": "evidence-" + ("x" * 13_000),
+        }
+        for index in range(45)
+    ]
+    monkeypatch.setattr(service, "query_runtime_logs", AsyncMock(return_value={
+        "source": "fastcore.log", "start_time": "start", "end_time": "end",
+        "scanned_bytes": 1, "scanned_files": ["fastcore.log"], "matched_count": 45,
+        "truncated": False, "notice": "notice", "entries": entries,
+    }))
+    events = await collect(auth)
+    assert events[-1]["type"] == "done"
+    result = next(event for event in events if event["type"] == "log_result")
+    assert result["returned_count"] == 40 and result["truncated"] is True
+    payload = json.loads(captured["messages"][-1].content)
+    assert len(payload["entries"]) == 40
+    assert all(len(entry["message"]) <= service.MAX_CHAT_LOG_ENTRY_CHARS for entry in payload["entries"])
 
 
 @pytest.mark.parametrize("scenario", ["ordinary", "logged-out", "missing-session", "revoked", "unavailable"])
