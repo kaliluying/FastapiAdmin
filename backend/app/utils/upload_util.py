@@ -185,7 +185,7 @@ class UploadUtil:
             return "image/png"
         if content.startswith(b"GIF87a") or content.startswith(b"GIF89a"):
             return "image/gif"
-        if content.startswith(b"PK\x03\x04"):
+        if content.startswith((b"PK\x03\x04", b"PK\x05\x06")):
             return "application/zip"
         if content.startswith(b"%PDF"):
             return "application/pdf"
