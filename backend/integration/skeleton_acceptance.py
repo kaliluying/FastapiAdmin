@@ -28,16 +28,6 @@ def run(args: list[str], cwd: Path, log: Path, env=None) -> None:
         subprocess.run(args, cwd=cwd, env=env, stdout=output, stderr=output, check=True)
 
 
-def rewrite_copy(directory: Path) -> None:
-    replacements = (("Category", "Supplier"), ("category", "supplier"), ("Demo", "Business"), ("demo", "business"), ("分类", "供应商"), ("开发范例", "业务管理"))
-    for path in directory.rglob("*"):
-        if path.is_file() and path.suffix in {".py", ".ts", ".vue", ".json"}:
-            source = path.read_text(encoding="utf-8-sig")
-            for old, new in replacements:
-                source = source.replace(old, new)
-            path.write_text(source, encoding="utf-8")
-
-
 def prepare_copy(stage: Path) -> tuple[Path, Path]:
     backend, frontend = stage / "backend", stage / "frontend"
     backend.mkdir()
@@ -54,21 +44,21 @@ def prepare_copy(stage: Path) -> tuple[Path, Path]:
     vite = frontend / "vite.config.ts"
     vite.write_text(vite.read_text().replace("return defineConfig({", 'return defineConfig({\n    cacheDir: ".vite-cache",'))
 
+    run(
+        [str(ROOT / "backend/.venv/bin/python"), "main.py", "generate-module", "--module", "business",
+         "--resource", "supplier", "--title", "供应商", "--module-title", "业务管理", "--apply"],
+        backend, stage / "generator.log",
+    )
+    # 先验证原始产物，再按实际业务改字段。
+    shutil.copy2(ROOT / "backend/tests/conftest.py", backend / "tests/conftest.py")
+    run(
+        [str(ROOT / "backend/.venv/bin/python"), "-m", "pytest", "tests/test_business_supplier.py", "-q",
+         "-o", "asyncio_mode=auto", "-o", "asyncio_default_fixture_loop_scope=function"],
+        backend, stage / "generated-tests.log",
+    )
     business = backend / "app/api/v1/module_business"
-    shutil.copytree(backend / "app/api/v1/module_demo", business)
-    (business / "category").rename(business / "supplier")
-    rewrite_copy(business)
-    module = business / "module.py"
-    module.write_text(module.read_text().replace("development_only=True", "development_only=False"))
-    registry = backend / "app/config/modules.py"
-    registry.write_text(registry.read_text().replace("INSTALLED_MODULES = (", 'INSTALLED_MODULES = (\n    "app.api.v1.module_business.module:get_module",'))
     view = frontend / "src/views/module_business/supplier"
-    shutil.copytree(frontend / "src/views/module_demo/category", view)
-    rewrite_copy(view)
     api = frontend / "src/api/module_business"
-    api.mkdir()
-    shutil.copy2(frontend / "src/api/module_demo/category.ts", api / "supplier.ts")
-    rewrite_copy(api)
 
     # 真实修改：新增联系邮箱字段，并将名称上限从 64 改为 32。
     model = business / "supplier/model.py"
@@ -108,7 +98,7 @@ def main() -> None:
     redis_port, backend_port, frontend_port = free_port(), free_port(), free_port()
     environment = {
         **os.environ,
-        "ENVIRONMENT": "prod",
+        "ENVIRONMENT": "dev",
         "DATABASE_TYPE": "sqlite",
         "DATABASE_NAME": str(artifacts / "database"),
         "SECRET_KEY": "skeleton-fixture-only-not-a-real-key-2026",
@@ -127,8 +117,20 @@ def main() -> None:
         f"VITE_APP_TITLE=FastCore 骨架验收\nVITE_VERSION=fixture\nVITE_BASE_URL=/\nVITE_APP_BASE_API=/api/v1\nVITE_API_BASE_URL=http://127.0.0.1:{backend_port}\nVITE_PORT={frontend_port}\n"
     )
     server = backend / "fixture_server.py"
+    # SQLite 只用于隔离测试；与 ux_e2e_server 一样，仅切换运行时模块策略。
     server.write_text(
-        'import uvicorn\nfrom app.config.setting import settings\nfrom main import create_app\nsettings.CAPTCHA_ENABLE = False\nuvicorn.run(create_app(), host="127.0.0.1", port=settings.SERVER_PORT, log_config=None)\n'
+        "import uvicorn\n"
+        "from app.config.setting import settings\n"
+        "from app.common.enums import EnvironmentEnum\n"
+        "import app.init_app as init\n"
+        "from main import create_app\n"
+        "original_bootstrap = init.bootstrap_database\n"
+        "async def fixture_bootstrap(redis, environment=None, *, migrate_only=False):\n"
+        "    await original_bootstrap(redis, EnvironmentEnum.DEV, migrate_only=migrate_only)\n"
+        "init.bootstrap_database = fixture_bootstrap\n"
+        "settings.ENVIRONMENT = EnvironmentEnum.PROD\n"
+        "settings.CAPTCHA_ENABLE = False\n"
+        'uvicorn.run(create_app(), host="127.0.0.1", port=settings.SERVER_PORT, log_config=None)\n'
     )
     # 只在副本重置种子为公开的测试身份；不读取真实数据库或环境文件。
     hashed = subprocess.check_output([str(python), "-c", "from app.utils.hash_bcrpy_util import PwdUtil; print(PwdUtil.hash_password('admin123'))"], cwd=backend, env=environment, text=True).strip()
@@ -215,7 +217,7 @@ def main() -> None:
             artifacts / "core-install.log",
         )
         for prefix, root in (("module_ai:", "AI"), ("module_demo:", "Demo")):
-            run([str(core_python), "-m", "app.scripts.prune_menus", "--env", "prod", "--permission-prefix", prefix, "--route-name", root, "--apply"], backend, artifacts / "cleanup.log", environment)
+            run([str(core_python), "-m", "app.scripts.prune_menus", "--env", "dev", "--permission-prefix", prefix, "--route-name", root, "--apply"], backend, artifacts / "cleanup.log", environment)
         with sqlite3.connect(artifacts / "database.db") as database:
             assert "ai_knowledge_document" in {row[0] for row in database.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             assert database.execute("SELECT contact_email FROM business_supplier WHERE name='骨架验收供应商-修改'").fetchone() == ("updated@example.com",)
@@ -254,12 +256,15 @@ def main() -> None:
                     "passed": True,
                     "database": "isolated SQLite",
                     "redis": "isolated real Redis",
+                    "module_policy": "prod runtime with dev SQLite fixture; not production configuration acceptance",
+                    "module_creation": "main.py generate-module --apply",
+                    "generated_regression_tests": "generated-tests.log",
                     "ai_dependencies_installed_in_pruned_runtime": False,
                     "existing_business_data_preserved": True,
                     "fresh_database_omits_removed_tables": True,
                     "migration_generation_preserves_unowned_tables": True,
                     "scenarios": [
-                        "copy business module",
+                        "generate business module with CLI",
                         "add and validate email field",
                         "permissions",
                         "restart persistence",

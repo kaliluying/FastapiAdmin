@@ -12,6 +12,36 @@ from app.common.enums import EnvironmentEnum
 fastcore_cli = typer.Typer()
 
 
+@fastcore_cli.command(name="generate-module", help="生成独立业务模块；默认仅预览差异，--apply 写入，不连接数据库")
+def generate_module(
+    module: Annotated[str, typer.Option("--module", help="新功能组标识，如 business")],
+    resource: Annotated[str, typer.Option("--resource", help="资源标识，如 supplier")],
+    title: Annotated[str, typer.Option("--title", help="资源显示名，如 供应商；页面自动加“管理”")],
+    module_title: Annotated[str | None, typer.Option("--module-title", help="目录显示名，默认使用资源显示名")] = None,
+    apply: Annotated[bool, typer.Option("--apply", help="写入新文件并接入模块清单")] = False,
+) -> None:
+    from pathlib import Path
+
+    from app.scripts.module_generator import apply_module_plan, build_module_plan, preview_module
+
+    root = Path(__file__).resolve().parent.parent
+    try:
+        plan = build_module_plan(root, module=module, resource=resource, title=title, module_title=module_title)
+        if apply:
+            apply_module_plan(root, plan)
+        else:
+            typer.echo(preview_module(plan))
+    except (ValueError, OSError, SyntaxError) as error:
+        typer.echo(f"生成失败: {error}", err=True)
+        raise typer.Exit(code=1) from error
+    typer.echo(f"{'已生成' if apply else '仅预览，未写入'}: {len(plan.files)} 个新文件，更新 backend/app/config/modules.py")
+    if apply:
+        typer.echo(f"回归: uv run --no-sync pytest tests/test_{module}_{resource}.py -q")
+        typer.echo("请先审查迁移和业务约束，再核对目标数据库并启动或 bootstrap；普通角色需在角色管理中明确授权。")
+    else:
+        typer.echo("确认差异后添加 --apply 执行；已有文件不会覆盖。")
+
+
 def create_app() -> FastAPI:
     """创建 FastAPI 应用实例并完成日志、中间件、路由与静态资源注册。
 

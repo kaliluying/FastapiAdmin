@@ -63,4 +63,4 @@ uv run main.py run --env=prod
 .venv/bin/ruff check app tests --no-fix --output-format concise
 ```
 
-测试默认使用临时 SQLite 和模拟 Redis，只证明测试环境行为，不能替代 MySQL 或 PostgreSQL 验收。跨层或真实依赖验收见[测试与验收](../docs/TESTING.md)。新增业务模块见[标准模块模板](../docs/STANDARD_MODULE_TEMPLATE.md)。
+测试默认使用临时 SQLite 和模拟 Redis，只证明测试环境行为，不能替代 MySQL 或 PostgreSQL 验收。跨层或真实依赖验收见[测试与验收](../docs/TESTING.md)。新增业务可运行 `uv run --no-sync main.py generate-module --module business --resource supplier --title 供应商`，默认预览，添加 `--apply` 写入；见[模块生成器](../docs/MODULE_GENERATOR.md)和[标准模块模板](../docs/STANDARD_MODULE_TEMPLATE.md)。

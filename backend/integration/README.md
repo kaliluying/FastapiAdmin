@@ -88,4 +88,4 @@ node tests/site-e2e.cjs
 
 ## 骨架增删改验收
 
-运行 `uv run --no-sync python integration/skeleton_acceptance.py`。在副本中新增供应商业务、修改字段及校验，以真实浏览器验证保存、权限和重启持久化；然后物理删除 AI、范例和监控展示，创建不含 AI 专用依赖的独立 Python 环境，验证菜单清理、启动与前端构建。使用隔离 SQLite 和独立真实 Redis，不读取已有数据库或环境文件，不调用外部模型服务。依赖与证据边界见[模块开发指南](../../docs/MODULE_DEVELOPMENT.md)。
+运行 `uv run --no-sync python integration/skeleton_acceptance.py`。在副本中调用模块生成 CLI 并运行生成的测试，再修改供应商字段及校验，以真实浏览器验证保存、权限和重启持久化；然后物理删除 AI、范例和监控展示，创建不含 AI 专用依赖的独立 Python 环境，验证菜单清理、启动与前端构建。使用隔离 SQLite 和独立真实 Redis，开发配置加载后仅切换生产模块运行策略，不代表生产配置验收。不读取已有数据库或环境文件，不调用外部模型服务。依赖与证据边界见[模块开发指南](../../docs/MODULE_DEVELOPMENT.md)。

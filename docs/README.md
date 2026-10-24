@@ -11,6 +11,7 @@ FastCore 是单组织企业后端项目骨架，配套管理端并内置 AI 能�
 | [管理端说明](../frontend/README.md)                             | 环境配置、路由与构建                         |
 | [架构与开发指南](ARCHITECTURE_AND_DEVELOPMENT.md)               | 模块边界、权限链路、数据归属与知识任务恢复   |
 | [模块增删改指南](MODULE_DEVELOPMENT.md) | 显式注册、字段修改、功能裁剪与依赖分离 |
+| [业务模块生成器](MODULE_GENERATOR.md) | CLI 预览、安全写入、前后端 CRUD、迁移和测试 |
 | [骨架增删改验收](SKELETON_ACCEPTANCE.md) | 隔离增改、物理裁剪、独立走查与验证边界 |
 | [标准模块模板：分类管理](STANDARD_MODULE_TEMPLATE.md)           | 新业务模块从数据库到页面的开发与验收路径     |
 | [测试与验收](TESTING.md)                                        | 单测、静态检查、隔离浏览器和真实依赖验收边界 |
