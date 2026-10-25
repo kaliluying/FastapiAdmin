@@ -31,8 +31,9 @@
               @toggle-sidebar="toggleSidebar"
               @show-evidence="isEvidenceDrawerOpen = true"
               @show-usage="usageOpen = true"
-            />
-            <ElButton text @click="diagnosticAgentOpen = true">只读诊断 Agent</ElButton>
+            >
+              <ElButton text @click="diagnosticAgentOpen = true">只读诊断 Agent</ElButton>
+            </FaChatNavbar>
           </ElHeader>
           <ElMain class="chat-main" :aria-busy="switchingSession">
             <p v-if="switchingSession" class="builtin-tool-notice" role="status">正在加载对话…</p>
@@ -726,7 +727,7 @@ onDeactivated(() => {
   justify-content: space-between;
   padding-bottom: 10px;
   margin-bottom: 12px;
-  border-bottom: 1px solid var(--fa-card-border);
+  border-bottom: 1px solid var(--fa-glass-border);
 
   strong {
     font-size: 14px;
@@ -750,9 +751,11 @@ onDeactivated(() => {
   font-size: 12px;
   line-height: 1.5;
   color: var(--fa-color-text-secondary, #606266);
-  background: color-mix(in srgb, var(--theme-color) 6%, var(--fa-color-canvas));
-  border: 1px solid color-mix(in srgb, var(--theme-color) 16%, transparent);
-  border-radius: 8px;
+  background: var(--fa-glass-bg-inset);
+  border: 1px solid var(--fa-glass-border);
+  border-radius: 10px;
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
 
   span {
     flex: 1;
@@ -770,10 +773,12 @@ onDeactivated(() => {
 .main-chat {
   height: 100%;
   overflow: hidden;
-  background: var(--fa-color-surface);
-  border: 1px solid var(--fa-card-border);
-  border-radius: var(--fa-radius-panel);
-  box-shadow: var(--fa-panel-shadow, 0 8px 24px -4px rgb(15 23 42 / 6%));
+  background: var(--fa-glass-bg);
+  border: 1px solid var(--fa-glass-border);
+  border-radius: var(--fa-radius-bento);
+  box-shadow: var(--fa-shadow-bento);
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
 
   :deep(.chat-split-panel) {
     min-width: 0;
@@ -817,8 +822,8 @@ onDeactivated(() => {
     flex-shrink: 0;
     height: auto;
     padding: 0;
-    background: var(--fa-color-surface);
-    border-bottom: 1px solid var(--fa-card-border);
+    background: transparent;
+    border-bottom: 0;
   }
 
   .chat-main {
@@ -833,15 +838,15 @@ onDeactivated(() => {
     height: auto;
     min-height: 80px;
     padding: 0;
-    background: var(--fa-color-surface);
-    border-top: 1px solid var(--fa-card-border);
+    background: transparent;
+    border-top: 1px solid var(--fa-glass-border);
   }
 
   :deep(.evidence-panel) {
     padding: 14px;
     overflow-y: auto;
-    background: color-mix(in srgb, var(--fa-color-canvas) 85%, var(--fa-color-surface));
-    border-left: 1px solid var(--fa-card-border);
+    background: var(--fa-glass-bg-inset);
+    border-left: 1px solid var(--fa-glass-border);
   }
 
   :deep(.el-splitter-bar__dragger) {

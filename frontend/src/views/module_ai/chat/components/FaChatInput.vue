@@ -266,10 +266,12 @@ defineExpose({
   max-width: 100%;
   padding: 4px 10px;
   font-size: 12px;
-  background: var(--fa-color-surface-raised);
-  border: 1px solid var(--fa-color-border);
+  background: var(--fa-glass-bg-inset);
+  border: 1px solid var(--fa-glass-border);
   border-radius: 14px;
-  box-shadow: var(--fa-soft-shadow);
+  box-shadow: var(--fa-shadow-bento);
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
 }
 
 .file-name {
@@ -284,18 +286,21 @@ defineExpose({
   padding: 14px 18px 12px;
   overflow: hidden;
   color: var(--fa-color-text);
-  background: color-mix(in srgb, var(--fa-color-surface) 95%, transparent);
-  border: 1px solid var(--fa-color-border);
-  border-radius: 20px;
-  box-shadow: var(--fa-panel-shadow);
-  backdrop-filter: blur(16px) saturate(180%);
+  background: var(--fa-color-surface);
+  border: 1px solid var(--fa-glass-border);
+  border-radius: var(--fa-radius-bento);
+  box-shadow: var(--fa-shadow-bento);
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
   transition:
     border-color var(--fa-motion-control),
     box-shadow var(--fa-motion-control);
 
   &:focus-within {
-    border-color: var(--theme-color);
-    box-shadow: var(--fa-focus-ring), var(--fa-panel-shadow);
+    border-color: color-mix(in srgb, var(--theme-color) 65%, var(--fa-glass-border));
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--theme-color) 16%, transparent),
+      var(--fa-shadow-bento-hover);
   }
 }
 
@@ -380,18 +385,19 @@ defineExpose({
 }
 
 .composer-mode {
-  padding: 2px 8px;
+  padding: 3px 10px;
   font-size: 12px;
   font-weight: 500;
   color: var(--theme-color);
-  background: color-mix(in srgb, var(--theme-color) 8%, transparent);
-  border-radius: 6px;
+  background: color-mix(in srgb, var(--theme-color) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-color) 18%, transparent);
+  border-radius: 8px;
 }
 
 .composer-divider {
   width: 1px;
   height: 18px;
-  background: var(--fa-color-border);
+  background: var(--fa-glass-border);
 }
 
 .upload-btn,
@@ -405,24 +411,30 @@ defineExpose({
 
 .upload-btn {
   color: var(--fa-color-text);
-  background: transparent;
-  border: 1px solid var(--fa-color-border);
+  background: var(--fa-glass-bg-inset);
+  border: 1px solid var(--fa-glass-border);
+  box-shadow: var(--fa-shadow-bento);
   transition:
     color var(--fa-motion-control),
     background-color var(--fa-motion-control),
-    border-color var(--fa-motion-control);
+    border-color var(--fa-motion-control),
+    transform var(--fa-motion-control),
+    box-shadow var(--fa-motion-control);
 
   &:hover,
   &:focus-visible {
     color: var(--theme-color);
     background: var(--fa-hover-color);
-    border-color: color-mix(in srgb, var(--theme-color) 35%, transparent);
+    border-color: color-mix(in srgb, var(--theme-color) 35%, var(--fa-glass-border));
+    box-shadow: var(--fa-shadow-bento-hover);
+    transform: translateY(-1px);
   }
 }
 
 .send-button {
   color: var(--el-color-white);
   background: var(--theme-color);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-color) 32%, transparent);
   transition:
     transform var(--fa-motion-control),
     background-color var(--fa-motion-control),
@@ -431,7 +443,8 @@ defineExpose({
   &:not(:disabled):hover,
   &:not(:disabled):focus-visible {
     background: var(--el-color-primary-dark-2);
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-color) 35%, transparent);
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--theme-color) 45%, transparent);
+    transform: translateY(-1px);
   }
 
   &:not(:disabled):active {
@@ -440,7 +453,9 @@ defineExpose({
 
   &:disabled {
     color: var(--fa-color-text-muted);
-    background: var(--fa-color-surface-raised);
+    background: var(--fa-glass-bg-inset);
+    border: 1px solid var(--fa-glass-border);
+    box-shadow: none;
   }
 
   &.stop-button {
@@ -449,7 +464,8 @@ defineExpose({
     &:hover,
     &:focus-visible {
       background: var(--el-color-danger-dark-2);
-      box-shadow: 0 2px 8px color-mix(in srgb, var(--el-color-danger) 35%, transparent);
+      box-shadow: 0 6px 18px color-mix(in srgb, var(--el-color-danger) 45%, transparent);
+      transform: translateY(-1px);
     }
   }
 }

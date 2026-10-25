@@ -395,9 +395,11 @@ watch(menuOpen, (isMenuOpen: boolean) => {
   height: 100vh;
   user-select: none;
   scrollbar-width: none;
-  background: var(--fa-color-sidebar, var(--default-box-color));
-  border-right: 1px solid var(--fa-color-border);
-  box-shadow: none;
+  background: var(--fa-glass-bg, var(--fa-color-sidebar));
+  border-right: 1px solid var(--fa-glass-border, var(--fa-color-border));
+  box-shadow: 0 4px 24px -2px rgb(15 23 42 / 4%);
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
 
   &.no-border {
     border-right: none !important;

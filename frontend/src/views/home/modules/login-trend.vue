@@ -202,10 +202,12 @@ onUnmounted(() => {
 
 <style scoped lang="scss">
 .login-trend-card {
-  background: var(--fa-color-surface, var(--el-bg-color));
-  border: 1px solid var(--fa-color-border, var(--el-border-color));
+  background: var(--fa-glass-bg, var(--el-bg-color));
+  border: 1px solid var(--fa-glass-border, var(--el-border-color));
   border-radius: var(--fa-radius-panel);
-  box-shadow: var(--fa-soft-shadow);
+  box-shadow: var(--fa-shadow-bento, var(--fa-soft-shadow));
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
 }
 
 .login-trend-card :deep(.el-card__header) {

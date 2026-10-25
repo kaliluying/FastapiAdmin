@@ -590,10 +590,19 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
   position: relative;
   padding: 20px 20px 8px;
   overflow: hidden;
-  background: var(--default-box-color);
-  border: 1px solid var(--fa-card-border);
-  border-radius: var(--fa-radius-panel);
-  box-shadow: var(--fa-soft-shadow);
+  background: var(--fa-glass-bg);
+  border: 1px solid var(--fa-glass-border);
+  border-radius: var(--fa-radius-bento);
+  box-shadow: var(--fa-shadow-bento);
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
+  transition:
+    border-color var(--fa-motion-control) ease,
+    box-shadow var(--fa-motion-control) ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--theme-color) 20%, var(--fa-glass-border));
+  }
 
   :deep(.el-form-item) {
     margin-bottom: 14px;
@@ -608,7 +617,23 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
 
   :deep(.el-input__wrapper),
   :deep(.el-select__wrapper) {
-    background: var(--default-box-color) !important;
+    background: var(--fa-glass-bg-inset) !important;
+    border: 1px solid var(--fa-glass-border) !important;
+    border-radius: var(--fa-radius-control) !important;
+    box-shadow: none !important;
+    transition:
+      border-color var(--fa-motion-control) ease,
+      box-shadow var(--fa-motion-control) ease;
+
+    &:hover {
+      border-color: color-mix(in srgb, var(--theme-color) 35%, var(--fa-glass-border)) !important;
+    }
+
+    &.is-focus,
+    &.is-focused {
+      border-color: var(--theme-color) !important;
+      box-shadow: var(--fa-focus-ring) !important;
+    }
   }
 
   .action-column {
@@ -618,6 +643,7 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
     .action-buttons-wrapper {
       display: flex;
       flex-wrap: wrap;
+      gap: 8px;
       align-items: center;
       justify-content: flex-end;
       margin-bottom: 14px;
@@ -625,15 +651,57 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
 
     .form-buttons {
       display: flex;
-      gap: 10px;
+      gap: 8px;
 
       .reset-button {
-        background: var(--default-box-color);
-        border-color: var(--fa-card-border);
+        background: var(--fa-glass-bg-elevated);
+        border: 1px solid var(--fa-glass-border);
+        border-radius: var(--fa-radius-control);
+        box-shadow: var(--fa-shadow-bento);
+        transition:
+          background-color 0.18s ease,
+          border-color 0.18s ease,
+          color 0.18s ease,
+          box-shadow 0.18s ease,
+          transform 0.18s ease;
+
+        &:hover {
+          color: var(--theme-color);
+          background: var(--fa-hover-color);
+          border-color: color-mix(in srgb, var(--theme-color) 35%, var(--fa-glass-border));
+          box-shadow: var(--fa-shadow-bento-hover);
+          transform: translateY(-1px);
+        }
       }
 
       .search-button {
         min-width: 88px;
+        background: linear-gradient(
+          135deg,
+          var(--theme-color) 0%,
+          color-mix(in srgb, var(--theme-color) 85%, #000) 100%
+        );
+        border: 0;
+        border-radius: var(--fa-radius-control);
+        box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-color) 28%, transparent);
+        transition:
+          background-color 0.18s ease,
+          box-shadow 0.18s ease,
+          transform 0.18s ease;
+
+        &:hover {
+          background: linear-gradient(
+            135deg,
+            var(--el-color-primary-dark-2) 0%,
+            var(--theme-color) 100%
+          );
+          box-shadow: 0 6px 18px color-mix(in srgb, var(--theme-color) 40%, transparent);
+          transform: translateY(-1px);
+        }
+
+        &:active {
+          transform: scale(0.97);
+        }
       }
     }
 
@@ -641,24 +709,28 @@ const { span, gutter, labelPosition, labelWidth } = toRefs(props);
       display: flex;
       align-items: center;
       height: 32px;
-      padding: 0 10px;
-      margin-left: 12px;
+      padding: 0 12px;
       font-size: 13px;
       line-height: 32px;
       color: var(--el-text-color-secondary);
       cursor: pointer;
-      background: color-mix(in srgb, var(--theme-color) 6%, var(--default-box-color));
-      border: 1px solid color-mix(in srgb, var(--theme-color) 14%, var(--fa-card-border));
-      border-radius: 8px;
+      background: var(--fa-glass-bg-inset);
+      border: 1px solid var(--fa-glass-border);
+      border-radius: var(--fa-radius-control);
+      box-shadow: var(--fa-shadow-bento);
       transition:
-        background-color 0.2s ease,
-        border-color 0.2s ease,
-        color 0.2s ease;
+        background-color 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.18s ease;
 
       &:hover {
         color: var(--el-color-primary);
-        background: color-mix(in srgb, var(--theme-color) 10%, var(--default-box-color));
-        border-color: color-mix(in srgb, var(--theme-color) 32%, var(--fa-card-border));
+        background: var(--fa-glass-bg-elevated);
+        border-color: color-mix(in srgb, var(--theme-color) 35%, var(--fa-glass-border));
+        box-shadow: var(--fa-shadow-bento-hover);
+        transform: translateY(-1px);
       }
 
       &:focus-visible {

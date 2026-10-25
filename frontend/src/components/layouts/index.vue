@@ -8,6 +8,14 @@
 -->
 <template>
   <div class="app-layout">
+    <!-- 背景动态环境光 -->
+    <div class="ambient-canvas" aria-hidden="true">
+      <div class="ambient-orb orb-1" />
+      <div class="ambient-orb orb-2" />
+      <div class="ambient-orb orb-3" />
+      <div class="ambient-grid" />
+    </div>
+
     <a class="skip-main-link" href="#app-content" @click.prevent="focusContent">跳到主要内容</a>
     <!-- 左侧菜单导航 -->
     <aside id="app-sidebar">

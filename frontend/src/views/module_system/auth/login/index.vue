@@ -1,6 +1,15 @@
 <!-- 登录页：顶栏固定；仅插画列与表单区随布局切换 -->
 <template>
   <div class="login-page-root flex w-full flex-col overflow-hidden">
+    <div
+      class="ambient-canvas pointer-events-none fixed inset-0 z-0 overflow-hidden"
+      aria-hidden="true"
+    >
+      <div class="ambient-orb orb-1" />
+      <div class="ambient-orb orb-2" />
+      <div class="ambient-orb orb-3" />
+      <div class="ambient-grid" />
+    </div>
     <FaLoginCenterBackdrop v-if="panelAlign === 'center'" viewport-fixed />
     <FaAuthTopBar v-model:panel-align="panelAlign" />
 
@@ -17,7 +26,7 @@
 
       <div
         class="login-auth-split__col login-auth-split__col--form login-page-panel relative flex min-h-0 min-w-0 flex-col"
-        :class="panelAlign === 'center' ? 'bg-transparent' : 'bg-(--el-bg-color-page)'"
+        :class="panelAlign === 'center' ? 'bg-transparent' : 'bg-transparent'"
       >
         <div class="login-page-panel__main relative z-1 flex min-h-0 flex-1 flex-col">
           <main class="auth-right-wrap" aria-labelledby="login-heading">

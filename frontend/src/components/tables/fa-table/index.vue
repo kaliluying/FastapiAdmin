@@ -305,9 +305,7 @@ const height = computed(() => {
 
 // 表头背景颜色样式
 const headerCellStyle = computed(() => ({
-  background: isHeaderBackground.value
-    ? "var(--el-fill-color-lighter)"
-    : "var(--default-box-color)",
+  background: isHeaderBackground.value ? "var(--fa-glass-bg-inset)" : "transparent",
   ...(props.headerCellStyle || {}), // 合并用户传入的样式
 }));
 
@@ -538,7 +536,9 @@ defineExpose({
 
   :deep(.el-loading-mask) {
     z-index: 100;
-    background-color: var(--default-box-color) !important;
+    background-color: var(--fa-glass-bg) !important;
+    -webkit-backdrop-filter: var(--fa-glass-blur);
+    backdrop-filter: var(--fa-glass-blur);
   }
 
   /* Loading 过渡动画 - 消失时淡出 */
@@ -586,34 +586,48 @@ defineExpose({
       :deep(.el-pagination) {
         .btn-prev,
         .btn-next {
-          background-color: transparent;
-          border: 1px solid var(--fa-card-border);
-          border-radius: 8px;
-          transition: border-color 0.15s;
+          background: var(--fa-glass-bg-inset) !important;
+          border: 1px solid var(--fa-glass-border);
+          border-radius: 9px;
+          box-shadow: var(--fa-shadow-bento);
+          transition: all 0.18s ease;
 
           &:hover:not(.is-disabled) {
             color: var(--theme-color);
-            border-color: var(--theme-color);
+            background: var(--fa-glass-bg-elevated) !important;
+            border-color: color-mix(in srgb, var(--theme-color) 35%, var(--fa-glass-border));
+            box-shadow: var(--fa-shadow-bento-hover);
+            transform: translateY(-1px);
           }
         }
 
         li {
           box-sizing: border-box;
-          font-weight: 400 !important;
-          background-color: transparent;
-          border: 1px solid var(--fa-card-border);
-          border-radius: 8px;
-          transition: border-color 0.15s;
+          font-weight: 500 !important;
+          background: var(--fa-glass-bg-inset) !important;
+          border: 1px solid var(--fa-glass-border);
+          border-radius: 9px;
+          box-shadow: var(--fa-shadow-bento);
+          transition: all 0.18s ease;
 
           &.is-active {
-            font-weight: 400;
-            color: #fff;
-            background-color: var(--theme-color);
-            border: 1px solid var(--theme-color);
+            font-weight: 600;
+            color: #fff !important;
+            background: linear-gradient(
+              135deg,
+              var(--theme-color) 0%,
+              color-mix(in srgb, var(--theme-color) 85%, #000) 100%
+            ) !important;
+            border: 1px solid var(--theme-color) !important;
+            box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-color) 35%, transparent);
           }
 
-          &:hover:not(.is-disabled) {
-            border-color: var(--theme-color);
+          &:hover:not(.is-disabled, .is-active) {
+            color: var(--theme-color);
+            background: var(--fa-glass-bg-elevated) !important;
+            border-color: color-mix(in srgb, var(--theme-color) 35%, var(--fa-glass-border));
+            box-shadow: var(--fa-shadow-bento-hover);
+            transform: translateY(-1px);
           }
         }
       }

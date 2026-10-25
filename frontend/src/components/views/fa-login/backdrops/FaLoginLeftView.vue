@@ -1,4 +1,4 @@
-﻿<!-- 登录、注册、忘记密码左侧背景 -->
+<!-- 登录、注册、忘记密码左侧背景 -->
 <template>
   <div class="login-left-view">
     <div v-if="!hideTopBranding" class="logo">
@@ -104,7 +104,6 @@ withDefaults(defineProps<Props>(), {
   hideContent: false,
   hideTopBranding: false,
 });
-
 
 /** 使用内置 Logo，站点名称取应用默认值 */
 const webLogoSrc = computed(() => undefined);

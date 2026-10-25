@@ -323,14 +323,24 @@ html.dark .relative.box-border {
 }
 
 #app-header-toolbar .flex.items-center.justify-between {
-  background: var(--fa-color-surface-raised);
-  border: 1px solid var(--fa-card-border);
-  border-radius: var(--fa-radius-control);
-  box-shadow: none;
+  padding: 0 12px;
+  background: var(--fa-glass-bg-inset, var(--fa-color-surface-raised));
+  border: 1px solid var(--fa-glass-border, var(--fa-card-border));
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 2%);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 #app-header-toolbar .flex.items-center.justify-between:hover {
-  border-color: color-mix(in srgb, var(--theme-color) 32%, var(--fa-card-border));
+  background: var(--fa-glass-bg-hover, var(--fa-color-surface));
+  border-color: color-mix(in srgb, var(--theme-color) 40%, var(--fa-glass-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-color) 12%, transparent);
+}
+
+#app-header-toolbar .flex.items-center.h-5 {
+  background: var(--fa-glass-bg-elevated);
+  border-color: var(--fa-glass-border);
+  border-radius: 6px;
 }
 
 @media screen and (width <= 768px) {

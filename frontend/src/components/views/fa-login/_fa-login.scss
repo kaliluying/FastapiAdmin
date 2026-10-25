@@ -1,4 +1,5 @@
 .login-page-root {
+  position: relative;
   height: 100dvh;
   background-color: var(--fa-color-canvas);
 }
@@ -59,12 +60,9 @@
   overflow-y: auto;
 }
 
+// 登录卡片基础容器（居中与左右布局统一毛玻璃 Bento 质感）
 .login-auth-split--center .auth-right-wrap {
-  padding: 40px;
-  background: color-mix(in srgb, var(--fa-color-surface) 94%, transparent);
-  border: 1px solid var(--fa-color-border);
-  border-radius: 24px;
-  box-shadow: var(--fa-panel-shadow);
+  margin: auto;
 }
 
 @media only screen and (width <= 1180px) {
@@ -96,7 +94,38 @@
   flex-shrink: 0;
   width: min(440px, 100%);
   height: auto;
+  padding: 40px;
   margin: auto;
+  overflow: hidden;
+  background: var(--fa-glass-bg);
+  border: 1px solid var(--fa-glass-border);
+  border-radius: 24px;
+  box-shadow: var(--fa-shadow-bento);
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
+  transition:
+    box-shadow var(--fa-motion-page) ease,
+    border-color var(--fa-motion-page) ease;
+
+  &::before {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 1px;
+    pointer-events: none;
+    content: "";
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, #fff 45%, transparent) 30%,
+      color-mix(in srgb, #fff 75%, transparent) 50%,
+      color-mix(in srgb, #fff 45%, transparent) 70%,
+      transparent
+    );
+  }
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--theme-color) 25%, var(--fa-glass-border));
+  }
 
   .form {
     height: auto;
@@ -132,12 +161,21 @@
   justify-content: center;
   width: 48px;
   height: 48px;
-  margin-bottom: 28px;
-  font-size: 23px;
+  margin-bottom: 24px;
+  font-size: 24px;
   color: var(--el-color-primary);
-  background: color-mix(in srgb, var(--el-color-primary) 8%, var(--fa-color-surface));
-  border: 1px solid color-mix(in srgb, var(--el-color-primary) 14%, var(--fa-color-border));
+  background: var(--fa-glass-bg-inset);
+  border: 1px solid var(--fa-glass-border);
   border-radius: 14px;
+  box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--el-color-primary) 18%, transparent);
+  transition:
+    transform var(--fa-motion-control) ease,
+    box-shadow var(--fa-motion-control) ease;
+
+  &:hover {
+    box-shadow: 0 6px 16px -2px color-mix(in srgb, var(--el-color-primary) 28%, transparent);
+    transform: scale(1.05);
+  }
 }
 
 .form-intro {
@@ -177,8 +215,8 @@
 .login-page-form :deep(.el-input__wrapper),
 .login-page-form :deep(.el-select__wrapper) {
   padding: 1px 16px;
-  background: var(--fa-color-surface);
-  border: 1px solid var(--fa-color-border);
+  background: var(--fa-glass-bg-inset) !important;
+  border: 1px solid var(--fa-glass-border) !important;
   border-radius: 12px;
   box-shadow: none !important;
   transition:
@@ -189,13 +227,22 @@
 
 .login-page-form :deep(.el-input__wrapper:hover),
 .login-page-form :deep(.el-select__wrapper:hover) {
-  border-color: var(--el-border-color);
+  border-color: color-mix(in srgb, var(--el-color-primary) 35%, var(--fa-glass-border)) !important;
 }
 
 .login-page-form :deep(.el-input__wrapper.is-focus),
 .login-page-form :deep(.el-select__wrapper.is-focused) {
-  border-color: var(--el-color-primary);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--el-color-primary) 16%, transparent) !important;
+  border-color: var(--el-color-primary) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--el-color-primary) 18%, transparent) !important;
+}
+
+.login-page-form :deep(.el-input__wrapper .el-icon) {
+  color: var(--fa-color-text-muted);
+  transition: color 0.2s ease;
+}
+
+.login-page-form :deep(.el-input__wrapper.is-focus .el-icon) {
+  color: var(--el-color-primary);
 }
 
 /* 可见焦点态：键盘导航无障碍 */
@@ -206,10 +253,34 @@
 }
 
 .login-submit-btn {
-  height: 52px !important;
+  height: 50px !important;
   margin-top: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff !important;
+  background: linear-gradient(
+    135deg,
+    var(--el-color-primary) 0%,
+    color-mix(in srgb, var(--el-color-primary) 85%, #000) 100%
+  ) !important;
+  border: 1px solid color-mix(in srgb, var(--el-color-primary) 30%, transparent) !important;
   border-radius: 12px !important;
-  box-shadow: 0 4px 10px color-mix(in srgb, var(--el-color-primary) 14%, transparent);
+  box-shadow: 0 6px 18px -2px color-mix(in srgb, var(--el-color-primary) 35%, transparent);
+  transition:
+    transform var(--fa-motion-control) ease,
+    box-shadow var(--fa-motion-control) ease,
+    filter var(--fa-motion-control) ease;
+
+  &:hover {
+    box-shadow: 0 8px 24px -2px color-mix(in srgb, var(--el-color-primary) 45%, transparent);
+    filter: brightness(1.05);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--el-color-primary) 35%, transparent);
+    transform: translateY(0);
+  }
 }
 
 .captcha-image {
@@ -217,10 +288,26 @@
   align-items: center;
   justify-content: center;
   width: 144px;
-  height: 52px;
+  height: 50px;
+  overflow: hidden;
   cursor: pointer;
-  background: var(--fa-color-surface);
+  background: var(--fa-glass-bg-inset);
+  border: 1px solid var(--fa-glass-border);
   border-radius: 12px;
+  transition:
+    border-color var(--fa-motion-control) ease,
+    box-shadow var(--fa-motion-control) ease,
+    transform var(--fa-motion-control) ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--el-color-primary) 35%, var(--fa-glass-border));
+    box-shadow: var(--fa-shadow-bento);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 }
 
 .captcha-image img {
@@ -235,8 +322,9 @@
 }
 
 @media (width <= 640px) {
-  .login-auth-split--center .auth-right-wrap {
+  .auth-right-wrap {
     padding: 28px 20px;
+    border-radius: 20px;
   }
 }
 
@@ -275,10 +363,6 @@
   }
 }
 
-.login-submit-btn:hover {
-  filter: brightness(0.98);
-}
-
 .login-page-root button:focus-visible {
   outline: 2px solid var(--el-color-primary);
   outline-offset: 3px;
@@ -290,10 +374,12 @@
   font-size: 13px;
   line-height: 1.6;
   color: var(--fa-color-text);
-  background: var(--fa-color-surface-raised);
-  border: 1px solid var(--fa-color-border);
+  background: var(--fa-glass-bg-inset);
+  border: 1px solid var(--fa-glass-border);
   border-left: 3px solid var(--fa-color-danger);
   border-radius: var(--fa-radius-control);
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
 }
 
 .auth-feedback p {

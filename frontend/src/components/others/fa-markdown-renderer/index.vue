@@ -80,24 +80,34 @@ const renderedContent = computed(() => {
   overflow-wrap: break-word;
 
   :deep(pre) {
-    padding: 12px;
+    padding: 12px 16px;
     margin: 12px 0;
     overflow-x: auto;
-    background: var(--el-fill-color-light);
-    border-radius: 6px;
+    background: var(--fa-glass-bg-inset, var(--el-fill-color-light));
+    border: 1px solid var(--fa-glass-border, var(--el-border-color-lighter));
+    border-radius: var(--fa-radius-control, 8px);
 
     code {
-      font-family: "Courier New", Courier, monospace;
+      font-family:
+        "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 13px;
+      line-height: 1.6;
     }
   }
 
-  :deep(code) {
+  :deep(:not(pre) > code) {
     padding: 2px 6px;
-    font-family: "Courier New", Courier, monospace;
-    font-size: 13px;
-    background: var(--el-fill-color-light);
-    border-radius: 3px;
+    font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 12.5px;
+    color: var(--theme-color, var(--el-color-primary));
+    background: color-mix(
+      in srgb,
+      var(--theme-color, var(--el-color-primary)) 8%,
+      var(--fa-glass-bg-inset, var(--el-fill-color-light))
+    );
+    border: 1px solid
+      color-mix(in srgb, var(--theme-color, var(--el-color-primary)) 16%, transparent);
+    border-radius: 4px;
   }
 
   :deep(p) {

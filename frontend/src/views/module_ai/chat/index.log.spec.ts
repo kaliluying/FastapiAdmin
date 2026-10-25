@@ -85,6 +85,7 @@ function mountChat() {
         ElSplitterPanel: Panel,
         ElContainer: Panel,
         ElHeader: Panel,
+        FaChatNavbar: Panel,
         ElMain: Panel,
         ElFooter: Panel,
         FaChatInput: defineComponent({

@@ -378,32 +378,35 @@ onUnmounted(() => {
     items-center 
     justify-center 
     cursor-pointer 
-    rounded-md 
-    bg-box
-    dark:bg-g-200/70
+    rounded-lg 
     text-g-700
-    border
-    border-(--fa-card-border)
-    hover:bg-hover-color
     md:ml-0 
     md:mr-2.5;
 
-  box-shadow: var(--fa-soft-shadow);
+  background: var(--fa-glass-bg-elevated);
+  border: 1px solid var(--fa-glass-border);
+  box-shadow: var(--fa-shadow-bento);
   transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease,
-    transform 0.15s ease;
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
 }
 
 .button:hover {
-  border-color: color-mix(in srgb, var(--theme-color) 22%, var(--fa-card-border));
+  color: var(--theme-color);
+  background: var(--fa-hover-color);
+  border-color: color-mix(in srgb, var(--theme-color) 35%, var(--fa-glass-border));
+  box-shadow: var(--fa-shadow-bento-hover);
   transform: translateY(-1px);
 }
 
 .button.active {
-  border-color: color-mix(in srgb, var(--theme-color) 32%, transparent);
-  box-shadow: var(--fa-soft-shadow);
+  color: var(--el-color-white);
+  background: var(--theme-color);
+  border-color: var(--theme-color);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-color) 35%, transparent);
 }
 
 .button:focus-visible {

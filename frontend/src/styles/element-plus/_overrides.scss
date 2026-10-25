@@ -801,10 +801,19 @@ html.dark .el-overlay {
 .el-dialog,
 .el-message-box,
 .login-out-dialog {
-  background: var(--fa-color-surface-raised) !important;
-  border: 1px solid var(--fa-color-border) !important;
+  background: var(--fa-glass-bg-elevated, var(--fa-color-surface-raised)) !important;
+  border: 1px solid var(--fa-glass-border, var(--fa-color-border)) !important;
   border-radius: var(--fa-radius-overlay) !important;
-  box-shadow: var(--fa-overlay-shadow) !important;
+  box-shadow: var(--fa-overlay-shadow), var(--fa-shadow-bento) !important;
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
+}
+
+.el-drawer {
+  background: var(--fa-glass-bg-elevated, var(--fa-color-surface-raised)) !important;
+  border-left: 1px solid var(--fa-glass-border, var(--fa-color-border)) !important;
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
 }
 
 .el-message {
@@ -815,40 +824,82 @@ html.dark .el-overlay {
 }
 
 .el-table {
-  --el-table-border-color: var(--fa-color-border) !important;
+  --el-table-border-color: var(--fa-glass-border) !important;
+  --el-table-bg-color: transparent !important;
+  --el-table-tr-bg-color: transparent !important;
   --el-table-current-row-bg-color: color-mix(
     in srgb,
     var(--theme-color) 8%,
-    var(--fa-color-surface)
+    var(--fa-glass-bg-elevated)
   ) !important;
-  --el-table-header-bg-color: var(--fa-color-surface-raised) !important;
+  --el-table-header-bg-color: var(--fa-glass-bg-inset) !important;
   --el-table-row-hover-bg-color: color-mix(
     in srgb,
     var(--theme-color) 5%,
-    var(--fa-color-surface)
+    var(--fa-glass-bg-elevated)
   ) !important;
 
   overflow: hidden;
-  border: 1px solid var(--fa-color-border);
-  border-radius: var(--fa-radius-panel);
+  background: transparent !important;
+  border: 1px solid var(--fa-glass-border);
+  border-radius: var(--fa-radius-bento);
 }
 
 .el-table th.el-table__cell {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--fa-color-text-muted);
   letter-spacing: 0.02em;
-  background: var(--fa-color-surface-raised) !important;
+  background: var(--fa-glass-bg-inset) !important;
+}
+
+.el-table tr {
+  background-color: transparent !important;
+  transition: background-color 0.15s ease;
+}
+
+.el-table .el-tag {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  font-weight: 550;
+  border-radius: 9999px !important;
+
+  &::before {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    content: "";
+    background-color: currentcolor;
+    border-radius: 50%;
+    opacity: 0.85;
+  }
 }
 
 .el-table .el-table__cell {
-  border-bottom-color: var(--fa-color-border) !important;
+  border-bottom-color: var(--fa-glass-border) !important;
+}
+
+.el-table .el-table-fixed-column--left,
+.el-table .el-table-fixed-column--right,
+.el-table__fixed-right-patch {
+  background-color: var(--fa-glass-bg-elevated) !important;
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
+}
+
+.el-table .el-table-fixed-column--left.is-last-column::before {
+  box-shadow: inset 10px 0 10px -10px rgb(0 0 0 / 15%);
+}
+
+.el-table .el-table-fixed-column--right.is-first-column::before {
+  box-shadow: inset -10px 0 10px -10px rgb(0 0 0 / 15%);
 }
 
 .el-table--border::after,
 .el-table--border::before,
 .el-table__inner-wrapper::before {
-  background-color: var(--fa-color-border) !important;
+  background-color: var(--fa-glass-border) !important;
 }
 
 // Semantic status colors must also reach component-local variables in both modes.

@@ -251,9 +251,15 @@ const changeThemeColor = (color: string) => {
   font-size: 22px;
   color: var(--fa-color-text);
   cursor: pointer;
-  background: var(--fa-color-surface);
-  border: 1px solid var(--fa-color-border);
+  background: var(--fa-glass-bg);
+  border: 1px solid var(--fa-glass-border);
   border-radius: 12px;
+  box-shadow: var(--fa-shadow-bento);
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
+  transition:
+    background-color var(--fa-motion-control) ease,
+    transform var(--fa-motion-control) ease;
 }
 
 .auth-mobile-settings:focus-visible {
@@ -291,18 +297,20 @@ const changeThemeColor = (color: string) => {
 /* 右上角操作的整体衬底 */
 .auth-top-bar-actions-panel {
   gap: 4px;
-  background-color: var(--fa-color-surface);
-  border: 1px solid var(--fa-color-border);
+  background: var(--fa-glass-bg);
+  border: 1px solid var(--fa-glass-border);
 
   /* 胶囊形：左右两端为半圆弧 */
   border-radius: var(--fa-radius-overlay, 14px);
-  box-shadow: var(--fa-soft-shadow);
+  box-shadow: var(--fa-shadow-bento);
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
 }
 
 .dark .auth-top-bar-actions-panel {
-  background-color: rgb(255 255 255 / 8%);
-  border-color: rgb(255 255 255 / 12%);
-  box-shadow: 0 4px 20px rgb(0 0 0 / 35%);
+  background: var(--fa-glass-bg);
+  border-color: var(--fa-glass-border);
+  box-shadow: var(--fa-shadow-bento);
 }
 
 /* 右上角三个操作按钮：悬浮抬升 + 浅底 + 图标随主色 */

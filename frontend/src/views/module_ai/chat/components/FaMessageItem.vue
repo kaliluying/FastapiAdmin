@@ -47,6 +47,11 @@
         </div>
         <div v-if="parsedContent.answer" class="message-text">
           <FaMarkdownRenderer :content="parsedContent.answer" />
+          <span
+            v-if="message.type === 'assistant' && message.loading"
+            class="streaming-cursor"
+            aria-hidden="true"
+          />
         </div>
         <div
           v-if="message.type === 'assistant' && message.loading && !message.content"
@@ -236,7 +241,7 @@ const formatFileSize = (bytes: number): string => {
       color: #fff;
       background: var(--theme-color);
       border-radius: 10px;
-      box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-color) 25%, transparent);
+      box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--theme-color) 35%, transparent);
     }
 
     .ai-avatar {
@@ -253,7 +258,7 @@ const formatFileSize = (bytes: number): string => {
         color-mix(in srgb, var(--el-color-success) 70%, #06b6d4)
       );
       border-radius: 10px;
-      box-shadow: 0 2px 6px color-mix(in srgb, var(--el-color-success) 25%, transparent);
+      box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--el-color-success) 35%, transparent);
     }
   }
 
@@ -274,14 +279,28 @@ const formatFileSize = (bytes: number): string => {
       }
 
       .copy-button {
-        gap: 4px;
-        padding: 4px;
-        font-size: 12px;
+        display: inline-flex;
+        gap: 5px;
+        align-items: center;
+        padding: 3px 8px;
+        font-size: 11.5px;
         color: var(--fa-color-text-muted);
-        transition: color var(--fa-motion-control);
+        background: var(--fa-glass-bg-inset);
+        border: 1px solid var(--fa-glass-border);
+        border-radius: var(--fa-radius-control);
+        box-shadow: var(--fa-shadow-bento);
+        opacity: 1;
+        transition:
+          color var(--fa-motion-control),
+          background-color var(--fa-motion-control),
+          border-color var(--fa-motion-control),
+          box-shadow var(--fa-motion-control);
 
         &:hover {
           color: var(--theme-color);
+          background: var(--fa-glass-bg-elevated);
+          border-color: color-mix(in srgb, var(--theme-color) 35%, var(--fa-glass-border));
+          box-shadow: var(--fa-shadow-bento-hover);
         }
       }
     }
@@ -302,9 +321,12 @@ const formatFileSize = (bytes: number): string => {
         font-size: 12px;
         font-weight: 500;
         color: var(--theme-color);
-        background: color-mix(in srgb, var(--theme-color) 10%, transparent);
-        border: 1px solid color-mix(in srgb, var(--theme-color) 22%, transparent);
+        background: var(--fa-glass-bg-inset);
+        border: 1px solid var(--fa-glass-border);
         border-radius: 14px;
+        box-shadow: var(--fa-shadow-bento);
+        -webkit-backdrop-filter: var(--fa-glass-blur);
+        backdrop-filter: var(--fa-glass-blur);
         transition: all var(--fa-motion-control);
 
         .citations-icon {
@@ -313,8 +335,9 @@ const formatFileSize = (bytes: number): string => {
 
         &:hover {
           color: var(--theme-color);
-          background: color-mix(in srgb, var(--theme-color) 18%, transparent);
-          border-color: color-mix(in srgb, var(--theme-color) 35%, transparent);
+          background: color-mix(in srgb, var(--theme-color) 18%, var(--fa-glass-bg-inset));
+          border-color: color-mix(in srgb, var(--theme-color) 35%, var(--fa-glass-border));
+          box-shadow: var(--fa-shadow-bento-hover);
           transform: translateY(-1px);
         }
 
@@ -337,10 +360,10 @@ const formatFileSize = (bytes: number): string => {
           align-items: center;
           padding: 6px 12px;
           font-size: 12px;
-          background: var(--fa-color-surface-raised);
-          border: 1px solid var(--fa-color-border);
+          background: var(--fa-glass-bg-inset);
+          border: 1px solid var(--fa-glass-border);
           border-radius: 8px;
-          box-shadow: var(--fa-soft-shadow);
+          box-shadow: var(--fa-shadow-bento);
 
           .file-icon {
             font-size: 15px;
@@ -366,10 +389,12 @@ const formatFileSize = (bytes: number): string => {
         max-width: 760px;
         margin-bottom: 12px;
         overflow: hidden;
-        background: var(--fa-color-surface-raised);
-        border: 1px solid var(--fa-color-border);
+        background: var(--fa-glass-bg-inset);
+        border: 1px solid var(--fa-glass-border);
         border-left: 3px solid var(--theme-color);
-        border-radius: var(--fa-radius-control);
+        border-radius: var(--fa-radius-bento);
+        -webkit-backdrop-filter: var(--fa-glass-blur);
+        backdrop-filter: var(--fa-glass-blur);
       }
 
       .thinking-toggle {
@@ -389,7 +414,7 @@ const formatFileSize = (bytes: number): string => {
         font-size: 13px;
         line-height: 1.6;
         color: var(--fa-color-text-muted);
-        border-top: 1px dashed var(--fa-color-border);
+        border-top: 1px dashed var(--fa-glass-border);
       }
 
       .message-text {
@@ -397,6 +422,17 @@ const formatFileSize = (bytes: number): string => {
         line-height: 1.72;
         color: var(--fa-color-text);
         overflow-wrap: anywhere;
+      }
+
+      .streaming-cursor {
+        display: inline-block;
+        width: 6px;
+        height: 15px;
+        margin-left: 4px;
+        vertical-align: -1px;
+        background-color: var(--theme-color);
+        border-radius: 2px;
+        animation: cursor-blink 0.9s infinite ease-in-out;
       }
 
       .typing-indicator {
@@ -502,10 +538,12 @@ const formatFileSize = (bytes: number): string => {
           padding: 12px 18px;
           color: var(--fa-color-text);
           letter-spacing: -0.01em;
-          background: color-mix(in srgb, var(--theme-color) 9%, var(--fa-color-surface));
-          border: 1px solid color-mix(in srgb, var(--theme-color) 20%, var(--fa-color-border));
-          border-radius: 18px 6px 18px 18px;
-          box-shadow: var(--fa-soft-shadow);
+          background: color-mix(in srgb, var(--theme-color) 12%, var(--fa-glass-bg-elevated));
+          border: 1px solid color-mix(in srgb, var(--theme-color) 26%, var(--fa-glass-border));
+          border-radius: 20px 6px 20px 20px;
+          box-shadow: 0 4px 16px -2px color-mix(in srgb, var(--theme-color) 16%, transparent);
+          -webkit-backdrop-filter: var(--fa-glass-blur);
+          backdrop-filter: var(--fa-glass-blur);
         }
       }
     }
@@ -520,8 +558,9 @@ const formatFileSize = (bytes: number): string => {
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .typing-dots span {
-      animation: none;
+    .typing-dots span,
+    .streaming-cursor {
+      animation: none !important;
     }
 
     .copy-button,
@@ -540,6 +579,19 @@ const formatFileSize = (bytes: number): string => {
 
   30% {
     transform: translateY(-4px);
+  }
+}
+
+@keyframes cursor-blink {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+
+  50% {
+    opacity: 0.15;
+    transform: scaleY(0.7);
   }
 }
 

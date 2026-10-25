@@ -411,8 +411,10 @@ defineExpose({
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: color-mix(in srgb, var(--fa-color-canvas) 85%, var(--fa-color-surface));
-  border-right: 1px solid var(--fa-card-border);
+  background: var(--fa-glass-bg-inset);
+  border-right: 1px solid var(--fa-glass-border);
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
   transition: width 0.3s ease;
 
   .sidebar-header {
@@ -433,9 +435,10 @@ defineExpose({
         width: 34px;
         height: 34px;
         color: var(--theme-color);
-        background: color-mix(in srgb, var(--theme-color) 12%, transparent);
-        border-radius: 10px;
-        box-shadow: 0 2px 6px color-mix(in srgb, var(--theme-color) 15%, transparent);
+        background: color-mix(in srgb, var(--theme-color) 14%, transparent);
+        border: 1px solid color-mix(in srgb, var(--theme-color) 24%, transparent);
+        border-radius: 11px;
+        box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--theme-color) 20%, transparent);
       }
 
       .project-name {
@@ -464,8 +467,14 @@ defineExpose({
         font-size: 13.5px;
         font-weight: 500;
         letter-spacing: 0.01em;
-        border-radius: 11px;
-        box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-color) 25%, transparent);
+        background: linear-gradient(
+          135deg,
+          var(--theme-color) 0%,
+          color-mix(in srgb, var(--theme-color) 85%, #000) 100%
+        );
+        border: 0;
+        border-radius: 12px;
+        box-shadow: 0 4px 14px color-mix(in srgb, var(--theme-color) 28%, transparent);
         transition:
           transform 0.18s ease,
           box-shadow 0.18s ease;
@@ -475,7 +484,7 @@ defineExpose({
         }
 
         &:hover {
-          box-shadow: 0 4px 12px color-mix(in srgb, var(--theme-color) 32%, transparent);
+          box-shadow: 0 6px 18px color-mix(in srgb, var(--theme-color) 38%, transparent);
           transform: translateY(-1px);
         }
 
@@ -490,21 +499,25 @@ defineExpose({
         margin-bottom: 14px;
 
         :deep(.el-input__wrapper) {
-          background: color-mix(in srgb, var(--fa-color-surface) 80%, var(--fa-color-canvas));
-          border: 1px solid var(--fa-card-border);
-          border-radius: 10px;
-          box-shadow: none;
+          background: var(--fa-glass-bg) !important;
+          border: 1px solid var(--fa-glass-border) !important;
+          border-radius: 11px;
+          box-shadow: var(--fa-shadow-bento);
           transition:
             border-color 0.2s ease,
             box-shadow 0.2s ease;
 
           &:hover {
-            border-color: color-mix(in srgb, var(--theme-color) 40%, transparent);
+            border-color: color-mix(
+              in srgb,
+              var(--theme-color) 40%,
+              var(--fa-glass-border)
+            ) !important;
           }
 
           &.is-focus {
-            border-color: var(--theme-color);
-            box-shadow: var(--fa-focus-ring);
+            border-color: var(--theme-color) !important;
+            box-shadow: var(--fa-focus-ring), var(--fa-shadow-bento-hover) !important;
           }
         }
 
@@ -571,26 +584,30 @@ defineExpose({
               display: flex;
               gap: 6px;
               align-items: center;
-              padding: 4px 6px;
+              padding: 6px 8px;
               margin-bottom: 4px;
               cursor: pointer;
+              background: transparent;
               border: 1px solid transparent;
-              border-radius: 10px;
+              border-radius: 12px;
               transition:
                 background-color 0.18s ease,
                 border-color 0.18s ease,
-                box-shadow 0.18s ease;
+                box-shadow 0.18s ease,
+                transform 0.18s ease;
 
               &:hover {
-                background: color-mix(in srgb, var(--fa-color-surface) 92%, transparent);
-                border-color: var(--fa-card-border);
+                background: var(--fa-glass-bg);
+                border-color: var(--fa-glass-border);
+                box-shadow: var(--fa-shadow-bento);
+                transform: translateY(-1px);
               }
 
               &.active {
                 color: var(--theme-color);
-                background: color-mix(in srgb, var(--theme-color) 9%, var(--fa-color-surface));
-                border-color: color-mix(in srgb, var(--theme-color) 24%, transparent);
-                box-shadow: 0 1px 4px color-mix(in srgb, var(--theme-color) 8%, transparent);
+                background: color-mix(in srgb, var(--theme-color) 12%, var(--fa-glass-bg-elevated));
+                border-color: color-mix(in srgb, var(--theme-color) 32%, var(--fa-glass-border));
+                box-shadow: 0 4px 14px -2px color-mix(in srgb, var(--theme-color) 20%, transparent);
               }
 
               .session-icon {
@@ -653,7 +670,7 @@ defineExpose({
 
   .sidebar-footer {
     padding: 12px 14px;
-    border-top: 1px solid var(--fa-card-border);
+    border-top: 1px solid var(--fa-glass-border);
 
     .user-info {
       display: flex;

@@ -39,6 +39,7 @@
       <ElButton v-if="hasMessages" text :icon="Delete" @click="handleClearChat">清空对话</ElButton>
       <ElButton text @click="emit('show-evidence')">回答依据</ElButton>
       <ElButton text @click="emit('show-usage')">今日用量</ElButton>
+      <slot />
     </div>
   </div>
 </template>
@@ -95,7 +96,7 @@ const handleKnowledgeChange = (value: number[]) => {
   justify-content: space-between;
   padding: 10px 16px;
   color: var(--fa-color-text);
-  background: color-mix(in srgb, var(--fa-color-surface) 92%, transparent);
+  background: var(--fa-color-surface);
   border-bottom: 1px solid var(--fa-card-border);
   backdrop-filter: blur(14px) saturate(180%);
 }

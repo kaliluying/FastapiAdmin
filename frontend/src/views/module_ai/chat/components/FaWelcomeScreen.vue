@@ -83,7 +83,7 @@ const handlePromptClick = (prompt: string) => {
   justify-content: flex-start;
   padding: 28px 24px;
   text-align: left;
-  background: var(--fa-color-surface);
+  background: transparent;
 }
 
 .welcome-content {
@@ -93,8 +93,8 @@ const handlePromptClick = (prompt: string) => {
 .ai-mark {
   display: inline-grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   margin-bottom: 14px;
 }
 
@@ -102,12 +102,13 @@ const handlePromptClick = (prompt: string) => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   color: var(--theme-color);
-  background: var(--fa-color-canvas);
-  border: 1px solid var(--fa-color-border);
+  background: var(--fa-glass-bg-inset);
+  border: 1px solid var(--fa-glass-border);
   border-radius: 14px;
+  box-shadow: 0 4px 16px -2px color-mix(in srgb, var(--theme-color) 25%, transparent);
 }
 
 .welcome-heading span {
@@ -137,7 +138,7 @@ const handlePromptClick = (prompt: string) => {
 .example-prompts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
   margin-top: 20px;
 }
 
@@ -153,16 +154,24 @@ const handlePromptClick = (prompt: string) => {
   font: inherit;
   text-align: left;
   cursor: pointer;
-  background: var(--fa-color-surface);
-  border: 1px solid var(--fa-card-border);
-  border-radius: 10px;
-  box-shadow: none;
-  transition: border-color var(--fa-motion-control);
+  background: var(--fa-glass-bg-elevated);
+  border: 1px solid var(--fa-glass-border);
+  border-radius: var(--fa-radius-bento);
+  box-shadow: var(--fa-shadow-bento);
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
+  transition:
+    transform var(--fa-motion-control) ease,
+    border-color var(--fa-motion-control) ease,
+    box-shadow var(--fa-motion-control) ease,
+    background-color var(--fa-motion-control) ease;
 }
 
 .prompt-card:hover {
-  background: var(--fa-color-canvas);
-  border-color: color-mix(in srgb, var(--theme-color) 42%, var(--fa-color-border));
+  background: var(--fa-glass-bg);
+  border-color: color-mix(in srgb, var(--theme-color) 35%, var(--fa-glass-border));
+  box-shadow: var(--fa-shadow-bento-hover);
+  transform: translateY(-2px);
 }
 
 .prompt-card:focus-visible {
@@ -178,8 +187,9 @@ const handlePromptClick = (prompt: string) => {
   height: 32px;
   font-size: 18px;
   color: var(--theme-color);
-  background: color-mix(in srgb, var(--theme-color) 10%, var(--fa-color-surface));
-  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-color) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-color) 20%, transparent);
+  border-radius: 10px;
 }
 
 .prompt-card h4 {
@@ -194,6 +204,16 @@ const handlePromptClick = (prompt: string) => {
   font-size: 12px;
   line-height: 1.4;
   color: var(--el-text-color-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .prompt-card {
+    transition: none !important;
+
+    &:hover {
+      transform: none !important;
+    }
+  }
 }
 
 @media (width <= 720px) {

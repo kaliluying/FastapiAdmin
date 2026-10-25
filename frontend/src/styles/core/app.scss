@@ -1,3 +1,53 @@
+// 现代动态环境光网格（供全局布局、登录等独立页面复用）
+.ambient-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+
+  .ambient-orb {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.65;
+    filter: blur(100px);
+    transition: all 0.5s ease;
+
+    &.orb-1 {
+      top: -10%;
+      left: 15%;
+      width: 500px;
+      height: 500px;
+      background: var(--fa-mesh-orb-1);
+    }
+
+    &.orb-2 {
+      right: 10%;
+      bottom: -15%;
+      width: 650px;
+      height: 650px;
+      background: var(--fa-mesh-orb-2);
+    }
+
+    &.orb-3 {
+      top: 40%;
+      right: 25%;
+      width: 450px;
+      height: 450px;
+      background: var(--fa-mesh-orb-3);
+    }
+  }
+
+  .ambient-grid {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, var(--fa-glass-border) 1px, transparent 1px);
+    background-size: 32px 32px;
+    opacity: 0.4;
+    mask-image: radial-gradient(ellipse at 50% 50%, black 40%, transparent 80%);
+  }
+}
+
 // ================================================================
 // NProgress 样式（从 nprogress/nprogress.css 完整迁移至 SCSS 管线）
 // ================================================================
@@ -150,9 +200,11 @@
 .fa-card,
 .fa-card-sm,
 .fa-card-xs {
-  background: var(--fa-color-surface);
-  border: 1px solid var(--fa-color-border);
-  box-shadow: var(--fa-soft-shadow);
+  background: var(--fa-glass-bg);
+  border: 1px solid var(--fa-glass-border);
+  box-shadow: var(--fa-shadow-bento);
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
   transition:
     border-color var(--fa-motion-control) ease,
     background-color var(--fa-motion-control) ease,
@@ -163,8 +215,10 @@
 .fa-card:hover,
 .fa-card-sm:hover,
 .fa-card-xs:hover {
-  border-color: color-mix(in srgb, var(--theme-color) 28%, var(--fa-color-border));
-  box-shadow: var(--fa-panel-shadow);
+  border-color: color-mix(in srgb, var(--theme-color) 28%, var(--fa-glass-border));
+  box-shadow:
+    var(--fa-shadow-bento),
+    0 0 20px -4px color-mix(in srgb, var(--theme-color) 12%, transparent);
 }
 
 // 盒子边框
@@ -248,10 +302,12 @@
   min-height: 0;
   margin-top: 12px;
   overflow: hidden;
-  background: var(--fa-color-surface);
-  border: 1px solid var(--fa-color-border);
-  border-radius: var(--fa-radius-panel) !important;
-  box-shadow: var(--fa-soft-shadow);
+  background: var(--fa-glass-bg);
+  border: 1px solid var(--fa-glass-border);
+  border-radius: var(--fa-radius-bento) !important;
+  box-shadow: var(--fa-shadow-bento);
+  -webkit-backdrop-filter: var(--fa-glass-blur);
+  backdrop-filter: var(--fa-glass-blur);
   transition:
     border-color var(--fa-motion-control) ease,
     box-shadow var(--fa-motion-control) ease;
@@ -371,9 +427,27 @@
 
 // 表格按钮悬浮效果
 .hover-btn {
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+
   &:hover {
-    filter: brightness(0.96);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 8%);
+    filter: brightness(1.05);
+    transform: translateY(-1px);
   }
+
+  &:active {
+    box-shadow: none;
+    filter: brightness(0.96);
+    transform: translateY(0);
+  }
+}
+
+html.dark .hover-btn:hover {
+  box-shadow: 0 2px 8px rgb(0 0 0 / 30%);
+  filter: brightness(1.15);
 }
 
 // 去除移动端点击背景色
