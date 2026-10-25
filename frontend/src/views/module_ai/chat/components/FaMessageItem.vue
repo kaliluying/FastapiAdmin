@@ -13,15 +13,15 @@
         <strong class="sender-name">
           {{ message.type === "user" ? userName : "FA助手" }}
         </strong>
-        <ElButton
-          v-if="message.content"
-          text
-          size="small"
-          :icon="CopyDocument"
+        <FaCopyButton
+          v-if="parsedContent.answer.trim()"
+          :text="parsedContent.answer"
           class="copy-button"
-          aria-label="复制消息"
-          @click="handleCopy"
-        ></ElButton>
+          :aria-label="message.type === 'assistant' ? '复制回答' : '复制消息'"
+        >
+          <ElIcon><CopyDocument /></ElIcon>
+          <span>{{ message.type === "assistant" ? "复制回答" : "复制消息" }}</span>
+        </FaCopyButton>
       </div>
       <div class="message-body">
         <div v-if="message.files && message.files.length > 0" class="message-files">
@@ -122,7 +122,6 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
 import { useIntervalFn, useNow } from "@vueuse/core";
-import { ElMessage } from "element-plus";
 import {
   User,
   ChatDotRound,
@@ -138,6 +137,7 @@ import {
 import { useUserStoreHook } from "@stores";
 import type { ChatMessage } from "../types";
 import FaAnswerFeedback from "./FaAnswerFeedback.vue";
+import FaCopyButton from "@/components/others/fa-copy-button/index.vue";
 
 interface Props {
   message: ChatMessage;
@@ -185,14 +185,17 @@ const parsedContent = computed(() => {
 
 const parseThinkingContent = (content: string) => {
   const thinkingParts: string[] = [];
-  const answer = content
-    .replace(/<think(?:ing)?>([\s\S]*?)(?:<\/think(?:ing)?>|$)/gi, (_, thinking: string) => {
-      if (thinking.trim()) {
-        thinkingParts.push(thinking.trim());
-      }
-      return "";
-    })
-    .trim();
+  let answer = content;
+  // Only leading thought sections are metadata; tags in the answer remain literal Markdown.
+  while (answer) {
+    const match = answer.match(
+      /^(?:[ \t]*\r?\n)* {0,3}<(think(?:ing)?)>([\s\S]*?)(?:<\/\1>|$)(?:\r?\n)*/i
+    );
+    if (!match) break;
+    const thinking = match[2]?.trim();
+    if (thinking) thinkingParts.push(thinking);
+    answer = answer.slice(match[0].length);
+  }
 
   return {
     thinking: thinkingParts.join("\n\n"),
@@ -202,21 +205,6 @@ const parseThinkingContent = (content: string) => {
 
 const handleToggleThinking = () => {
   emit("toggle-thinking");
-};
-
-const handleCopy = async () => {
-  try {
-    await navigator.clipboard.writeText(props.message.content);
-    ElMessage.success("已复制到剪贴板");
-  } catch {
-    const textArea = document.createElement("textarea");
-    textArea.value = props.message.content;
-    document.body.appendChild(textArea);
-    textArea.select();
-    document.execCommand("copy");
-    document.body.removeChild(textArea);
-    ElMessage.success("已复制到剪贴板");
-  }
 };
 
 const formatFileSize = (bytes: number): string => {
@@ -286,22 +274,16 @@ const formatFileSize = (bytes: number): string => {
       }
 
       .copy-button {
+        gap: 4px;
         padding: 4px;
         font-size: 12px;
         color: var(--fa-color-text-muted);
-        opacity: 0;
-        transition:
-          opacity var(--fa-motion-control),
-          color var(--fa-motion-control);
+        transition: color var(--fa-motion-control);
 
         &:hover {
           color: var(--theme-color);
         }
       }
-    }
-
-    &:hover .copy-button {
-      opacity: 1;
     }
 
     .message-actions {

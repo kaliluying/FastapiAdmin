@@ -30,7 +30,8 @@ vi.mock("element-plus", () => ({
   ElMessage: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
   ElMessageBox: { confirm: vi.fn().mockResolvedValue(true) },
 }));
-vi.mock("@vueuse/core", () => ({
+vi.mock("@vueuse/core", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@vueuse/core")>()),
   useIntervalFn: () => ({ pause: vi.fn(), resume: vi.fn() }),
   useMediaQuery: () => false,
   useElementBounding: () => ({ top: { value: 0 } }),
@@ -67,6 +68,7 @@ let wrapper: VueWrapper;
 let page: Page;
 let stream: TestStream;
 beforeEach(async () => {
+  sessionStorage.clear();
   stream = new TestStream();
   streamRequest.mockReset().mockImplementation((body, signal, onData, onOpen) => {
     stream.sent.push(body);

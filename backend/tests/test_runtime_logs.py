@@ -56,6 +56,18 @@ async def query(logs, **kwargs):
     return await logs.query_runtime_logs(ADMIN, logs.RuntimeLogQuerySchema(**kwargs))
 
 
+@pytest.mark.parametrize("quote", ['"', "'"])
+@pytest.mark.parametrize("tail", ["", "\\", "\\\n"])
+@pytest.mark.parametrize("key", ["password", "cookie", "cookies", "set-cookie", "authorization", "proxy-authorization"])
+def test_redaction_covers_unclosed_multiline_quoted_secrets(logs, quote, tail, key):
+    text = f"公开说明\n{key}={quote}synthetic-line-one\nsynthetic-line-two{tail}"
+    result = logs.redact_log_text(text)
+    assert "synthetic-" not in result
+    assert result == f"公开说明\n{key}=[REDACTED]"
+    if tail != "\\":
+        assert logs.redact_log_text(text + quote + "\n可见后文").endswith("\n可见后文")
+
+
 @pytest.mark.asyncio
 async def test_complete_evidence_includes_info_casefold_and_long_exception(logs):
     trace = "Traceback\n" + "  worker frame\n" * 1000 + "ValueError: ROOT-CAUSE-END"

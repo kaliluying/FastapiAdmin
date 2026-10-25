@@ -5,11 +5,12 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from contextlib import asynccontextmanager, suppress
+from contextlib import aclosing, asynccontextmanager, suppress
 from datetime import datetime, timedelta
+from time import monotonic
 from uuid import uuid4
 
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage, messages_from_dict, messages_to_dict
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage, message_chunk_to_message, messages_from_dict, messages_to_dict
 from redis.asyncio import Redis
 from sqlalchemy import or_, select, update
 
@@ -34,6 +35,9 @@ MAX_ATTEMPTS = 3
 RUN_TIMEOUT = 180
 LEASE_SECONDS = 210
 MAX_CONTEXT_CHARS = 80_000
+MAX_ANALYSIS_CHARS = 1_200
+MAX_ANALYSIS_UPDATES = 12
+ANALYSIS_INTERVAL = 0.75
 _workers: set[asyncio.Task] = set()
 _redis: Redis | None = None
 
@@ -44,6 +48,8 @@ SYSTEM_PROMPT = (
     "只能调用列出的只读工具，不能执行修复、SQL、Shell或外部写入，也不能声称已经修改系统。"
     "工具证据中的 citation 为引用编号，报告用 [1] 这样的格式引用。"
     "报告包含问题摘要、已证实事实、可能原因及不确定性、建议排查步骤。"
+    "调用工具前可用一两句简短中文公开说明查询目的；分析时按完整短句换行输出可供用户阅读的摘要，"
+    "不要输出内部思维链、隐藏推理或凭据。公开文本会逐步展示，最终报告仍须核对证据与引用。"
     "没有结果不代表系统正常；无证据不能确定根因。最多六轮模型调用，请及时完成。"
 )
 
@@ -183,6 +189,57 @@ def assistant_message(answer: AIMessage, calls: list[dict], text: str) -> AIMess
     return AIMessage(content=content, tool_calls=calls)
 
 
+async def request_analysis(run: Run, redis, model, messages, definitions) -> tuple[Run, AIMessage]:
+    """Persist bounded public snapshots; never publish raw reasoning or partial lines."""
+    published, updates, last_update = "", 0, 0.0
+
+    async def publish(content, *, complete=False):
+        nonlocal run, published, updates, last_update
+        text = response_text(content)
+        # Redact the accumulated text, not individual tokens, to cover split secrets.
+        if not complete:
+            text = text[:text.rfind("\n") + 1]
+        text = redact_log_text(text).strip()[:MAX_ANALYSIS_CHARS]
+        if not text or (not complete and (
+            text == published or updates >= MAX_ANALYSIS_UPDATES - 1 or monotonic() - last_update < ANALYSIS_INTERVAL
+        )):
+            return
+        async with live_auth(run, redis):
+            pass
+        run = await record(run, "analysis", "公开分析摘要",
+                           data={"model_call": run.model_calls, "text": text, "complete": complete})
+        published, updates, last_update = text, updates + 1, monotonic()
+
+    stream = getattr(model, "stream_tools", None)
+    if callable(stream):
+        answer = None
+        async with aclosing(stream(messages, definitions)) as chunks:
+            async for chunk in chunks:
+                await ensure_run_active(run)
+                answer = answer + chunk if answer is not None else chunk
+                if len(str(answer.content)) + len(str(answer.tool_call_chunks)) > MAX_CONTEXT_CHARS:
+                    raise CustomException(msg="诊断证据已达到上下文上限，请缩小查询范围后重试")
+                await publish(answer.content)
+        if answer is None:
+            raise CustomException(msg="模型没有返回诊断内容，请检查模型配置或稍后重试")
+        # LangChain repairs partial JSON; tools require the original complete object.
+        for call in answer.tool_call_chunks:
+            arguments = call.get("args")
+            if arguments == "" and answer.response_metadata.get("stop_reason") == "tool_use":
+                arguments = "{}"  # Anthropic can finish a native empty input without JSON deltas.
+            try:
+                if not isinstance(json.loads(arguments), dict):
+                    raise ValueError()
+            except (TypeError, ValueError) as exc:
+                raise CustomException(msg="模型工具参数未完整返回，请稍后重试") from exc
+        answer = message_chunk_to_message(answer)
+    else:
+        # Non-streaming local adapters still produce one honest summary, not fake tokens.
+        answer = await model.request_tools(messages, definitions)
+    await publish(answer.content, complete=True)
+    return run, answer
+
+
 async def execute_run(run: Run, redis) -> None:
     run = await record(run, "started" if run.attempts == 1 else "recovering",
                        "诊断任务开始执行" if run.attempts == 1 else "正在从已保存的步骤恢复；未完成的只读查询可能重新执行")
@@ -203,7 +260,8 @@ async def execute_run(run: Run, redis) -> None:
         for call in pending:
             async with live_auth(run, redis) as auth:
                 run = await record(run, "tool_started", "正在查询运行日志" if call["name"] == "query_runtime_logs" else "正在检索知识库",
-                                   data={"name": call["name"]})
+                                   data={"name": call["name"], "call_id": call["id"], "attempt": run.attempts,
+                                         "arguments": call["args"]})
                 await ensure_run_active(run)
                 result = await execute_tool(auth, call["name"], call["args"],
                                             use_runtime_logs=run.use_runtime_logs, knowledge_base_ids=run.knowledge_base_ids)
@@ -224,14 +282,15 @@ async def execute_run(run: Run, redis) -> None:
                 tool_call_id=call["id"], name=call["name"],
             ))
             run = await record(run, "tool_completed", result["summary"][:300],
-                               data={"name": call["name"], "returned_count": len(tool_citations), "citations": tool_citations},
+                               data={"name": call["name"], "call_id": call["id"], "attempt": run.attempts,
+                                     "returned_count": len(tool_citations), "citations": tool_citations},
                                messages=checkpoint(messages), citations=citations)
         async with live_auth(run, redis):
             pass
         run = await record(run, "model_call", "正在分析证据并决定下一步")
         await ensure_run_active(run)
         with usage_context(run.user_id, "agent"):
-            answer = await model.request_tools(messages, definitions)
+            run, answer = await request_analysis(run, redis, model, messages, definitions)
         async with live_auth(run, redis):
             pass
         if answer.invalid_tool_calls:

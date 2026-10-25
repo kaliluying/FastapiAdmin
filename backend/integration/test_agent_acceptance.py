@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_acceptance import clean_environment, local_model_message, validate_root
+from agent_acceptance import clean_environment, local_model_chunks, local_model_message, validate_root
 
 
 class AgentAcceptanceSafetyTests(unittest.TestCase):
@@ -34,6 +34,17 @@ class AgentAcceptanceSafetyTests(unittest.TestCase):
             local_model_message({"messages": [{"role": "user", "content": "acceptance"},
                                                {"role": "tool", "content": '{"citations":[]}'}],
                                  "tools": [{"function": {"name": "search_knowledge"}}]})
+
+    def test_stream_preserves_text_and_fragmented_tool_arguments(self):
+        message = local_model_message({"messages": [{"role": "user", "content": "acceptance"}],
+                                       "tools": [{"function": {"name": "query_runtime_logs"}}]})
+        chunks = list(local_model_chunks(message))
+        self.assertIn("\n", chunks[0]["content"])
+        import json
+        fragments = [item["tool_calls"][0]["function"]["arguments"] for item in chunks if "tool_calls" in item]
+        self.assertEqual(json.loads("".join(fragments)), json.loads(message["tool_calls"][0]["function"]["arguments"]))
+        self.assertEqual("".join(item["content"] for item in local_model_chunks({"content": "报告\n[1] 依据"})),
+                         "报告\n[1] 依据")
 
 
 if __name__ == "__main__":

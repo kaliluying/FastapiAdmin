@@ -103,6 +103,38 @@ async def test_final_write_failure_retains_pending_without_failing_answer(usage_
     assert summary["calls"] == 1 and summary["items"][0]["status"] == "pending"
 
 
+async def test_tool_stream_accounts_usage_and_closes_on_consumer_cancel(usage_storage):
+    closed = []
+
+    class Client:
+        def bind_tools(self, tools):
+            return self
+
+        async def astream(self, messages):
+            try:
+                yield AIMessageChunk(content="公开摘要\n")
+                yield AIMessageChunk(content="", usage_metadata={"input_tokens": 4, "output_tokens": 6, "total_tokens": 10})
+            finally:
+                closed.append(True)
+
+    model = object.__new__(rag.LangChainChatModel)
+    model.config, model.llm = CONFIG, Client()
+    assert len([chunk async for chunk in model.stream_tools([], [])]) == 2
+    stream = model.stream_tools([], [])
+    await anext(stream)
+    await stream.aclose()
+    async with usage_storage() as db:
+        rows = list((await db.scalars(select(AiUsageRecordModel).order_by(AiUsageRecordModel.id))).all())
+    assert [(item.status, item.total_tokens, item.purpose) for item in rows] == [
+        ("succeeded", 10, "tools"), ("cancelled", None, "tools"),
+    ]
+    assert closed == [True, True]
+    await usage.set_quota(1, 2)
+    with pytest.raises(CustomException, match="额度"):
+        await anext(model.stream_tools([], []))
+    assert closed == [True, True]
+
+
 @pytest.mark.parametrize("metadata,expected", [
     ({"token_usage": {"prompt_tokens": 3, "completion_tokens": 5, "total_tokens": 8}}, (3, 5, 8)),
     ({"usage": {"input_tokens": 4, "output_tokens": 6}}, (4, 6, None)),

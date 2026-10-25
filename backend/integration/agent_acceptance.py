@@ -124,8 +124,27 @@ def local_model_message(payload: dict) -> dict:
     for index, name in enumerate(names):
         arguments = {"minutes": 60, "keyword": MARKER} if name == "query_runtime_logs" else {"query": MARKER, "top_k": 4}
         calls.append({"id": f"call_{count}_{index}", "type": "function",
-                      "function": {"name": name, "arguments": json.dumps(arguments)}})
-    return {"role": "assistant", "content": None, "tool_calls": calls}
+                      "function": {"name": name, "arguments": '{"minutes":' if "TRUNCATED_ARGS" in goal else json.dumps(arguments)}})
+    content = (
+        '公开说明\npassword="synthetic-line-one\nsynthetic-line-two\n"\n'
+        'Cookie="synthetic-line-cookie-one\nsynthetic-line-cookie-two\n"\n'
+        "Set-Cookie='synthetic-line-set-cookie-one\nsynthetic-line-set-cookie-two\n'\n"
+        'Authorization="synthetic-line-auth-one\nsynthetic-line-auth-two\n"\n'
+    ) if "MULTILINE_SECRET" in goal else None
+    return {"role": "assistant", "content": content, "tool_calls": calls}
+
+
+def local_model_chunks(message: dict):
+    """Exercise the real SDK SSE parser, including fragmented function arguments."""
+    content = message.get("content") or "正在核对所选数据源。\n将查询日志并对照知识库。\n"
+    for line in content.splitlines(keepends=True):
+        yield {"content": line}
+    for index, call in enumerate(message.get("tool_calls", [])):
+        arguments = call["function"]["arguments"]
+        middle = len(arguments) // 2
+        yield {"tool_calls": [{"index": index, "id": call["id"], "type": "function",
+                              "function": {"name": call["function"]["name"], "arguments": arguments[:middle]}}]}
+        yield {"tool_calls": [{"index": index, "function": {"arguments": arguments[middle:]}}]}
 
 
 @contextmanager
@@ -156,6 +175,36 @@ def model_server(root: Path, port: int):
                     (root / f"model-entered-{barrier}").touch()
                     wait_until(lambda: (root / f"model-release-{barrier}").exists(), timeout=25, description=scenario)
                 message = local_model_message(payload)
+                if payload.get("stream"):
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/event-stream")
+                    self.end_headers()
+
+                    def send(delta, *, finish=None, usage=False):
+                        chunk = {"id": "chatcmpl-isolated", "object": "chat.completion.chunk",
+                                 "created": int(time.time()), "model": "isolated-agent",
+                                 "choices": [] if usage else [{"index": 0, "delta": delta, "finish_reason": finish}]}
+                        if usage:
+                            chunk["usage"] = {"prompt_tokens": 10, "completion_tokens": 10, "total_tokens": 20}
+                        self.wfile.write(("data: " + json.dumps(chunk, ensure_ascii=False) + "\n\n").encode())
+                        self.wfile.flush()
+
+                    send({"role": "assistant"})
+                    for index, delta in enumerate(local_model_chunks(message)):
+                        send(delta)
+                        if "MULTILINE_SECRET" in goal and message.get("tool_calls") and index < 4:
+                            time.sleep(0.8)
+                        if scenario == "BROWSER" and message.get("tool_calls") and index < 2:
+                            (root / f"stream-entered-BROWSER-{index + 1}").touch()
+                            wait_until(lambda index=index: (root / f"stream-release-BROWSER-{index + 1}").exists(),
+                                       timeout=25, description="browser streaming snapshot")
+                    send({}, finish="tool_calls" if message.get("tool_calls") else "stop")
+                    send({}, usage=True)
+                    self.wfile.write(b"data: [DONE]\n\n")
+                    self.wfile.flush()
+                    if blocking:
+                        (root / f"model-returned-{scenario}").touch()
+                    return
                 response = {"id": "chatcmpl-isolated", "object": "chat.completion", "created": int(time.time()),
                             "model": "isolated-agent", "choices": [{"index": 0, "message": message,
                             "finish_reason": "tool_calls" if message.get("tool_calls") else "stop"}],
@@ -185,6 +234,8 @@ def model_server(root: Path, port: int):
         for name in ("CANCEL", "LATE", "CRASH", "REVOKE", "TIMEOUT", "RETRY-1", "RETRY-2", "RETRY-3",
                      "LOGOUT", "CONCURRENT", "SAME", "BROWSER"):
             (root / f"model-release-{name}").touch()
+        for index in (1, 2):
+            (root / f"stream-release-BROWSER-{index}").touch()
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
@@ -497,6 +548,20 @@ def verify(root: Path, environment: dict, port: int, processes: Processes, *, br
             assert cancel_completed["result"] is None and cancel_completed["citations"] == []
             assert detail(first["run_id"])["result"] == completed["result"]
             passed("cancel of completed task returns only safe summary and preserves stored report", {"run_id": first["run_id"]})
+            truncated = terminal(create(f"TRUNCATED_ARGS {MARKER}")["run_id"], status="failed")
+            assert truncated["tool_calls"] == 0 and truncated["model_calls"] == 1
+            assert "完整" in truncated["error"]
+            assert not any(item["type"] == "tool_started" for item in truncated["events"])
+            passed("truncated provider SSE arguments fail before any real tool executes", truncated)
+            multiline = terminal(create(f"MULTILINE_SECRET {MARKER}")["run_id"])
+            assert "synthetic-line-" not in json.dumps(multiline)
+            analyses = [item["data"] for item in multiline["events"] if item["type"] == "analysis"]
+            assert len(analyses) >= 2 and any("[REDACTED]" in item["text"] for item in analyses)
+            with engine.connect() as db:
+                stored = db.execute(text("SELECT data FROM ai_agent_event WHERE run_id=:id"),
+                                    {"id": multiline["run_id"]}).scalars().all()
+                assert "synthetic-line-" not in json.dumps(stored)
+            passed("multiline sensitive values never enter SQL analysis snapshots during SSE", multiline)
 
             def concurrent_submissions(same_id):
                 barrier = threading.Barrier(6)
@@ -709,6 +774,7 @@ def run(database_types: list[str], *, browser=True) -> Path:
                                 BACKEND / "app/plugin/module_ai/plugin.toml",
                                 BACKEND / "app/alembic/versions/20261024_agent_runs.py",
                                 BACKEND.parent / "frontend/src/views/module_ai/chat/components/FaDiagnosticAgent.vue",
+                                BACKEND.parent / "frontend/src/views/module_ai/chat/components/diagnosticAgentTimeline.ts",
                                 BACKEND.parent / "frontend/src/views/module_ai/chat/index.vue",
                                 BACKEND.parent / "frontend/src/api/module_ai/agent.ts", SCRIPT,
                                 BACKEND / "integration/agent_browser_checks.cjs"]

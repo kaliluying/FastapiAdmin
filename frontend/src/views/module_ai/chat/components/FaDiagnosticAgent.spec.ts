@@ -1,6 +1,7 @@
 import { defineComponent, ref } from "vue";
 import { flushPromises, mount, type VueWrapper } from "@vue/test-utils";
 import ElementPlus, { ElOption, ElSelect } from "element-plus";
+import { createI18n } from "vue-i18n";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentSubmissionRejected, type AgentEvent, type AgentRun } from "@/api/module_ai/agent";
 import FaDiagnosticAgent from "./FaDiagnosticAgent.vue";
@@ -106,7 +107,7 @@ const Overlay = defineComponent({
   template: '<section v-if="modelValue"><slot /></section>',
 });
 const global = {
-  plugins: [ElementPlus],
+  plugins: [ElementPlus, createI18n({ legacy: false, locale: "zh", messages: { zh: {} } })],
   stubs: { ElDrawer: Overlay, ElDialog: Overlay },
 };
 const wrappers: VueWrapper[] = [];
@@ -134,7 +135,8 @@ async function click(wrapper: VueWrapper, text: string) {
 }
 
 beforeEach(() => {
-  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+  vi.setSystemTime(new Date(2026, 9, 24, 12, 0, 0));
   vi.resetAllMocks();
   api.knowledge.mockResolvedValue(response([{ id: 1, name: "操作手册" }]));
   api.logStatus.mockResolvedValue(response({ can_query: false, enabled: true }));
@@ -151,6 +153,18 @@ afterEach(() => {
 });
 
 describe("read-only diagnostic agent", () => {
+  it("copies the diagnostic result as complete Markdown", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal("navigator", { clipboard: { writeText } });
+    const result = "## 诊断结果\n\n- 检查连接池\n- 查看日志\n\n```sql\nSELECT 1;\n```";
+    api.getRun.mockResolvedValue(response(run({ status: "succeeded", result })));
+    const wrapper = await create();
+    await choose(wrapper);
+    await wrapper.get('[aria-label="复制诊断结果"]').trigger("click");
+    await flushPromises();
+    expect(writeText).toHaveBeenCalledExactlyOnceWith(result);
+  });
+
   it("does not load while closed and permits non-admin knowledge-only diagnostics", async () => {
     const wrapper = await create(false);
     expect(api.listRuns).not.toHaveBeenCalled();
@@ -334,6 +348,8 @@ describe("read-only diagnostic agent", () => {
     expect(wrapper.findAll(".agent-events li")).toHaveLength(2);
     expect(wrapper.text()).toContain("工具：知识库检索");
     expect(wrapper.text()).toContain("返回 2 条证据");
+    await wrapper.get(".agent-tool-toggle").trigger("click");
+    expect(wrapper.text()).toContain("接口超时");
     expect(wrapper.text()).not.toContain("不要展示原始结果");
     await vi.advanceTimersByTimeAsync(1500);
     await flushPromises();
@@ -459,6 +475,7 @@ describe("read-only diagnostic agent", () => {
       .mockResolvedValueOnce(response(evidenceRun()));
     const wrapper = await create();
     await choose(wrapper);
+    await wrapper.get(".agent-tool-toggle").trigger("click");
     expect(wrapper.get('[aria-label="诊断结果"]').text()).toContain("敏感诊断正文");
     expect(wrapper.get(".agent-events").text()).toContain("敏感执行记录");
     expect(wrapper.get(".agent-events").text()).toContain("敏感查询条件");
@@ -659,5 +676,237 @@ describe("read-only diagnostic agent", () => {
     await vi.advanceTimersByTimeAsync(6000);
     expect(api.getRun).toHaveBeenCalledTimes(1);
     expect(api.cancelRun).not.toHaveBeenCalled();
+  });
+
+  it("keeps tool summaries visible and toggles paired arguments, results and citations", async () => {
+    const started = event(2, "tool_started", {
+      name: "search_knowledge",
+      call_id: "search-1",
+      attempt: 1,
+      arguments: { query: "接口超时", top_k: 3 },
+      reasoning: "不公开的推理",
+    });
+    api.getRun.mockResolvedValue(response(run({ events: [event(1), started], last_seq: 2 })));
+    const wrapper = await create();
+    await choose(wrapper);
+    expect(wrapper.findAll(".agent-tool-card")).toHaveLength(1);
+    expect(wrapper.get(".agent-tool-toggle").attributes("aria-expanded")).toBe("false");
+    expect(wrapper.get(".agent-tool-toggle").attributes("type")).toBe("button");
+    expect(wrapper.get(".agent-tool-card").text()).toContain("运行中");
+    expect(wrapper.find(".agent-tool-body").exists()).toBe(false);
+    expect(wrapper.find("pre").exists()).toBe(false);
+    await wrapper.get(".agent-tool-toggle").trigger("click");
+    expect(wrapper.get(".agent-tool-toggle").attributes("aria-expanded")).toBe("true");
+    const bodyId = wrapper.get(".agent-tool-body").attributes("id");
+    expect(wrapper.get(".agent-tool-toggle").attributes("aria-controls")).toBe(bodyId);
+    expect(wrapper.get("pre").text()).toContain('"query": "接口超时"');
+
+    api.getRun.mockResolvedValue(
+      response(
+        run({
+          events: [
+            {
+              ...event(3, "tool_completed", {
+                name: "search_knowledge",
+                call_id: "search-1",
+                attempt: 1,
+                returned_count: 2,
+                citations: [{ id: "tool-doc", title: "查询引用", snippet: "公开片段" }],
+                raw_results: "不公开的原始结果",
+              }),
+              created_at: "2026-10-24T12:00:03",
+              message: "找到连接池配置",
+            },
+          ],
+          last_seq: 3,
+        })
+      )
+    );
+    await vi.advanceTimersByTimeAsync(3000);
+    await flushPromises();
+    expect(wrapper.findAll(".agent-tool-card")).toHaveLength(1);
+    expect(wrapper.findAll(".agent-events > li")).toHaveLength(2);
+    expect(wrapper.get(".agent-tool-card").text()).toContain("已完成");
+    expect(wrapper.get(".agent-tool-card").text()).toContain("返回 2 条证据");
+    expect(wrapper.get(".agent-tool-card").text()).toContain("耗时 00:03");
+    expect(wrapper.get(".agent-tool-body").text()).toContain("找到连接池配置");
+    await wrapper.get(".fa-citation-item__title").trigger("click");
+    expect(wrapper.get(".agent-citation").text()).toBe("公开片段");
+    await wrapper.get(".agent-tool-toggle").trigger("click");
+    expect(wrapper.find(".agent-tool-body").exists()).toBe(false);
+    expect(wrapper.get(".agent-tool-card").text()).toContain("返回 2 条证据");
+    expect(wrapper.text()).not.toContain("不公开");
+  });
+
+  it("replaces public snapshots per model round and separates recovery attempts", async () => {
+    api.getRun
+      .mockResolvedValueOnce(
+        response(
+          run({
+            events: [
+              event(1, "model_call"),
+              event(2, "analysis", { model_call: 1, text: "第一轮初稿", complete: false }),
+              event(3, "analysis", {
+                model_call: 1,
+                text: "第一轮公开摘要",
+                complete: true,
+                reasoning: "私有推理",
+              }),
+              event(4, "model_call"),
+              event(5, "analysis", { model_call: 2, text: "报告正在", complete: false }),
+            ],
+            last_seq: 5,
+          })
+        )
+      )
+      .mockResolvedValueOnce(
+        response(
+          run({
+            events: [
+              event(6, "analysis", { model_call: 2, text: "报告正在生成", complete: false }),
+              event(7, "recovering"),
+              event(8, "model_call"),
+              event(9, "analysis", { model_call: 2, text: "恢复后的公开摘要", complete: false }),
+              event(10, "analysis", { model_call: 3, reasoning: "私有推理", complete: false }),
+            ],
+            last_seq: 10,
+          })
+        )
+      );
+    const wrapper = await create();
+    await choose(wrapper);
+    expect(wrapper.findAll(".agent-analysis")).toHaveLength(2);
+    expect(wrapper.text()).not.toContain("第一轮初稿");
+    expect(wrapper.text()).toContain("生成中，供参考；最终以报告为准");
+    await vi.advanceTimersByTimeAsync(1500);
+    await flushPromises();
+    const summaries = wrapper.findAll(".agent-analysis");
+    expect(summaries).toHaveLength(3);
+    expect(summaries[0]!.text()).toContain("第一轮公开摘要");
+    expect(summaries[1]!.text()).toContain("报告正在生成");
+    expect(summaries[1]!.text()).toContain("已中断");
+    expect(summaries[2]!.text()).toContain("恢复后的公开摘要");
+    expect(summaries[2]!.text()).toContain("生成中");
+    expect(wrapper.text()).not.toContain("私有推理");
+  });
+
+  it.each(["failed", "cancelled"] as const)(
+    "marks unfinished cards interrupted on %s",
+    async (status) => {
+      api.getRun.mockResolvedValue(
+        response(
+          run({
+            status,
+            events: [
+              event(1, "model_call"),
+              event(2, "analysis", { model_call: 1, text: "未完成的公开摘要", complete: false }),
+              event(3, "tool_started", { name: "search_knowledge", call_id: "one", attempt: 1 }),
+            ],
+            last_seq: 3,
+          })
+        )
+      );
+      const wrapper = await create();
+      await choose(wrapper);
+      expect(wrapper.get(".agent-tool-card").text()).toContain("已中断");
+      expect(wrapper.get(".agent-analysis").text()).toContain("已中断");
+      expect(wrapper.get(".agent-analysis").text()).not.toContain("生成中");
+      await wrapper.get(".agent-tool-toggle").trigger("click");
+      expect(wrapper.text()).toContain("查询已中断，未收到完成结果");
+    }
+  );
+
+  it("ticks independently of polling, resets stage time, and freezes terminal durations", async () => {
+    api.getRun.mockResolvedValue(response(run()));
+    const wrapper = await create();
+    await choose(wrapper);
+    const total = () => wrapper.get('[data-testid="agent-total-time"]').text();
+    const stage = () => wrapper.get('[data-testid="agent-stage-time"]').text();
+    expect(total()).toBe("00:00");
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(total()).toBe("00:01");
+    expect(stage()).toBe("00:01");
+    expect(api.getRun).toHaveBeenCalledTimes(1);
+    api.getRun.mockResolvedValue(
+      response(
+        run({
+          events: [{ ...event(2, "model_call"), created_at: "2026-10-24T12:00:01" }],
+          last_seq: 2,
+        })
+      )
+    );
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(total()).toBe("00:02");
+    expect(stage()).toBe("00:01");
+    api.getRun.mockResolvedValue(
+      response(
+        run({
+          status: "succeeded",
+          updated_at: "2026-10-24T12:00:03",
+          events: [{ ...event(3, "succeeded"), created_at: "2026-10-24T12:00:03" }],
+          last_seq: 3,
+        })
+      )
+    );
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(total()).toBe("00:03");
+    expect(stage()).toBe("00:02");
+    await vi.advanceTimersByTimeAsync(10000);
+    expect(total()).toBe("00:03");
+    expect(stage()).toBe("00:02");
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("clears tool details, public summaries and timers on revoked detail access", async () => {
+    const sensitive = run({
+      events: [
+        event(1, "model_call"),
+        event(2, "analysis", { model_call: 1, text: "敏感公开摘要", complete: false }),
+        event(3, "tool_started", {
+          name: "search_knowledge",
+          call_id: "secure",
+          attempt: 1,
+          arguments: { query: "敏感查询参数" },
+        }),
+      ],
+      last_seq: 3,
+    });
+    api.getRun.mockResolvedValueOnce(response(sensitive)).mockRejectedValueOnce(new Error("403"));
+    const wrapper = await create();
+    await choose(wrapper);
+    await wrapper.get(".agent-tool-toggle").trigger("click");
+    expect(wrapper.text()).toContain("敏感查询参数");
+    await vi.advanceTimersByTimeAsync(1500);
+    await flushPromises();
+    expectNoEvidence(wrapper);
+    expect(wrapper.find(".agent-tool-body").exists()).toBe(false);
+    expect(wrapper.find(".agent-analysis").exists()).toBe(false);
+    expect(wrapper.get(".agent-stage").text()).toContain("状态待确认");
+    const time = wrapper.get('[data-testid="agent-total-time"]').text();
+    await vi.advanceTimersByTimeAsync(6000);
+    expect(wrapper.get('[data-testid="agent-total-time"]').text()).toBe(time);
+    expect(vi.getTimerCount()).toBe(0);
+    api.getRun.mockResolvedValue(response(sensitive));
+    await click(wrapper, "重试更新");
+    expect(api.getRun.mock.calls[2]![1]).toBe(0);
+    expect(wrapper.get(".agent-tool-toggle").attributes("aria-expanded")).toBe("false");
+  });
+
+  it("clears the ticking clock on close, restarts on authorized reopen and clears on unmount", async () => {
+    const wrapper = await create();
+    await choose(wrapper);
+    await vi.advanceTimersByTimeAsync(1000);
+    await wrapper.setProps({ modelValue: false });
+    await vi.advanceTimersByTimeAsync(6000);
+    expect(vi.getTimerCount()).toBe(0);
+    await wrapper.setProps({ modelValue: true });
+    await flushPromises();
+    expect(wrapper.get('[data-testid="agent-total-time"]').text()).toBe("00:07");
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(wrapper.get('[data-testid="agent-total-time"]').text()).toBe("00:08");
+    wrapper.unmount();
+    wrappers.splice(wrappers.indexOf(wrapper), 1);
+    await vi.advanceTimersByTimeAsync(6000);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

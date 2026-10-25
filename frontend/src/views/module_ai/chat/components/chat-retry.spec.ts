@@ -1,5 +1,6 @@
 import { mount } from "@vue/test-utils";
 import ElementPlus from "element-plus";
+import { createI18n } from "vue-i18n";
 import { describe, expect, it, vi } from "vitest";
 import FaChatMessages from "./FaChatMessages.vue";
 
@@ -33,7 +34,10 @@ describe("recovered chat failures", () => {
         ],
       },
       attachTo: document.body,
-      global: { plugins: [ElementPlus], stubs: { FaMarkdownRenderer: true, FaSvgIcon: true } },
+      global: {
+        plugins: [ElementPlus, createI18n({ legacy: false, locale: "zh", messages: { zh: {} } })],
+        stubs: { FaMarkdownRenderer: true, FaSvgIcon: true },
+      },
     });
     try {
       const saved = wrapper.get('[data-message-id="saved"]').element as HTMLElement;

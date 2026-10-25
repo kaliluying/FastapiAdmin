@@ -148,22 +148,103 @@
               run.use_runtime_logs ? "、运行日志" : ""
             }}
           </p>
-          <ol v-if="run.events.length" class="agent-events" aria-label="诊断执行记录" tabindex="0">
-            <li v-for="event in run.events" :key="event.seq">
-              <div class="agent-event-heading">
-                <strong>{{ eventLabels[event.type] || "任务进展" }}</strong>
-                <time :datetime="event.created_at">{{ formatTime(event.created_at) }}</time>
-              </div>
-              <p>{{ event.message }}</p>
-              <p v-if="toolNames[String(event.data.name)]" class="agent-muted">
-                工具：{{ toolNames[String(event.data.name)] }}
-              </p>
-              <p v-if="typeof event.data.query === 'string'" class="agent-muted">
-                查询：{{ event.data.query }}
-              </p>
-              <p v-if="typeof event.data.returned_count === 'number'" class="agent-muted">
-                返回 {{ event.data.returned_count }} 条证据
-              </p>
+          <div class="agent-progress" aria-label="诊断进度">
+            <div class="agent-stage">
+              <span class="agent-muted">当前阶段</span>
+              <strong>{{ detailError ? "状态待确认" : currentStage.label }}</strong>
+            </div>
+            <div class="agent-timing">
+              <span
+                >总耗时 <strong data-testid="agent-total-time">{{ totalDuration }}</strong></span
+              >
+              <span>
+                {{ isActive ? "当前阶段耗时" : "最后阶段耗时" }}
+                <strong data-testid="agent-stage-time">{{ stageDuration }}</strong>
+              </span>
+            </div>
+          </div>
+          <ol v-if="timeline.length" class="agent-events" aria-label="诊断执行记录" tabindex="0">
+            <li v-for="item in timeline" :key="item.key">
+              <article v-if="item.kind === 'tool'" class="agent-tool-card">
+                <button
+                  type="button"
+                  class="agent-tool-toggle"
+                  :aria-expanded="expandedTools.has(item.key)"
+                  :aria-controls="`agent-${run.run_id}-${item.key}`"
+                  @click="toggleTool(item.key)"
+                >
+                  <span class="agent-tool-heading">
+                    <strong>工具：{{ toolNames[item.name] || "只读查询" }}</strong>
+                    <ElTag
+                      :type="
+                        item.completed ? 'success' : item.interruptedAt ? 'warning' : 'primary'
+                      "
+                      size="small"
+                    >
+                      {{ item.completed ? "已完成" : item.interruptedAt ? "已中断" : "运行中" }}
+                    </ElTag>
+                  </span>
+                  <span class="agent-tool-meta">
+                    <span v-if="typeof item.completed?.data.returned_count === 'number'">
+                      返回 {{ item.completed.data.returned_count }} 条证据
+                    </span>
+                    <span v-else>{{ item.completed ? "证据数量未提供" : "证据待返回" }}</span>
+                    <span>耗时 {{ toolDuration(item) }}</span>
+                    <span class="agent-tool-action">{{
+                      expandedTools.has(item.key) ? "收起详情" : "展开详情"
+                    }}</span>
+                  </span>
+                </button>
+                <div
+                  v-if="expandedTools.has(item.key)"
+                  :id="`agent-${run.run_id}-${item.key}`"
+                  class="agent-tool-body"
+                >
+                  <strong>查询参数</strong>
+                  <pre>{{ toolArguments(item) }}</pre>
+                  <strong>结果概要</strong>
+                  <p>
+                    {{
+                      item.completed?.message ||
+                      (item.interruptedAt ? "查询已中断，未收到完成结果。" : "正在查询，等待结果…")
+                    }}
+                  </p>
+                  <FaCitationList
+                    v-if="toolCitations(item).length"
+                    :citations="toolCitations(item)"
+                    @select="selectedCitation = $event"
+                  />
+                </div>
+              </article>
+              <article
+                v-else-if="item.kind === 'analysis'"
+                class="agent-analysis"
+                aria-label="公开分析摘要"
+              >
+                <div class="agent-event-heading">
+                  <strong>公开分析摘要 · 第 {{ item.modelCall }} 轮</strong>
+                  <span>{{
+                    item.state === "streaming"
+                      ? "生成中"
+                      : item.state === "interrupted"
+                        ? "已中断"
+                        : "本轮摘要已结束"
+                  }}</span>
+                </div>
+                <p class="agent-muted">
+                  {{ item.state === "streaming" ? "生成中，" : "" }}供参考；最终以报告为准
+                </p>
+                <p class="agent-analysis-text">{{ item.text || "等待公开摘要…" }}</p>
+              </article>
+              <template v-else>
+                <div class="agent-event-heading">
+                  <strong>{{ eventLabels[item.event.type] || "任务进展" }}</strong>
+                  <time :datetime="item.event.created_at">{{
+                    formatTime(item.event.created_at)
+                  }}</time>
+                </div>
+                <p>{{ item.event.message }}</p>
+              </template>
             </li>
           </ol>
           <p v-else class="agent-muted">暂无执行记录{{ isActive ? "，等待任务进展…" : "。" }}</p>
@@ -174,7 +255,13 @@
             任务已取消；已进入调用的只读请求可能继续至返回，但不会发布新的结果。
           </p>
           <section v-if="run.result !== null" aria-label="诊断结果" class="agent-result">
-            <h3>诊断结果</h3>
+            <div class="agent-row agent-detail-heading">
+              <h3>诊断结果</h3>
+              <FaCopyButton v-if="run.result" :text="run.result" aria-label="复制诊断结果">
+                <ElIcon><CopyDocument /></ElIcon>
+                <span>复制结果</span>
+              </FaCopyButton>
+            </div>
             <FaMarkdownRenderer :content="run.result" />
           </section>
           <p
@@ -205,6 +292,7 @@
 
 <script setup lang="ts">
 import { computed, onActivated, onDeactivated, onUnmounted, ref, watch } from "vue";
+import { CopyDocument } from "@element-plus/icons-vue";
 import AiAgentAPI, {
   AgentSubmissionRejected,
   type AgentRun,
@@ -214,7 +302,16 @@ import AiChatAPI from "@/api/module_ai/chat";
 import KnowledgeAPI, { type KnowledgeBase } from "@/api/module_ai/knowledge";
 import FaCitationList from "@/views/module_ai/components/FaCitationList.vue";
 import FaMarkdownRenderer from "@/components/others/fa-markdown-renderer/index.vue";
+import FaCopyButton from "@/components/others/fa-copy-button/index.vue";
 import type { ChatCitation } from "../types";
+import {
+  agentDuration,
+  agentTimeline,
+  agentTimestamp,
+  toolArguments,
+  toolCitations,
+  type AgentToolCard,
+} from "./diagnosticAgentTimeline";
 
 const props = defineProps<{ modelValue: boolean }>();
 const emit = defineEmits<{ "update:modelValue": [value: boolean] }>();
@@ -286,6 +383,50 @@ const toolNames: Record<string, string> = {
   search_knowledge: "知识库检索",
 };
 const formatTime = (value: string) => value.replace("T", " ").split(".")[0];
+const expandedTools = ref(new Set<string>());
+const now = ref(Date.now());
+const timeline = computed(() => (run.value ? agentTimeline(run.value) : []));
+const runEnd = computed(() => {
+  if (!run.value) return null;
+  if (isActive.value) return now.value;
+  const terminal = run.value.events.find((event) =>
+    ["succeeded", "failed", "cancelled"].includes(event.type)
+  );
+  return agentTimestamp(terminal?.created_at || run.value.updated_at);
+});
+const currentStage = computed(() => {
+  const stages: Record<string, string> = {
+    started: "开始诊断",
+    recovering: "恢复执行",
+    model_call: "模型分析",
+    tool_started: "查询证据",
+    tool_completed: "整理查询结果",
+  };
+  const event = run.value?.events.findLast((item) => stages[item.type]);
+  return {
+    label:
+      !isActive.value && run.value
+        ? statusLabels[run.value.status]
+        : event?.type === "tool_started"
+          ? `正在查询${toolNames[String(event.data.name)] || "证据"}`
+          : (event && stages[event.type]) || (run.value ? statusLabels[run.value.status] : ""),
+    startedAt: event?.created_at || run.value?.created_at,
+  };
+});
+const totalDuration = computed(() => agentDuration(run.value?.created_at, runEnd.value));
+const stageDuration = computed(() => agentDuration(currentStage.value.startedAt, runEnd.value));
+
+function toggleTool(key: string) {
+  const next = new Set(expandedTools.value);
+  if (next.has(key)) next.delete(key);
+  else next.add(key);
+  expandedTools.value = next;
+}
+
+function toolDuration(card: AgentToolCard) {
+  const end = card.completed?.created_at || card.interruptedAt;
+  return agentDuration(card.started?.created_at, end ? agentTimestamp(end) : runEnd.value);
+}
 
 let viewGeneration = 0;
 let sourceGeneration = 0;
@@ -294,6 +435,26 @@ let pollTimer: ReturnType<typeof setTimeout> | undefined;
 let detailController: AbortController | undefined;
 let listController: AbortController | undefined;
 let disposed = false;
+let clockTimer: ReturnType<typeof setTimeout> | undefined;
+
+function stopClock() {
+  clearTimeout(clockTimer);
+  clockTimer = undefined;
+}
+
+watch(
+  [visible, isActive, detailError, selectedRunId],
+  () => {
+    stopClock();
+    if (!visible.value || !isActive.value || detailError.value) return;
+    const tick = () => {
+      now.value = Date.now();
+      clockTimer = setTimeout(tick, 1000);
+    };
+    tick();
+  },
+  { flush: "sync" }
+);
 
 function stopPolling() {
   detailGeneration++;
@@ -309,6 +470,7 @@ function summary(incoming: AgentRun): AgentRun {
 function clearEvidence() {
   if (run.value) run.value = summary(run.value);
   selectedCitation.value = null;
+  expandedTools.value = new Set();
 }
 
 function mergeRun(incoming: AgentRun) {
@@ -398,6 +560,7 @@ async function selectRun(id: string) {
   stopPolling();
   selectedRunId.value = id;
   run.value = null;
+  expandedTools.value = new Set();
   selectedCitation.value = null;
   cancelError.value = "";
   await refreshRun();
@@ -451,6 +614,7 @@ async function submit() {
     if (disposed) return;
     selectedRunId.value = response.data.data.run_id;
     run.value = null;
+    expandedTools.value = new Set();
     selectedCitation.value = null;
     mergeRun(
       visible.value && generation === viewGeneration
@@ -528,6 +692,7 @@ onActivated(() => {
 });
 onUnmounted(() => {
   disposed = true;
+  stopClock();
   viewGeneration++;
   stopPolling();
   listController?.abort();
@@ -614,10 +779,104 @@ onUnmounted(() => {
 }
 
 .agent-goal,
-.agent-citation {
+.agent-citation,
+.agent-analysis-text {
   line-height: 1.7;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.agent-progress {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  background: var(--fa-color-surface-raised);
+  border: 1px solid var(--fa-color-border);
+  border-left: 3px solid var(--theme-color);
+  border-radius: var(--fa-radius-control);
+}
+
+.agent-stage,
+.agent-timing,
+.agent-tool-heading,
+.agent-tool-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+}
+
+.agent-stage strong {
+  color: var(--fa-color-text);
+}
+
+.agent-timing {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fa-color-text-muted);
+}
+
+.agent-tool-card,
+.agent-analysis {
+  min-width: 0;
+  background: var(--fa-color-surface);
+  border: 1px solid var(--fa-color-border);
+  border-radius: var(--fa-radius-control);
+}
+
+.agent-tool-toggle {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: inherit;
+
+  &:focus-visible {
+    outline: 2px solid var(--theme-color);
+    outline-offset: 2px;
+  }
+}
+
+.agent-tool-meta {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fa-color-text-muted);
+}
+
+.agent-tool-action {
+  margin-left: auto;
+  color: var(--theme-color);
+}
+
+.agent-tool-body,
+.agent-analysis {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  font-size: 13px;
+}
+
+.agent-tool-body {
+  border-top: 1px solid var(--fa-color-border);
+
+  pre {
+    max-height: 200px;
+    padding: 10px;
+    margin: 0;
+    overflow: auto;
+    font-size: 12px;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+    background: var(--fa-color-canvas);
+    border-radius: var(--fa-radius-control);
+  }
 }
 
 .agent-events {
@@ -666,6 +925,19 @@ onUnmounted(() => {
 
   .agent-history .agent-row :deep(.el-select) {
     flex-basis: 100%;
+  }
+
+  .agent-events {
+    padding-left: 18px;
+  }
+
+  .agent-tool-meta {
+    gap: 6px 12px;
+  }
+
+  .agent-tool-action {
+    flex-basis: 100%;
+    margin-left: 0;
   }
 
   .diagnostic-agent :deep(.el-button),

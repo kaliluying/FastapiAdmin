@@ -54,11 +54,15 @@ _CID = re.compile(r"(?:\|\s*cid|\bcorrelation_id)\s*[:=]\s*([A-Za-z0-9_-]{1,64})
 _PRIVATE_KEY = re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----.*?(?:-----END [A-Z0-9 ]*PRIVATE KEY-----|\Z)", re.DOTALL)
 _TRACE_VALUES = re.compile(r"(?m)^[ \t]*[│┃┆┇╎╏└┗├┣╰┌┏].*$")
 _URL_CREDENTIALS = re.compile(r"(?i)\b[a-z][a-z0-9+.-]{0,31}://[^\s/'\"<>]+@[^\s'\"<>]+")
-_HEADERS = re.compile(r"(?im)([\"']?\b(?:authorization|proxy-authorization|cookies?|set-cookie)[\"']?\s*[:=]\s*)[^\r\n]+")
+_QUOTED_VALUE = r""""(?:\\[\s\S]|[^"\\])*(?:"|\\?\Z)|'(?:\\[\s\S]|[^'\\])*(?:'|\\?\Z)"""
+_HEADERS = re.compile(
+    r"""(?im)(["']?\b(?:authorization|proxy-authorization|cookies?|set-cookie)["']?\s*[:=]\s*)"""
+    + "(?:" + _QUOTED_VALUE + r"|[^\r\n]+)"
+)
 _SECRET_VALUES = re.compile(
     r"""(?i)(["']?(?<![\w.-])(?=[\w.-]*(?:password|passwd|pwd|secret|api[_-]?key|access[_-]?key|token|credential|cookie|session))"""
     r"""[\w.-]++["']?\s*[:=]\s*)"""
-    r"""(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\{[^\r\n]*\}|\[[^\r\n]*\]|[^\s,;}\]]+)"""
+    + "(?:" + _QUOTED_VALUE + r"|\{[^\r\n]*\}|\[[^\r\n]*\]|[^\s,;}\]]+)"
 )
 _AUTH_TOKEN = re.compile(r"(?i)\b(?:Bearer|Basic)\s+[A-Za-z0-9._~+/-]+=*")
 _JWT = re.compile(r"\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b")

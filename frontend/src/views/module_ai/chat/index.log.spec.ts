@@ -3,10 +3,26 @@ import { shallowMount, flushPromises, type VueWrapper } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import ChatPage from "./index.vue";
 
-const api = vi.hoisted(() => ({ status: vi.fn(), create: vi.fn(), stream: vi.fn() }));
-vi.mock("@/api/module_ai/chat", () => ({
-  default: { getRuntimeLogStatus: api.status, createSession: api.create, stream: api.stream },
+const api = vi.hoisted(() => ({
+  status: vi.fn(),
+  create: vi.fn(),
+  stream: vi.fn(),
+  detail: vi.fn(),
+  feedback: vi.fn(),
+  login: "test-login",
 }));
+vi.mock("@/api/module_ai/chat", () => ({
+  default: {
+    getRuntimeLogStatus: api.status,
+    createSession: api.create,
+    stream: api.stream,
+    getSessionDetail: api.detail,
+  },
+}));
+vi.mock("@/api/module_ai/quality", () => ({
+  default: { feedbackList: api.feedback },
+}));
+vi.mock("@/utils/auth", () => ({ Auth: { getSessionKey: () => api.login } }));
 vi.mock("@/api/module_ai/knowledge", () => ({
   default: { optionselect: vi.fn().mockResolvedValue({ data: { data: [] } }) },
 }));
@@ -28,13 +44,37 @@ let wrapper: VueWrapper;
 
 beforeEach(async () => {
   vi.clearAllMocks();
+  sessionStorage.clear();
+  api.login = "test-login";
+  api.detail.mockResolvedValue({
+    data: {
+      success: true,
+      data: {
+        runs: [
+          {
+            run_id: "saved-run",
+            messages: [
+              { role: "user", content: "保存的问题" },
+              { role: "assistant", content: "保存的回答", citations: [{ title: "来源" }] },
+            ],
+          },
+        ],
+      },
+    },
+  });
+  api.feedback.mockResolvedValue({ data: { data: { items: [] } } });
   api.status.mockResolvedValue({ data: { data: { can_query: true, enabled: true } } });
   api.create.mockResolvedValue({ data: { success: true, data: { id: "ordinary-session" } } });
   api.stream.mockImplementation((_body, _signal, _onData, onOpen) => {
     onOpen();
     return new Promise(() => {});
   });
-  wrapper = shallowMount(ChatPage, {
+  wrapper = mountChat();
+  await flushPromises();
+});
+
+function mountChat() {
+  return shallowMount(ChatPage, {
     global: {
       stubs: {
         ElButton: defineComponent({
@@ -49,11 +89,13 @@ beforeEach(async () => {
         ElFooter: Panel,
         FaChatInput: defineComponent({
           name: "FaChatInput",
+          props: ["disabled", "sending"],
           template: "<div />",
           methods: { clearDraft() {} },
         }),
         FaSidebar: defineComponent({
           name: "FaSidebar",
+          props: ["currentSessionId"],
           template: "<div />",
           methods: { loadSessions() {} },
         }),
@@ -63,11 +105,13 @@ beforeEach(async () => {
           template: "<div />",
           methods: { scrollToBottom() {} },
         }),
+        FaSvgIcon: true,
+        ElDrawer: Panel,
+        ElDialog: Panel,
       },
     },
   });
-  await flushPromises();
-});
+}
 
 afterEach(() => {
   wrapper.unmount();
@@ -75,7 +119,237 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
+async function saveConversation() {
+  wrapper.getComponent({ name: "FaChatInput" }).vm.$emit("send", "保存的问题");
+  await flushPromises();
+  const payload = api.stream.mock.calls.at(-1)![0];
+  Sse.current.onmessage({
+    data: JSON.stringify({
+      type: "done",
+      request_id: payload.request_id,
+      session_id: "saved-session",
+    }),
+  });
+  await flushPromises();
+}
+
+async function remount() {
+  wrapper.unmount();
+  wrapper = mountChat();
+  await flushPromises();
+}
+
+describe("conversation restoration", () => {
+  it("rejects stale-login selections, sends and stream completions", async () => {
+    wrapper.getComponent({ name: "FaChatInput" }).vm.$emit("send", "登录变化前的问题");
+    await flushPromises();
+    const payload = api.stream.mock.calls.at(-1)![0];
+    api.login = "another-login";
+    Sse.current.onmessage({
+      data: JSON.stringify({
+        type: "done",
+        request_id: payload.request_id,
+        session_id: "old-login-session",
+      }),
+    });
+    wrapper.getComponent({ name: "FaChatInput" }).vm.$emit("stop");
+    wrapper.getComponent({ name: "FaSidebar" }).vm.$emit("select-session", {
+      id: "old-login-session",
+      title: "旧登录会话",
+    });
+    wrapper.getComponent({ name: "FaChatInput" }).vm.$emit("send", "不能以旧上下文发送");
+    await flushPromises();
+    expect(api.detail).not.toHaveBeenCalled();
+    expect(api.stream).toHaveBeenCalledTimes(1);
+    expect(wrapper.getComponent({ name: "FaSidebar" }).props("currentSessionId")).toBeNull();
+  });
+
+  it.each(["detail", "feedback"])(
+    "ignores a restoration if the login changes while %s is pending",
+    async (stage) => {
+      await saveConversation();
+      const response = await api.detail();
+      api.detail.mockClear();
+      let resolve!: (value: unknown) => void;
+      const pending = new Promise((done) => {
+        resolve = done;
+      });
+      if (stage === "detail") api.detail.mockReturnValueOnce(pending);
+      else api.feedback.mockReturnValueOnce(pending);
+      await remount();
+      api.login = "another-login";
+      resolve(stage === "detail" ? response : null);
+      await flushPromises();
+      expect(wrapper.getComponent({ name: "FaChatMessages" }).props("messages")).toEqual([]);
+      expect(wrapper.getComponent({ name: "FaSidebar" }).props("currentSessionId")).toBeNull();
+    }
+  );
+
+  it("keeps restoration protection when a later historical selection also fails", async () => {
+    await saveConversation();
+    api.detail.mockRejectedValueOnce(new Error("network"));
+    await remount();
+    api.detail.mockRejectedValueOnce(new Error("still offline"));
+    wrapper.getComponent({ name: "FaSidebar" }).vm.$emit("select-session", {
+      id: "another-session",
+      title: "另一段对话",
+    });
+    await flushPromises();
+    expect(wrapper.getComponent({ name: "FaAsyncState" }).props("title")).toBe("对话恢复失败");
+    expect(wrapper.getComponent({ name: "FaChatInput" }).props("disabled")).toBe(true);
+  });
+
+  it("treats successful but missing session detail as a recoverable failure", async () => {
+    await saveConversation();
+    api.detail.mockResolvedValueOnce({ data: { success: true, data: null } });
+    await remount();
+    expect(wrapper.getComponent({ name: "FaAsyncState" }).props("title")).toBe("对话恢复失败");
+    expect(wrapper.getComponent({ name: "FaSidebar" }).props("currentSessionId")).toBeNull();
+    expect(wrapper.getComponent({ name: "FaChatInput" }).props("disabled")).toBe(true);
+    await remount();
+    expect(wrapper.getComponent({ name: "FaChatMessages" }).props("messages")).toHaveLength(2);
+  });
+
+  it("remembers a selected historical conversation", async () => {
+    wrapper.getComponent({ name: "FaSidebar" }).vm.$emit("select-session", {
+      id: "selected-session",
+      title: "历史对话",
+    });
+    await flushPromises();
+    api.detail.mockClear();
+    await remount();
+    expect(api.detail).toHaveBeenCalledWith("selected-session");
+  });
+
+  it.each(["new-session", "delete-session"])("clears the bookmark on %s", async (event) => {
+    await saveConversation();
+    wrapper.getComponent({ name: "FaSidebar" }).vm.$emit(event, "saved-session");
+    await flushPromises();
+    await remount();
+    expect(api.detail).not.toHaveBeenCalled();
+    expect(wrapper.getComponent({ name: "FaChatMessages" }).props("messages")).toEqual([]);
+    wrapper.getComponent({ name: "FaChatInput" }).vm.$emit("send", "新问题");
+    await flushPromises();
+    expect(api.stream.mock.calls.at(-1)![0].session_id).toBeNull();
+  });
+
+  it("ignores a bookmark from another login and never stores message bodies", async () => {
+    await saveConversation();
+    const saved = sessionStorage.getItem("ai-chat-active-session");
+    expect(saved).not.toContain("保存的问题");
+    api.login = "another-login";
+    await remount();
+    expect(api.detail).not.toHaveBeenCalled();
+    expect(wrapper.getComponent({ name: "FaChatMessages" }).props("messages")).toEqual([]);
+  });
+
+  it("does not claim an unconfirmed stream was saved", async () => {
+    wrapper.getComponent({ name: "FaChatInput" }).vm.$emit("send", "仍在生成");
+    await flushPromises();
+    await remount();
+    expect(api.detail).not.toHaveBeenCalled();
+    expect(wrapper.getComponent({ name: "FaChatMessages" }).props("messages")).toEqual([]);
+  });
+
+  it.each(["network", "response"])(
+    "keeps the bookmark for retry after %s failure",
+    async (failure) => {
+      await saveConversation();
+      if (failure === "network") api.detail.mockRejectedValueOnce(new Error("network"));
+      else api.detail.mockResolvedValueOnce({ data: { success: false, msg: "暂时不可用" } });
+      await remount();
+      expect(wrapper.getComponent({ name: "FaAsyncState" }).props("title")).toBe("对话恢复失败");
+      expect(wrapper.getComponent({ name: "FaChatInput" }).props("disabled")).toBe(true);
+      wrapper.getComponent({ name: "FaChatInput" }).vm.$emit("send", "失败时不能误发新会话");
+      await flushPromises();
+      expect(api.stream).toHaveBeenCalledTimes(1);
+      await remount();
+      expect(api.detail).toHaveBeenCalledTimes(2);
+      expect(wrapper.getComponent({ name: "FaChatMessages" }).props("messages")).toHaveLength(2);
+    }
+  );
+
+  it.each(["new-session", "delete-session"])(
+    "does not resurrect an in-flight restoration after %s",
+    async (event) => {
+      await saveConversation();
+      const response = await api.detail();
+      api.detail.mockClear();
+      let resolve!: (value: unknown) => void;
+      api.detail.mockImplementationOnce(
+        () =>
+          new Promise((done) => {
+            resolve = done;
+          })
+      );
+      await remount();
+      expect(wrapper.getComponent({ name: "FaChatInput" }).props("disabled")).toBe(true);
+      wrapper.getComponent({ name: "FaSidebar" }).vm.$emit(event, "saved-session");
+      await flushPromises();
+      resolve(response);
+      await flushPromises();
+      expect(wrapper.getComponent({ name: "FaChatMessages" }).props("messages")).toEqual([]);
+      api.detail.mockClear();
+      await remount();
+      expect(api.detail).not.toHaveBeenCalled();
+    }
+  );
+
+  it("does not commit a stale restoration while feedback is pending", async () => {
+    await saveConversation();
+    let resolve!: (value: unknown) => void;
+    api.feedback.mockImplementationOnce(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        })
+    );
+    await remount();
+    wrapper.getComponent({ name: "FaSidebar" }).vm.$emit("select-session", {
+      id: "newer-selection",
+      title: "另一段对话",
+    });
+    await flushPromises();
+    resolve(null);
+    await flushPromises();
+    api.detail.mockClear();
+    await remount();
+    expect(api.detail).toHaveBeenCalledWith("newer-selection");
+    expect(wrapper.getComponent({ name: "FaSidebar" }).props("currentSessionId")).toBe(
+      "newer-selection"
+    );
+  });
+});
+
 describe("built-in runtime log tool", () => {
+  it("automatically restores the saved conversation after a page remount", async () => {
+    wrapper.getComponent({ name: "FaChatInput" }).vm.$emit("send", "保存的问题");
+    await flushPromises();
+    const payload = api.stream.mock.calls.at(-1)![0];
+    Sse.current.onmessage({
+      data: JSON.stringify({
+        type: "done",
+        request_id: payload.request_id,
+        session_id: "saved-session",
+      }),
+    });
+    await flushPromises();
+    wrapper.unmount();
+    wrapper = mountChat();
+    await flushPromises();
+    expect(api.detail).toHaveBeenCalledWith("saved-session");
+    const messages = wrapper.getComponent({ name: "FaChatMessages" }).props("messages");
+    expect(messages.map((message: { content: string }) => message.content)).toEqual([
+      "保存的问题",
+      "保存的回答",
+    ]);
+    expect(messages[1].runId).toBe("saved-run");
+    expect(messages[1].citations).toEqual([{ title: "来源" }]);
+    wrapper.getComponent({ name: "FaChatInput" }).vm.$emit("send", "继续追问");
+    await flushPromises();
+    expect(api.stream.mock.calls.at(-1)![0].session_id).toBe("saved-session");
+  });
+
   it("opens diagnostics from a visible entry without sending ordinary chat messages", async () => {
     const button = wrapper.findAll("button").find((item) => item.text().includes("只读诊断 Agent"));
     expect(button).toBeDefined();

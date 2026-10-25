@@ -34,8 +34,20 @@
             />
             <ElButton text @click="diagnosticAgentOpen = true">只读诊断 Agent</ElButton>
           </ElHeader>
-          <ElMain class="chat-main">
+          <ElMain class="chat-main" :aria-busy="switchingSession">
+            <p v-if="switchingSession" class="builtin-tool-notice" role="status">正在加载对话…</p>
+            <FaAsyncState
+              v-else-if="restoreRequired"
+              state="error"
+              title="对话恢复失败"
+              description="未能加载已保存的对话，请重试，或在会话列表中选择其他对话。"
+            >
+              <template #action>
+                <ElButton @click="restoreSession">重试加载对话</ElButton>
+              </template>
+            </FaAsyncState>
             <FaChatMessages
+              v-show="!switchingSession && !restoreRequired"
               ref="chatMessagesRef"
               :messages="messages"
               :error="error"
@@ -78,7 +90,7 @@
             </p>
             <FaChatInput
               ref="chatInputRef"
-              :disabled="switchingSession"
+              :disabled="switchingSession || restoreRequired"
               :sending="sending"
               @send="handleSendMessage"
               @stop="stopGeneration"
@@ -161,8 +173,15 @@ defineOptions({
 });
 
 import { ref, computed, watch, onMounted, onUnmounted, onActivated, onDeactivated } from "vue";
-import { useElementBounding, useIntervalFn, useMediaQuery, useWindowSize } from "@vueuse/core";
+import {
+  useElementBounding,
+  useIntervalFn,
+  useMediaQuery,
+  useSessionStorage,
+  useWindowSize,
+} from "@vueuse/core";
 import { ElMessage, ElMessageBox } from "element-plus";
+import { Auth } from "@/utils/auth";
 import AiChatAPI, { ChatSession } from "@/api/module_ai/chat";
 import KnowledgeAPI, { type KnowledgeBase } from "@/api/module_ai/knowledge";
 import QualityAPI from "@/api/module_ai/quality";
@@ -176,6 +195,7 @@ import FaChatMessages from "./components/FaChatMessages.vue";
 import FaChatInput from "./components/FaChatInput.vue";
 import FaAiProcessStatus from "@/views/module_ai/components/FaAiProcessStatus.vue";
 import FaCitationList from "@/views/module_ai/components/FaCitationList.vue";
+import FaAsyncState from "@/components/feedback/fa-async-state/index.vue";
 
 // 状态
 const messages = ref<ChatMessage[]>([]);
@@ -184,6 +204,19 @@ const diagnosticAgentOpen = ref(false);
 const sending = ref(false);
 const error = ref("");
 const currentSessionId = ref<string | null>(null);
+const loginSession = Auth.getSessionKey();
+const isCurrentLogin = () => loginSession === Auth.getSessionKey();
+// 只保留当前标签页的会话定位；正文始终经后端鉴权后读取。
+const savedSession = useSessionStorage(
+  "ai-chat-active-session",
+  { login: "", sessionId: "" },
+  { writeDefaults: false }
+);
+const restoreRequired = ref(false);
+const setCurrentSession = (sessionId: string | null) => {
+  currentSessionId.value = sessionId;
+  savedSession.value = { login: loginSession, sessionId: sessionId || "" };
+};
 const currentLogContextId = ref<string | null>(null);
 const switchingSession = ref(false);
 const isSidebarCollapsed = ref(false);
@@ -260,7 +293,7 @@ const handleStreamMessage = (data: string) => {
   } catch {
     return;
   }
-  if (!activeRequest || event.request_id !== activeRequest.id) return;
+  if (!activeRequest || event.request_id !== activeRequest.id || !isCurrentLogin()) return;
   const message = messages.value.find((item) => item.id === activeRequest?.messageId);
   if (!message) return;
   if (
@@ -296,7 +329,7 @@ const handleStreamMessage = (data: string) => {
   if (event.type === "done" || event.type === "cancelled") {
     if (event.type === "done") {
       currentLogContextId.value = event.log_context_id || null;
-      if (event.session_id) currentSessionId.value = event.session_id;
+      if (event.session_id) setCurrentSession(event.session_id);
       message.runId = event.run_id || undefined;
       message.sessionId = event.session_id || undefined;
       let original = messages.value.find((item) => item.id === message.retryOf);
@@ -398,7 +431,9 @@ const handleSendMessage = async (
 ) => {
   if (
     (!message.trim() && !files?.length) ||
+    !isCurrentLogin() ||
     switchingSession.value ||
+    restoreRequired.value ||
     sending.value ||
     files?.some((file) => file.status !== "ready")
   )
@@ -465,7 +500,11 @@ const isSuccessResponse = (responseData?: ApiResponse<unknown>) =>
   responseData?.success === true || responseData?.code === 0 || responseData?.code === 200;
 
 // ============ 会话操作 ============
-const handleSelectSession = async (session: ChatSession) => {
+const handleSelectSession = async (
+  session: Pick<ChatSession, "id" | "session_id" | "title">,
+  restoring = false
+) => {
+  if (!isCurrentLogin()) return;
   const sessionId = session.id || session.session_id;
   if (!sessionId) {
     ElMessage.error("会话 ID 缺失，无法切换");
@@ -475,25 +514,32 @@ const handleSelectSession = async (session: ChatSession) => {
   const generation = ++selectionGeneration;
   pendingSelectionId = sessionId;
   switchingSession.value = true;
+  if (restoring) restoreRequired.value = true;
   try {
     const response = await AiChatAPI.getSessionDetail(sessionId);
-    if (generation !== selectionGeneration) return;
+    if (generation !== selectionGeneration || !isCurrentLogin()) return;
     const responseData = response.data;
-    if (!isSuccessResponse(responseData)) {
-      ElMessage.error(responseData?.msg || "获取会话详情失败");
+    if (!isSuccessResponse(responseData) || !responseData.data) {
+      if (!restoring)
+        ElMessage.error(
+          isSuccessResponse(responseData)
+            ? "会话不存在或暂时无法加载，请重试"
+            : responseData?.msg || "获取会话详情失败"
+        );
       return;
     }
 
-    currentSessionId.value = sessionId;
-    currentLogContextId.value = null;
-    messages.value = [];
-
-    const sessionData = responseData.data || {};
+    const sessionData = responseData.data;
     const runs = sessionData.runs || [];
     const feedback = await QualityAPI.feedbackList({ session_id: sessionId, page_size: 100 }).catch(
       () => null
     );
-    if (generation !== selectionGeneration) return;
+    if (generation !== selectionGeneration || !isCurrentLogin()) return;
+    setCurrentSession(sessionId);
+    restoreRequired.value = false;
+    currentLogContextId.value = null;
+    error.value = "";
+    messages.value = [];
     const feedbackByRun = new Map(
       feedback?.data.data.items.map((item) => [item.run_id, item]) || []
     );
@@ -517,9 +563,12 @@ const handleSelectSession = async (session: ChatSession) => {
     });
 
     isMobileDrawerOpen.value = false;
-    ElMessage.success(`已切换到会话：${session.title}`);
+    chatMessagesRef.value?.scrollToBottom();
+    if (!restoring) ElMessage.success(`已切换到会话：${session.title || "未命名会话"}`);
   } catch {
-    if (generation === selectionGeneration) ElMessage.error("获取会话详情失败");
+    if (generation === selectionGeneration && isCurrentLogin()) {
+      if (!restoring) ElMessage.error("获取会话详情失败");
+    }
   } finally {
     if (generation === selectionGeneration) {
       pendingSelectionId = null;
@@ -528,15 +577,30 @@ const handleSelectSession = async (session: ChatSession) => {
   }
 };
 
+const restoreSession = () => {
+  const login = savedSession.value?.login;
+  const sessionId = savedSession.value?.sessionId;
+  if (
+    loginSession &&
+    isCurrentLogin() &&
+    login === loginSession &&
+    typeof sessionId === "string" &&
+    sessionId
+  ) {
+    void handleSelectSession({ id: sessionId, session_id: sessionId, title: null }, true);
+  }
+};
+
 const handleNewSession = () => {
   stopGeneration();
   selectionGeneration += 1;
   pendingSelectionId = null;
   switchingSession.value = false;
+  restoreRequired.value = false;
   isMobileDrawerOpen.value = false;
   error.value = "";
   selectedCitation.value = null;
-  currentSessionId.value = null;
+  setCurrentSession(null);
   currentLogContextId.value = null;
   messages.value = [];
   isEvidenceDrawerOpen.value = false;
@@ -544,7 +608,12 @@ const handleNewSession = () => {
 };
 
 const handleDeleteSession = (sessionId: string) => {
-  if (currentSessionId.value !== sessionId && pendingSelectionId !== sessionId) return;
+  if (
+    currentSessionId.value !== sessionId &&
+    pendingSelectionId !== sessionId &&
+    !(restoreRequired.value && savedSession.value?.sessionId === sessionId)
+  )
+    return;
 
   handleNewSession();
 };
@@ -604,6 +673,7 @@ const loadRuntimeLogStatus = async () => {
 onMounted(() => {
   loadKnowledgeBases();
   loadRuntimeLogStatus();
+  restoreSession();
 });
 onUnmounted(() => {
   selectionGeneration += 1;
@@ -611,9 +681,10 @@ onUnmounted(() => {
   switchingSession.value = false;
   stopGeneration();
 });
-// 离开缓存视图时取消当前生成，返回后只刷新权限状态。
+// 返回缓存视图时，重新加载离开前尚未完成的会话恢复。
 onActivated(() => {
   loadRuntimeLogStatus();
+  if (!currentSessionId.value && !switchingSession.value) restoreSession();
 });
 onDeactivated(() => {
   selectionGeneration += 1;

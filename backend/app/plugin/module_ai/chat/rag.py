@@ -7,7 +7,7 @@ from functools import lru_cache
 from typing import Any, Protocol
 
 from langchain_anthropic import ChatAnthropic
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 
 from app.core.logger import logger
@@ -63,6 +63,9 @@ class ChatModel(Protocol):
 class ToolChatModel(ChatModel, Protocol):
     async def request_tools(self, messages: list[BaseMessage], tools: list[dict[str, Any]]) -> AIMessage:
         """返回文本和结构化工具调用，同时保留服务商消息。"""
+
+    def stream_tools(self, messages: list[BaseMessage], tools: list[dict[str, Any]]) -> AsyncGenerator[AIMessageChunk, None]:
+        """逐块返回公开文本及工具协议；调用方负责归并和过滤。"""
 
 
 def content_to_text(content: Any) -> str:
@@ -351,6 +354,14 @@ class LangChainChatModel:
             response = await self.llm.bind_tools(tools).ainvoke(messages)
             outcome["response"] = response
             return response
+
+    async def stream_tools(self, messages: list[BaseMessage], tools: list[dict[str, Any]]) -> AsyncGenerator[AIMessageChunk, None]:
+        async with provider_call(self.config, "tools") as outcome:
+            async with aclosing(self.llm.bind_tools(tools).astream(messages)) as chunks:
+                async for chunk in chunks:
+                    previous = outcome["response"]
+                    outcome["response"] = previous + chunk if previous is not None else chunk
+                    yield chunk
 
 
 @lru_cache(maxsize=4)

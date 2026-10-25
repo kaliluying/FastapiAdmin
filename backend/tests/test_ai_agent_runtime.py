@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage, messages_from_dict, messages_to_dict
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage, SystemMessage, ToolMessage, messages_from_dict, messages_to_dict
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
@@ -17,7 +17,7 @@ from app.core.security import credential_fingerprint
 from app.plugin.module_ai.agent import runtime
 from app.plugin.module_ai.agent.model import AgentEventModel as Event
 from app.plugin.module_ai.agent.model import AgentRunModel as Run
-from app.plugin.module_ai.agent.service import cancel_run, get_run, list_runs
+from app.plugin.module_ai.agent.service import cancel_run, get_run, list_runs, snapshot
 
 LIVE_AUTH = runtime.live_auth
 
@@ -69,6 +69,188 @@ def tool(identifier="read-1", name="query_runtime_logs"):
     return AIMessage(content="", tool_calls=[{"id": identifier, "name": name, "args": {}}])
 
 
+async def analysis_events(sessions):
+    async with sessions() as db:
+        return list((await db.scalars(select(Event).where(Event.type == "analysis").order_by(Event.seq))).all())
+
+
+async def test_snapshot_dates_identify_server_instants_for_remote_browser_clocks(runs):
+    identifier = await enqueue(runs)
+    job = await runtime.record(await runtime.claim_run(), "model_call", "start")
+    async with runs() as db:
+        event = await db.scalar(select(Event).where(Event.run_id == identifier))
+    result = snapshot(job, [event])
+    for value, original in [(result["created_at"], job.created_at),
+                            (result["updated_at"], job.updated_at),
+                            (result["events"][0]["created_at"], event.created_at)]:
+        parsed = datetime.fromisoformat(value)
+        assert parsed.tzinfo is not None
+        assert parsed.timestamp() == original.timestamp()
+
+
+async def test_stream_persists_public_lines_before_end_and_merges_split_tools(runs, monkeypatch):
+    closed = []
+
+    async def stream(*_):
+        try:
+            yield AIMessageChunk(content="先查询日志。\n")
+            events = await analysis_events(runs)
+            assert len(events) == 1 and events[0].data["complete"] is False
+            yield AIMessageChunk(content="", tool_call_chunks=[
+                {"index": 0, "id": "read-1", "name": "query_runtime_logs", "args": '{"keyword":"to'},
+            ])
+            yield AIMessageChunk(content="", tool_call_chunks=[
+                {"index": 0, "id": None, "name": None, "args": 'ken=private-secret"}'},
+            ])
+        finally:
+            closed.append(True)
+
+    await enqueue(runs)
+    job = await runtime.record(await runtime.claim_run(), "model_call", "start")
+    _, answer = await runtime.request_analysis(job, None, SimpleNamespace(stream_tools=stream), [], [])
+    assert closed == [True]
+    assert answer.tool_calls[0]["args"] == {"keyword": "token=private-secret"}
+    assert (await analysis_events(runs))[-1].data == {
+        "model_call": 1, "text": "先查询日志。", "complete": True,
+    }
+
+
+async def test_stream_redacts_accumulated_secrets_and_excludes_private_blocks(runs, monkeypatch):
+    monkeypatch.setattr(runtime, "ANALYSIS_INTERVAL", 0)
+
+    async def stream(*_):
+        yield AIMessageChunk(content=[{"type": "thinking", "thinking": "internal-secret", "signature": "private-signature"},
+                                      {"type": "text", "text": "公开摘要\npassword=split-"}])
+        private_key = "-----BEGIN " + "PRIVATE KEY-----\nkey-body\n-----END " + "PRIVATE KEY-----"
+        yield AIMessageChunk(content=[{"type": "text", "text": "secret\n" + private_key + "\n结束。"}])
+
+    await enqueue(runs)
+    job = await runtime.record(await runtime.claim_run(), "model_call", "start")
+    await runtime.request_analysis(job, None, SimpleNamespace(stream_tools=stream), [], [])
+    serialized = json.dumps([item.data for item in await analysis_events(runs)], ensure_ascii=False)
+    for secret in ("internal-secret", "private-signature", "split-", "secret", "key-body"):
+        assert secret not in serialized
+    assert "[REDACTED]" in serialized
+    assert (await analysis_events(runs))[-1].data["complete"] is True
+
+
+@pytest.mark.parametrize("quote", ['"', "'"])
+@pytest.mark.parametrize("key", ["password", "cookie", "cookies", "set-cookie", "authorization", "proxy-authorization"])
+async def test_stream_never_persists_unclosed_multiline_secret_values(runs, monkeypatch, quote, key):
+    monkeypatch.setattr(runtime, "ANALYSIS_INTERVAL", 0)
+
+    async def stream(*_):
+        for text in [f"公开说明\n{key}={quote}synthetic-line-one\n",
+                     "synthetic-line-two\\\n", "synthetic-tail\\", quote + "\n"]:
+            yield AIMessageChunk(content=text)
+
+    await enqueue(runs)
+    job = await runtime.record(await runtime.claim_run(), "model_call", "start")
+    await runtime.request_analysis(job, None, SimpleNamespace(stream_tools=stream), [], [])
+    events = await analysis_events(runs)
+    assert events
+    assert "synthetic-" not in json.dumps([item.data for item in events])
+    assert events[-1].data["complete"] is True
+
+
+async def test_stream_snapshots_are_bounded_and_always_finish(runs, monkeypatch):
+    monkeypatch.setattr(runtime, "ANALYSIS_INTERVAL", 0)
+
+    async def stream(*_):
+        for _index in range(30):
+            yield AIMessageChunk(content="公开句子\n")
+        yield AIMessageChunk(content="后文" * runtime.MAX_ANALYSIS_CHARS)
+
+    await enqueue(runs)
+    job = await runtime.record(await runtime.claim_run(), "model_call", "start")
+    await runtime.request_analysis(job, None, SimpleNamespace(stream_tools=stream), [], [])
+    events = await analysis_events(runs)
+    assert len(events) == runtime.MAX_ANALYSIS_UPDATES
+    assert events[-1].data["complete"] is True
+    assert len(events[-1].data["text"]) == runtime.MAX_ANALYSIS_CHARS
+    assert all(len(item.data["text"]) <= runtime.MAX_ANALYSIS_CHARS for item in events)
+
+
+@pytest.mark.parametrize("stop", ["cancel", "lease", "auth"])
+async def test_stream_stops_and_closes_on_cancel_lease_loss_or_revoked_auth(runs, monkeypatch, stop):
+    closed = []
+    monkeypatch.setattr(runtime, "ANALYSIS_INTERVAL", 0)
+
+    async def stream(*_):
+        try:
+            yield AIMessageChunk(content="已公开。\n")
+            if stop == "auth":
+                @asynccontextmanager
+                async def revoked(*_):
+                    raise CustomException(msg="权限已撤销")
+                    yield
+                monkeypatch.setattr(runtime, "live_auth", revoked)
+            else:
+                async with runs() as db, db.begin():
+                    await db.execute(update(Run).where(Run.run_id == job.run_id).values(
+                        **({"status": "cancelled", "token": None} if stop == "cancel" else {"token": "replacement"})
+                    ))
+            yield AIMessageChunk(content="不能公开的新内容。\n")
+        finally:
+            closed.append(True)
+
+    await enqueue(runs)
+    job = await runtime.record(await runtime.claim_run(), "model_call", "start")
+    with pytest.raises(CustomException if stop == "auth" else runtime.RunStopped):
+        await runtime.request_analysis(job, None, SimpleNamespace(stream_tools=stream), [], [])
+    assert closed == [True]
+    assert [item.data["text"] for item in await analysis_events(runs)] == ["已公开。"]
+
+
+@pytest.mark.parametrize("failure", ["empty", "error", "oversize"])
+async def test_bad_stream_fails_without_second_provider_request(runs, failure):
+    async def stream(*_):
+        if failure == "error":
+            raise RuntimeError("provider interrupted")
+        if failure == "oversize":
+            yield AIMessageChunk(content="x" * (runtime.MAX_CONTEXT_CHARS + 1))
+
+    fallback = AsyncMock()
+    await enqueue(runs)
+    job = await runtime.record(await runtime.claim_run(), "model_call", "start")
+    with pytest.raises(RuntimeError if failure == "error" else CustomException):
+        await runtime.request_analysis(job, None, SimpleNamespace(stream_tools=stream, request_tools=fallback), [], [])
+    fallback.assert_not_called()
+    assert await analysis_events(runs) == []
+
+
+@pytest.mark.parametrize("arguments", ['{"minutes":', '{"minutes":30', '{"keyword":"partial', "[]"])
+async def test_stream_rejects_truncated_json_instead_of_executing_repaired_defaults(runs, monkeypatch, arguments):
+    async def stream(*_):
+        yield AIMessageChunk(content="", tool_call_chunks=[
+            {"index": 0, "id": "read-1", "name": "query_runtime_logs", "args": arguments},
+        ])
+
+    monkeypatch.setattr(runtime, "prepare_tool_model", AsyncMock(return_value=SimpleNamespace(stream_tools=stream)))
+    identifier = await enqueue(runs)
+    await runtime.process_run(await runtime.claim_run(), None)
+    saved = await read(runs, identifier)
+    assert saved.status == "failed"
+    runtime.execute_tool.assert_not_called()
+
+
+@pytest.mark.parametrize("stop_reason", [None, "tool_use"])
+async def test_only_completed_native_empty_tool_input_can_omit_json_deltas(runs, stop_reason):
+    async def stream(*_):
+        yield AIMessageChunk(content=[{"type": "tool_use", "id": "read-1", "name": "query_runtime_logs", "input": {}}],
+                             tool_call_chunks=[{"index": 0, "id": "read-1", "name": "query_runtime_logs", "args": ""}],
+                             response_metadata={"stop_reason": stop_reason})
+
+    await enqueue(runs)
+    job = await runtime.record(await runtime.claim_run(), "model_call", "start")
+    if stop_reason is None:
+        with pytest.raises(CustomException, match="未完整"):
+            await runtime.request_analysis(job, None, SimpleNamespace(stream_tools=stream), [], [])
+    else:
+        _, answer = await runtime.request_analysis(job, None, SimpleNamespace(stream_tools=stream), [], [])
+        assert answer.tool_calls[0]["args"] == {}
+
+
 async def test_success_is_durable_with_ordered_events_and_bounded_identity(runs, monkeypatch):
     model = set_model(monkeypatch, [tool(), AIMessage(content="发现异常，见 [1]。")])
     identifier = await enqueue(runs)
@@ -83,6 +265,13 @@ async def test_success_is_durable_with_ordered_events_and_bounded_identity(runs,
         events = (await db.scalars(select(Event).order_by(Event.seq))).all()
     assert [item.seq for item in events] == list(range(1, saved.last_seq + 1))
     assert events[-1].type == "succeeded"
+    started = next(item.data for item in events if item.type == "tool_started")
+    completed = next(item.data for item in events if item.type == "tool_completed")
+    assert started["call_id"] == completed["call_id"] == "read-1"
+    assert started["attempt"] == completed["attempt"] == 1
+    assert started["arguments"] == runtime.validate_tool_arguments(
+        "query_runtime_logs", {}, use_runtime_logs=True, knowledge_base_ids=[],
+    )
     with pytest.raises(runtime.RunStopped):
         await runtime.record(job, "failed", "stale worker")
 

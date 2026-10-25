@@ -68,7 +68,7 @@ export default (env) => {
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
     browser = await chromium.launch({ channel: "chrome", headless: true });
-    page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, timezoneId: "UTC" });
     page.setDefaultTimeout(30000);
     page.on("pageerror", (error) => errors.push(error.message));
     page.on("response", (response) => {
@@ -136,12 +136,47 @@ export default (env) => {
       assert.match(await drawer.locator(".agent-detail").innerText(), /诊断中/);
       await drawer.screenshot({ path: path.join(root, "agent-browser-running-restored.png"), animations: "disabled" });
       fs.writeFileSync(path.join(root, "model-release-BROWSER"), "");
+      const summary = drawer.locator(".agent-analysis").first();
+      await summary.getByText("正在核对所选数据源。", { exact: true }).waitFor();
+      assert.match(await summary.innerText(), /生成中/);
+      assert.equal(await drawer.locator(".agent-result").count(), 0);
+      const totalBefore = await drawer.getByTestId("agent-total-time").innerText();
+      const stageBefore = await drawer.getByTestId("agent-stage-time").innerText();
+      assert.match(totalBefore, /^00:[0-5]\d$/, "A new task must not inherit a server/browser timezone offset");
+      await page.waitForTimeout(1250);
+      assert.notEqual(await drawer.getByTestId("agent-total-time").innerText(), totalBefore);
+      assert.notEqual(await drawer.getByTestId("agent-stage-time").innerText(), stageBefore);
+      fs.writeFileSync(path.join(root, "stream-release-BROWSER-1"), "");
+      await summary.getByText(/将查询日志并对照知识库。/).waitFor();
+      assert.equal(await drawer.locator(".agent-analysis").count(), 1, "Snapshots must update one summary card");
+      assert.equal(await drawer.locator(".agent-result").count(), 0, "Summary must precede completion");
+      await summary.scrollIntoViewIfNeeded();
+      await drawer.screenshot({ path: path.join(root, "agent-browser-streaming.png"), animations: "disabled" });
+      fs.writeFileSync(path.join(root, "stream-release-BROWSER-2"), "");
     }
     await drawer.locator(".agent-result").waitFor({ timeout: 45000 });
     assert.match(await drawer.locator(".agent-result").innerText(), /AGENTORCHIDEVIDENCE/);
-    assert.match(await drawer.locator(".agent-events").innerText(), /查询完成/);
+    assert.match(await drawer.locator(".agent-events").innerText(), /已完成/);
     assert.match(await drawer.locator(".agent-events").innerText(), /运行日志/);
     assert.match(await drawer.locator(".agent-events").innerText(), /知识库检索/);
+    const toggles = drawer.locator(".agent-tool-toggle");
+    assert.equal(await toggles.count(), 2);
+    const toggle = toggles.first();
+    await toggle.scrollIntoViewIfNeeded();
+    assert.equal(await toggle.getAttribute("aria-expanded"), "false");
+    await toggle.focus();
+    await page.keyboard.press("Enter");
+    assert.equal(await toggle.getAttribute("aria-expanded"), "true");
+    const toolBody = drawer.locator(".agent-tool-body").first();
+    assert.match(await toolBody.innerText(), /查询参数/);
+    assert.match(await toolBody.innerText(), /AGENTORCHIDEVIDENCE/);
+    await drawer.screenshot({ path: path.join(root, "agent-browser-tool-expanded.png"), animations: "disabled" });
+    await toggle.focus();
+    await page.keyboard.press("Space");
+    assert.equal(await toggle.getAttribute("aria-expanded"), "false");
+    const finishedTime = await drawer.getByTestId("agent-total-time").innerText();
+    await page.waitForTimeout(1250);
+    assert.equal(await drawer.getByTestId("agent-total-time").innerText(), finishedTime);
     await drawer.locator(".fa-citation-item__title").first().click();
     const citation = page.getByRole("dialog", { name: "引用片段", exact: true });
     await citation.waitFor();
@@ -160,6 +195,8 @@ export default (env) => {
     await page.getByRole("option").filter({ hasText: "浏览器验收：" }).click();
     await drawer.locator(".agent-result").waitFor();
     assert.match(await drawer.locator(".agent-result").innerText(), /AGENTORCHIDEVIDENCE/);
+    assert.equal(await drawer.getByTestId("agent-total-time").innerText(), finishedTime);
+    assert.equal(await drawer.locator(".agent-tool-toggle").count(), 2);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
@@ -168,6 +205,11 @@ export default (env) => {
       return { width: bounds.width, x: bounds.x, right: bounds.right, viewport: innerWidth };
     });
     assert.ok(geometry.width <= 390 && geometry.x >= -1 && geometry.right <= 391, JSON.stringify(geometry));
+    await drawer.locator(".agent-tool-toggle").first().click();
+    const mobileTool = drawer.locator(".agent-tool-card").first();
+    await mobileTool.scrollIntoViewIfNeeded();
+    assert.equal(await mobileTool.evaluate((element) => element.scrollWidth > element.clientWidth), false);
+    await drawer.screenshot({ path: path.join(root, "agent-browser-mobile-tool.png"), animations: "disabled" });
     await drawer.locator(".agent-notice").scrollIntoViewIfNeeded();
     await page.screenshot({ path: path.join(root, "agent-browser-mobile-form.png"), animations: "disabled" });
     await drawer.locator(".agent-result h3").scrollIntoViewIfNeeded();
@@ -178,12 +220,17 @@ export default (env) => {
       passed: true, browser: await browser.version(), run_id: runId, pageErrors: errors, requests, geometry,
       copied_source_sha256: Object.fromEntries([
         "src/views/module_ai/chat/components/FaDiagnosticAgent.vue",
+        "src/views/module_ai/chat/components/diagnosticAgentTimeline.ts",
         "src/views/module_ai/chat/index.vue", "src/api/module_ai/agent.ts",
       ].map((name) => [name, createHash("sha256").update(fs.readFileSync(path.join(frontend, name))).digest("hex")])),
       checks: ["UI login", "authorized menu -> AI chat -> diagnostic drawer",
         "visible readonly/continue-after-close instructions", "UI selects KB and runtime logs",
         "one task created", "durable steps and final report", "real evidence citation preview",
         ...(blocked ? ["close drawer + refresh while provider blocked -> task still running -> resume"] : []),
+        ...(blocked ? ["two live summary snapshots before completion", "continuous total and stage timers"] : []),
+        "keyboard expands/collapses tool cards with real arguments and citations",
+        "terminal timer freezes and survives refresh", "UTC browser against server timestamps",
+        "restored tool cards", "390px expanded tool fits viewport",
         "page refresh -> recent task -> restored report", "390px drawer stays inside viewport"],
       usability: {
         kind: "AI simulated user walk-through, not a human study",

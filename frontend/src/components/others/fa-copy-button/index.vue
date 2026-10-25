@@ -1,6 +1,6 @@
 <!-- 复制组件 -->
 <template>
-  <ElButton link :style="style" @click="handleClipboard">
+  <ElButton link :style="style" aria-label="复制" v-bind="$attrs" @click="handleClipboard">
     <slot>
       <ElIcon><DocumentCopy color="var(--el-color-primary)" /></ElIcon>
     </slot>
@@ -8,6 +8,8 @@
 </template>
 
 <script setup lang="ts">
+import { DocumentCopy } from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
 import { useI18n } from "vue-i18n";
 
 defineOptions({
@@ -39,10 +41,12 @@ async function handleClipboard() {
     }
   } else {
     // 兼容性处理（useClipboard 有兼容性问题）
-    const input = document.createElement("input");
-    input.style.position = "absolute";
+    const previousFocus = document.activeElement;
+    const input = document.createElement("textarea");
+    input.style.position = "fixed";
     input.style.left = "-9999px";
-    input.setAttribute("value", props.text);
+    input.value = props.text;
+    input.readOnly = true;
     document.body.appendChild(input);
     input.select();
     try {
@@ -57,6 +61,7 @@ async function handleClipboard() {
       console.warn("[FaCopyButton] Copy failed:", err);
     } finally {
       document.body.removeChild(input);
+      if (previousFocus instanceof HTMLElement) previousFocus.focus({ preventScroll: true });
     }
   }
 }

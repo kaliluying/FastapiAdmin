@@ -27,13 +27,13 @@ async def authorize_sources(auth: AuthSchema, run) -> None:
 def snapshot(run: Run, events=()) -> dict:
     return {
         "run_id": run.run_id, "goal": run.goal, "status": run.status,
-        "created_at": run.created_at.isoformat(), "updated_at": run.updated_at.isoformat(),
+        "created_at": run.created_at.astimezone().isoformat(), "updated_at": run.updated_at.astimezone().isoformat(),
         "result": run.result, "error": run.error, "knowledge_base_ids": run.knowledge_base_ids,
         "use_runtime_logs": run.use_runtime_logs, "model_calls": run.model_calls,
         "tool_calls": run.tool_calls, "attempts": run.attempts, "last_seq": run.last_seq,
         "citations": run.citations,
         "events": [{"seq": event.seq, "type": event.type, "message": event.message,
-                    "data": event.data, "created_at": event.created_at.isoformat()} for event in events],
+                    "data": event.data, "created_at": event.created_at.astimezone().isoformat()} for event in events],
     }
 
 
