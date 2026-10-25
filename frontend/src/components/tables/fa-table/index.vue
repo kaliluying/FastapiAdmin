@@ -6,7 +6,39 @@
 <template>
   <div class="fa-table" :class="{ 'is-empty': isEmpty }">
     <div class="fa-table__main">
+      <div v-if="virtual" class="fa-table__virtual-wrap" v-loading="!!loading">
+        <ElAutoResizer>
+          <template #default="{ height: autoHeight, width: autoWidth }">
+            <ElTableV2
+              ref="elTableV2Ref"
+              :columns="v2Columns"
+              :data="(data as Record<string, any>[]) || []"
+              :width="autoWidth"
+              :height="autoHeight"
+              :row-height="estimatedRowHeight"
+              fixed
+            >
+              <template v-if="isEmpty" #empty>
+                <div v-if="loading"></div>
+                <FaAsyncState
+                  v-else-if="error"
+                  state="error"
+                  title="加载失败"
+                  :description="error.message"
+                >
+                  <template #action>
+                    <ElButton type="primary" plain @click="emit('retry')">重试</ElButton>
+                  </template>
+                </FaAsyncState>
+                <ElEmpty v-else :description="emptyText" :image-size="80" />
+              </template>
+            </ElTableV2>
+          </template>
+        </ElAutoResizer>
+      </div>
+
       <VueDraggable
+        v-else
         class="fa-table__drag-wrap"
         target="tbody"
         v-model="dragModel"
@@ -103,7 +135,7 @@ import {
   defineComponent,
   type PropType,
 } from "vue";
-import type { TableInstance, TableProps } from "element-plus";
+import type { TableInstance, TableProps, TableV2Instance } from "element-plus";
 import { storeToRefs } from "pinia";
 import { ColumnOption } from "@/types";
 import { useTableStore } from "@stores";
@@ -117,6 +149,7 @@ defineOptions({ name: "FaTable" });
 
 const { width } = useWindowSize();
 const elTableRef = ref<TableInstance | null>(null);
+const elTableV2Ref = ref<TableV2Instance | null>(null);
 const paginationRef = ref<HTMLElement>();
 const tableHeaderRef = ref<HTMLElement>();
 const tableStore = useTableStore();
@@ -178,6 +211,10 @@ interface Props extends TableProps<Record<string, any>> {
   showTableHeader?: boolean;
   /** 为 true 时关闭行拖拽（忽略工具栏「行拖拽」开关） */
   disableRowDrag?: boolean;
+  /** 是否开启虚拟滚动（适用于单页大批量数据展示场景） */
+  virtual?: boolean;
+  /** 虚拟滚动单行高度，默认 50 */
+  estimatedRowHeight?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -191,6 +228,8 @@ const props = withDefaults(defineProps<Props>(), {
   emptyText: "暂无数据",
   showTableHeader: true,
   disableRowDrag: false,
+  virtual: false,
+  estimatedRowHeight: 50,
 });
 const instance = getCurrentInstance();
 const attrs = useAttrs();
@@ -439,7 +478,11 @@ const { scrollToTop: scrollPageToTop } = useCommon();
 // 滚动表格内容到顶部，并可以联动页面滚动到顶部
 const scrollToTop = () => {
   nextTick(() => {
-    elTableRef.value?.setScrollTop(0); // 滚动 ElTable 内部滚动条到顶部
+    if (props.virtual) {
+      elTableV2Ref.value?.scrollToTop(0);
+    } else {
+      elTableRef.value?.setScrollTop(0); // 滚动 ElTable 内部滚动条到顶部
+    }
     scrollPageToTop(); // 调用公共 composable 滚动页面到顶部
   });
 };
@@ -464,6 +507,56 @@ const getGlobalIndex = (index: number) => {
   const { current, size } = props.pagination;
   return (current - 1) * size + index + 1;
 };
+
+const v2Columns = computed<any[]>(() => {
+  return props.columns
+    .filter((col) => col.visible !== false)
+    .map((col, index) => {
+      const key = (col.prop || `col_${index}`) as string;
+      const widthVal =
+        typeof col.width === "number" ? col.width : parseInt(String(col.width || 160), 10) || 160;
+
+      if (col.type === "globalIndex" || col.type === "index") {
+        return {
+          key: "index",
+          title: col.label || "序号",
+          width: widthVal || 70,
+          cellRenderer: (cellData: any): any => {
+            return getGlobalIndex(cellData.rowIndex);
+          },
+        };
+      }
+
+      return {
+        key,
+        dataKey: col.prop,
+        title: col.label,
+        width: widthVal,
+        fixed:
+          col.fixed === "left" || col.fixed === true
+            ? "left"
+            : col.fixed === "right"
+              ? "right"
+              : undefined,
+        cellRenderer: (cellData: any) => {
+          const row = cellData.rowData as Record<string, any>;
+          const slotName = (col.slotName || col.prop) as string;
+          if (col.useSlot && col.prop && slots[slotName]) {
+            return slots[slotName]!({
+              ...cellData,
+              row,
+              prop: col.prop,
+              value: row?.[col.prop],
+            });
+          }
+          if (col.formatter) {
+            return col.formatter(row);
+          }
+          return row?.[col.prop as string];
+        },
+      };
+    });
+});
 
 // 查找并绑定表格头部元素 - 使用 VueUse 优化
 const findTableHeader = () => {
@@ -503,6 +596,7 @@ watchEffect(
 defineExpose({
   scrollToTop,
   elTableRef,
+  elTableV2Ref,
 });
 </script>
 
@@ -518,6 +612,11 @@ defineExpose({
     flex: 1;
     min-height: 0;
     padding-top: 8px;
+
+    .fa-table__virtual-wrap {
+      width: 100%;
+      height: 100%;
+    }
 
     /* VueDraggable 透传高度，确保 ElTable height: 100% 能正确解析 */
     > * {

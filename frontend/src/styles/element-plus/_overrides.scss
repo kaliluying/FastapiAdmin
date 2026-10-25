@@ -823,7 +823,8 @@ html.dark .el-overlay {
   box-shadow: var(--fa-overlay-shadow) !important;
 }
 
-.el-table {
+.el-table,
+.el-table-v2 {
   --el-table-border-color: var(--fa-glass-border) !important;
   --el-table-bg-color: transparent !important;
   --el-table-tr-bg-color: transparent !important;
@@ -845,7 +846,8 @@ html.dark .el-overlay {
   border-radius: var(--fa-radius-bento);
 }
 
-.el-table th.el-table__cell {
+.el-table th.el-table__cell,
+.el-table-v2__header-cell {
   font-size: 12.5px;
   font-weight: 600;
   color: var(--fa-color-text-muted);
@@ -853,7 +855,8 @@ html.dark .el-overlay {
   background: var(--fa-glass-bg-inset) !important;
 }
 
-.el-table tr {
+.el-table tr,
+.el-table-v2__row {
   background-color: transparent !important;
   transition: background-color 0.15s ease;
 }
@@ -900,6 +903,67 @@ html.dark .el-overlay {
 .el-table--border::before,
 .el-table__inner-wrapper::before {
   background-color: var(--fa-glass-border) !important;
+}
+
+.el-table__empty-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+}
+
+.el-table__empty-text {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--fa-color-text-muted);
+
+  &::before {
+    display: block;
+    width: 44px;
+    height: 44px;
+    margin-bottom: 4px;
+    content: "";
+    background-color: var(--fa-color-text-muted);
+    opacity: 0.45;
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/%3E%3Cpolyline points='3.27 6.96 12 12.01 20.73 6.96'/%3E%3Cline x1='12' y1='22.08' x2='12' y2='12'/%3E%3C/svg%3E")
+      no-repeat center / contain;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z'/%3E%3Cpolyline points='3.27 6.96 12 12.01 20.73 6.96'/%3E%3Cline x1='12' y1='22.08' x2='12' y2='12'/%3E%3C/svg%3E")
+      no-repeat center / contain;
+  }
+}
+
+.el-table .sort-caret.ascending {
+  border-bottom-color: var(--fa-color-text-muted);
+}
+
+.el-table .sort-caret.descending {
+  border-top-color: var(--fa-color-text-muted);
+}
+
+.el-table .ascending .sort-caret.ascending {
+  border-bottom-color: var(--theme-color, var(--el-color-primary)) !important;
+}
+
+.el-table .descending .sort-caret.descending {
+  border-top-color: var(--theme-color, var(--el-color-primary)) !important;
+}
+
+.el-table .el-checkbox__inner {
+  background: var(--fa-glass-bg-inset, var(--el-fill-color-blank));
+  border: 1px solid var(--fa-glass-border, var(--el-border-color));
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.el-table .el-checkbox.is-checked .el-checkbox__inner {
+  background-color: var(--el-color-primary) !important;
+  border-color: var(--el-color-primary) !important;
 }
 
 // Semantic status colors must also reach component-local variables in both modes.

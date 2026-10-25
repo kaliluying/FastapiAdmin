@@ -7,6 +7,7 @@
       width="600px"
       dialog-class="crud-embed-dialog"
       modal-class="crud-embed-dialog"
+      :before-close="handleBeforeClose"
       @close="handleCloseExportsModal"
     >
       <!-- 滚动 -->
@@ -55,8 +56,10 @@
       <!-- 弹窗底部操作按钮 -->
       <template #footer>
         <div :style="'padding-right: var(--el-dialog-padding-primary)'">
-          <ElButton type="primary" @click="handleExportsSubmit">确 定</ElButton>
-          <ElButton @click="handleCloseExportsModal">取 消</ElButton>
+          <ElButton type="primary" :loading="exporting" @click="handleExportsSubmit"
+            >确 定</ElButton
+          >
+          <ElButton :disabled="exporting" @click="handleCloseExportsModal">取 消</ElButton>
         </div>
       </template>
     </FaDialog>
@@ -173,8 +176,16 @@ const initFields = () => {
 // 初始化
 initFields();
 
+const exporting = ref(false);
+
+const handleBeforeClose = (done: () => void) => {
+  if (exporting.value) return;
+  done();
+};
+
 // 关闭导出弹窗
 function handleCloseExportsModal() {
+  if (exporting.value) return;
   exportsModalVisible.value = false;
   exportsFormRef.value?.resetFields();
   nextTick(() => {
@@ -233,6 +244,7 @@ async function handleExports() {
       const buffer = await workbook.xlsx.writeBuffer();
       saveXlsx(buffer, filename as string);
     }
+    ElMessage.success("导出成功");
   } catch (error) {
     console.error("导出失败:", error);
     ElMessage.error("导出失败");
@@ -240,13 +252,23 @@ async function handleExports() {
 }
 
 // 导出确认
-const handleExportsSubmit = useThrottleFn(() => {
-  exportsFormRef.value?.validate((valid: boolean) => {
-    if (valid) {
-      handleExports();
-      handleCloseExportsModal();
-    }
-  });
+const handleExportsSubmit = useThrottleFn(async () => {
+  if (exporting.value) return;
+  const form = exportsFormRef.value;
+  if (!form) return;
+  const valid = await form.validate().catch(() => false);
+  if (!valid) return;
+  exporting.value = true;
+  try {
+    await handleExports();
+    exportsModalVisible.value = false;
+    form.resetFields();
+    nextTick(() => {
+      form.clearValidate();
+    });
+  } finally {
+    exporting.value = false;
+  }
 }, 3000);
 
 // 浏览器保存文件

@@ -1,5 +1,5 @@
 <template>
-  <div class="markdown-content" v-html="renderedContent"></div>
+  <div class="markdown-content" @click="handleContentClick" v-html="renderedContent"></div>
 </template>
 
 <script setup lang="ts">
@@ -32,16 +32,52 @@ const md: MarkdownItInstance = new MarkdownIt({
   typographer: true,
   breaks: true,
   highlight(str: string, lang: string): string {
+    const cleanLang = (lang || "").trim().toLowerCase();
+    const langAttr = cleanLang ? ` data-lang="${cleanLang}"` : "";
     if (lang && hljs.getLanguage(lang)) {
       try {
-        return `<pre class="hljs"><code>${hljs.highlight(str, { language: lang, ignoreIllegals: true }).value}</code></pre>`;
+        return `<pre class="hljs"${langAttr}><code>${hljs.highlight(str, { language: lang, ignoreIllegals: true }).value}</code></pre>`;
       } catch {
-        return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`;
+        return `<pre class="hljs"${langAttr}><code>${md.utils.escapeHtml(str)}</code></pre>`;
       }
     }
-    return `<pre class="hljs"><code>${md.utils.escapeHtml(str)}</code></pre>`;
+    return `<pre class="hljs"${langAttr}><code>${md.utils.escapeHtml(str)}</code></pre>`;
   },
 }).use(markdownItHighlightjs);
+
+const defaultFence = md.renderer.rules.fence;
+const COPY_BTN_HTML =
+  '<button class="code-copy-btn" type="button" title="复制代码" aria-label="复制代码"><svg class="icon-copy" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg><svg class="icon-check" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></button>';
+
+md.renderer.rules.fence = function (tokens: any[], idx: number, options: any, env: any, self: any) {
+  const token = tokens[idx];
+  const info = token.info ? md.utils.unescapeAll(token.info).trim() : "";
+  const lang = info ? info.split(/\s+/g)[0] : "";
+  const rendered = defaultFence
+    ? defaultFence(tokens, idx, options, env, self)
+    : self.renderToken(tokens, idx, options, env, self);
+  const langAttr = lang ? ` data-lang="${lang.toLowerCase()}"` : "";
+  return rendered.replace(/^<pre([^>]*)>/, `<pre$1${langAttr}>${COPY_BTN_HTML}`);
+};
+
+const handleContentClick = async (event: MouseEvent) => {
+  const target = event.target as HTMLElement | null;
+  const copyBtn = target?.closest(".code-copy-btn") as HTMLButtonElement | null;
+  if (!copyBtn) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const pre = copyBtn.closest("pre");
+  const code = pre?.querySelector("code");
+  if (!code) return;
+  const textToCopy = code.textContent || "";
+  try {
+    await navigator.clipboard.writeText(textToCopy);
+    copyBtn.classList.add("is-copied");
+    setTimeout(() => copyBtn.classList.remove("is-copied"), 1600);
+  } catch (err) {
+    void err;
+  }
+};
 
 const defaultRender =
   md.renderer.rules.link_open ||
@@ -68,7 +104,12 @@ const renderedContent = computed(() => {
       ? props.content.substring(0, props.maxLength) + "..."
       : props.content;
   const html = md.render(source);
-  return props.sanitize ? DOMPurify.sanitize(html) : html;
+  return props.sanitize
+    ? DOMPurify.sanitize(html, {
+        ADD_ATTR: ["data-lang", "target", "rel"],
+        ADD_TAGS: ["button", "svg", "path", "rect", "polyline"],
+      })
+    : html;
 });
 </script>
 
@@ -80,18 +121,110 @@ const renderedContent = computed(() => {
   overflow-wrap: break-word;
 
   :deep(pre) {
-    padding: 12px 16px;
+    position: relative;
+    padding: 34px 16px 14px;
     margin: 12px 0;
     overflow-x: auto;
     background: var(--fa-glass-bg-inset, var(--el-fill-color-light));
     border: 1px solid var(--fa-glass-border, var(--el-border-color-lighter));
     border-radius: var(--fa-radius-control, 8px);
 
+    &::before {
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      width: 10px;
+      height: 10px;
+      content: "";
+      background: #ff5f56;
+      border-radius: 50%;
+      box-shadow:
+        16px 0 0 #ffbd2e,
+        32px 0 0 #27c93f;
+    }
+
+    &[data-lang]::after {
+      position: absolute;
+      top: 10px;
+      right: 42px;
+      font-family:
+        "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--fa-color-text-muted, var(--el-text-color-secondary));
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      pointer-events: none;
+      user-select: none;
+      content: attr(data-lang);
+      opacity: 0.75;
+    }
+
+    .code-copy-btn {
+      position: absolute;
+      top: 7px;
+      right: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      padding: 0;
+      color: var(--fa-color-text-muted, var(--el-text-color-secondary));
+      cursor: pointer;
+      background: var(--fa-glass-bg-inset, var(--el-fill-color-light));
+      border: 1px solid var(--fa-glass-border, var(--el-border-color-lighter));
+      border-radius: 6px;
+      box-shadow: var(--fa-shadow-bento);
+      opacity: 0.75;
+      transition: all var(--fa-motion-control, 0.18s ease);
+
+      .icon-check {
+        display: none;
+        color: var(--el-color-success);
+      }
+
+      .icon-copy {
+        display: block;
+      }
+
+      &.is-copied {
+        color: var(--el-color-success);
+        border-color: color-mix(in srgb, var(--el-color-success) 35%, var(--fa-glass-border));
+
+        .icon-copy {
+          display: none;
+        }
+
+        .icon-check {
+          display: block;
+        }
+      }
+
+      &:hover {
+        color: var(--theme-color, var(--el-color-primary));
+        background: var(--fa-glass-bg-elevated, var(--el-fill-color));
+        border-color: color-mix(
+          in srgb,
+          var(--theme-color, var(--el-color-primary)) 35%,
+          var(--fa-glass-border)
+        );
+        opacity: 1;
+        transform: translateY(-1px);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
+
     code {
+      padding: 0;
       font-family:
         "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       font-size: 13px;
       line-height: 1.6;
+      background: transparent;
     }
   }
 
@@ -154,6 +287,13 @@ const renderedContent = computed(() => {
     th {
       font-weight: 600;
       background: var(--el-fill-color-light);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :deep(pre .code-copy-btn) {
+      transform: none !important;
+      transition: none;
     }
   }
 }

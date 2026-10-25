@@ -297,3 +297,35 @@ it("accepts a pending response after token renewal within the same session", asy
   second.wrapper.unmount();
   Auth.clearAuth();
 });
+
+describe("table virtual mode", () => {
+  it("switches to virtual wrapper when virtual prop is enabled", async () => {
+    const wrapper = mount(FaTable, {
+      props: {
+        virtual: true,
+        data: [{ id: 1, name: "item-1" }],
+        columns: [{ prop: "name", label: "名称" }],
+      },
+      global: {
+        plugins: [ElementPlus],
+        stubs: {
+          ElAutoResizer: {
+            template: '<div class="auto-resizer-stub"><slot :height="500" :width="800" /></div>',
+          },
+          ElTableV2: {
+            props: ["data", "columns", "height", "width"],
+            template: '<div class="table-v2-stub" :data-count="data.length" />',
+          },
+        },
+      },
+    });
+
+    expect(wrapper.find(".fa-table__virtual-wrap").exists()).toBe(true);
+    expect(wrapper.find(".fa-table__drag-wrap").exists()).toBe(false);
+    expect(wrapper.find(".table-v2-stub").attributes("data-count")).toBe("1");
+
+    await wrapper.setProps({ virtual: false });
+    expect(wrapper.find(".fa-table__virtual-wrap").exists()).toBe(false);
+    wrapper.unmount();
+  });
+});

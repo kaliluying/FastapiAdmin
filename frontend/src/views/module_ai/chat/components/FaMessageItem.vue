@@ -45,8 +45,8 @@
             <FaMarkdownRenderer :content="parsedContent.thinking" />
           </div>
         </div>
-        <div v-if="parsedContent.answer" class="message-text">
-          <FaMarkdownRenderer :content="parsedContent.answer" />
+        <div v-if="displayedAnswer" class="message-text">
+          <FaMarkdownRenderer :content="displayedAnswer" />
           <span
             v-if="message.type === 'assistant' && message.loading"
             class="streaming-cursor"
@@ -141,6 +141,7 @@ import {
 } from "@element-plus/icons-vue";
 import { useUserStoreHook } from "@stores";
 import type { ChatMessage } from "../types";
+import { useSmoothStream } from "../composables/useSmoothStream";
 import FaAnswerFeedback from "./FaAnswerFeedback.vue";
 import FaCopyButton from "@/components/others/fa-copy-button/index.vue";
 
@@ -181,14 +182,7 @@ const userStore = useUserStoreHook();
 
 const userName = computed(() => userStore.basicInfo.name || "用户");
 
-const parsedContent = computed(() => {
-  if (props.message.type !== "assistant") {
-    return { thinking: "", answer: props.message.content };
-  }
-  return parseThinkingContent(props.message.content);
-});
-
-const parseThinkingContent = (content: string) => {
+function parseThinkingContent(content: string) {
   const thinkingParts: string[] = [];
   let answer = content;
   // Only leading thought sections are metadata; tags in the answer remain literal Markdown.
@@ -206,7 +200,21 @@ const parseThinkingContent = (content: string) => {
     thinking: thinkingParts.join("\n\n"),
     answer,
   };
-};
+}
+
+const parsedContent = computed(() => {
+  if (props.message.type !== "assistant") {
+    return { thinking: "", answer: props.message.content };
+  }
+  return parseThinkingContent(props.message.content);
+});
+
+const answerSource = computed(() => parsedContent.value.answer);
+const isStreaming = computed(
+  () => props.message.type === "assistant" && Boolean(props.message.loading)
+);
+
+const { displayedText: displayedAnswer } = useSmoothStream(answerSource, isStreaming);
 
 const handleToggleThinking = () => {
   emit("toggle-thinking");
