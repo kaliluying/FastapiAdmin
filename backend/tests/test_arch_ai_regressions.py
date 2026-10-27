@@ -52,10 +52,10 @@ async def test_memory_releases_connection_during_provider_wait(isolated_sessions
     async def complete(_prompt):
         entered.set()
         await release.wait()
-        return '{"actions":[{"action":"create","key":"job","value":"engineer","confidence":0.9}]}'
+        return '{"actions":[{"action":"create","key":"job","value":"engineer","confidence":0.9,"is_long_term":true,"source_quote":"I am an engineer"}]}'
 
     task = asyncio.create_task(memory_service.extract_conversation_in_background(
-        user_id=1, user_message="job", assistant_response="ok",
+        user_id=1, user_message="I am an engineer", assistant_response="ok",
         chat_model=SimpleNamespace(complete=complete),
     ))
     try:

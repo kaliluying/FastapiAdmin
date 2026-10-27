@@ -2,6 +2,7 @@ node_modules/
 dist/
 public/
 .vscode/
+.vitest/
 src/types/import/
 .auto-import.json
 pnpm-lock.yaml

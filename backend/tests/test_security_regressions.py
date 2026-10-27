@@ -7,7 +7,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import Integer, String, select
+from sqlalchemy import Integer, String, event, select
+from sqlalchemy.exc import CompileError
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import Mapped, mapped_column
 from starlette.datastructures import UploadFile
@@ -339,6 +340,61 @@ def test_captcha_endpoint_returns_a_login_challenge(test_client: TestClient) -> 
     assert body["data"]["key"]
     assert body["data"]["img_base"].startswith("data:image/png;base64,")
     assert body["data"]["enable"] is False
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("offset", "search", "total", "values", "query_count"),
+    [
+        (0, {"value": "absent"}, 0, [], 1),
+        (2, {}, 2, [], 1),
+        (0, {}, 2, ["first", "second"], 2),
+        (1, {}, 2, ["second"], 2),
+    ],
+)
+async def test_crud_page_skips_empty_data_queries_and_preserves_scope(tmp_path, offset, search, total, values, query_count):
+    engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'page.db'}")
+    try:
+        async with engine.begin() as connection:
+            await connection.run_sync(PermissionRecord.__table__.create)
+        sessions = async_sessionmaker(engine, expire_on_commit=False)
+        async with sessions() as db:
+            db.add_all([
+                PermissionRecord(created_id=1, value="first"),
+                PermissionRecord(created_id=2, value="foreign"),
+                PermissionRecord(created_id=1, value="deleted", is_deleted=True),
+                PermissionRecord(created_id=1, value="second"),
+            ])
+            await db.commit()
+            auth = _auth_for(1)
+            auth.db = db
+            statements = []
+
+            def capture(_connection, _cursor, statement, _parameters, _context, _executemany):
+                if statement.lstrip().upper().startswith("SELECT"):
+                    statements.append(statement)
+
+            event.listen(engine.sync_engine, "before_cursor_execute", capture)
+            page = await CRUDBase(PermissionRecord, auth=auth).page(
+                offset=offset, limit=2, order_by=[{"id": "asc"}], search=search, preload=[]
+            )
+            assert page.total == total
+            assert page.page_no == offset // 2 + 1
+            assert page.page_size == 2
+            assert page.has_next is False
+            assert [item.value for item in page.items] == values
+            assert len(statements) == query_count, statements
+
+            with pytest.raises(CustomException, match="分页查询失败"):
+                await CRUDBase(PermissionRecord, auth=auth).page(
+                    offset=0, limit=2, order_by=[{"missing": "asc"}], search={"value": "absent"}, preload=[]
+                )
+            with pytest.raises(CompileError):
+                await CRUDBase(PermissionRecord, auth=auth).page(
+                    offset=offset, limit=2, order_by=[{"__tablename__": "asc"}], search=search, preload=[]
+                )
+    finally:
+        await engine.dispose()
 
 
 @pytest.mark.asyncio

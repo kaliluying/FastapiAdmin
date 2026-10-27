@@ -21,7 +21,9 @@ describe("useMenuTreeTable", () => {
     expect(wrapper.text()).toBe("");
 
     await wrapper.setProps({
-      menuTree: [{ id: 1, name: "系统管理", type: 1, children: [{ id: 2, name: "角色管理", type: 2 }] }],
+      menuTree: [
+        { id: 1, name: "系统管理", type: 1, children: [{ id: 2, name: "角色管理", type: 2 }] },
+      ],
     });
     await nextTick();
 

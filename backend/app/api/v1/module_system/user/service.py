@@ -218,11 +218,16 @@ class UserService:
         return UserOutSchema.model_validate(new_user)
 
     async def set_available(self, data: BatchSetAvailable) -> None:
+        crud = UserCRUD(self.auth)
+        users = await crud.get_list(search={"id": ("in", data.ids)})
+        user_map = {user.id: user for user in users}
         for mid in data.ids:
-            user = await UserCRUD(self.auth).get_or_404(id=mid)
+            user = user_map.get(mid)
+            if not user:
+                raise CustomException(msg="该数据不存在")
             if user.is_superuser:
                 raise CustomException(msg="超级管理员状态不能修改")
-        await UserCRUD(self.auth).set(ids=data.ids, status=data.status)
+        await crud.set(ids=data.ids, status=data.status)
 
     async def change_password(self, data: UserChangePasswordSchema) -> UserOutSchema:
         if not self.auth.user or not self.auth.user.id:

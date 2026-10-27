@@ -303,10 +303,14 @@ class CRUDBase[ModelType: MappedBase, CreateSchemaType: BaseModel, UpdateSchemaT
             total_result = await self.db.execute(count_sql)
             total = total_result.scalar() or 0
 
-            result: Result = await self.db.execute(
-                data_sql.order_by(*self._parse_order(order)).offset(offset).limit(limit)
-            )
-            objs = result.scalars().all()
+            data_sql = data_sql.order_by(*self._parse_order(order)).offset(offset).limit(limit)
+            objs = []
+            if total and offset < total:
+                result: Result = await self.db.execute(data_sql)
+                objs = result.scalars().all()
+            else:
+                # 保留 SQL 编译校验，避免空页静默接受非法排序。
+                data_sql.compile(bind=self.db.get_bind())
 
             items = (
                 [out_schema.model_validate(obj).model_dump() for obj in objs]

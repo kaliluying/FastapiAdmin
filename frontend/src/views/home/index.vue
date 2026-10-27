@@ -14,7 +14,7 @@
           <span class="knowledge-launch__icon" aria-hidden="true">
             <FaSvgIcon :icon="chatLink.icon" />
           </span>
-          <strong>{{ $t(chatLink.title) }}</strong>
+          <strong>{{ formatMenuTitle(chatLink.title) }}</strong>
           <p>围绕团队资料提问，获取带有来源的回答。</p>
           <span class="knowledge-launch__link">
             开始 AI 对话 <FaSvgIcon icon="ri:arrow-right-line" aria-hidden="true" />
@@ -24,7 +24,7 @@
           <span class="knowledge-launch__icon" aria-hidden="true">
             <FaSvgIcon :icon="link.icon" />
           </span>
-          <strong>{{ $t(link.title) }}</strong>
+          <strong>{{ formatMenuTitle(link.title) }}</strong>
           <p>
             {{
               link.path === "/ai/knowledge"
@@ -59,7 +59,7 @@
             <span class="quick-links__icon" aria-hidden="true">
               <FaSvgIcon :icon="link.icon" />
             </span>
-            <span>{{ $t(link.title) }}</span>
+            <span>{{ formatMenuTitle(link.title) }}</span>
             <FaSvgIcon icon="ri:arrow-right-s-line" class="quick-links__arrow" aria-hidden="true" />
           </RouterLink>
         </nav>
@@ -78,7 +78,7 @@ import HealthAPI, { type HealthReadiness } from "@/api/module_common/health";
 import type { AppRouteRecord } from "@/types/router";
 import { useMenuStore, useUserStore } from "@stores";
 import { hasPermissionCode } from "@/utils/auth/permission";
-import { HttpError } from "@utils";
+import { formatMenuTitle, HttpError } from "@utils";
 import Banner from "./modules/banner.vue";
 import LoginTrend from "./modules/login-trend.vue";
 

@@ -114,22 +114,23 @@ const actualTransition = computed(() => {
   return pageTransition.value;
 });
 
-const containerStyle = computed(
-  (): CSSProperties => ({
-    width: "100%",
-    minWidth: 0,
-    maxWidth: containerWidth.value,
-    flex: "1",
-    minHeight: "0",
-    display: "flex",
-    flexDirection: "column",
-  })
-);
+const containerStyle = computed((): CSSProperties => ({
+  width: "100%",
+  minWidth: 0,
+  maxWidth: containerWidth.value,
+  flex: "1",
+  minHeight: "0",
+  display: "flex",
+  flexDirection: "column",
+}));
 
 /** 常规布局下由 `.layout-content` 承担纵向滚动，路由视图填满剩余高度 */
-const contentStyle = computed(
-  (): CSSProperties => ({ flex: "1", minHeight: "0", minWidth: 0, width: "100%" })
-);
+const contentStyle = computed((): CSSProperties => ({
+  flex: "1",
+  minHeight: "0",
+  minWidth: 0,
+  width: "100%",
+}));
 
 const reload = () => {
   isRefresh.value = false;

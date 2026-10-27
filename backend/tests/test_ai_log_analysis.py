@@ -114,6 +114,7 @@ async def test_log_analysis_has_redacted_evidence_without_history_or_memory(log_
     assert "fixture-secret" not in captured["prompt"]
     assert "[REDACTED]" in captured["prompt"]
     assert "不可信" in captured["messages"][0].content
+    assert "不需要则仅回复 NO_LOG_TOOL，不回答原问题" in captured["messages"][0].content
     assert captured["messages"][0].type == "system"
     assert isinstance(captured["messages"][-1], ToolMessage)
     assert captured["messages"][-1].tool_call_id == "log-1"
@@ -130,6 +131,7 @@ async def test_log_analysis_has_redacted_evidence_without_history_or_memory(log_
 
 async def test_chat_log_evidence_is_bounded_before_model_context(log_chat, monkeypatch):
     auth, captured = log_chat
+    count = service.MAX_CHAT_LOG_ENTRIES + 5
     entries = [
         {
             "id": str(index),
@@ -137,21 +139,21 @@ async def test_chat_log_evidence_is_bounded_before_model_context(log_chat, monke
             "level": "ERROR",
             "correlation_id": "",
             "file": "fastcore.log",
-            "message": "evidence-" + ("x" * 13_000),
+            "message": "evidence-" + ("x" * (service.MAX_CHAT_LOG_ENTRY_CHARS + 1000)),
         }
-        for index in range(45)
+        for index in range(count)
     ]
     monkeypatch.setattr(service, "query_runtime_logs", AsyncMock(return_value={
         "source": "fastcore.log", "start_time": "start", "end_time": "end",
-        "scanned_bytes": 1, "scanned_files": ["fastcore.log"], "matched_count": 45,
+        "scanned_bytes": 1, "scanned_files": ["fastcore.log"], "matched_count": count,
         "truncated": False, "notice": "notice", "entries": entries,
     }))
     events = await collect(auth)
     assert events[-1]["type"] == "done"
     result = next(event for event in events if event["type"] == "log_result")
-    assert result["returned_count"] == 40 and result["truncated"] is True
+    assert result["returned_count"] == service.MAX_CHAT_LOG_ENTRIES and result["truncated"] is True
     payload = json.loads(captured["messages"][-1].content)
-    assert len(payload["entries"]) == 40
+    assert len(payload["entries"]) == service.MAX_CHAT_LOG_ENTRIES
     assert all(len(entry["message"]) <= service.MAX_CHAT_LOG_ENTRY_CHARS for entry in payload["entries"])
 
 
@@ -230,6 +232,33 @@ async def test_model_error_is_not_success_and_never_exposes_provider_detail(log_
     assert events[-1]["type"] == "error"
     assert "provider-url-with-secret" not in str(events)
     assert not any(event["type"] == "done" for event in events)
+
+
+@pytest.mark.parametrize("provider", ["openai", "anthropic"])
+@pytest.mark.parametrize("explicit", [False, True])
+async def test_sdk_timeout_has_timeout_code_and_safe_fallback(log_chat, monkeypatch, provider, explicit):
+    from anthropic import APITimeoutError as AnthropicTimeout
+    from openai import APITimeoutError as OpenAITimeout
+
+    auth, _ = log_chat
+    error = (AnthropicTimeout if provider == "anthropic" else OpenAITimeout)(
+        request=httpx.Request("POST", "https://fixture.invalid/synthetic-secret")
+    )
+    planner = AsyncMock(side_effect=error)
+    reader = AsyncMock()
+    monkeypatch.setattr(rag, "get_cached_chat_model", lambda: SimpleNamespace(request_tools=planner))
+    monkeypatch.setattr(service, "query_runtime_logs", reader)
+    query = ChatQuerySchema(message="普通问题", **({"log_query": {}} if explicit else {}))
+    events = [event async for event in service.ChatService(auth)._stream_log_analysis(query)]
+    assert len(events) == 1
+    assert events[0]["type"] == ("error" if explicit else "warning")
+    assert events[0]["error_code"] == "log_analysis_timeout"
+    assert "synthetic-secret" not in str(events)
+    if not explicit:
+        assert "未读取运行日志" in events[0]["message"]
+        assert "不保存到会话" in events[0]["message"]
+    planner.assert_awaited_once()
+    reader.assert_not_called()
 
 
 async def test_log_analysis_cancellation_propagates(log_chat, monkeypatch):

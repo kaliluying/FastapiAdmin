@@ -54,11 +54,11 @@ async def test_extraction_respects_confidence_and_user_ownership(memory_sessions
         foreign = await MemoryService.for_user(db, 2).create(MemoryCreateSchema(key="职责", value="FOREIGN_SECRET"))
         await db.commit()
         model = SimpleNamespace(complete=AsyncMock(return_value=json.dumps({"actions": [
-            {"action": "update", "key": "职责", "value": "OWN_UPDATED", "confidence": 0.9},
-            {"action": "create", "key": "猜测", "value": "LOW_CONFIDENCE", "confidence": 0.1},
-            {"action": "delete", "memory_id": foreign["id"], "confidence": 0.9},
+            {"action": "update", "key": "职责", "value": "OWN_UPDATED", "confidence": 0.9, "is_long_term": True, "source_quote": "我的职责是 OWN_UPDATED"},
+            {"action": "create", "key": "猜测", "value": "LOW_CONFIDENCE", "confidence": 0.1, "is_long_term": True, "source_quote": "我的职责是 OWN_UPDATED"},
+            {"action": "delete", "memory_id": foreign["id"], "confidence": 0.9, "is_long_term": True, "source_quote": "忘记原职责"},
         ]})))
-        saved = await own.extract_from_conversation(user_message="更新我的职责", assistant_response="已了解", chat_model=model)
+        saved = await own.extract_from_conversation(user_message="我的职责是 OWN_UPDATED。忘记原职责", assistant_response="已了解", chat_model=model)
         # The existing extractor counts a successful idempotent delete as an action.
         assert saved == 2
         await db.commit()
@@ -70,10 +70,10 @@ async def test_extraction_respects_confidence_and_user_ownership(memory_sessions
 
 async def test_background_extraction_commits_independently_of_chat_session(memory_sessions):
     model = SimpleNamespace(complete=AsyncMock(return_value=json.dumps({"actions": [
-        {"action": "create", "key": "职责", "value": "BACKGROUND_MEMORY", "confidence": 0.9},
+        {"action": "create", "key": "职责", "value": "BACKGROUND_MEMORY", "confidence": 0.9, "is_long_term": True, "source_quote": "我的职责是 BACKGROUND_MEMORY"},
     ]})))
     async with memory_sessions() as request_db:
-        await extract_conversation_in_background(user_id=1, user_message="我的职责", assistant_response="已了解", chat_model=model)
+        await extract_conversation_in_background(user_id=1, user_message="我的职责是 BACKGROUND_MEMORY", assistant_response="已了解", chat_model=model)
         await request_db.rollback()
     async with memory_sessions() as observer:
         assert [item["value"] for item in await MemoryService.for_user(observer, 1).get_active_memories()] == ["BACKGROUND_MEMORY"]

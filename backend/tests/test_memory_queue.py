@@ -24,7 +24,7 @@ from app.plugin.module_ai.memory.model import AiMemoryModel
 from app.plugin.module_ai.memory.public import MemoryService
 from app.plugin.module_ai.module import get_module
 
-RESULT = '{"actions":[{"action":"create","key":"style","value":"concise","confidence":0.9}]}'
+RESULT = '{"actions":[{"action":"create","key":"style","value":"concise","confidence":0.9,"is_long_term":true,"source_quote":"Always use concise replies"}]}'
 
 
 @pytest.fixture
@@ -55,7 +55,7 @@ async def add_turn(sessions, user_id=1):
     async with sessions() as db:
         crud = ChatSessionCRUD(SimpleNamespace(db=db, user=SimpleNamespace(id=user_id)))
         session = await crud.create_crud(ChatSessionCreateSchema(title="test"))
-        assert await crud.append_run_crud(session_id=session.session_id, message="use concise replies", response="ok")
+        assert await crud.append_run_crud(session_id=session.session_id, message="Always use concise replies", response="ok")
         await db.commit()
         return session.session_id, crud.last_run_id
 
@@ -254,7 +254,7 @@ async def test_permanent_failure_becomes_dead_and_does_not_block_later_turn(queu
     first_session_id, _ = await add_turn(sessions)
     async with sessions() as db:
         crud = ChatSessionCRUD(SimpleNamespace(db=db, user=SimpleNamespace(id=1)))
-        assert await crud.append_run_crud(session_id=first_session_id, message="another turn", response="ok")
+        assert await crud.append_run_crud(session_id=first_session_id, message="Always use concise replies", response="ok")
         await db.commit()
     model.complete.side_effect = RuntimeError("provider unavailable")
 

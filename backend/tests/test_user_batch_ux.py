@@ -7,7 +7,7 @@ import pytest
 from fastapi import FastAPI, UploadFile
 from httpx import ASGITransport, AsyncClient
 from openpyxl import Workbook, load_workbook
-from sqlalchemy import select
+from sqlalchemy import event, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.api.v1.module_system.role.controller import RoleRouter
@@ -20,8 +20,10 @@ from app.api.v1.module_system.user.schema import UserOutSchema
 from app.api.v1.module_system.user.service import UserService
 from app.config.setting import settings
 from app.core.base_model import MappedBase
-from app.core.base_schema import AuthSchema
+from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.dependencies import get_current_user
+from app.core.exceptions import CustomException
+from app.init_app import register_exceptions
 from app.utils.hash_bcrpy_util import PwdUtil
 
 
@@ -47,6 +49,89 @@ async def batch_auth(tmp_path):
     async with session_factory() as session:
         yield AuthSchema(db=session, redis=AsyncMock(), check_data_scope=False), session_factory
     await engine.dispose()
+
+
+async def test_batch_status_fetches_users_once_and_accepts_duplicate_ids(batch_auth):
+    auth, session_factory = batch_auth
+    users = [UserModel(username=f"batch{index}", name="用户", password="synthetic", status=0) for index in range(3)]
+    auth.db.add_all(users)
+    await auth.db.commit()
+    ids = [user.id for user in users]
+    statements = []
+
+    def capture(_connection, _cursor, statement, _parameters, _context, _executemany):
+        if statement.lstrip().upper().startswith("SELECT") and "FROM sys_user \nWHERE sys_user.is_deleted" in statement:
+            statements.append(statement)
+
+    engine = auth.db.bind.sync_engine
+    event.listen(engine, "before_cursor_execute", capture)
+    try:
+        await UserService(auth).set_available(BatchSetAvailable(ids=[*ids, ids[0]], status=1))
+        await auth.db.commit()
+    finally:
+        event.remove(engine, "before_cursor_execute", capture)
+
+    async with session_factory() as persisted:
+        assert list(await persisted.scalars(select(UserModel.status).order_by(UserModel.id))) == [1, 1, 1]
+    assert len(statements) == 1, statements
+
+
+@pytest.mark.parametrize(
+    ("blocked", "message"),
+    [
+        ("missing", "该数据不存在"),
+        ("deleted", "该数据不存在"),
+        ("foreign", "该数据不存在"),
+        ("superuser", "超级管理员状态不能修改"),
+    ],
+)
+async def test_batch_status_validates_all_users_before_writing(batch_auth, blocked, message):
+    auth, session_factory = batch_auth
+    first = UserModel(username="first", name="正常用户", password="synthetic", created_id=1, status=0)
+    second = UserModel(
+        username="blocked",
+        name="受保护用户",
+        password="synthetic",
+        created_id=2 if blocked == "foreign" else 1,
+        is_deleted=blocked == "deleted",
+        is_superuser=blocked == "superuser",
+        status=0,
+    )
+    auth.db.add_all([first, second])
+    await auth.db.commit()
+    auth.user = SimpleNamespace(id=1, is_superuser=False, roles=[])
+    auth.check_data_scope = True
+    ids = [first.id, second.id + 1000 if blocked == "missing" else second.id]
+
+    with pytest.raises(CustomException, match=message):
+        await UserService(auth).set_available(BatchSetAvailable(ids=ids, status=1))
+    await auth.db.commit()
+    async with session_factory() as persisted:
+        assert list(await persisted.scalars(select(UserModel.status).order_by(UserModel.id))) == [0, 0]
+
+
+async def test_http_batch_status_updates_persist_and_protect_superadmin(batch_auth, monkeypatch):
+    auth, session_factory = batch_auth
+    auth.user = SimpleNamespace(id=None, is_superuser=True, roles=[])
+    monkeypatch.setattr(settings, "OPERATION_LOG_RECORD", False)
+    user = UserModel(username="httpbatch", name="接口用户", password="synthetic", status=0)
+    admin = UserModel(username="protected", name="管理员", password="synthetic", is_superuser=True, status=0)
+    auth.db.add_all([user, admin])
+    await auth.db.commit()
+    application = FastAPI()
+    application.include_router(UserRouter, prefix="/system")
+    application.dependency_overrides[get_current_user] = lambda: auth
+    register_exceptions(application)
+    async with AsyncClient(transport=ASGITransport(app=application), base_url="http://test") as client:
+        response = await client.patch("/system/user/status/batch", json={"ids": [user.id, user.id], "status": 1})
+        assert response.status_code == 200 and response.json()["success"] is True
+        await auth.db.commit()
+        response = await client.patch("/system/user/status/batch", json={"ids": [user.id, admin.id], "status": 0})
+        assert response.status_code == 500 and response.json()["success"] is False
+        assert response.json()["msg"] == "超级管理员状态不能修改"
+        await auth.db.commit()
+    async with session_factory() as persisted:
+        assert list(await persisted.scalars(select(UserModel.status).order_by(UserModel.id))) == [1, 0]
 
 
 @pytest.mark.parametrize("as_dict", [False, True])

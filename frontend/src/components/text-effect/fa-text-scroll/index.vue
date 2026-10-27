@@ -58,14 +58,7 @@ import {
 import { useSettingsStore } from "@stores";
 
 type ThemeType =
-  | "theme"
-  | "primary"
-  | "secondary"
-  | "error"
-  | "info"
-  | "success"
-  | "warning"
-  | "danger";
+  "theme" | "primary" | "secondary" | "error" | "info" | "success" | "warning" | "danger";
 
 /**
  * 文本滚动组件属性接口

@@ -101,6 +101,21 @@ async def test_category_crud_filter_sort_and_soft_delete(category_app):
         assert deleted.is_deleted and deleted.deleted_id == 1 and deleted.deleted_time is not None
 
 
+async def test_empty_and_out_of_range_pages_keep_response_metadata(category_app):
+    client, _, actor = category_app
+    empty = await client.get("/demo/category/list", params={"page_no": 1, "page_size": 1})
+    assert empty.status_code == 200
+    assert empty.json()["data"] == {"page_no": 1, "page_size": 1, "total": 0, "has_next": False, "items": []}
+    await create_category(client)
+    last = await client.get("/demo/category/list", params={"page_no": 2, "page_size": 1})
+    assert last.status_code == 200
+    assert last.json()["data"] == {"page_no": 2, "page_size": 1, "total": 1, "has_next": False, "items": []}
+    actor["id"] = 2
+    hidden = await client.get("/demo/category/list", params={"page_no": 1, "page_size": 1})
+    assert hidden.status_code == 200
+    assert hidden.json()["data"] == empty.json()["data"]
+
+
 async def test_duplicate_create_update_and_deleted_name_are_transactional(category_app):
     client, sessions, _ = category_app
     first = await create_category(client)

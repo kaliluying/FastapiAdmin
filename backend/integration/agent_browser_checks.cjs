@@ -58,6 +58,7 @@ export default (env) => {
   let page;
   const requests = [];
   const errors = [];
+  const translationWarnings = [];
   try {
     for (let attempt = 0; attempt < 160; attempt++) {
       assert.equal(vite.exitCode, null, "Vite exited before readiness");
@@ -71,6 +72,10 @@ export default (env) => {
     page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, timezoneId: "UTC" });
     page.setDefaultTimeout(30000);
     page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "warning" && message.text().includes("[intlify]"))
+        translationWarnings.push(message.text());
+    });
     page.on("response", (response) => {
       const url = new URL(response.url());
       if (url.pathname.startsWith("/api/v1/"))
@@ -215,9 +220,12 @@ export default (env) => {
     await drawer.locator(".agent-result h3").scrollIntoViewIfNeeded();
     await page.screenshot({ path: path.join(root, "agent-browser-mobile.png"), animations: "disabled" });
     assert.deepEqual(errors, [], "Unhandled page errors");
+    assert.deepEqual(translationWarnings, [], "Menu titles must not produce translation warnings");
+    const avatars = requests.filter((item) => item.path.endsWith("/static/image/avatar.png"));
+    assert.ok(avatars.length > 0 && avatars.every((item) => item.status === 200), "Seed avatar must be served");
     assert.equal(requests.filter((item) => item.method === "POST" && item.path.endsWith("/ai/agent/runs")).length, 1);
     fs.writeFileSync(path.join(root, "agent-browser-results.json"), JSON.stringify({
-      passed: true, browser: await browser.version(), run_id: runId, pageErrors: errors, requests, geometry,
+      passed: true, browser: await browser.version(), run_id: runId, pageErrors: errors, translationWarnings, requests, geometry,
       copied_source_sha256: Object.fromEntries([
         "src/views/module_ai/chat/components/FaDiagnosticAgent.vue",
         "src/views/module_ai/chat/components/diagnosticAgentTimeline.ts",

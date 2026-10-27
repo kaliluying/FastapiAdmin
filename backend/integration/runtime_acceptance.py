@@ -322,6 +322,9 @@ def run(mysql_port: int, redis_port: int, acknowledged: bool, database_type: str
     created = False
     database_name = "fastcore_ci_" + secrets.token_hex(8)
     artifacts = Path(tempfile.mkdtemp(prefix="fastcore-integration-"))
+    avatar = artifacts / "static" / "image" / "avatar.png"
+    avatar.parent.mkdir(parents=True)
+    avatar.write_bytes((ROOT / "static" / "image" / "avatar.png").read_bytes())
     try:
         redis.ping()
         if redis.dbsize():
@@ -366,7 +369,8 @@ def run(mysql_port: int, redis_port: int, acknowledged: bool, database_type: str
             "REDIS_DB_NAME": "15",
             "SECRET_KEY": secrets.token_urlsafe(48),
             "SQL_DB_ENABLE": "true",
-            "STATIC_ENABLE": "false",
+            "STATIC_ENABLE": "true",
+            "STATIC_ROOT": str(artifacts / "static"),
             "UPLOAD_FILE_PATH": str(artifacts / "uploads"),
             "ROOT_PATH": "",
             "RATE_LIMITER_TIMES": "2",

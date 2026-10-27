@@ -40,6 +40,7 @@ export default (env) => {
   let browser;
   let page;
   const errors = [];
+  const translationWarnings = [];
   const requests = [];
   try {
     for (let attempt = 0; attempt < 120; attempt += 1) {
@@ -54,6 +55,10 @@ export default (env) => {
     page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     page.setDefaultTimeout(30000);
     page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "warning" && message.text().includes("[intlify]"))
+        translationWarnings.push(message.text());
+    });
     page.on("response", (response) => {
       const url = new URL(response.url());
       if (url.pathname.startsWith("/api/v1/"))
@@ -126,13 +131,16 @@ export default (env) => {
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     await page.screenshot({ path: path.join(root, "browser-chat-mobile.png"), animations: "disabled" });
     assert.deepEqual(errors, [], "页面存在未处理的运行错误");
+    assert.deepEqual(translationWarnings, [], "菜单标题产生翻译警告");
+    const avatars = requests.filter((item) => item.path.endsWith("/static/image/avatar.png"));
+    assert.ok(avatars.length > 0 && avatars.every((item) => item.status === 200), "种子头像必须可访问");
     fs.writeFileSync(path.join(root, "browser-results.json"), JSON.stringify({
       passed: true, database: process.env.DATABASE_TYPE, browser: await browser.version(),
       checks: ["UI login and authorized menu navigation", "create knowledge base and upload document",
         "visible successful indexing", "select knowledge base, SSE answer and citation preview",
         "refresh restores persisted history", "390px chat has no horizontal page overflow"],
       usability: "AI simulated user walk-through; visible navigation, progress, success and citation feedback observed",
-      pageErrors: errors, requests,
+      pageErrors: errors, translationWarnings, requests,
     }, null, 2));
   } catch (error) {
     if (page) {

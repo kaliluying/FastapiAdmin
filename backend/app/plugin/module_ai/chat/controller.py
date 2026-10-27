@@ -4,7 +4,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Path, Request, UploadFile
 from fastapi.responses import JSONResponse
 
-from app.common.response import ResponseSchema, SuccessResponse
+from app.common.response import ErrorResponse, ResponseSchema, SuccessResponse
 from app.core.base_params import PaginationQueryParam
 from app.core.base_schema import AuthSchema
 from app.core.database import async_db_session
@@ -149,12 +149,15 @@ async def ai_chat_controller(
     async with async_db_session() as auth_db:
         user = await _load_user_from_db(auth_db, user_id=auth.user.id)
     service = ChatService(auth.model_copy(update={"user": user}))
-    result = await service.chat_non_stream(
-        message=data.message,
-        session_id=data.session_id,
-        knowledge_base_ids=data.knowledge_base_ids,
-        log_context_id=data.log_context_id,
-    )
+    try:
+        result = await service.chat_non_stream(
+            message=data.message,
+            session_id=data.session_id,
+            knowledge_base_ids=data.knowledge_base_ids,
+            log_context_id=data.log_context_id,
+        )
+    except CustomException as exc:
+        return ErrorResponse(msg=exc.msg, code=exc.code, status_code=exc.status_code, data=exc.data)
     return SuccessResponse(
         data=AiChatResponseSchema(
             response=result["response"],

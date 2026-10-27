@@ -87,6 +87,8 @@ class MemoryExtractAction(BaseModel):
     value: str | None = Field(None, max_length=5000)
     priority: int = Field(0, ge=0, le=100)
     confidence: float = Field(0.0, ge=0.0, le=1.0, description="置信度 0-1，低于阈值自动跳过")
+    is_long_term: bool = Field(False, description="是否适用于未来独立会话；未确认则不保存")
+    source_quote: str = Field("", max_length=5000, description="支持操作的用户原文，不得引用助手或资料内容")
     reason: str = Field("", description="操作理由，便于调试")
 
 

@@ -379,12 +379,16 @@ def provision(root: Path, database_type: str, processes: Processes):
         redis_version = redis.info("server")["redis_version"]
     finally:
         redis.close()
+    avatar = root / "static" / "image" / "avatar.png"
+    avatar.parent.mkdir(parents=True)
+    avatar.write_bytes((BACKEND / "static" / "image" / "avatar.png").read_bytes())
     environment.update({
         "ENVIRONMENT": "prod", "DATABASE_TYPE": database_type, "DATABASE_HOST": "127.0.0.1",
         "DATABASE_PORT": str(database_port), "DATABASE_USER": user, "DATABASE_PASSWORD": "",
         "DATABASE_NAME": database_name, "REDIS_ENABLE": "true", "REDIS_HOST": "127.0.0.1",
         "REDIS_PORT": str(redis_port), "REDIS_USER": "", "REDIS_PASSWORD": "", "REDIS_DB_NAME": "15",
-        "SECRET_KEY": secrets.token_urlsafe(48), "SQL_DB_ENABLE": "true", "STATIC_ENABLE": "false",
+        "SECRET_KEY": secrets.token_urlsafe(48), "SQL_DB_ENABLE": "true", "STATIC_ENABLE": "true",
+        "STATIC_ROOT": str(root / "static"),
         "UPLOAD_FILE_PATH": str(root / "uploads"), "ROOT_PATH": "", "CAPTCHA_ENABLE": "false",
         "RATE_LIMITER_TIMES": "10000", "RATE_LIMITER_SECONDS": "1", "IP_LOCATION_ENABLE": "false",
         "OPENAI_API_KEY": "isolated-local-only", "OPENAI_MODEL": "isolated-agent",

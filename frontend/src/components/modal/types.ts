@@ -26,14 +26,7 @@ export type IObject = Record<string, any>;
 type DateComponent = "date-picker" | "time-picker" | "time-select" | "custom-tag" | "input-tag";
 type InputComponent = "input" | "select" | "input-number" | "cascader" | "tree-select";
 type OtherComponent =
-  | "text"
-  | "radio"
-  | "checkbox"
-  | "switch"
-  | "rate"
-  | "slider"
-  | "icon-select"
-  | "custom";
+  "text" | "radio" | "checkbox" | "switch" | "rate" | "slider" | "icon-select" | "custom";
 export type ISearchComponent =
   | DateComponent
   | InputComponent

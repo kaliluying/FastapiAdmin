@@ -4,6 +4,7 @@ import asyncio
 import io
 import json
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -13,7 +14,16 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
-RESULT = '{"actions":[{"action":"create","key":"reliability","value":"restart-survived","confidence":0.9}]}'
+RESULT = (
+    '{"actions":[{"action":"create","memory_type":"user_preference",'
+    '"key":"回答风格","value":"简洁","confidence":0.9,'
+    '"is_long_term":true,"source_quote":"以后回答简洁"}]}'
+)
+RESTART_RESULT = (
+    '{"actions":[{"action":"create","memory_type":"user_preference",'
+    '"key":"回答风格","value":"restart-survived","confidence":0.9,'
+    '"is_long_term":true,"source_quote":"以后回答 restart-survived"}]}'
+)
 
 
 async def verify_reliability() -> dict:
@@ -59,6 +69,10 @@ async def verify_reliability() -> dict:
             full.set()
         try:
             await release.wait()
+            if match := re.search(r"以后回答 (queue-style-[0-5])", _):
+                action = json.loads(RESULT)
+                action["actions"][0].update(value=match[1], source_quote=match[0])
+                return json.dumps(action, ensure_ascii=False)
             return RESULT
         finally:
             concurrent -= 1
@@ -97,7 +111,7 @@ async def verify_reliability() -> dict:
                 assert login.status_code == 200
                 headers = {"Authorization": "Bearer " + login.json()["data"]["access_token"]}
                 for _ in range(7):
-                    response = await client.post("/ai/chat/ai-chat", json={"message": "use concise replies"}, headers=headers)
+                    response = await client.post("/ai/chat/ai-chat", json={"message": "以后回答简洁"}, headers=headers)
                     assert response.status_code == 200 and response.json()["data"]["response"] == "accepted"
                 await asyncio.wait_for(entered.wait(), 5)
                 assert await job_count() == 7
@@ -112,14 +126,16 @@ async def verify_reliability() -> dict:
             from app.plugin.module_ai.chat.schema import ChatSessionCreateSchema
 
             release.clear()
+            queue_users = {}
             for index in range(6):
                 async with async_db_session() as db:
                     user = UserModel(username=f"queue-{index}", name="isolated", password="unused")
                     db.add(user)
                     await db.flush()
+                    queue_users[str(user.id)] = f"queue-style-{index}"
                     crud = ChatSessionCRUD(SimpleNamespace(db=db, user=user))
                     session = await crud.create_crud(ChatSessionCreateSchema(title="queue"))
-                    assert await crud.append_run_crud(session_id=session.session_id, message="preference", response="ack")
+                    assert await crud.append_run_crud(session_id=session.session_id, message=f"以后回答 queue-style-{index}", response="ack")
                     await db.commit()
                 worker.wake_memory_worker()
             await asyncio.wait_for(full.wait(), 5)
@@ -127,6 +143,11 @@ async def verify_reliability() -> dict:
             release.set()
             await drained()
             assert maximum == 4 and calls == 13
+            async with async_db_session() as db:
+                memories = (await db.scalars(select(AiMemoryModel).where(AiMemoryModel.user_id.in_(queue_users)))).all()
+                assert sorted((memory.user_id, memory.key, memory.value) for memory in memories) == sorted(
+                    (owner, "回答风格", value) for owner, value in queue_users.items()
+                )
 
             async with async_db_session() as db:
                 user = UserModel(username="terminal-queue", name="终态验收", password="unused")
@@ -135,7 +156,7 @@ async def verify_reliability() -> dict:
                 terminal_user_id = user.id
                 crud = ChatSessionCRUD(SimpleNamespace(db=db, user=user))
                 session = await crud.create_crud(ChatSessionCreateSchema(title="终态与顺序"))
-                for message in ("terminal-failure", "terminal-success"):
+                for message in ("terminal-failure", "以后回答简洁 terminal-success"):
                     assert await crud.append_run_crud(session_id=session.session_id, message=message, response="ack")
                 await db.commit()
             worker.wake_memory_worker()
@@ -222,7 +243,8 @@ async def verify_reliability() -> dict:
         return {
             "passed": True, "model": "deterministic local stand-in; no provider request",
             "checks": ["authenticated HTTP chat persists seven queued turns", "real SQL queue drains without lost turns",
-                       "six users saturate four workers without skipping", "upload and replacement commit/rollback acknowledgment loss",
+                       "six users saturate four workers and persist one correctly owned memory each",
+                       "upload and replacement commit/rollback acknowledgment loss",
                        "three failures reach dead status and unblock the next turn of the same user",
                        "busy SQL transaction is skipped, then orphan removed after rollback",
                        "production recovery loop deletes orphan", "production shutdown drains memory workers"],
@@ -258,7 +280,7 @@ async def memory_restart_phase(phase: str) -> dict:
                 await db.flush()
                 crud = ChatSessionCRUD(SimpleNamespace(db=db, user=user))
                 session = await crud.create_crud(ChatSessionCreateSchema(title="crash recovery"))
-                assert await crud.append_run_crud(session_id=session.session_id, message="remember", response="ack")
+                assert await crud.append_run_crud(session_id=session.session_id, message="以后回答 restart-survived", response="ack")
                 base = KnowledgeBaseModel(name="upload process crash", created_id=user.id)
                 db.add(base)
                 await db.flush()
@@ -292,7 +314,7 @@ async def memory_restart_phase(phase: str) -> dict:
                 await upload_ready.wait()
                 (root / "memory-claimed").write_text("SQL lease committed; provider barrier entered")
                 await asyncio.Event().wait()
-            return RESULT
+            return RESTART_RESULT
 
         worker.get_cached_chat_model = lambda: SimpleNamespace(complete=complete)
         if phase == "crash-memory":

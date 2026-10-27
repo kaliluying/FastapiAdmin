@@ -10,7 +10,10 @@ const stores = vi.hoisted(() => ({
 }));
 
 vi.mock("@stores", () => ({ useMenuStore: () => stores.menu, useUserStore: () => stores.user }));
-vi.mock("@utils", () => ({ HttpError: class extends Error {} }));
+vi.mock("@utils", () => ({
+  HttpError: class extends Error {},
+  formatMenuTitle: (title: string) => title,
+}));
 vi.mock("@/api/module_common/health", () => ({ default: { getReadiness: vi.fn() } }));
 vi.mock("./modules/login-trend.vue", () => ({
   default: { name: "LoginTrend", template: '<section data-test="login-trend" />' },
@@ -25,7 +28,12 @@ const route = (path: string, title = path, meta = {}): AppRouteRecord => ({
 const createPage = () => {
   wrapper = mount(Home, {
     global: {
-      mocks: { $t: (text: string) => text },
+      mocks: {
+        $t: (text: string) => {
+          if (!text.includes(".")) throw new Error(`Literal menu title translated: ${text}`);
+          return text;
+        },
+      },
       stubs: {
         FaSvgIcon: true,
         RouterLink: { props: ["to"], template: '<a :href="to"><slot /></a>' },
