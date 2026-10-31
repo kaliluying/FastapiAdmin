@@ -2,11 +2,11 @@ import { mount } from "@vue/test-utils";
 import { defineComponent, h, nextTick, type PropType } from "vue";
 import { describe, expect, it } from "vitest";
 
-import { useMenuTreeTable } from "./useMenuTreeTable";
+import { useMenuTreeTable, type MenuTreeNode } from "./useMenuTreeTable";
 
 const Harness = defineComponent({
   props: {
-    menuTree: { type: Array, required: true },
+    menuTree: { type: Array as PropType<MenuTreeNode[]>, required: true },
     checkedIds: { type: Array as PropType<number[]>, default: () => [] },
   },
   setup(props) {

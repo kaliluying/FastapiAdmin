@@ -1,0 +1,410 @@
+/* 工具条：底边与内容区分界；顶边由顶部栏 border-b 承担，避免与标签条顶边双线 */
+.worktab-tags-shell {
+  /* 外壳 padding（py-1 / pt-1 pb-0）会让内部分割线出现上下缝隙；用变量让分割线延伸到 padding 区 */
+  --worktab-shell-pad-top: 4px;
+  --worktab-shell-pad-bottom: 4px;
+}
+
+/* Google 标签模式：外壳 padding + 激活块 / 主题变量（与下方 Chrome 弧角样式共用） */
+.worktab-tags-shell--google {
+  --worktab-shell-pad-top: 4px;
+  --worktab-shell-pad-bottom: 0px;
+  --worktab-google-active-bg: var(--el-fill-color-light);
+  --worktab-google-tab-muted: var(--el-text-color-regular);
+}
+
+.worktab-tags-bar {
+  background: color-mix(in srgb, var(--default-box-color) 96%, transparent);
+
+  /* 外壳已统一提供 border-b，避免不同模式出现双线/高度不一致 */
+  border: none;
+}
+
+.worktab-toolbar-end {
+  position: relative;
+  align-self: stretch;
+
+  /* 让工具按钮边框（分割线）撑满外壳高度 */
+  margin-top: calc(var(--worktab-shell-pad-top) * -1);
+  margin-bottom: calc(var(--worktab-shell-pad-bottom) * -1);
+}
+
+/* 工具区左侧分割线：拉满到标签栏高度 */
+.worktab-toolbar-end::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  content: "";
+  background: var(--el-border-color-lighter);
+}
+
+.dark .worktab-toolbar-end::before {
+  background: rgb(255 255 255 / 12%);
+}
+
+/* 工具区内部按钮分割线：拉满到标签栏高度 */
+.worktab-toolbar-end .worktab-bar-cell {
+  position: relative;
+
+  /* 让 hover/active 背景也覆盖到外壳 padding 区域（与左侧按钮一致的手感） */
+  padding-top: var(--worktab-shell-pad-top);
+  padding-bottom: var(--worktab-shell-pad-bottom);
+  margin-top: calc(var(--worktab-shell-pad-top) * -1);
+  margin-bottom: calc(var(--worktab-shell-pad-bottom) * -1);
+}
+
+.worktab-toolbar-end .worktab-bar-cell + .worktab-bar-cell::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  content: "";
+  background: var(--el-border-color-lighter);
+}
+
+.dark .worktab-toolbar-end .worktab-bar-cell + .worktab-bar-cell::before {
+  background: rgb(255 255 255 / 12%);
+}
+
+/*
+ * 工具区：单格无四边描边；悬停 / 按下仅在当前格矩形内铺底
+ */
+.worktab-tags-bar .worktab-bar-btn {
+  padding: 0;
+  margin: 0;
+  color: var(--el-text-color-regular);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.worktab-tags-bar .worktab-bar-cell {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  align-self: stretch;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 0 0.5rem;
+}
+
+.worktab-tags-bar .worktab-bar-cell--sep-r {
+  /* 左侧按钮分割线同样撑满外壳高度 */
+  margin-top: calc(var(--worktab-shell-pad-top) * -1);
+  margin-bottom: calc(var(--worktab-shell-pad-bottom) * -1);
+  border-right: 1px solid var(--el-border-color-lighter);
+}
+
+.worktab-tags-bar .worktab-bar-btn:hover {
+  color: var(--el-color-primary);
+  background-color: var(--fa-active-color);
+}
+
+.worktab-tags-bar .worktab-bar-btn:active {
+  background-color: color-mix(in srgb, var(--el-color-primary) 16%, var(--el-fill-color-blank));
+}
+
+.worktab-tags-bar .worktab-bar-btn:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 45%, transparent);
+}
+
+.dark .worktab-tags-bar .worktab-bar-btn {
+  color: rgb(255 255 255 / 72%);
+}
+
+.dark .worktab-tags-bar .worktab-bar-cell--sep-r {
+  border-right-color: rgb(255 255 255 / 12%);
+}
+
+.dark .worktab-tags-bar .worktab-bar-btn:hover {
+  color: var(--el-color-primary);
+  background-color: rgb(255 255 255 / 8%);
+}
+
+.dark .worktab-tags-bar .worktab-bar-btn:active {
+  background-color: rgb(255 255 255 / 12%);
+}
+
+.dark .worktab-tags-bar .worktab-bar-btn:focus-visible {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--el-color-primary) 55%, transparent);
+}
+
+/* tab-card：胶囊 + 轻阴影（仅 .worktab-tab--card；Chrome 由 .google-tab 负责） */
+.worktab-tab.worktab-tab--card {
+  gap: 6px;
+  background: color-mix(
+    in srgb,
+    var(--el-bg-color) 94%,
+    var(--el-text-color-regular) 6%
+  ) !important;
+  border: 1px solid color-mix(in srgb, var(--fa-card-border) 80%, transparent) !important;
+
+  /* 卡片模式圆角不要半圆：与默认一致 */
+  border-radius: calc(var(--custom-radius) / 2.5 + 2px) !important;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 5%),
+    inset 0 1px 0 rgb(255 255 255 / 45%);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    transform 0.15s ease;
+}
+
+.dark .worktab-tab.worktab-tab--card {
+  background: color-mix(
+    in srgb,
+    var(--el-bg-color-overlay) 92%,
+    var(--el-text-color-regular) 8%
+  ) !important;
+  border-color: color-mix(in srgb, var(--fa-card-border) 55%, transparent) !important;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+}
+
+.worktab-tab.worktab-tab--card:hover {
+  border-color: var(--el-border-color) !important;
+  transform: translateY(-0.5px);
+}
+
+.worktab-tab.worktab-tab--card.activ-tab {
+  background: color-mix(in srgb, var(--el-color-primary) 14%, var(--el-bg-color)) !important;
+  border-color: color-mix(in srgb, var(--el-color-primary) 50%, transparent) !important;
+  box-shadow:
+    0 2px 14px color-mix(in srgb, var(--el-color-primary) 20%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--el-color-primary) 28%, transparent);
+}
+
+/* 亮色：胶囊选中态与顶栏标签一致，用主题浅底 */
+html:not(.dark) .worktab-tab.worktab-tab--card.activ-tab {
+  background: var(--el-color-primary-light-9) !important;
+  border-color: var(--el-color-primary-light-7) !important;
+  box-shadow:
+    0 2px 14px color-mix(in srgb, var(--el-color-primary) 18%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, var(--el-color-primary) 22%, transparent);
+}
+
+.worktab-star {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  margin: 0 2px 0 0;
+  color: var(--el-text-color-placeholder);
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  opacity: 0.45;
+  transition:
+    opacity 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.group:hover .worktab-star,
+.worktab-star:hover {
+  opacity: 1;
+}
+
+.worktab-star:hover {
+  color: var(--el-color-primary);
+  transform: scale(1.06);
+}
+
+.worktab-star--on {
+  color: var(--el-color-primary);
+  opacity: 1;
+}
+
+.worktab-close {
+  color: var(--el-text-color-secondary);
+  opacity: 0.28;
+  transition:
+    opacity 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.group:hover .worktab-close,
+.worktab-close:hover {
+  opacity: 1;
+}
+
+.worktab-close:hover {
+  color: var(--el-color-danger);
+  background-color: color-mix(in srgb, var(--el-color-danger) 12%, transparent) !important;
+}
+
+/* 亮色：当前选中标签条为主题浅底（::before/::after 弧角共用同一变量） */
+html:not(.dark) .worktab-tags-shell--google {
+  --worktab-google-active-bg: var(--el-color-primary-light-9);
+}
+
+.dark .worktab-tags-shell--google {
+  --worktab-google-active-bg: color-mix(in srgb, rgb(255 255 255) 15%, var(--el-bg-color) 85%);
+}
+
+.worktab-tags-shell--google .google-tab:not(.activ-tab) {
+  color: var(--worktab-google-tab-muted) !important;
+  background: transparent !important;
+}
+
+.worktab-tags-shell--google .google-tab:not(.activ-tab):hover {
+  box-sizing: border-box;
+  color: var(--el-text-color-primary) !important;
+  background-color: color-mix(in srgb, var(--el-text-color-primary) 8%, transparent) !important;
+  border-bottom: none !important;
+  border-radius: 6px 6px 0 0 !important;
+}
+
+.worktab-tags-shell--google .google-tab-route-icon:not(.text-theme) {
+  color: color-mix(in srgb, var(--worktab-google-tab-muted) 92%, transparent);
+}
+
+.worktab-tags-shell--google .google-tab.activ-tab {
+  color: var(--theme-color) !important;
+  background-color: var(--worktab-google-active-bg) !important;
+  border-bottom: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+
+.worktab-tags-shell--google .google-tab.activ-tab::before,
+.worktab-tags-shell--google .google-tab.activ-tab::after {
+  box-shadow: 0 0 0 30px var(--worktab-google-active-bg);
+}
+
+.worktab-google-divider {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 1px;
+  height: 14px;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--el-border-color) 72%, transparent);
+  transform: translateY(-50%);
+  transition: opacity 0.15s ease;
+}
+
+.dark .worktab-tags-shell--google .worktab-google-divider {
+  background: rgb(255 255 255 / 14%);
+}
+
+/* 悬停当前标签：隐藏与本标签相邻的两条竖线（自身左缘 + 下一标签左缘） */
+.worktab-tags-shell--google .google-tab:hover .worktab-google-divider {
+  opacity: 0;
+}
+
+.worktab-tags-shell--google .google-tab:hover + .google-tab .worktab-google-divider {
+  opacity: 0;
+}
+
+/* 当前选中标签：与悬停一致，不展示左右相邻竖线 */
+.worktab-tags-shell--google .google-tab.activ-tab .worktab-google-divider {
+  opacity: 0;
+}
+
+.worktab-tags-shell--google .google-tab.activ-tab + .google-tab .worktab-google-divider {
+  opacity: 0;
+}
+
+/* 固定标签图钉（pushpin）：常用黄色，与路由菜单图标区分 */
+.worktab-pin {
+  color: #ca8a04 !important;
+}
+
+.dark .worktab-pin {
+  color: #fbbf24 !important;
+}
+
+.worktab-tags-shell--google .worktab-pin {
+  color: #ca8a04 !important;
+}
+
+.dark .worktab-tags-shell--google .worktab-pin {
+  color: #fbbf24 !important;
+}
+
+.group:hover .worktab-pin {
+  color: #a16207 !important;
+}
+
+.dark .group:hover .worktab-pin {
+  color: #fcd34d !important;
+}
+
+.google-tab::before,
+.google-tab::after {
+  position: absolute;
+  bottom: 0;
+  width: 20px;
+  height: 20px;
+  content: "";
+  border-radius: 50%;
+  box-shadow: 0 0 0 30px transparent;
+}
+
+.google-tab::before {
+  left: -20px;
+  clip-path: inset(50% -10px 0 50%);
+}
+
+.google-tab::after {
+  right: -20px;
+  clip-path: inset(50% 50% 0 -10px);
+}
+
+@media only screen and (width <= 768px) {
+  .box-border.flex.justify-between {
+    padding-right: 0.625rem;
+    padding-left: 0.625rem;
+  }
+}
+
+@media only screen and (width <= 640px) {
+  .box-border.flex.justify-between {
+    padding-right: 0.9375rem;
+    padding-left: 0.9375rem;
+  }
+}
+
+.worktab-tab.worktab-tab--card {
+  background: var(--fa-color-surface) !important;
+  border: 1px solid var(--fa-color-border) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--fa-soft-shadow) !important;
+  transition:
+    background-color var(--fa-motion-control) ease,
+    border-color var(--fa-motion-control) ease,
+    color var(--fa-motion-control) ease,
+    box-shadow var(--fa-motion-control) ease,
+    transform var(--fa-motion-control) ease;
+}
+
+.worktab-tab.worktab-tab--card:hover {
+  border-color: color-mix(in srgb, var(--theme-color) 32%, var(--fa-color-border)) !important;
+  box-shadow: var(--fa-panel-shadow) !important;
+  transform: translateY(-1px);
+}
+
+.worktab-tab.worktab-tab--card.activ-tab,
+html:not(.dark) .worktab-tab.worktab-tab--card.activ-tab {
+  color: var(--theme-color) !important;
+  background: color-mix(in srgb, var(--theme-color) 10%, var(--fa-color-surface)) !important;
+  border-color: color-mix(in srgb, var(--theme-color) 36%, transparent) !important;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 6%) !important;
+}
+
+.worktab-tags-shell--google .google-tab.activ-tab {
+  background-color: color-mix(in srgb, var(--theme-color) 9%, var(--default-box-color)) !important;
+}

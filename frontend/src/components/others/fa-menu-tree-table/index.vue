@@ -26,7 +26,7 @@
       :default-expand-all="true"
       class="flex-1 min-h-0"
       @selection-change="onSelectionChange"
-      @select="onSelect"
+      @select="(selection, row) => onSelect(selection as MenuTreeNode[], asMenuNode(row))"
       @select-all="onSelectAll"
     >
       <ElTableColumn type="selection" width="48" />
@@ -35,17 +35,17 @@
         label="菜单名称"
         width="220"
         show-overflow-tooltip
-        :formatter="formatMenuName"
+        :formatter="(row) => formatMenuName(asMenuNode(row))"
       />
       <ElTableColumn label="功能权限">
         <template #default="{ row }">
           <ElCheckboxGroup
             v-model="checkedBtns[row.id]"
             class="flex flex-wrap gap-x-3"
-            @change="(val: CheckboxValueType[]) => onBtnChange(row, val)"
+            @change="(val: CheckboxValueType[]) => onBtnChange(asMenuNode(row), val)"
           >
             <ElCheckbox
-              v-for="btn in getMenuBtns(row)"
+              v-for="btn in getMenuBtns(asMenuNode(row))"
               :key="btn.id"
               :value="btn.id"
               :label="btn.name"
@@ -60,12 +60,12 @@
 <script setup lang="ts">
 import { Search, Switch as SwitchIcon } from "@element-plus/icons-vue";
 import type { CheckboxValueType } from "element-plus";
-import { useMenuTreeTable } from "./composables/useMenuTreeTable";
+import { useMenuTreeTable, type MenuTreeNode } from "./composables/useMenuTreeTable";
 
 defineOptions({ name: "FaMenuTreeTable" });
 
 interface Props {
-  menuTree: any[];
+  menuTree: MenuTreeNode[];
   checkedIds?: number[];
   loading?: boolean;
 }
@@ -73,6 +73,9 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   checkedIds: () => [],
 });
+
+/** ElTable 的插槽行类型较宽松，在边界处收敛为菜单节点。 */
+const asMenuNode = (row: unknown) => row as MenuTreeNode;
 
 const {
   filterText,

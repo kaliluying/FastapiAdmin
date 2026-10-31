@@ -34,7 +34,7 @@
           <div class="mt-3 flex-1 min-h-0">
             <FaMenuTreeTable
               ref="menuTreeTableRef"
-              :menu-tree="rawMenuTree"
+              :menu-tree="rawMenuTree as MenuTreeNode[]"
               :checked-ids="menuCheckedIds"
               :loading="loading"
             />
@@ -57,6 +57,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from "vue";
 import FaMenuTreeTable from "@/components/others/fa-menu-tree-table/index.vue";
+import type { MenuTreeNode } from "@/components/others/fa-menu-tree-table/composables/useMenuTreeTable";
 import RoleAPI, { permissionDataType } from "@/api/module_system/role";
 import MenuAPI, { MenuTable } from "@/api/module_platform/menu";
 import { DeviceEnum } from "@/enums/settings/device.enum";

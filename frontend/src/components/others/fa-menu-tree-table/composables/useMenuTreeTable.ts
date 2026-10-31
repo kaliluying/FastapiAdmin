@@ -15,10 +15,26 @@ function isPermission(type: number | undefined): boolean {
   return type != null && type >= BTN_TYPE;
 }
 
+/** 菜单树节点：仅声明本组合式函数实际读写的字段，其余属性原样透传给表格。 */
+export interface MenuTreeNode {
+  id: number;
+  name?: string;
+  type?: number;
+  icon?: string;
+  children?: MenuTreeNode[];
+}
+
 interface MenuTreeTableProps {
-  menuTree: any[];
+  menuTree: MenuTreeNode[];
   checkedIds?: number[];
   loading?: boolean;
+}
+
+/** Element Plus 表格实例内部 store 的最小接口（仅用到选中状态与勾选操作）。 */
+interface TableStore {
+  states?: { selection?: { value: MenuTreeNode[] } };
+  clearSelection: () => void;
+  toggleRowSelection: (row: MenuTreeNode, selected?: boolean, ignoreSelectable?: boolean) => void;
 }
 
 /**
@@ -33,41 +49,49 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
   const parentChildLinked = ref(true);
   const isHandlingCascade = ref(false);
   const permTableRef = ref<TableInstance>();
-  const tableData = ref<any[]>([]);
+  const tableData = ref<MenuTreeNode[]>([]);
   const checkedBtns = ref<Record<number, number[]>>({});
   const selectedMenuIds = ref<Set<number>>(new Set());
+
+  /** 读取表格实例内部的选中状态（Element Plus 未对外暴露该状态）。 */
+  function getTableStore(): TableStore | undefined {
+    return (permTableRef.value as unknown as { store?: TableStore } | undefined)?.store;
+  }
 
   // ---- 搜索过滤后的菜单树 ----
   const filteredMenuTree = computed(() =>
     filterText.value ? filterMenuTree(props.menuTree, filterText.value) : props.menuTree
   );
 
-  function filterMenuTree(nodes: any[], text: string): any[] {
+  function filterMenuTree(nodes: MenuTreeNode[], text: string): MenuTreeNode[] {
     if (!text) return nodes;
     const lower = text.toLowerCase();
 
-    function walk(n: any): any | null {
+    function walk(n: MenuTreeNode): MenuTreeNode | null {
       const nameMatch = (n.name || "").toLowerCase().includes(lower);
       const filteredChildren = n.children?.map(walk).filter(Boolean) ?? [];
 
       if (nameMatch || filteredChildren.length > 0) {
-        return { ...n, children: filteredChildren.length > 0 ? filteredChildren : n.children };
+        return {
+          ...n,
+          children: filteredChildren.length > 0 ? (filteredChildren as MenuTreeNode[]) : n.children,
+        };
       }
       return null;
     }
 
-    return nodes.map(walk).filter(Boolean) as any[];
+    return nodes.map(walk).filter(Boolean) as MenuTreeNode[];
   }
 
   // ---- 工具函数 ----
-  function walkTree(nodes: any[], fn: (node: any) => void) {
+  function walkTree(nodes: MenuTreeNode[], fn: (node: MenuTreeNode) => void) {
     for (const node of nodes) {
       fn(node);
       if (node.children) walkTree(node.children, fn);
     }
   }
 
-  function findRawNode(id: number, nodes: any[]): any | undefined {
+  function findRawNode(id: number, nodes: MenuTreeNode[]): MenuTreeNode | undefined {
     for (const node of nodes) {
       if (node.id === id) return node;
       if (node.children) {
@@ -78,7 +102,7 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
     return undefined;
   }
 
-  function findTableNode(id: number, nodes: any[]): any | undefined {
+  function findTableNode(id: number, nodes: MenuTreeNode[]): MenuTreeNode | undefined {
     for (const node of nodes) {
       if (node.id === id) return node;
       if (node.children) {
@@ -89,9 +113,9 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
     return undefined;
   }
 
-  function findParentInRawTree(menuId: number, nodes: any[]): any | null {
+  function findParentInRawTree(menuId: number, nodes: MenuTreeNode[]): MenuTreeNode | null {
     for (const n of nodes) {
-      if (n.children?.some((c: any) => c.id === menuId)) return n;
+      if (n.children?.some((c) => c.id === menuId)) return n;
       if (n.children) {
         const found = findParentInRawTree(menuId, n.children);
         if (found) return found;
@@ -100,7 +124,7 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
     return null;
   }
 
-  function formatMenuName(row: any) {
+  function formatMenuName(row: MenuTreeNode) {
     const name = row.name || "";
     if (row.icon) {
       return h("span", { class: "inline-flex items-center gap-1.5" }, [
@@ -111,15 +135,15 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
     return name;
   }
 
-  function getMenuBtns(row: any): any[] {
+  function getMenuBtns(row: MenuTreeNode): MenuTreeNode[] {
     const fullNode = findRawNode(row.id, props.menuTree);
     if (!fullNode?.children) return [];
-    return fullNode.children.filter((c: any) => isPermission(c.type));
+    return fullNode.children.filter((c) => isPermission(c.type));
   }
 
-  function hasAnySelectedDescendant(node: any): boolean {
-    if (checkedBtns.value[node.id!]?.length ?? 0 > 0) return true;
-    const tableNode = findTableNode(node.id!, tableData.value);
+  function hasAnySelectedDescendant(node: MenuTreeNode): boolean {
+    if ((checkedBtns.value[node.id]?.length ?? 0) > 0) return true;
+    const tableNode = findTableNode(node.id, tableData.value);
     if (tableNode?.children) {
       for (const child of tableNode.children) {
         if (isDirOrMenu(child.type) && hasAnySelectedDescendant(child)) return true;
@@ -128,11 +152,11 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
     return false;
   }
 
-  function findAncestors(nodeId: number): any[] {
-    function collectAncestorIds(nodes: any[], target: number): number[] {
+  function findAncestors(nodeId: number): MenuTreeNode[] {
+    function collectAncestorIds(nodes: MenuTreeNode[], target: number): number[] {
       for (const n of nodes) {
-        if (n.children?.some((c: any) => c.id === target)) {
-          return [n.id!, ...collectAncestorIds(props.menuTree, n.id!)];
+        if (n.children?.some((c) => c.id === target)) {
+          return [n.id, ...collectAncestorIds(props.menuTree, n.id)];
         }
         if (n.children) {
           const found = collectAncestorIds(n.children, target);
@@ -143,10 +167,10 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
     }
     return collectAncestorIds(props.menuTree, nodeId)
       .map((id) => findTableNode(id, tableData.value))
-      .filter(Boolean) as any[];
+      .filter(Boolean) as MenuTreeNode[];
   }
 
-  function filterTableData(nodes: any[]): any[] {
+  function filterTableData(nodes: MenuTreeNode[]): MenuTreeNode[] {
     return nodes
       .filter((n) => isDirOrMenu(n.type))
       .map((n) => ({
@@ -156,12 +180,12 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
   }
 
   // ---- 级联 ----
-  function collectBtnState(node: any) {
-    const ids = getMenuBtns(node).map((b: any) => b.id!);
-    if (ids.length) checkedBtns.value[node.id!] = ids;
+  function collectBtnState(node: MenuTreeNode) {
+    const ids = getMenuBtns(node).map((b) => b.id);
+    if (ids.length) checkedBtns.value[node.id] = ids;
   }
 
-  function cascadeSelect(node: any) {
+  function cascadeSelect(node: MenuTreeNode) {
     permTableRef.value?.toggleRowSelection(node, true);
     collectBtnState(node);
     const tableNode = findTableNode(node.id, tableData.value);
@@ -172,9 +196,9 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
     }
   }
 
-  function cascadeDeselect(node: any) {
+  function cascadeDeselect(node: MenuTreeNode) {
     permTableRef.value?.toggleRowSelection(node, false);
-    checkedBtns.value[node.id!] = [];
+    checkedBtns.value[node.id] = [];
     const tableNode = findTableNode(node.id, tableData.value);
     if (tableNode?.children) {
       for (const child of tableNode.children) {
@@ -183,12 +207,12 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
     }
   }
 
-  function selectAncestors(node: any) {
-    findAncestors(node.id!).forEach((a) => permTableRef.value?.toggleRowSelection(a, true));
+  function selectAncestors(node: MenuTreeNode) {
+    findAncestors(node.id).forEach((a) => permTableRef.value?.toggleRowSelection(a, true));
   }
 
-  function deselectAncestorsIfNeeded(node: any) {
-    findAncestors(node.id!).forEach((a) => {
+  function deselectAncestorsIfNeeded(node: MenuTreeNode) {
+    findAncestors(node.id).forEach((a) => {
       if (!hasAnySelectedDescendant(a)) permTableRef.value?.toggleRowSelection(a, false);
     });
   }
@@ -204,19 +228,17 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
 
   // ---- Table 事件 ----
   function onSelectionChange() {
-    const store = (permTableRef.value as any)?.store;
-    const selection = store?.states?.selection?.value || [];
+    const selection = getTableStore()?.states?.selection?.value ?? [];
     const newSelected = new Set<number>();
-    selection.forEach((row: any) => {
-      if (isDirOrMenu(row.type)) newSelected.add(row.id!);
+    selection.forEach((row) => {
+      if (isDirOrMenu(row.type)) newSelected.add(row.id);
     });
     selectedMenuIds.value = newSelected;
     if (newSelected.size === 0) checkedBtns.value = {};
   }
 
   function onSelectAll() {
-    const store = (permTableRef.value as any)?.store;
-    const selection = store?.states?.selection?.value || [];
+    const selection = getTableStore()?.states?.selection?.value ?? [];
     withCascadeGuard(() => {
       if (!selection.length) {
         checkedBtns.value = {};
@@ -225,14 +247,14 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
       }
       for (const row of selection) {
         if (isDirOrMenu(row.type)) {
-          selectedMenuIds.value.add(row.id!);
+          selectedMenuIds.value.add(row.id);
           if (parentChildLinked.value) collectBtnState(row);
         }
       }
     });
   }
 
-  function onSelect(selection: any[], row: any) {
+  function onSelect(selection: MenuTreeNode[], row: MenuTreeNode) {
     if (isHandlingCascade.value || !parentChildLinked.value) return;
     const tableRow = findTableNode(row.id, tableData.value);
     if (!tableRow) return;
@@ -248,8 +270,8 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
     });
   }
 
-  function onBtnChange(row: any, val: CheckboxValueType[]) {
-    checkedBtns.value[row.id!] = val.map((v) => Number(v));
+  function onBtnChange(row: MenuTreeNode, val: CheckboxValueType[]) {
+    checkedBtns.value[row.id] = val.map((v) => Number(v));
     if (!parentChildLinked.value) return;
     withCascadeGuard(() => {
       if (val.length > 0) {
@@ -279,17 +301,16 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
   }
 
   // ---- 初始化 ----
-  function checkParentChildLinked(ids: number[], nodes: any[]): boolean {
+  function checkParentChildLinked(ids: number[], nodes: MenuTreeNode[]): boolean {
     if (!ids.length || !nodes.length) return true;
-    const idMap = new Map<number, any>();
-    walkTree(nodes, (n) => idMap.set(n.id!, n));
+    const idMap = new Map<number, MenuTreeNode>();
+    walkTree(nodes, (n) => idMap.set(n.id, n));
     for (const id of ids) {
       const node = idMap.get(id);
       if (!node) continue;
-      if (node.children?.length && node.children.some((c: any) => !ids.includes(c.id!)))
-        return false;
+      if (node.children?.length && node.children.some((c) => !ids.includes(c.id))) return false;
       const parent = findParentInRawTree(id, nodes);
-      if (parent && !ids.includes(parent.id!)) return false;
+      if (parent && !ids.includes(parent.id)) return false;
     }
     return true;
   }
@@ -297,24 +318,24 @@ export function useMenuTreeTable(rawProps: MenuTreeTableProps) {
   async function initSelection(ids: number[]) {
     await nextTick();
     const btnsState: Record<number, number[]> = {};
-    const rowsToSelect: any[] = [];
+    const rowsToSelect: MenuTreeNode[] = [];
 
     walkTree(tableData.value, (node) => {
-      if (isDirOrMenu(node.type) && ids.includes(node.id!)) {
+      if (isDirOrMenu(node.type) && ids.includes(node.id)) {
         rowsToSelect.push(node);
       }
     });
 
     walkTree(props.menuTree, (node) => {
-      if (!isPermission(node.type) || !ids.includes(node.id!)) return;
-      const parent = findParentInRawTree(node.id!, props.menuTree);
-      if (parent) (btnsState[parent.id!] ??= []).push(node.id!);
+      if (!isPermission(node.type) || !ids.includes(node.id)) return;
+      const parent = findParentInRawTree(node.id, props.menuTree);
+      if (parent) (btnsState[parent.id] ??= []).push(node.id);
     });
 
     checkedBtns.value = btnsState;
 
     withCascadeGuard(() => {
-      const store = (permTableRef.value as any)?.store;
+      const store = getTableStore();
       if (!store) return;
       store.clearSelection();
       rowsToSelect.forEach((row) => store.toggleRowSelection(row, true, false));
