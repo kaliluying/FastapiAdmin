@@ -81,7 +81,7 @@ async def private_upload_preview_controller(relative_path: str) -> FileResponse:
     response_class=FileResponse,
 )
 async def public_upload_preview_controller(relative_path: str) -> FileResponse:
-    """匿名访问仅返回经过校验的头像和站点参数图片。"""
+    """匿名访问仅返回经过校验的头像图片。"""
     file_path, media_type = await FileService.preview_service(relative_path, public_images_only=True)
     return FileResponse(
         path=file_path,

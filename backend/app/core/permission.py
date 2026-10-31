@@ -74,12 +74,22 @@ class Permission:
         else:
             return await self.__filter_by_data_scope()
 
+    def _active_roles(self) -> list[Any]:
+        """
+        返回当前用户的有效角色（启用且未删除），供各过滤策略共用。
+        """
+        return [
+            role
+            for role in (getattr(self.auth.user, "roles", []) or [])
+            if role.status == 0 and not getattr(role, "is_deleted", False)
+        ]
+
     async def __filter_by_menu_auth(self) -> ColumnElement | None:
         """基于角色-菜单授权的过滤（适用于菜单模型）。
 
         只显示用户角色授权的菜单，不再叠加额外运营级约束。
         """
-        roles = [role for role in (getattr(self.auth.user, "roles", []) or []) if role.status == 0 and not getattr(role, "is_deleted", False)]
+        roles = self._active_roles()
         if not roles:
             id_attr = getattr(self.model, "id", None)
             if id_attr is not None:
@@ -109,7 +119,7 @@ class Permission:
 
         只显示当前用户绑定的角色
         """
-        roles = [role for role in (getattr(self.auth.user, "roles", []) or []) if role.status == 0 and not getattr(role, "is_deleted", False)]
+        roles = self._active_roles()
         if not roles:
             id_attr = getattr(self.model, "id", None)
             if id_attr is not None:
@@ -137,7 +147,7 @@ class Permission:
         if not hasattr(self.model, "created_id"):
             return None
 
-        roles = [role for role in (getattr(self.auth.user, "roles", []) or []) if role.status == 0 and not getattr(role, "is_deleted", False)]
+        roles = self._active_roles()
         if any(role.data_scope == self.DATA_SCOPE_ALL for role in roles):
             return None
 

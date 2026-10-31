@@ -49,6 +49,8 @@ CaptchaBase64 = NewType("CaptchaBase64", str)
 
 
 async def _write_login_log(
+    db: AsyncSession,
+    *,
     username: str,
     status: int,
     login_ip: str | None = None,
@@ -57,27 +59,31 @@ async def _write_login_log(
     request_browser: str | None = None,
     msg: str | None = None,
 ) -> None:
-    """写入登录日志（独立 session，避免事务回滚时丢失失败记录）。"""
+    """写入登录日志并立即提交。
+
+    日志与登录请求共用会话：另开连接时，本请求已持有的事务会阻塞这次写入
+    （SQLite 只能有一个写者，实测等 5s 后抛 `database is locked`），日志会被丢弃。
+    写入后立即提交，失败登录的日志在后续回滚时也不会丢失。
+    """
     from app.api.v1.module_system.log.crud import LoginLogCRUD
     from app.api.v1.module_system.log.schema import LoginLogCreateSchema
-    from app.core.base_schema import AuthSchema
-    from app.core.database import async_db_session
 
     try:
-        async with async_db_session() as session:
-            async with session.begin():
-                _auth = AuthSchema(db=session, check_data_scope=False)
-                await LoginLogCRUD(_auth).create(data=LoginLogCreateSchema(
-                    username=username,
-                    status=status,
-                    login_ip=login_ip,
-                    login_location=login_location,
-                    request_os=request_os,
-                    request_browser=request_browser,
-                    msg=msg,
-                ))
-    except Exception:
-        pass  # 登录日志写入失败不影响登录主流程
+        await LoginLogCRUD(AuthSchema(db=db, check_data_scope=False)).create(
+            data=LoginLogCreateSchema(
+                username=username,
+                status=status,
+                login_ip=login_ip,
+                login_location=login_location,
+                request_os=request_os,
+                request_browser=request_browser,
+                msg=msg,
+            )
+        )
+        await db.commit()
+    except Exception as exc:
+        await db.rollback()
+        logger.warning(f"登录日志写入失败: {exc}")
 
 
 def _resolve_request_ip(request: Request) -> str:
@@ -204,13 +210,9 @@ class LoginService:
         if not user:
             failure_count = await _record_login_failure(redis, _login_username, request_ip)
             await _write_login_log(
+                db=db,
                 username=_login_username,
                 status=2,
-                login_ip=request_ip,
-                login_location=login_location,
-                request_os=_login_os,
-                request_browser=_login_browser,
-                msg="用户不存在",
             )
             raise CustomException(
                 msg=_locked_message() if failure_count >= settings.LOGIN_MAX_FAILURES else "账号或密码错误",
@@ -220,6 +222,7 @@ class LoginService:
         if not PwdUtil.verify_password(plain_password=login_form.password, password_hash=user.password):
             failure_count = await _record_login_failure(redis, _login_username, request_ip)
             await _write_login_log(
+                db=db,
                 username=_login_username,
                 status=2,
                 login_ip=request_ip,
@@ -234,6 +237,7 @@ class LoginService:
             )
         if user.status == 1:
             await _write_login_log(
+                db=db,
                 username=_login_username,
                 status=2,
                 login_ip=request_ip,
@@ -266,6 +270,7 @@ class LoginService:
         }
 
         await _write_login_log(
+            db=db,
             username=user.username,
             status=1,
             login_ip=request_ip,

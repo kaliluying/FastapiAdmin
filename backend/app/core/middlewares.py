@@ -74,8 +74,9 @@ class RequestLogMiddleware(BaseHTTPMiddleware):
             if sid:
                 base = ctx or RequestContext()
                 request.state.ctx = replace(base, session_id=sid)
-        except Exception:
-            pass
+        except Exception as exc:
+            # 未登录或 token 无效时不影响请求主流程，但保留排查线索
+            logger.debug(f"解析请求上下文 session_id 失败: {exc}")
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         start_time = time.time()

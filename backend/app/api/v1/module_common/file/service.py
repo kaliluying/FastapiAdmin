@@ -19,7 +19,7 @@ class FileService:
 
         Args:
             file_path: 相对上传路径或旧版绝对路径。
-            public_images_only: 是否仅允许 avatar、param 图片目录及栅格图片扩展名。
+            public_images_only: 是否仅允许 avatar 图片目录及栅格图片扩展名。
 
         Returns:
             解析后的文件路径及相对于私有根目录的 POSIX 路径。
