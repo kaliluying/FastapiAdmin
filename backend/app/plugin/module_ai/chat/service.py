@@ -169,7 +169,7 @@ class ChatService:
             crud = ChatSessionCRUD(self.auth) if not degraded and self._should_persist_session() else None
             active_session_id = await self._ensure_session_id(crud, query.session_id, title=query.message[:20]) if crud is not None else self._ensure_runtime_session_id(None if degraded else query.session_id)
             db = crud.db if crud else self._get_db()
-            if crud and query.session_id is None and db:
+            if crud and not query.session_id and db:
                 await db.commit()
             chain = create_rag_chain(db=db, auth=self.auth)
             if structured:
@@ -409,7 +409,7 @@ class ChatService:
             crud = ChatSessionCRUD(self.auth) if not warning and self._should_persist_session() else None
             active_session_id = await self._ensure_session_id(crud, None if warning else session_id, title=message[:20])
             db = crud.db if crud else self._get_db()
-            if crud and session_id is None and db:
+            if crud and not session_id and db:
                 await db.commit()
             chain = create_rag_chain(db=db, auth=self.auth)
             response_text = await chain.ainvoke(
@@ -515,7 +515,8 @@ class ChatService:
                 json_start = text.find("```json") + 7
                 json_end = text.find("```", json_start)
                 if json_end > json_start:
-                    return json.loads(text[json_start:json_end].strip())
+                    action = json.loads(text[json_start:json_end].strip())
+                    return action if isinstance(action, dict) else None
         except (json.JSONDecodeError, Exception):
             pass
         return ChatService._parse_action_from_response(response_text)

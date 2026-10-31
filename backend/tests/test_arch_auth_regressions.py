@@ -15,7 +15,7 @@ from sqlalchemy import update
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.api.v1.module_platform.menu.model import MenuModel
-from app.api.v1.module_platform.menu.schema import MenuUpdateSchema
+from app.api.v1.module_platform.menu.schema import MenuCreateSchema, MenuUpdateSchema
 from app.api.v1.module_platform.menu.service import MenuService
 from app.api.v1.module_system.user.model import UserModel
 from app.common.enums import RedisInitKeyConfig
@@ -288,3 +288,28 @@ async def test_menu_edit_applies_the_same_status_cascade_as_batch_action(arch_se
         await service.update(target_id, MenuUpdateSchema(status=target_status))
         statuses = [(await service.detail(node.id)).status for node in (root, page, button)]
         assert statuses == [target_status] * 3
+
+
+@pytest.mark.parametrize("action", ["create", "move"])
+@pytest.mark.parametrize("status", [0, 1])
+async def test_menu_create_and_move_apply_existing_status_cascade(arch_sessions, action, status):
+    async with arch_sessions() as db:
+        actor = UserModel(username="menu-operator", name="Operator", password="fixture", is_superuser=True)
+        root = MenuModel(name="Root", type=1, route_name="CascadeRoot", route_path="/cascade-root", redirect="/cascade-root/page", status=1)
+        source = MenuModel(name="Source", type=2, route_name="CascadeSource", route_path="/cascade-source", component_path="module_system/user/index", permission="cascade:source:query", status=0)
+        db.add_all([actor, root, source])
+        await db.flush()
+        page = MenuModel(name="Page", type=2, parent_id=root.id, route_name="CascadePage", route_path="page", component_path="module_system/user/index", permission="cascade:page:query", status=1)
+        db.add(page)
+        await db.flush()
+        service = MenuService(AuthSchema(db=db, user=actor))
+        if action == "create":
+            button = await service.create(MenuCreateSchema(name="Button", order=1, type=3, parent_id=page.id, permission="cascade:button:write", status=status))
+        else:
+            button = MenuModel(name="Button", type=3, parent_id=source.id, permission="cascade:button:write", status=status)
+            db.add(button)
+            await db.flush()
+            button = await service.update(button.id, MenuUpdateSchema(parent_id=page.id))
+        await db.commit()
+        assert [(await service.detail(node.id)).status for node in (root, page, button)] == [status] * 3
+        assert (await service.detail(source.id)).status == 0

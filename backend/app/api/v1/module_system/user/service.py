@@ -7,7 +7,7 @@ from pydantic import ValidationError
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.v1.module_platform.menu.crud import MenuCRUD
-from app.api.v1.module_platform.menu.schema import MenuOutSchema
+from app.api.v1.module_platform.menu.schema import MenuOutSchema, MenuTreeOutSchema
 from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.exceptions import CustomException
 from app.core.logger import logger
@@ -176,7 +176,10 @@ class UserService:
         menus = [menu for menu in menus if menu_is_active(permission=menu.permission, route_name=menu.route_name)]
         user_dict.modules = [module.name for module in get_modules() if module.active]
         user_dict.permissions = self._collect_permissions()
-        user_dict.menus = traversal_to_tree([menu.model_dump() for menu in menus])
+        user_dict.menus = [
+            MenuTreeOutSchema.model_validate(menu)
+            for menu in traversal_to_tree([menu.model_dump() for menu in menus])
+        ]
         return user_dict
 
     def _collect_permissions(self) -> list[str]:

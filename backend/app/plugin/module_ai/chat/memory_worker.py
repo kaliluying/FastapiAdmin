@@ -14,10 +14,12 @@ from sqlalchemy.orm import aliased
 from app.api.v1.module_system.user.model import UserModel
 from app.core.database import async_db_session
 from app.core.logger import logger
+from app.plugin.module_ai.config import async_validate_model_base_url
 from app.plugin.module_ai.memory.public import MemoryExtractor, MemoryService
 
 from .model import ChatSessionModel
 from .model import MemoryExtractionJobModel as Job
+from .model_config_service import get_active_chat_model_config
 from .rag import get_cached_chat_model
 from .usage import usage_context
 
@@ -121,6 +123,7 @@ async def process_memory_job(job: Job) -> None:
             if not active:
                 await _finish_sql(_apply_job(job, []))
                 return
+            await async_validate_model_base_url(get_active_chat_model_config().base_url)
             with usage_context(int(job.user_id), "memory"):
                 extractor = MemoryExtractor(chat_model=get_cached_chat_model())
                 actions = await extractor.extract_actions(

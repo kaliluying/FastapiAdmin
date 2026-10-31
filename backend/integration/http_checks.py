@@ -1,5 +1,6 @@
 """通过真实 TCP HTTP 验证认证、知识库、SSE 与重启持久化。"""
 
+import io
 import json
 import os
 import signal
@@ -65,6 +66,7 @@ def serve(port: int) -> None:
 
 def verify_http() -> dict:
     import httpx
+    from openpyxl import load_workbook
     from sqlalchemy import create_engine, text
 
     from app.config.setting import settings
@@ -137,6 +139,42 @@ def verify_http() -> dict:
             login = data(client.post("/system/auth/login", data={"username": "admin", "password": "isolated-acceptance"}))
             headers = {"Authorization": "Bearer " + login["access_token"]}
             assert data(client.get("/system/user/current/info", headers=headers))["username"] == "admin"
+            formula_user = data(client.post("/system/user/create", headers=headers, json={
+                "username": "http-formula", "name": "=1+1", "password": "isolated-formula", "role_ids": [],
+            }))
+            formula_role = data(client.post("/system/role/create", headers=headers, json={
+                "name": "=1+1", "code": "http_formula", "status": 0, "data_scope": 4,
+            }))
+            for resource, title in [("user", "用户昵称"), ("role", "角色名称")]:
+                exported = client.get(f"/system/{resource}/export", headers=headers)
+                assert exported.status_code == 200
+                (root / f"{resource}-literal-text.xlsx").write_bytes(exported.content)
+                worksheet = load_workbook(io.BytesIO(exported.content)).active
+                column = next(cell.column for cell in worksheet[1] if cell.value == title)
+                cell = next(row[column - 1] for row in worksheet.iter_rows(min_row=2) if row[column - 1].value == "=1+1")
+                assert cell.data_type == "s", f"{resource} 导出把用户文本写成了公式"
+
+            def create_menu(**values):
+                return data(client.post("/platform/menu/create", headers=headers, json={"order": 1, **values}))
+
+            menu_root = create_menu(name="HTTP cascade", type=1, route_name="HttpCascade", route_path="/http-cascade", redirect="/http-cascade/page", status=1)
+            menu_page = create_menu(name="HTTP page", type=2, parent_id=menu_root["id"], route_name="HttpCascadePage", route_path="page", component_path="module_system/user/index", permission="http:cascade:query", status=1)
+            source = create_menu(name="HTTP source", type=2, route_name="HttpCascadeSource", route_path="/http-cascade-source", component_path="module_system/user/index", permission="http:source:query", status=0)
+            button = create_menu(name="HTTP button", type=3, parent_id=source["id"], permission="module_system:user:query", status=0)
+            data(client.put("/system/role/permission", headers=headers, json={"role_ids": [formula_role["id"]], "data_scope": 4, "menu_ids": [button["id"]]}))
+            data(client.put(f'/system/user/update/{formula_user["id"]}', headers=headers, json={"username": "http-formula", "name": "=1+1", "role_ids": [formula_role["id"]]}))
+            formula_login = data(client.post("/system/auth/login", data={"username": "http-formula", "password": "isolated-formula"}))
+            formula_headers = {"Authorization": "Bearer " + formula_login["access_token"]}
+            assert client.get("/system/user/list", headers=formula_headers).status_code == 200
+            data(client.put(f'/platform/menu/update/{button["id"]}', headers=headers, json={"parent_id": menu_page["id"]}))
+            for node in (menu_root, menu_page, button):
+                assert data(client.get(f'/platform/menu/detail/{node["id"]}', headers=headers))["status"] == 0
+            data(client.patch("/platform/menu/status/batch", headers=headers, json={"ids": [menu_root["id"]], "status": 1}))
+            assert client.get("/system/user/list", headers=formula_headers).status_code == 403
+            create_menu(name="HTTP new button", type=3, parent_id=menu_page["id"], permission="http:new:query", status=0)
+            for node in (menu_root, menu_page):
+                assert data(client.get(f'/platform/menu/detail/{node["id"]}', headers=headers))["status"] == 0
+            assert client.get("/system/user/list", headers=formula_headers).status_code == 403
             limited = data(client.post("/system/user/create", headers=headers, json={
                 "username": "http-limited", "name": "受限验收用户", "password": "isolated-limited", "role_ids": [],
             }))
@@ -211,6 +249,18 @@ def verify_http() -> dict:
                 cwd=Path(__file__).resolve().parents[1], env=os.environ.copy(), timeout=120,
             )
             assert browser.returncode == 0, "浏览器页面验收失败"
+            for resource, title in [("user", "用户昵称"), ("role", "角色名称")]:
+                worksheet = load_workbook(root / f"browser-{resource}-export.xlsx").active
+                column = next(cell.column for cell in worksheet[1] if cell.value == title)
+                cell = next(row[column - 1] for row in worksheet.iter_rows(min_row=2) if row[column - 1].value == "=1+1")
+                assert cell.data_type == "s"
+            login = data(client.post("/system/auth/login", data={"username": "admin", "password": "isolated-acceptance"}))
+            headers = {"Authorization": "Bearer " + login["access_token"]}
+            data(client.request("DELETE", "/platform/menu/delete", headers=headers, json=[menu_root["id"], source["id"]]))
+            data(client.patch("/system/user/status/batch", headers=headers, json={"ids": [formula_user["id"]], "status": 1}))
+            data(client.patch("/system/role/status/batch", headers=headers, json={"ids": [formula_role["id"]], "status": 1}))
+            data(client.request("DELETE", "/system/user/delete", headers=headers, json=[formula_user["id"]]))
+            data(client.request("DELETE", "/system/role/delete", headers=headers, json=[formula_role["id"]]))
             with engine.connect() as connection:
                 assert connection.execute(text("SELECT count(*) FROM ai_knowledge_base WHERE name=:name AND is_deleted=false"), {"name": "浏览器全链路验收"}).scalar_one() == 1
     finally:
@@ -219,6 +269,8 @@ def verify_http() -> dict:
     return {
         "passed": True, "transport": "TCP HTTP to standalone Uvicorn process",
         "checks": ["readiness checks real database and Redis", "login, unauthorized request and RBAC denial",
+                   "user and role XLSX exports preserve untrusted formula-like text as literal strings",
+                   "menu create/reparent uses status cascade; disabling ancestor revokes assigned API permission",
                    "create user, validation failure and knowledge base CRUD", "upload, indexing, BM25 retrieval and original download",
                    "SSE retrieval citations, completion and SQL persistence", "process restart preserves Redis session and SQL data",
                    "document replacement; deletion clears SQL chunks, files and BM25 entries", "logout revokes real Redis session"],

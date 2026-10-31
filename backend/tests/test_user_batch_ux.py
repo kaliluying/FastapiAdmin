@@ -24,6 +24,7 @@ from app.core.base_schema import AuthSchema, BatchSetAvailable
 from app.core.dependencies import get_current_user
 from app.core.exceptions import CustomException
 from app.init_app import register_exceptions
+from app.utils.excel_util import ExcelUtil
 from app.utils.hash_bcrpy_util import PwdUtil
 
 
@@ -256,3 +257,26 @@ async def test_http_upload_then_user_and_role_excel_downloads(batch_auth, monkey
             assert "spreadsheetml.sheet" in response.headers["content-type"]
             values = list(load_workbook(io.BytesIO(response.content)).active.values)
             assert values[1][values[0].index(label)] == expected
+
+
+@pytest.mark.parametrize("as_dict", [False, True])
+@pytest.mark.parametrize("name", ["=1+1", '=HYPERLINK("https://x.invalid")', "+1+1", "-1+1", "@SUM(1,2)", "#N/A"])
+def test_user_and_role_exports_keep_untrusted_names_as_text(as_dict, name):
+    user = UserOutSchema(username="formula-user", name=name, status=0)
+    role = RoleOutSchema(name=name, code="formula_role", data_scope=4, status=0)
+    for service, row, title in [(UserService, user, "用户昵称"), (RoleService, role, "角色名称")]:
+        source = row.model_dump() if as_dict else row
+        workbook = load_workbook(io.BytesIO(service.export_list([source])))
+        worksheet = workbook.active
+        column = next(cell.column for cell in worksheet[1] if cell.value == title)
+        cell = worksheet.cell(2, column)
+        assert (cell.value, cell.data_type) == (name, "s")
+        assert (source["name"] if as_dict else source.name) == name
+
+
+def test_excel_export_preserves_typed_non_text_values():
+    row = {"number": -12.5, "boolean": True, "missing": None}
+    workbook = load_workbook(io.BytesIO(ExcelUtil.export_list2excel([row], {key: key for key in row})))
+    cells = list(workbook.active.rows)[1]
+    assert [(cell.value, cell.data_type) for cell in cells[:2]] == [(-12.5, "n"), (True, "b")]
+    assert cells[2].value is None

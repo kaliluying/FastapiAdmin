@@ -2,6 +2,7 @@ import io
 from typing import Any
 
 from openpyxl import Workbook
+from openpyxl.cell import WriteOnlyCell
 from openpyxl.styles import Alignment, PatternFill
 from openpyxl.utils import get_column_letter
 from openpyxl.worksheet.datavalidation import DataValidation
@@ -85,7 +86,16 @@ class ExcelUtil:
         keys = list(mapping_dict)
         worksheet.append([mapping_dict[key] for key in keys])
         for item in list_data:
-            worksheet.append([item.get(key) for key in keys])
+            row = []
+            for key in keys:
+                value = item.get(key)
+                if isinstance(value, str):
+                    cell = WriteOnlyCell(worksheet, value=value)
+                    cell.data_type = "s"
+                    row.append(cell)
+                else:
+                    row.append(value)
+            worksheet.append(row)
         buffer = io.BytesIO()
         workbook.save(buffer)
         binary_data = buffer.getvalue()

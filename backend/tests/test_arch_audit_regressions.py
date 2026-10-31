@@ -40,6 +40,7 @@ async def only_record(sessions):
 
 
 @pytest.mark.parametrize("failure,status", [("permission", 403), ("validation", 422), ("business", 409), ("unhandled", 500)])
+@pytest.mark.filterwarnings("error::starlette.exceptions.StarletteDeprecationWarning")
 async def test_failed_request_has_one_safe_operation_audit(audit_app, arch_sessions, failure, status):
     @audit_app.post("/failure")
     async def fail(payload: Annotated[int, Body()]):
@@ -50,6 +51,12 @@ async def test_failed_request_has_one_safe_operation_audit(audit_app, arch_sessi
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=audit_app, raise_app_exceptions=False), base_url="http://test") as client:
         response = await client.post("/failure", json="invalid" if failure == "validation" else 7)
     assert response.status_code == status
+    if failure == "validation":
+        body = response.json()
+        assert body["status_code"] == 422
+        assert body["success"] is False
+        assert body["data"] is None
+        assert body["msg"] == "Input should be a valid integer, unable to parse string as an integer"
     record = await only_record(arch_sessions)
     assert record.request_path == "/failure"
     assert record.response_code == status

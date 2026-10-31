@@ -64,6 +64,8 @@
 </template>
 
 <script lang="ts" setup>
+import { ElMessage } from "element-plus";
+
 defineOptions({ name: "FaIntervalTab" });
 
 // 定义接口，增强类型安全

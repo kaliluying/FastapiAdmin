@@ -11,7 +11,7 @@ from pydantic import (
     model_validator,
 )
 
-from app.api.v1.module_platform.menu.schema import MenuOutSchema
+from app.api.v1.module_platform.menu.schema import MenuTreeOutSchema
 from app.api.v1.module_system.role.schema import RoleOutSchema
 from app.common.enums import QueueEnum
 from app.core.base_params import BaseQueryParam, UserByQueryParam
@@ -208,7 +208,7 @@ class UserOutSchema(UserUpdateSchema, BaseSchema, UserBySchema):
     wx_login: str | None = Field(default=None, max_length=32, description="微信登录")
     qq_login: str | None = Field(default=None, max_length=32, description="QQ登录")
     roles: list[RoleOutSchema] | None = Field(default=[], description="角色")
-    menus: list[MenuOutSchema] | None = Field(default=[], description="菜单")
+    menus: list[MenuTreeOutSchema] | None = Field(default=[], description="菜单")
     permissions: list[str] = Field(default_factory=list, description="权限标识列表")
     modules: list[str] = Field(default_factory=list, description="当前环境已注册的业务模块")
 

@@ -82,6 +82,7 @@ async def verify_reliability() -> dict:
             yield
 
     worker.get_cached_chat_model = lambda: SimpleNamespace(complete=complete)
+    worker.async_validate_model_base_url = AsyncMock()
     chat.ChatService._validate_ai_config = staticmethod(AsyncMock(return_value=None))
     chat.ChatService._stream_log_analysis = ordinary_routing
     chat.create_rag_chain = lambda **_: SimpleNamespace(ainvoke=AsyncMock(return_value="accepted"))
@@ -317,6 +318,7 @@ async def memory_restart_phase(phase: str) -> dict:
             return RESTART_RESULT
 
         worker.get_cached_chat_model = lambda: SimpleNamespace(complete=complete)
+        worker.async_validate_model_base_url = AsyncMock()
         if phase == "crash-memory":
             worker.MEMORY_LEASE_SECONDS = 2
         app = create_app()

@@ -161,3 +161,15 @@ async def test_nonstream_api_reports_configuration_and_provider_failures(nonstre
     assert "private-provider-secret" not in response.text
     if scenario == "config":
         invoke.assert_not_awaited()
+
+
+@pytest.mark.parametrize("payload", [[1, 2], "answer", 42, True, None, {"type": "navigate", "path": "/system/user"}])
+async def test_nonstream_json_answer_only_exposes_object_actions(nonstream_api, monkeypatch, payload):
+    application, _ = nonstream_api
+    answer = f"```json\n{json.dumps(payload)}\n```"
+    monkeypatch.setattr(service, "create_rag_chain", lambda **kw: SimpleNamespace(ainvoke=AsyncMock(return_value=answer)))
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=application), base_url="http://test") as client:
+        response = await client.post("/chat/ai-chat", json={"message": "Return JSON"})
+    assert response.status_code == 200
+    assert response.json()["data"]["response"] == answer
+    assert response.json()["data"]["action"] == (payload if isinstance(payload, dict) else None)

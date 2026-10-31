@@ -1,5 +1,6 @@
 import asyncio
 import json
+import socket
 from contextvars import ContextVar
 from datetime import datetime, timedelta
 from types import SimpleNamespace
@@ -20,6 +21,8 @@ from app.plugin.module_ai.chat.model import MemoryExtractionJobModel as Job
 from app.plugin.module_ai.chat.model_config_service import ChatModelRuntimeConfig
 from app.plugin.module_ai.chat.schema import ChatSessionCreateSchema
 from app.plugin.module_ai.chat.usage_model import AiUsageDailyModel, AiUsageQuotaModel, AiUsageRecordModel
+from app.plugin.module_ai.config import async_validate_model_base_url
+from app.plugin.module_ai.config import settings as ai_settings
 from app.plugin.module_ai.memory.model import AiMemoryModel
 from app.plugin.module_ai.memory.public import MemoryService
 from app.plugin.module_ai.module import get_module
@@ -44,6 +47,7 @@ async def queue(tmp_path, monkeypatch):
     monkeypatch.setattr(worker, "MEMORY_POLL_SECONDS", 0.01)
     model = SimpleNamespace(complete=AsyncMock(return_value=RESULT))
     monkeypatch.setattr(worker, "get_cached_chat_model", lambda: model)
+    monkeypatch.setattr(worker, "async_validate_model_base_url", AsyncMock())
     try:
         yield sessions, model
     finally:
@@ -63,6 +67,21 @@ async def add_turn(sessions, user_id=1):
 async def count(sessions, model):
     async with sessions() as db:
         return await db.scalar(select(func.count()).select_from(model))
+
+
+async def test_memory_worker_revalidates_dns_before_provider_call(queue, monkeypatch):
+    sessions, model = queue
+    monkeypatch.setattr(worker, "async_validate_model_base_url", async_validate_model_base_url)
+    monkeypatch.setattr(worker, "get_active_chat_model_config", lambda: SimpleNamespace(base_url="https://model.fixture.invalid/v1"))
+    monkeypatch.setattr(ai_settings, "MODEL_ALLOWED_HOSTS", [])
+    monkeypatch.setattr(socket, "getaddrinfo", lambda *a, **kw: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 443))])
+    await add_turn(sessions)
+    await worker.process_memory_job(await worker.claim_memory_job())
+    model.complete.assert_not_awaited()
+    assert await count(sessions, AiMemoryModel) == 0
+    async with sessions() as db:
+        job = (await db.scalars(select(Job))).one()
+        assert job.status == "pending" and job.token is None and job.attempts == 1
 
 
 async def wait_empty(sessions):

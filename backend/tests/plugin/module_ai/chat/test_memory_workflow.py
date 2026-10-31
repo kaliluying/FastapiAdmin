@@ -8,8 +8,9 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from app.plugin.module_ai.chat import service as chat_service
 from app.plugin.module_ai.chat.rag import RagChatChain, RagPromptBuilder
 from app.plugin.module_ai.memory import service as memory_service
+from app.plugin.module_ai.memory.crud import MemoryCRUD
 from app.plugin.module_ai.memory.model import AiMemoryModel
-from app.plugin.module_ai.memory.schema import MemoryCreateSchema, MemoryUpdateSchema
+from app.plugin.module_ai.memory.schema import MemoryCreateSchema, MemoryExtractAction, MemoryUpdateSchema
 from app.plugin.module_ai.memory.service import MemoryService, extract_conversation_in_background
 
 
@@ -50,11 +51,11 @@ async def test_rag_reads_only_current_users_active_memories(memory_sessions):
 async def test_extraction_respects_confidence_and_user_ownership(memory_sessions):
     async with memory_sessions() as db:
         own = MemoryService.for_user(db, 1)
-        await own.create(MemoryCreateSchema(key="职责", value="OWN_EXISTING"))
+        existing = await own.create(MemoryCreateSchema(key="职责", value="OWN_EXISTING"))
         foreign = await MemoryService.for_user(db, 2).create(MemoryCreateSchema(key="职责", value="FOREIGN_SECRET"))
         await db.commit()
         model = SimpleNamespace(complete=AsyncMock(return_value=json.dumps({"actions": [
-            {"action": "update", "key": "职责", "value": "OWN_UPDATED", "confidence": 0.9, "is_long_term": True, "source_quote": "我的职责是 OWN_UPDATED"},
+            {"action": "update", "memory_id": existing["id"], "key": "职责", "value": "OWN_UPDATED", "confidence": 0.9, "is_long_term": True, "source_quote": "我的职责是 OWN_UPDATED"},
             {"action": "create", "key": "猜测", "value": "LOW_CONFIDENCE", "confidence": 0.1, "is_long_term": True, "source_quote": "我的职责是 OWN_UPDATED"},
             {"action": "delete", "memory_id": foreign["id"], "confidence": 0.9, "is_long_term": True, "source_quote": "忘记原职责"},
         ]})))
@@ -85,6 +86,29 @@ async def test_background_database_failure_is_nonfatal(monkeypatch):
 
     monkeypatch.setattr(memory_service, "async_db_session", unavailable_database)
     await extract_conversation_in_background(user_id=1, user_message="问题", assistant_response="回答", chat_model=SimpleNamespace(complete=AsyncMock()))
+
+
+@pytest.mark.parametrize("target", ["own", "foreign", "missing", "absent"])
+@pytest.mark.parametrize("active", [False, True])
+async def test_extracted_update_targets_owned_id_without_creating_memory(memory_sessions, target, active):
+    async with memory_sessions() as db:
+        own = MemoryService.for_user(db, 1)
+        original = await own.create(MemoryCreateSchema(key="职业", value="律师", category="profile", is_active=active))
+        foreign = await MemoryService.for_user(db, 2).create(MemoryCreateSchema(key="职业", value="FOREIGN"))
+        identifiers = {"own": original["id"], "foreign": foreign["id"], "missing": 99999, "absent": None}
+        saved = await own.apply_extracted_actions([MemoryExtractAction(
+            action="update", memory_id=identifiers[target], key="用户身份", value="后端工程师",
+        )])
+        await db.commit()
+        assert saved == (1 if target == "own" else 0)
+        memories = [entry.to_dict() for entry in await MemoryCRUD(own.auth).list_crud()]
+        assert len(memories) == 1
+        assert memories[0]["id"] == original["id"]
+        assert memories[0]["key"] == ("用户身份" if target == "own" else "职业")
+        assert memories[0]["value"] == ("后端工程师" if target == "own" else "律师")
+        assert memories[0]["category"] == "profile"
+        assert memories[0]["is_active"] is active
+        assert [entry["value"] for entry in await MemoryService.for_user(db, 2).get_active_memories()] == ["FOREIGN"]
 
 
 def test_chat_only_wakes_workers_without_calling_the_provider(monkeypatch):

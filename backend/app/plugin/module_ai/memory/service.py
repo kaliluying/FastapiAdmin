@@ -135,6 +135,15 @@ class MemoryService:
             if not key or not value:
                 logger.warning(f"记忆提取: 跳过空 key/value, action={action}")
                 return 0
+            if action.action == "update":
+                if action.memory_id is None:
+                    return 0
+                data = MemoryUpdateSchema(
+                    memory_type=action.memory_type or "fact", key=key, value=value, priority=action.priority,
+                )
+                if action.category is not None:
+                    data.category = action.category
+                return int(await crud.update_crud(action.memory_id, data))
             entry = await crud.upsert(
                 memory_type=action.memory_type or "fact", key=key, value=value,
                 category=action.category, priority=action.priority,

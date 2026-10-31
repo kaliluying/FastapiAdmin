@@ -77,7 +77,7 @@ def handle_exception(app: FastAPI) -> None:
             "[参数验证异常] {} {} | msg={} | errors={}",
             request.method, request.url.path, msg, exc.errors(),
         )
-        return ErrorResponse(msg=str(msg), status_code=status.HTTP_422_UNPROCESSABLE_ENTITY)
+        return ErrorResponse(msg=str(msg), status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
 
     @app.exception_handler(ResponseValidationError)
     async def response_validation_handler(request: Request, exc: ResponseValidationError) -> JSONResponse:

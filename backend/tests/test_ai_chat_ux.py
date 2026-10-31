@@ -217,6 +217,36 @@ async def test_structured_query_streams_real_rag_and_persists_citations(chat_aut
     assert "private_path" not in json.dumps(stored.runs)
 
 
+@pytest.mark.parametrize("session_id", [None, ""])
+@pytest.mark.parametrize("stream", [False, True])
+async def test_new_session_survives_rag_transaction_release(chat_auth, configured_chat, monkeypatch, session_id, stream):
+    class Retriever:
+        async def retrieve(self, **kwargs):
+            return []
+
+    class Model:
+        async def complete(self, prompt):
+            return "persisted answer"
+
+        async def stream(self, prompt):
+            yield "persisted answer"
+
+    monkeypatch.setattr(service, "create_rag_chain", lambda db, auth: RagChatChain(
+        retriever=Retriever(), prompt_builder=RagPromptBuilder(), chat_model=Model(), db=db,
+    ))
+    chat = service.ChatService(chat_auth)
+    if stream:
+        events = [event async for event in chat.chat_query(ChatQuerySchema(message="hello", session_id=session_id), structured=True)]
+        assert events[-1]["type"] == "done"
+        identifier = events[-1]["session_id"]
+    else:
+        identifier = (await chat.chat_non_stream(message="hello", session_id=session_id))["session_id"]
+    await chat_auth.db.rollback()
+    stored = await ChatSessionCRUD(chat_auth).get_by_id_crud(identifier)
+    assert stored is not None
+    assert stored.runs[0]["messages"][1]["content"] == "persisted answer"
+
+
 @pytest.mark.parametrize("failure", ["empty", "provider", "persistence", "commit"])
 async def test_structured_query_failures_never_emit_done_or_expose_internal_error(configured_chat, monkeypatch, failure):
     database = SimpleNamespace(commit=AsyncMock(), rollback=AsyncMock())

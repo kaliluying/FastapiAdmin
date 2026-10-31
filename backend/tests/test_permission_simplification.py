@@ -118,9 +118,16 @@ async def test_load_user_from_db_preserves_role_relationships():
 
 
 @pytest.mark.asyncio
-async def test_current_info_returns_flat_permissions_from_enabled_role_menus(monkeypatch):
+@pytest.mark.parametrize("is_superuser", [False, True])
+@pytest.mark.parametrize("empty_menus", [False, True])
+async def test_current_info_returns_flat_permissions_from_enabled_role_menus(monkeypatch, is_superuser, empty_menus):
+    root_menu = _menu(
+        id=9, name="系统管理", type=1, permission=None, component_path=None,
+        route_name="System", route_path="/system", redirect="/system/user",
+    )
     page_menu = _menu(
         id=10,
+        parent_id=9,
         permission="module_system:user:query",
         route_name="User",
         route_path="user",
@@ -151,8 +158,8 @@ async def test_current_info_returns_flat_permissions_from_enabled_role_menus(mon
         component_path=None,
         parent_id=10,
     )
-    role = _role(menus=[page_menu, button_menu, disabled_menu])
-    current_user = _user(roles=[role])
+    role = _role(menus=[] if empty_menus else [root_menu, page_menu, button_menu, disabled_menu])
+    current_user = _user(roles=[role], is_superuser=is_superuser)
 
     class FakeUserCRUD:
         def __init__(self, _auth):
@@ -167,17 +174,27 @@ async def test_current_info_returns_flat_permissions_from_enabled_role_menus(mon
             pass
 
         async def tree_list(self, **_kwargs):
-            return [page_menu, button_menu]
+            return [] if empty_menus else [root_menu, page_menu, button_menu]
 
     monkeypatch.setattr(user_service, "UserCRUD", FakeUserCRUD)
     monkeypatch.setattr(user_service, "MenuCRUD", FakeMenuCRUD)
 
     result = await user_service.UserService(AuthSchema(user=current_user)).current_info()
 
-    assert result.permissions == [
+    expected_permissions = [] if empty_menus else [
         "module_system:user:create",
         "module_system:user:query",
     ]
+    assert result.permissions == (["*:*:*"] if is_superuser else expected_permissions)
+    payload = result.model_dump(mode="json", warnings="error")
+    if empty_menus:
+        assert payload["menus"] == []
+    else:
+        assert [menu["id"] for menu in payload["menus"]] == [9]
+        assert [menu["id"] for menu in payload["menus"][0]["children"]] == [10]
+        buttons = payload["menus"][0]["children"][0]["children"]
+        assert [menu["id"] for menu in buttons] == [11]
+        assert buttons[0]["children"] is None
 
 
 @pytest.mark.asyncio

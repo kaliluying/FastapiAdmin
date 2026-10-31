@@ -24,6 +24,7 @@ async function run() {
   fs.writeFileSync(config, `import base from ${JSON.stringify(path.join(frontend, "vite.config.ts"))};
 export default (env) => {
   const config = base(env);
+  config.cacheDir = ${JSON.stringify(path.join(root, "vite-cache"))};
   config.server.open = false;
   config.server.proxy["/api/v1"].rewrite = (path) => path.replace(/^\\/api\\/v1/, "");
   return config;
@@ -78,6 +79,27 @@ export default (env) => {
     const skip = page.getByRole("button", { name: "跳过", exact: true });
     await skip.waitFor({ timeout: 3000 }).catch(() => {});
     if (await skip.isVisible()) await skip.click();
+    for (const [resource, title] of [["user", "用户管理"], ["role", "角色管理"]]) {
+      await page.getByRole("menuitem", { name: title, exact: true }).click();
+      await page.getByPlaceholder(resource === "user" ? "请输入用户名" : "请输入角色名称", { exact: true }).fill("=1+1");
+      await page.getByRole("button", { name: "查询", exact: true }).click();
+      await page.locator(".el-table__row").filter({ hasText: "=1+1" }).waitFor();
+      await page.getByRole("button", { name: "导出", exact: true }).click();
+      const exporting = page.getByRole("dialog", { name: "导出数据", exact: true });
+      await exporting.locator(".el-form-item").filter({ hasText: "数据源" }).locator(".el-select").click();
+      await page.getByRole("option", { name: "全量数据 (所有分页的数据)", exact: true }).click();
+      const downloading = page.waitForEvent("download");
+      await exporting.getByRole("button", { name: "确 定", exact: true }).click();
+      const download = await downloading;
+      await download.saveAs(path.join(root, `browser-${resource}-export.xlsx`));
+      await exporting.waitFor({ state: "hidden" });
+      await page.screenshot({ path: path.join(root, `browser-${resource}-export.png`), fullPage: true });
+    }
+    await page.getByRole("menuitem", { name: "菜单管理", exact: true }).click();
+    const cascade = page.locator(".el-table__row").filter({ hasText: "HTTP cascade" });
+    await cascade.waitFor();
+    assert.match(await cascade.innerText(), /启用/);
+    await page.screenshot({ path: path.join(root, "browser-menu-cascade.png"), fullPage: true });
     const menu = page.locator(".el-menu-item").filter({ hasText: "知识库管理" });
     if (!(await menu.isVisible()))
       await page.locator(".el-sub-menu__title").filter({ hasText: "AI 知识库" }).click();
@@ -137,6 +159,7 @@ export default (env) => {
     fs.writeFileSync(path.join(root, "browser-results.json"), JSON.stringify({
       passed: true, database: process.env.DATABASE_TYPE, browser: await browser.version(),
       checks: ["UI login and authorized menu navigation", "create knowledge base and upload document",
+        "formula-like user/role names render and export through actual download controls", "reparented menu ancestor renders enabled",
         "visible successful indexing", "select knowledge base, SSE answer and citation preview",
         "refresh restores persisted history", "390px chat has no horizontal page overflow"],
       usability: "AI simulated user walk-through; visible navigation, progress, success and citation feedback observed",
